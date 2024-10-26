@@ -87,16 +87,20 @@ export default function Navbar() {
                         <span>Trợ giúp</span>
                       </DropdownMenuItem>
                       <DropdownMenuSeparator />
-                      <DropdownMenuItem className="cursor-pointer">
-                        <LogOut className="mr-2 h-4 w-4" />
-                        <span>Đăng xuất</span>
-                      </DropdownMenuItem>
+                      <Link href={"/logout"}>
+                        <DropdownMenuItem className="cursor-pointer">
+                          <LogOut className="mr-2 h-4 w-4" />
+                          <span>Đăng xuất</span>
+                        </DropdownMenuItem>
+                      </Link>
                     </>
                   ) : (
-                    <DropdownMenuItem className="cursor-pointer">
-                      <LogOut className="mr-2 h-4 w-4" />
-                      <span>Đăng nhập</span>
-                    </DropdownMenuItem>
+                    <Link href={"/login"}>
+                      <DropdownMenuItem className="cursor-pointer">
+                        <LogOut className="mr-2 h-4 w-4" />
+                        <span>Đăng nhập</span>
+                      </DropdownMenuItem>
+                    </Link>
                   )}
                 </DropdownMenuContent>
               </DropdownMenu>
