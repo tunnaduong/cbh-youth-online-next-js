@@ -1,4 +1,5 @@
 import "./globals.css";
+import { AuthProvider } from "../contexts";
 
 export default function RootLayout({ children }) {
   return (
@@ -12,7 +13,9 @@ export default function RootLayout({ children }) {
         />
         <title>Thanh niên Chuyên Biên Hòa Online</title>
       </head>
-      <body>{children}</body>
+      <body>
+        <AuthProvider>{children}</AuthProvider>
+      </body>
     </html>
   );
 }
