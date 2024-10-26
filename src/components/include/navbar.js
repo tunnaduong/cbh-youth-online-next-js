@@ -1,4 +1,4 @@
-import Image from "next/image";
+import Link from "next/link";
 import { User, LogOut, Settings, HelpCircle } from "lucide-react";
 import {
   IoSearch,
@@ -23,7 +23,7 @@ export default function Navbar() {
       <nav className="px-6 py-3.5 fixed w-[100%] overflow-hidden top-0 bg-white shadow-md leading-[0] flex justify-between">
         <div className="flex flex-row">
           {/* Logo */}
-          <a id="logo" href="/" className="inline-block">
+          <Link id="logo" href="/" className="inline-block">
             <div className="flex gap-x-1 items-center">
               <img
                 src="/images/logo.png"
@@ -35,7 +35,7 @@ export default function Navbar() {
                 <h1 className="font-bold">Chuyên Biên Hòa Online</h1>
               </div>
             </div>
-          </a>
+          </Link>
           {/* Search box */}
           <div className="w-52 flex flex-row items-center bg-[#F7F7F7] rounded-lg pr-1 ml-7 pl-1">
             <input
@@ -113,18 +113,18 @@ export default function Navbar() {
           </div>
           {/* Main menu */}
           <div className="flex flex-row-reverse gap-x-3">
-            <a href="/explore" className="menu-btn mr-14">
+            <Link href="/explore" className="menu-btn mr-14">
               Khám phá
-            </a>
-            <a href="/lookup" className="menu-btn mr-5">
+            </Link>
+            <Link href="/lookup" className="menu-btn mr-5">
               Tra cứu
-            </a>
-            <a href="/report" className="menu-btn mr-5">
+            </Link>
+            <Link href="/report" className="menu-btn mr-5">
               Báo cáo
-            </a>
-            <a href="/" className="menu-btn nav-active mr-5">
+            </Link>
+            <Link href="/" className="menu-btn nav-active mr-5">
               Cộng đồng
-            </a>
+            </Link>
           </div>
         </div>
         {/* <div id="myModal" class="modal"></div> */}
