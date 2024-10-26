@@ -24,7 +24,7 @@ axiosInstance.interceptors.response.use(
     if (error.response && error.response.status === 401) {
       //WHEN: ERROR 401 (Unauthorized)
       localStorage.removeItem("TOKEN");
-      window.location.reload();
+      // window.location.reload();
     }
 
     return Promise.reject(error);
