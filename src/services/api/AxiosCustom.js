@@ -6,8 +6,11 @@ const axiosInstance = axios.create({
 });
 
 axiosInstance.interceptors.request.use((config) => {
-  const token = localStorage.getItem("TOKEN") || "";
-  config.headers.Authorization = `Bearer ${token}`;
+  // Check if we're running on the client side
+  if (typeof window !== "undefined") {
+    const token = localStorage.getItem("TOKEN") || "";
+    config.headers.Authorization = `Bearer ${token}`;
+  }
 
   return config;
 });
@@ -17,14 +20,13 @@ axiosInstance.interceptors.response.use(
     return response;
   },
   (error) => {
-    error.response
-      ? console.error("API Error:", error.response)
-      : console.error("Unknown Error:", error);
-
-    if (error.response && error.response.status === 401) {
-      //WHEN: ERROR 401 (Unauthorized)
-      localStorage.removeItem("TOKEN");
-      // window.location.reload();
+    if (typeof window !== "undefined") {
+      if (error.response && error.response.status === 401) {
+        // WHEN: ERROR 401 (Unauthorized)
+        localStorage.removeItem("TOKEN");
+        // Optionally reload the page to reflect the logout status
+        // window.location.reload();
+      }
     }
 
     return Promise.reject(error);

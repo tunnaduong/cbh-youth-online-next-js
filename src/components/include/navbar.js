@@ -1,3 +1,5 @@
+"use client";
+
 import Link from "next/link";
 import { User, LogOut, Settings, HelpCircle } from "lucide-react";
 import {
@@ -15,8 +17,11 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { useAuthContext } from "@/contexts/Support";
 
 export default function Navbar() {
+  const { currentUser } = useAuthContext();
+
   return (
     <>
       {/* Navbar */}
@@ -71,7 +76,7 @@ export default function Navbar() {
                   </Avatar>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
-                  {false ? (
+                  {currentUser ? (
                     <>
                       <DropdownMenuLabel>Tài khoản của tôi</DropdownMenuLabel>
                       <DropdownMenuItem className="cursor-pointer">
