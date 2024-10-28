@@ -28,7 +28,7 @@ export default function HomePosts() {
         </div>
         <div>
           <h1 className="text-[14px] font-semibold mb-1">
-            Bí kíp để "xử lí gọn" 50 câu Tiếng Anh trong 60 phút
+            Bí kíp để &quot;xử lí gọn&quot; 50 câu Tiếng Anh trong 60 phút
           </h1>
           <p className="text-[11px]">
             Có chiến lược làm bài thi rõ ràng, hiệu quả sẽ giúp sức rất nhiều
