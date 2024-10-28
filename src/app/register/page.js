@@ -1,3 +1,6 @@
+"use client";
+
+import React from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -6,15 +9,68 @@ import {
   CardFooter,
   CardHeader,
 } from "@/components/ui/card";
-import { Facebook } from "lucide-react";
+import { IoLogoFacebook } from "react-icons/io5";
 import Image from "next/image";
 import Link from "next/link";
+import { AlertCircle } from "lucide-react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { signupRequest } from "../Api";
+import { useAuthContext } from "@/contexts/Support";
+import { useRouter } from "next/navigation";
 
 export default function RegisterScreen() {
+  const router = useRouter();
+  const { setCurrentUser, setUserToken, loggedIn } = useAuthContext();
+  const [email, setEmail] = React.useState("");
+  const [name, setName] = React.useState("");
+  const [username, setUsername] = React.useState("");
+  const [password, setPassword] = React.useState("");
+  const [passwordConfirm, setPasswordConfirm] = React.useState("");
+  const [error, setError] = React.useState({ __html: "" });
+
+  React.useEffect(() => {
+    if (loggedIn) {
+      router.push("/");
+    }
+  }, [loggedIn, router]);
+
+  const onSubmit = async (ev) => {
+    ev.preventDefault();
+    setError({ __html: "" });
+
+    if (password !== passwordConfirm) {
+      setError({ __html: "Mật khẩu xác nhận không khớp!" });
+      return;
+    }
+
+    try {
+      const response = await signupRequest({ name, email, username, password });
+
+      if (response.data && response.data.user && response.data.token) {
+        setCurrentUser(response.data.user);
+        setUserToken(response.data.token);
+        router.push("/");
+      } else {
+        throw new Error("Phản hồi không hợp lệ!");
+      }
+    } catch (error) {
+      setError({ __html: error.response.data.message });
+    }
+  };
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100">
+    <div className="min-h-screen flex items-center justify-center bg-gray-100 px-4">
       <Card className="w-full max-w-md">
         <CardHeader className="space-y-4 text-center">
+          {error.__html && (
+            <Alert variant="destructive" className="text-left">
+              <AlertCircle className="h-4 w-4" />
+              <AlertTitle>Lỗi</AlertTitle>
+              <AlertDescription
+                dangerouslySetInnerHTML={error}
+              ></AlertDescription>
+            </Alert>
+          )}
           <div className="flex gap-x-1 items-center justify-center">
             <Image
               src="/images/logo.png"
@@ -29,53 +85,73 @@ export default function RegisterScreen() {
             </div>
           </div>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <Input
-              type="text"
-              placeholder="Tên người dùng"
-              className="w-full px-3 py-2 border rounded-md"
-            />
-          </div>
-          <div className="space-y-2">
-            <Input
-              type="text"
-              placeholder="Họ và tên"
-              className="w-full px-3 py-2 border rounded-md"
-            />
-          </div>
-          <div className="space-y-2">
-            <Input
-              type="text"
-              placeholder="Địa chỉ Email"
-              className="w-full px-3 py-2 border rounded-md"
-            />
-          </div>
-          <div className="space-y-2">
-            <Input
-              type="password"
-              placeholder="Mật khẩu"
-              className="w-full px-3 py-2 border rounded-md"
-            />
-          </div>
-          <div className="space-y-2">
-            <Input
-              type="password"
-              placeholder="Nhập lại mật khẩu"
-              className="w-full px-3 py-2 border rounded-md"
-            />
-          </div>
-          <Button className="w-full bg-green-600 text-white py-2 rounded-md hover:bg-green-700">
-            Đăng ký
-          </Button>
-          <div className="flex justify-between text-sm">
-            <Link href="#" className="text-green-600 hover:underline">
-              Quên mật khẩu?
-            </Link>
-            <Link href="/login" className="text-green-600 hover:underline">
-              Đã có tài khoản?
-            </Link>
-          </div>
+        <CardContent>
+          <form
+            action="#"
+            method="POST"
+            className="space-y-4"
+            onSubmit={onSubmit}
+          >
+            <div className="space-y-2">
+              <Input
+                type="text"
+                placeholder="Tên người dùng"
+                className="w-full px-3 py-2 border rounded-md"
+                value={username}
+                onChange={(ev) => setUsername(ev.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Input
+                type="text"
+                placeholder="Họ và tên"
+                className="w-full px-3 py-2 border rounded-md"
+                value={name}
+                onChange={(ev) => setName(ev.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Input
+                type="text"
+                placeholder="Địa chỉ Email"
+                className="w-full px-3 py-2 border rounded-md"
+                value={email}
+                onChange={(ev) => setEmail(ev.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Input
+                type="password"
+                placeholder="Mật khẩu"
+                className="w-full px-3 py-2 border rounded-md"
+                value={password}
+                onChange={(ev) => setPassword(ev.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Input
+                type="password"
+                placeholder="Nhập lại mật khẩu"
+                className="w-full px-3 py-2 border rounded-md"
+                value={passwordConfirm}
+                onChange={(ev) => setPasswordConfirm(ev.target.value)}
+              />
+            </div>
+            <Button
+              type="submit"
+              className="w-full bg-green-600 text-white py-2 rounded-md hover:bg-green-700"
+            >
+              Đăng ký
+            </Button>
+            <div className="flex justify-between text-sm">
+              <Link href="#" className="text-green-600 hover:underline">
+                Quên mật khẩu?
+              </Link>
+              <Link href="/login" className="text-green-600 hover:underline">
+                Đã có tài khoản?
+              </Link>
+            </div>
+          </form>
         </CardContent>
         <CardFooter>
           <div className="w-full space-y-2">
@@ -84,7 +160,7 @@ export default function RegisterScreen() {
             </div>
             <div className="flex justify-center space-x-4">
               <Button variant="outline" size="icon" className="w-10 h-10">
-                <Facebook className="w-5 h-5 text-blue-600" />
+                <IoLogoFacebook className="w-5 h-5 text-blue-600" />
                 <span className="sr-only">Facebook</span>
               </Button>
               <Button variant="outline" size="icon" className="w-10 h-10">

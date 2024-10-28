@@ -13,7 +13,7 @@ export default function RootLayout({ children }) {
         />
         <title>Thanh niên Chuyên Biên Hòa Online</title>
       </head>
-      <body>
+      <body className="bg-[#F8F8F8]">
         <AuthProvider>{children}</AuthProvider>
       </body>
     </html>

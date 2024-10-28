@@ -1,5 +1,6 @@
 "use client";
 
+import React from "react";
 import Link from "next/link";
 import { User, LogOut, Settings, HelpCircle } from "lucide-react";
 import {
@@ -18,9 +19,20 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useAuthContext } from "@/contexts/Support";
+import { logoutRequest } from "@/app/Api";
 
 export default function Navbar() {
-  const { currentUser } = useAuthContext();
+  const { loggedIn, currentUser, setCurrentUser, setUserToken } =
+    useAuthContext();
+
+  const onLogout = (ev) => {
+    ev.preventDefault();
+    logoutRequest();
+    setCurrentUser({});
+    setUserToken(null);
+    localStorage.clear();
+    location.href = "/login";
+  };
 
   return (
     <>
@@ -66,17 +78,19 @@ export default function Navbar() {
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Avatar className="cursor-pointer">
-                    {/* <AvatarImage
-                  src="/images/hoangphat.jpeg?height=32&width=32"
-                  alt="User"
-                /> */}
+                    {loggedIn && (
+                      <AvatarImage
+                        src={`${process.env.NEXT_PUBLIC_API_URL}/v1.0/users/${currentUser.username}/avatar`}
+                        alt="User"
+                      />
+                    )}
                     <AvatarFallback>
                       <User />
                     </AvatarFallback>
                   </Avatar>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
-                  {currentUser ? (
+                  {loggedIn ? (
                     <>
                       <DropdownMenuLabel>Tài khoản của tôi</DropdownMenuLabel>
                       <DropdownMenuItem className="cursor-pointer">
@@ -92,12 +106,13 @@ export default function Navbar() {
                         <span>Trợ giúp</span>
                       </DropdownMenuItem>
                       <DropdownMenuSeparator />
-                      <Link href={"/logout"}>
-                        <DropdownMenuItem className="cursor-pointer">
-                          <LogOut className="mr-2 h-4 w-4" />
-                          <span>Đăng xuất</span>
-                        </DropdownMenuItem>
-                      </Link>
+                      <DropdownMenuItem
+                        onClick={onLogout}
+                        className="cursor-pointer"
+                      >
+                        <LogOut className="mr-2 h-4 w-4" />
+                        <span>Đăng xuất</span>
+                      </DropdownMenuItem>
                     </>
                   ) : (
                     <Link href={"/login"}>

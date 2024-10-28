@@ -9,18 +9,27 @@ import {
   CardFooter,
   CardHeader,
 } from "@/components/ui/card";
-import { Facebook, AlertCircle } from "lucide-react";
+import { IoLogoFacebook } from "react-icons/io5";
+import { AlertCircle } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useAuthContext } from "@/contexts/Support";
 import { loginRequest } from "../Api";
+import { useRouter } from "next/navigation";
 
 export default function LoginScreen() {
-  const { setCurrentUser, setUserToken } = useAuthContext();
+  const { setCurrentUser, setUserToken, loggedIn } = useAuthContext();
   const [username, setUsername] = React.useState("");
   const [password, setPassword] = React.useState("");
   const [error, setError] = React.useState({ __html: "" });
+  const router = useRouter();
+
+  React.useEffect(() => {
+    if (loggedIn) {
+      router.push("/");
+    }
+  }, [loggedIn, router]);
 
   const onSubmit = async (ev) => {
     ev.preventDefault();
@@ -32,6 +41,7 @@ export default function LoginScreen() {
       if (response.data && response.data.user && response.data.token) {
         setCurrentUser(response.data.user);
         setUserToken(response.data.token);
+        router.push("/");
       } else {
         throw new Error("Phản hồi không hợp lệ!");
       }
@@ -41,7 +51,7 @@ export default function LoginScreen() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100">
+    <div className="min-h-screen flex items-center justify-center bg-gray-100 px-4">
       <Card className="w-full max-w-md">
         <CardHeader className="space-y-4 text-center">
           {error.__html && (
@@ -115,7 +125,7 @@ export default function LoginScreen() {
             </div>
             <div className="flex justify-center space-x-4">
               <Button variant="outline" size="icon" className="w-10 h-10">
-                <Facebook className="w-5 h-5 text-blue-600" />
+                <IoLogoFacebook className="w-5 h-5 text-blue-600" />
                 <span className="sr-only">Facebook</span>
               </Button>
               <Button variant="outline" size="icon" className="w-10 h-10">

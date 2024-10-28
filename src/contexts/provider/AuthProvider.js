@@ -5,14 +5,17 @@ import PropTypes from "prop-types";
 import { AuthContext } from "..";
 
 const AuthProvider = ({ children }) => {
-  const [currentUser, setCurrentUser] = useState({});
+  const [currentUser, setCurrentUser] = useState(null);
   const [userToken, _setUserToken] = useState("");
   const [toast, setToast] = useState({ message: "", show: false });
+  const [loggedIn, setLoggedIn] = useState(false);
 
   const setUserToken = (token) => {
-    token //WHEN: token is already exists
-      ? localStorage.setItem("TOKEN", token)
-      : localStorage.removeItem("TOKEN");
+    if (token) {
+      localStorage.setItem("TOKEN", token);
+    } else {
+      localStorage.removeItem("TOKEN");
+    }
     _setUserToken(token);
   };
 
@@ -23,16 +26,17 @@ const AuthProvider = ({ children }) => {
     }, 5000);
   };
 
-  // Set CURRENT_USER in localStorage only once
+  // Update currentUser in localStorage whenever it changes
   useEffect(() => {
-    _setUserToken(localStorage.getItem("TOKEN") || "");
-    if (
-      localStorage.getItem("CURRENT_USER") == "{}" ||
-      !localStorage.getItem("CURRENT_USER")
-    ) {
+    if (currentUser && Object.keys(currentUser).length > 0) {
       localStorage.setItem("CURRENT_USER", JSON.stringify(currentUser));
     }
   }, [currentUser]);
+
+  // Update loggedIn state based on token or currentUser
+  useEffect(() => {
+    setLoggedIn(!!userToken || !!currentUser); // Set loggedIn if either token or user exists
+  }, [userToken, currentUser]);
 
   return (
     <AuthContext.Provider
@@ -40,6 +44,7 @@ const AuthProvider = ({ children }) => {
         currentUser,
         userToken,
         toast,
+        loggedIn,
         showToast,
         setCurrentUser,
         setUserToken,
