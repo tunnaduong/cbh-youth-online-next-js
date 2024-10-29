@@ -5,7 +5,7 @@ import HomePosts from "@/components/home/homePosts";
 
 export default function Home() {
   return (
-    <div className="mt-[70px]">
+    <div className="mt-[66px]">
       <Navbar />
       <div className="flex flex-row">
         <LeftSidebar />

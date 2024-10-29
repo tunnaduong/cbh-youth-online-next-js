@@ -31,3 +31,11 @@ export const signupRequest = (params) => {
 export const getHomePosts = () => {
   return Api.getRequest("/topics");
 };
+
+export const incrementPostView = (id) => {
+  return Api.postRequest("/topics/" + id + "/views");
+};
+
+export const incrementPostViewAuthenticated = (id) => {
+  return Api.postRequest("/topics/" + id + "/views/authenticated");
+};

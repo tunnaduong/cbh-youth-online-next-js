@@ -9,15 +9,30 @@ import {
   IoEyeOutline,
   IoChatboxOutline,
 } from "react-icons/io5";
-import { getHomePosts } from "@/app/Api";
+import {
+  getHomePosts,
+  incrementPostView,
+  incrementPostViewAuthenticated,
+} from "@/app/Api";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { User, Loader2 } from "lucide-react";
 import TruncateText from "./truncate";
+import { useAuthContext } from "@/contexts/Support";
 
 export default function HomePosts() {
   const [posts, setPosts] = React.useState(null);
   const [loading, setLoading] = React.useState(true); // Manage loading state
   const [error, setError] = React.useState(null); // Manage error state
+  const observerRef = React.useRef(null);
+  const { loggedIn } = useAuthContext();
+
+  // Ref to store the latest value of `loggedIn`
+  const loggedInRef = React.useRef(loggedIn);
+
+  // Update the ref when `loggedIn` changes
+  React.useEffect(() => {
+    loggedInRef.current = loggedIn;
+  }, [loggedIn]);
 
   const getPosts = async () => {
     try {
@@ -31,6 +46,49 @@ export default function HomePosts() {
       setLoading(false); // Set loading to false after the API call completes
     }
   };
+
+  // Function to handle view increment when post enters viewport
+  const handlePostView = (id) => {
+    const isLoggedIn = loggedInRef.current; // Always use the current value of `loggedIn`
+    console.log("LoggedIn:", isLoggedIn);
+
+    if (isLoggedIn) {
+      incrementPostViewAuthenticated(id);
+    } else {
+      incrementPostView(id); // Call the API to increment the view count
+    }
+  };
+
+  // Set up the IntersectionObserver
+  React.useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            const postId = entry.target.getAttribute("data-post-id");
+            handlePostView(postId); // Increment view count when post is visible
+            observer.unobserve(entry.target); // Stop observing once viewed
+          }
+        });
+      },
+      { threshold: 0.5 } // Adjust the threshold as needed
+    );
+    observerRef.current = observer;
+  }, []);
+
+  // Attach observer to each post element
+  React.useEffect(() => {
+    if (posts && observerRef.current) {
+      posts.forEach((post) => {
+        const postElement = document.querySelector(
+          `[data-post-id="${post.id}"]`
+        );
+        if (postElement) {
+          observerRef.current.observe(postElement);
+        }
+      });
+    }
+  }, [posts]);
 
   React.useEffect(() => {
     getPosts();
@@ -59,6 +117,7 @@ export default function HomePosts() {
       {posts.map((post) => (
         <div
           key={post.id} // Ensure this is unique
+          data-post-id={post.id}
           className="max-w-[485px] mb-5 long-shadow w-[100%] h-min flex flex-row rounded-lg p-3.5 bg-white"
         >
           <div className="min-w-[60px] items-center mt-1 flex-col flex ml-[-15px] text-[13px] font-semibold text-gray-400">
