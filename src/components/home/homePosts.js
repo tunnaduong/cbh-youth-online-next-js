@@ -137,9 +137,11 @@ export default function HomePosts() {
             </div>
           </div>
           <div className="flex-1 overflow-hidden break-words">
-            <h1 className="text-[14px] font-semibold mb-1 max-w-sm overflow-hidden whitespace-nowrap overflow-ellipsis">
-              {post.title}
-            </h1>
+            <Link href={"/" + post.author.username + "/posts/" + post.id}>
+              <h1 className="text-[14px] font-semibold mb-1 max-w-sm overflow-hidden whitespace-nowrap overflow-ellipsis">
+                {post.title}
+              </h1>
+            </Link>
             <div className="text-[11px] max-w-[600px] overflow-wrap">
               <TruncateText text={post.content} maxWordsLength={90} />
             </div>

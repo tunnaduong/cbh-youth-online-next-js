@@ -8,7 +8,7 @@ export default function Home() {
     <div className="mt-[66px]">
       <Navbar />
       <div className="flex flex-row">
-        <LeftSidebar />
+        <LeftSidebar selected="feed" />
         <HomePosts />
         <RightSidebar />
       </div>
