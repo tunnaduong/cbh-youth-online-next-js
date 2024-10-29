@@ -113,17 +113,15 @@ nav {
   z-index: 50;
 }
 
-nav::after {
+.nav-active::after {
   content: "";
-  position: absolute;
-  bottom: 0;
-  left: 1390px;
-  width: 70px;
+  display: block;
   height: 3px;
   background: #319528;
+  transform: translateY(31px);
 }
 
-.nav-bar::after {
+.nav-active::after {
   transition: 300ms;
 }
 
@@ -139,7 +137,6 @@ nav::after {
 
 .nav-active {
   height: 85%;
-  /* border-bottom: 2.5px solid #319528; */
   margin-bottom: -24px;
   font-weight: 600;
   color: black;

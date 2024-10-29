@@ -24,6 +24,26 @@ import { logoutRequest } from "@/app/Api";
 export default function Navbar() {
   const { loggedIn, currentUser, setCurrentUser, setUserToken } =
     useAuthContext();
+  const [activeItem, setActiveItem] = React.useState(0);
+  const [indicatorStyle, setIndicatorStyle] = React.useState({});
+  const navRef = React.useRef(null);
+
+  React.useEffect(() => {
+    const updateIndicator = () => {
+      const navElement = navRef.current;
+      if (navElement) {
+        const activeElement = navElement.children[activeItem];
+        setIndicatorStyle({
+          width: `${activeElement.offsetWidth}px`,
+          transform: `translateX(${activeElement.offsetLeft}px)`,
+        });
+      }
+    };
+
+    updateIndicator();
+    window.addEventListener("resize", updateIndicator);
+    return () => window.removeEventListener("resize", updateIndicator);
+  }, [activeItem]);
 
   const onLogout = (ev) => {
     ev.preventDefault();
@@ -37,8 +57,8 @@ export default function Navbar() {
   return (
     <>
       {/* Navbar */}
-      <nav className="px-6 py-3.5 fixed w-[100%] overflow-hidden top-0 bg-white shadow-md leading-[0] flex justify-between">
-        <div className="flex flex-row">
+      <nav className="fixed w-[100%] overflow-hidden top-0 bg-white shadow-md leading-[0] flex justify-between">
+        <div className="flex flex-row px-6 py-3.5">
           {/* Logo */}
           <Link id="logo" href="/" className="inline-block">
             <div className="flex gap-x-1 items-center">
@@ -65,7 +85,7 @@ export default function Navbar() {
             </div>
           </div>
         </div>
-        <div className="flex flex-row-reverse items-center gap-x-5">
+        <div className="flex flex-row-reverse items-center gap-x-5 px-6">
           <div className="flex flex-row-reverse items-center gap-x-5 w-24">
             <div>
               {/* <Image
