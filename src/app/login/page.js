@@ -10,7 +10,7 @@ import {
   CardHeader,
 } from "@/components/ui/card";
 import { IoLogoFacebook } from "react-icons/io5";
-import { AlertCircle } from "lucide-react";
+import { AlertCircle, Loader2 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -23,6 +23,7 @@ export default function LoginScreen() {
   const [username, setUsername] = React.useState("");
   const [password, setPassword] = React.useState("");
   const [error, setError] = React.useState({ __html: "" });
+  const [isLoading, setIsLoading] = React.useState(false);
   const router = useRouter();
 
   React.useEffect(() => {
@@ -34,6 +35,7 @@ export default function LoginScreen() {
   const onSubmit = async (ev) => {
     ev.preventDefault();
     setError({ __html: "" });
+    setIsLoading(true);
 
     try {
       const response = await loginRequest({ username, password });
@@ -41,11 +43,14 @@ export default function LoginScreen() {
       if (response.data && response.data.user && response.data.token) {
         setCurrentUser(response.data.user);
         setUserToken(response.data.token);
+        setIsLoading(false);
         router.push("/");
       } else {
+        setIsLoading(false);
         throw new Error("Phản hồi không hợp lệ!");
       }
     } catch (error) {
+      setIsLoading(false);
       setError({ __html: error.message });
     }
   };
@@ -105,8 +110,16 @@ export default function LoginScreen() {
             <Button
               type="submit"
               className="w-full bg-green-600 text-white py-2 rounded-md hover:bg-green-700"
+              disabled={isLoading}
             >
-              Đăng nhập
+              {isLoading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Đang đăng nhập...
+                </>
+              ) : (
+                <>Đăng nhập</>
+              )}
             </Button>
             <div className="flex justify-between text-sm">
               <Link href="#" className="text-green-600 hover:underline">

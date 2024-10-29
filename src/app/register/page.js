@@ -12,7 +12,7 @@ import {
 import { IoLogoFacebook } from "react-icons/io5";
 import Image from "next/image";
 import Link from "next/link";
-import { AlertCircle } from "lucide-react";
+import { AlertCircle, Loader2 } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { signupRequest } from "../Api";
 import { useAuthContext } from "@/contexts/Support";
@@ -27,6 +27,7 @@ export default function RegisterScreen() {
   const [password, setPassword] = React.useState("");
   const [passwordConfirm, setPasswordConfirm] = React.useState("");
   const [error, setError] = React.useState({ __html: "" });
+  const [isLoading, setIsLoading] = React.useState(false);
 
   React.useEffect(() => {
     if (loggedIn) {
@@ -37,9 +38,11 @@ export default function RegisterScreen() {
   const onSubmit = async (ev) => {
     ev.preventDefault();
     setError({ __html: "" });
+    setIsLoading(true);
 
     if (password !== passwordConfirm) {
       setError({ __html: "Mật khẩu xác nhận không khớp!" });
+      setIsLoading(false);
       return;
     }
 
@@ -49,11 +52,14 @@ export default function RegisterScreen() {
       if (response.data && response.data.user && response.data.token) {
         setCurrentUser(response.data.user);
         setUserToken(response.data.token);
+        setIsLoading(false);
         router.push("/");
       } else {
+        setIsLoading(false);
         throw new Error("Phản hồi không hợp lệ!");
       }
     } catch (error) {
+      setIsLoading(false);
       setError({ __html: error.response.data.message });
     }
   };
@@ -140,8 +146,16 @@ export default function RegisterScreen() {
             <Button
               type="submit"
               className="w-full bg-green-600 text-white py-2 rounded-md hover:bg-green-700"
+              disabled={isLoading}
             >
-              Đăng ký
+              {isLoading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Đang đăng ký...
+                </>
+              ) : (
+                <>Đăng ký</>
+              )}
             </Button>
             <div className="flex justify-between text-sm">
               <Link href="#" className="text-green-600 hover:underline">

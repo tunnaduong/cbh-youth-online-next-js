@@ -27,3 +27,7 @@ export const logoutRequest = () => {
 export const signupRequest = (params) => {
   return Api.postRequest("/register", params);
 };
+
+export const getHomePosts = () => {
+  return Api.getRequest("/topics");
+};

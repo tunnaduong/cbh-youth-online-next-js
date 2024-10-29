@@ -26,10 +26,25 @@ const AuthProvider = ({ children }) => {
     }, 5000);
   };
 
+  // Retrieve initial values from localStorage on mount
+  useEffect(() => {
+    const storedUser = localStorage.getItem("CURRENT_USER");
+    const storedToken = localStorage.getItem("TOKEN");
+
+    if (storedUser) {
+      setCurrentUser(JSON.parse(storedUser));
+    }
+    if (storedToken) {
+      _setUserToken(storedToken);
+    }
+  }, []);
+
   // Update currentUser in localStorage whenever it changes
   useEffect(() => {
     if (currentUser && Object.keys(currentUser).length > 0) {
       localStorage.setItem("CURRENT_USER", JSON.stringify(currentUser));
+    } else {
+      localStorage.removeItem("CURRENT_USER");
     }
   }, [currentUser]);
 
