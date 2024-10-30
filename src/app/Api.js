@@ -53,7 +53,7 @@ export const unsavePost = (id) => {
 };
 
 export const createPost = (params) => {
-  return Api.postRequest("/v1.0/user/saved-topics", params);
+  return Api.postRequest("/v1.0/topics", params);
 };
 
 export const verifyEmail = (token) => {
