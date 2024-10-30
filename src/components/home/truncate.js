@@ -6,7 +6,7 @@ export default function TruncateText({ text, maxLength = 400 }) {
 
   // Render the full text if it's less than or equal to the maxLength
   if (text.length <= maxLength) {
-    return <div>{text}</div>;
+    return <div dangerouslySetInnerHTML={{ __html: text }}></div>;
   }
 
   // Truncate the text and add ellipsis if not expanded

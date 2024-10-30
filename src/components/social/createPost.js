@@ -18,6 +18,15 @@ import { useRouter } from "next/navigation";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { createPost } from "@/app/Api";
 import { useHomePost } from "@/contexts/HomePostContext";
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectLabel,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 export default function CreatePost({ trigger, type = "feed" }) {
   const [open, setOpen] = useState(false);
@@ -27,7 +36,7 @@ export default function CreatePost({ trigger, type = "feed" }) {
   const [isLoading, setIsLoading] = useState(false);
   const { currentUser, loggedIn } = useAuthContext();
   const router = useRouter();
-  const { posts, setPosts } = useHomePost();
+  const { setPosts } = useHomePost();
 
   const onSubmit = async (ev) => {
     ev.preventDefault();
@@ -43,13 +52,14 @@ export default function CreatePost({ trigger, type = "feed" }) {
         newPost, // Add the new post at the beginning of the list
         ...prevPosts,
       ]);
+      setOpen(false);
       return response;
     } catch (error) {
       setIsLoading(false);
-      setError(error.message);
+      setError(error.response.data.message);
+      console.log(error);
     } finally {
       setIsLoading(false);
-      setOpen(false);
     }
   };
 
@@ -119,6 +129,34 @@ export default function CreatePost({ trigger, type = "feed" }) {
           className="space-y-4"
           onSubmit={onSubmit}
         >
+          {type == "forum" && (
+            <Select>
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Chọn một chuyên mục" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectGroup>
+                  <SelectLabel>North America</SelectLabel>
+                  <SelectItem value="est">
+                    Eastern Standard Time (EST)
+                  </SelectItem>
+                </SelectGroup>
+                <SelectGroup>
+                  <SelectLabel>Europe & Africa</SelectLabel>
+                  <SelectItem value="gmt">Greenwich Mean Time (GMT)</SelectItem>
+                </SelectGroup>
+                <SelectGroup>
+                  <SelectLabel>Asia</SelectLabel>
+                  <SelectItem value="msk">Moscow Time (MSK)</SelectItem>
+                </SelectGroup>
+                <SelectGroup>
+                  <SelectLabel>South America</SelectLabel>
+                  <SelectItem value="clt">Chile Standard Time (CLT)</SelectItem>
+                </SelectGroup>
+              </SelectContent>
+            </Select>
+          )}
+
           <Input
             type="text"
             placeholder="Tiêu đề bài viết"
