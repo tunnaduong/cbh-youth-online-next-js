@@ -222,14 +222,14 @@ export default function HomePosts() {
                     vote.username === currentUser?.username &&
                     vote.vote_value === 1
                 )
-                  ? "text-green-600"
+                  ? "text-green-600 select-none"
                   : post.votes.some(
                       (vote) =>
                         vote.username === currentUser?.username &&
                         vote.vote_value === -1
                     )
-                  ? "text-red-500"
-                  : ""
+                  ? "text-red-500 select-none"
+                  : "select-none"
               }
             >
               {post.votes.reduce(
@@ -253,7 +253,11 @@ export default function HomePosts() {
               }}
             />
             <div
-              className="bg-[#EAEAEA] cursor-pointer rounded-md w-[19px] h-[19px] mt-2 border-[1.5px] flex items-center justify-center"
+              className={`${
+                post.saved == true
+                  ? "bg-[#CDEBCA] border-[#BFE5BB] text-[#319527]"
+                  : "bg-[#EAEAEA]"
+              } cursor-pointer rounded-md w-[19px] h-[19px] mt-2 border-[1.5px] flex items-center justify-center`}
               style={{ zoom: "1.2" }}
             >
               <IoBookmark style={{ zoom: "0.9" }} />
