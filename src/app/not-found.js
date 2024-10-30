@@ -11,7 +11,7 @@ export default function Custom404() {
   return (
     <div className="mt-[66px]">
       <Navbar opacity={0} />
-      <div className="flex flex-row">
+      <div className="flex flex-1 flex-row">
         <div
           className="flex flex-1 items-center justify-center"
           style={{

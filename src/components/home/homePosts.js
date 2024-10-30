@@ -135,6 +135,11 @@ export default function HomePosts() {
   };
 
   const handleSavePost = async (id) => {
+    if (loggedIn === false) {
+      router.push("/login");
+      return;
+    }
+
     const isCurrentlySaved = posts.find((post) => post.id === id)?.saved;
 
     // Optimistically update the UI

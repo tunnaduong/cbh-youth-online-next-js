@@ -3,7 +3,7 @@ import * as Api from "../services/api/ApiByAxios";
 // Authentication
 export const loginRequest = async (params) => {
   try {
-    const response = await Api.postRequest("/login", params);
+    const response = await Api.postRequest("/v1.0/login", params);
     return response;
   } catch (error) {
     if (error.response && error.response.data && error.response.data.error) {
@@ -21,33 +21,41 @@ export const loginRequest = async (params) => {
 };
 
 export const logoutRequest = () => {
-  return Api.postRequest("/logout");
+  return Api.postRequest("/v1.0/logout");
 };
 
 export const signupRequest = (params) => {
-  return Api.postRequest("/register", params);
+  return Api.postRequest("/v1.0/register", params);
 };
 
 export const getHomePosts = () => {
-  return Api.getRequest("/topics");
+  return Api.getRequest("/v1.0/topics");
 };
 
 export const incrementPostView = (id) => {
-  return Api.postRequest("/topics/" + id + "/views");
+  return Api.postRequest("/v1.0/topics/" + id + "/views");
 };
 
 export const incrementPostViewAuthenticated = (id) => {
-  return Api.postRequest("/topics/" + id + "/views/authenticated");
+  return Api.postRequest("/v1.0/topics/" + id + "/views/authenticated");
 };
 
 export const votePost = (id, params) => {
-  return Api.postRequest("/topics/" + id + "/votes", params);
+  return Api.postRequest("/v1.0/topics/" + id + "/votes", params);
 };
 
 export const savePost = (id) => {
-  return Api.postRequest("/user/saved-topics", { topic_id: id });
+  return Api.postRequest("/v1.0/user/saved-topics", { topic_id: id });
 };
 
 export const unsavePost = (id) => {
-  return Api.deleteRequest("/user/saved-topics/" + id);
+  return Api.deleteRequest("/v1.0/user/saved-topics/" + id);
+};
+
+export const createPost = (params) => {
+  return Api.postRequest("/v1.0/user/saved-topics", params);
+};
+
+export const verifyEmail = (token) => {
+  return Api.getRequest("/email/verify/" + token);
 };

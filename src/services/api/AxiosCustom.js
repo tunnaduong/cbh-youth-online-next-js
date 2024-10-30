@@ -2,7 +2,7 @@ import axios from "axios";
 
 // Hàm tạo một instance của axios với cấu hình tùy chỉnh
 const axiosInstance = axios.create({
-  baseURL: `${process.env.NEXT_PUBLIC_API_URL}/v1.0`,
+  baseURL: `${process.env.NEXT_PUBLIC_API_URL}`,
 });
 
 axiosInstance.interceptors.request.use((config) => {

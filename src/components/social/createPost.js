@@ -14,16 +14,26 @@ import { Image, Earth, X, User } from "lucide-react";
 import { useState } from "react";
 import { useAuthContext } from "@/contexts/Support";
 import { Input } from "@/components/ui/input";
+import { useRouter } from "next/navigation";
 
-export default function CreatePost({ trigger }) {
+export default function CreatePost({ trigger, type = "feed" }) {
   const [open, setOpen] = useState(false);
   const [content, setContent] = useState("");
   const [title, setTitle] = useState("");
-  const { currentUser } = useAuthContext();
+  const { currentUser, loggedIn } = useAuthContext();
+  const router = useRouter();
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
+      <DialogTrigger
+        asChild
+        onClick={(e) => {
+          if (!loggedIn) {
+            e.preventDefault();
+            router.push("/login");
+          }
+        }}
+      >
         {trigger || (
           <Button
             variant="outline"
@@ -33,7 +43,7 @@ export default function CreatePost({ trigger }) {
           </Button>
         )}
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[500px] pt-6">
+      <DialogContent className="sm:max-w-[500px] pt-5">
         <DialogHeader>
           <div className="flex items-center justify-between">
             <DialogTitle className="text-center flex-1">
@@ -55,7 +65,7 @@ export default function CreatePost({ trigger }) {
               src={`${process.env.NEXT_PUBLIC_API_URL}/v1.0/users/${currentUser?.username}/avatar`}
             />
             <AvatarFallback>
-              <User />
+              <User className="w-8 h-8" />
             </AvatarFallback>
           </Avatar>
           <div className="flex-1 space-y-1">

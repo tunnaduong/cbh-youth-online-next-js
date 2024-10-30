@@ -101,7 +101,7 @@ export default function RegisterScreen() {
             <div className="space-y-2">
               <Input
                 type="text"
-                placeholder="Tên người dùng"
+                placeholder="Tên đăng nhập"
                 className="w-full px-3 py-2 border rounded-md"
                 value={username}
                 onChange={(ev) => setUsername(ev.target.value)}
