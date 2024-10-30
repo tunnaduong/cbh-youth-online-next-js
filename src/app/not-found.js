@@ -1,17 +1,16 @@
 "use client";
 
 import Navbar from "@/components/include/navbar";
-import LeftSidebar from "@/components/include/leftSidebar";
-import RightSidebar from "@/components/include/rightSidebar";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 
 export default function Custom404() {
   const router = useRouter();
 
   return (
     <div className="mt-[66px]">
-      <Navbar />
+      <Navbar opacity={0} />
       <div className="flex flex-row">
         <div
           className="flex flex-1 items-center justify-center"
@@ -39,17 +38,20 @@ export default function Custom404() {
               <br />
               nhóm nhỏ, thay đổi người được xem hoặc đã xóa nội dung.
             </p>
-            <Button className="bg-[#319528] hover:bg-green-700 text-white text-[12px] font-semibold rounded-[5px] py-[5px] px-6 mt-3">
+            <Button
+              className="bg-[#319528] hover:bg-green-700 text-white text-[12px] font-semibold rounded-[5px] py-[5px] px-6 mt-3 h-7"
+              onClick={() => router.push("/")}
+            >
               Đi tới Bảng tin
             </Button>
             <br />
-            <a
+            <Link
               href="#"
               onClick={() => router.back()}
               className="text-[#319528] text-[12px] mt-2 inline-block font-semibold"
             >
               Quay lại
-            </a>
+            </Link>
           </center>
         </div>
       </div>

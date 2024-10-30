@@ -6,7 +6,7 @@ import HomePosts from "@/components/home/homePosts";
 export default function Home() {
   return (
     <div className="mt-[66px]">
-      <Navbar />
+      <Navbar selected={0} />
       <div className="flex flex-row">
         <LeftSidebar selected="feed" />
         <HomePosts />

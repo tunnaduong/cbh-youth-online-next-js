@@ -28,24 +28,35 @@ const menuItems = [
   { name: "Khám phá", href: "/explore" },
 ];
 
-export default function Navbar() {
+export default function Navbar({ selected = null, opacity = 1 }) {
   const { loggedIn, currentUser, setCurrentUser, setUserToken } =
     useAuthContext();
-  const [activeItem, setActiveItem] = React.useState(0);
+  const [activeItem, setActiveItem] = React.useState(selected);
   const [indicatorStyle, setIndicatorStyle] = React.useState({
     width: 98,
     transform: "translateX(0px)",
+    opacity,
   });
   const navRef = React.useRef(null);
 
   React.useEffect(() => {
     const updateIndicator = () => {
       const navElement = navRef.current;
-      if (navElement) {
+      if (navElement && activeItem !== null) {
         const activeElement = navElement.children[activeItem];
+        if (activeElement) {
+          setIndicatorStyle({
+            width: `${activeElement.offsetWidth}px`,
+            transform: `translateX(${activeElement.offsetLeft}px)`,
+            opacity: "1", // Show indicator when item is active
+          });
+        }
+      } else {
+        // Reset indicator when no item is active
         setIndicatorStyle({
-          width: `${activeElement.offsetWidth}px`,
-          transform: `translateX(${activeElement.offsetLeft}px)`,
+          width: "0",
+          transform: "translateX(0)",
+          opacity: "0",
         });
       }
     };
@@ -110,7 +121,7 @@ export default function Navbar() {
                   <Avatar className="cursor-pointer">
                     {loggedIn && (
                       <AvatarImage
-                        src={`${process.env.NEXT_PUBLIC_API_URL}/v1.0/users/${currentUser.username}/avatar`}
+                        src={`${process.env.NEXT_PUBLIC_API_URL}/v1.0/users/${currentUser?.username}/avatar`}
                         alt="User"
                       />
                     )}
