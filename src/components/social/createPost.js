@@ -59,7 +59,7 @@ export default function CreatePost({ trigger }) {
             </AvatarFallback>
           </Avatar>
           <div className="flex-1 space-y-1">
-            <h3 className="font-semibold">{currentUser.profile_name}</h3>
+            <h3 className="font-semibold">{currentUser?.profile_name}</h3>
             <Button variant="secondary" size="sm" className="h-6">
               <Earth className="h-3 w-3 -mr-1" />
               Công khai
