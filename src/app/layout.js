@@ -1,5 +1,6 @@
 import "./globals.css";
 import { AuthProvider } from "../contexts";
+import { HomePostProvider } from "@/contexts/HomePostContext";
 
 export default function RootLayout({ children }) {
   return (
@@ -14,7 +15,9 @@ export default function RootLayout({ children }) {
         <title>Thanh niên Chuyên Biên Hòa Online</title>
       </head>
       <body className="bg-[#F8F8F8]">
-        <AuthProvider>{children}</AuthProvider>
+        <AuthProvider>
+          <HomePostProvider>{children}</HomePostProvider>
+        </AuthProvider>
       </body>
     </html>
   );

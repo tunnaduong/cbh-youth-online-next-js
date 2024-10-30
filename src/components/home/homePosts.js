@@ -23,9 +23,10 @@ import TruncateText from "./truncate";
 import { useAuthContext } from "@/contexts/Support";
 import SkeletonPost from "./skeletonPost";
 import { useRouter } from "next/navigation";
+import { useHomePost } from "@/contexts/HomePostContext";
 
 export default function HomePosts() {
-  const [posts, setPosts] = React.useState([]);
+  const { posts, setPosts } = useHomePost();
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState(null);
   const observerRef = React.useRef(null);

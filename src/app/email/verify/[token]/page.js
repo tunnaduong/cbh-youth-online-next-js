@@ -14,7 +14,12 @@ const EmailVerify = ({ params }) => {
 
   const _verifyEmail = async () => {
     try {
-      await verifyEmail(token);
+      const res = await verifyEmail(token);
+      if (res.data.error) {
+        setError(true);
+      }
+
+      return res;
     } catch (error) {
       console.log("error verifying email", error);
 
