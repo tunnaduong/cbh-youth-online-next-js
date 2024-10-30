@@ -13,8 +13,18 @@ export default function Custom404() {
     <div className="mt-[66px]">
       <Navbar />
       <div className="flex flex-row">
-        <LeftSidebar selected="none" />
-        <div className="flex flex-1 items-center justify-center">
+        <div
+          className="flex flex-1 items-center justify-center"
+          style={{
+            zoom: "1.4",
+            display: "block",
+            position: "absolute",
+            left: "50%",
+            top: "50%",
+            WebkitTransform: "translate(-50%, -50%)",
+            transform: "translate(-50%, -50%)",
+          }}
+        >
           <center>
             <img
               src="/images/404.svg"
@@ -42,7 +52,6 @@ export default function Custom404() {
             </a>
           </center>
         </div>
-        <RightSidebar />
       </div>
     </div>
   );
