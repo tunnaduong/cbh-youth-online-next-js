@@ -13,72 +13,148 @@ import {
   getHomePosts,
   incrementPostView,
   incrementPostViewAuthenticated,
+  votePost,
 } from "@/app/Api";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { User, Loader2 } from "lucide-react";
+import { User } from "lucide-react";
 import TruncateText from "./truncate";
 import { useAuthContext } from "@/contexts/Support";
+import SkeletonPost from "./skeletonPost";
+import { useRouter } from "next/navigation";
 
 export default function HomePosts() {
-  const [posts, setPosts] = React.useState(null);
-  const [loading, setLoading] = React.useState(true); // Manage loading state
-  const [error, setError] = React.useState(null); // Manage error state
+  const [posts, setPosts] = React.useState([]);
+  const [loading, setLoading] = React.useState(true);
+  const [error, setError] = React.useState(null);
   const observerRef = React.useRef(null);
-  const { loggedIn } = useAuthContext();
-
-  // Ref to store the latest value of `loggedIn`
-  const loggedInRef = React.useRef(loggedIn);
-
-  // Update the ref when `loggedIn` changes
-  React.useEffect(() => {
-    loggedInRef.current = loggedIn;
-  }, [loggedIn]);
+  const { loggedIn, currentUser } = useAuthContext();
+  const [viewedPosts, setViewedPosts] = React.useState(new Set());
+  const router = useRouter();
 
   const getPosts = async () => {
     try {
       const res = await getHomePosts();
-      console.log(res.data);
       setPosts(res.data);
     } catch (err) {
       console.error("Error fetching posts:", err);
       setError("Có lỗi khi tải bài viết. Vui lòng thử lại sau.");
     } finally {
-      setLoading(false); // Set loading to false after the API call completes
+      setLoading(false);
     }
   };
 
-  // Function to handle view increment when post enters viewport
   const handlePostView = (id) => {
-    const isLoggedIn = loggedInRef.current; // Always use the current value of `loggedIn`
-    console.log("LoggedIn:", isLoggedIn);
-
-    if (isLoggedIn) {
-      incrementPostViewAuthenticated(id);
+    if (!viewedPosts.has(id)) {
+      if (loggedIn) {
+        incrementPostViewAuthenticated(id);
+      } else {
+        incrementPostView(id);
+      }
+      setViewedPosts((prev) => new Set(prev).add(id));
     } else {
-      incrementPostView(id); // Call the API to increment the view count
+      `Post ID: ${id} has already been viewed`;
     }
   };
 
-  // Set up the IntersectionObserver
+  const handleVote = async (postId, vote_value) => {
+    if (loggedIn === false) {
+      router.push("/login");
+      return;
+    }
+
+    // Create a copy of the current posts to revert if necessary
+    const previousPosts = [...posts];
+
+    // Find the current post
+    const postIndex = posts.findIndex((post) => post.id === postId);
+    const post = posts[postIndex];
+
+    // Find the user's existing vote on the post
+    const existingVote = post.votes.find(
+      (vote) => vote.username === currentUser?.username
+    );
+
+    // Optimistically update the vote count
+    setPosts((prevPosts) =>
+      prevPosts.map((post) => {
+        if (post.id === postId) {
+          let newVotes = [...post.votes];
+
+          if (existingVote) {
+            // User has already voted
+            if (existingVote.vote_value === vote_value) {
+              // If the user clicks the same vote again, remove it (set to 0)
+              newVotes = newVotes.filter(
+                (vote) => vote.username !== currentUser?.username
+              );
+            } else {
+              // If the user changes their vote, update it
+              const updatedVote = {
+                ...existingVote,
+                vote_value: vote_value,
+              };
+              newVotes = newVotes.map((vote) =>
+                vote.username === currentUser?.username ? updatedVote : vote
+              );
+            }
+          } else {
+            // User is voting for the first time
+            newVotes.push({ username: currentUser?.username, vote_value });
+          }
+
+          // Calculate the new vote count
+          const newVoteCount = newVotes.reduce(
+            (accumulator, vote) => accumulator + vote.vote_value,
+            0
+          );
+
+          // Return the updated post object
+          return {
+            ...post,
+            votes: newVotes,
+            voteCount: newVoteCount,
+          };
+        }
+        return post;
+      })
+    );
+
+    try {
+      // Determine the correct vote value to send to the server
+      const voteToSend =
+        existingVote && existingVote.vote_value === vote_value ? 0 : vote_value;
+      // Send the vote request to the server
+      await votePost(postId, { vote_value: voteToSend });
+    } catch (error) {
+      console.error("Error voting on post:", error);
+      // If there's an error, revert to the previous state
+      setPosts(previousPosts);
+    }
+  };
+
   React.useEffect(() => {
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
           if (entry.isIntersecting) {
             const postId = entry.target.getAttribute("data-post-id");
-            handlePostView(postId); // Increment view count when post is visible
-            observer.unobserve(entry.target); // Stop observing once viewed
+            console.log(`Post is intersecting: ${postId}`);
+            handlePostView(postId);
           }
         });
       },
-      { threshold: 0.5 } // Adjust the threshold as needed
+      { threshold: 0.5 }
     );
+
     observerRef.current = observer;
+
+    return () => {
+      observer.disconnect();
+    };
   }, []);
 
-  // Attach observer to each post element
   React.useEffect(() => {
-    if (posts && observerRef.current) {
+    if (posts.length > 0) {
       posts.forEach((post) => {
         const postElement = document.querySelector(
           `[data-post-id="${post.id}"]`
@@ -96,17 +172,20 @@ export default function HomePosts() {
 
   if (loading) {
     return (
-      <div className="flex flex-1 p-5 items-center flex-col">
-        <div className="flex flex-row items-center">
-          <Loader2 className="mr-2 h-6 w-6 animate-spin" />
-          Đang tải...
-        </div>
+      <div
+        className="flex flex-1 p-5 items-center flex-col"
+        style={{ zoom: "1.4" }}
+      >
+        {/* Use a loop to display multiple skeletons */}
+        {Array.from({ length: 4 }).map((_, index) => (
+          <SkeletonPost key={index} />
+        ))}
       </div>
-    ); // You might want to replace this with a spinner
+    );
   }
 
   if (error) {
-    return <div className="flex flex-1 p-5 items-center flex-col">{error}</div>; // Show error message
+    return <div className="flex flex-1 p-5 items-center flex-col">{error}</div>;
   }
 
   return (
@@ -116,19 +195,63 @@ export default function HomePosts() {
     >
       {posts.map((post) => (
         <div
-          key={post.id} // Ensure this is unique
+          key={post.id}
           data-post-id={post.id}
           className="max-w-[485px] mb-5 long-shadow w-[100%] h-min flex flex-row rounded-lg p-3.5 bg-white"
         >
           <div className="min-w-[60px] items-center mt-1 flex-col flex ml-[-15px] text-[13px] font-semibold text-gray-400">
-            <IoArrowUpOutline className="text-[19px] cursor-pointer" />
-            <span>
+            <IoArrowUpOutline
+              className={`text-[19px] cursor-pointer ${
+                post.votes.some(
+                  (vote) =>
+                    vote.username === currentUser?.username &&
+                    vote.vote_value === 1
+                )
+                  ? "text-green-600"
+                  : ""
+              }`}
+              onClick={(e) => {
+                e.stopPropagation(); // Prevent bubbling up to the observer
+                handleVote(post.id, 1);
+              }}
+            />
+            <span
+              className={
+                post.votes.some(
+                  (vote) =>
+                    vote.username === currentUser?.username &&
+                    vote.vote_value === 1
+                )
+                  ? "text-green-600"
+                  : post.votes.some(
+                      (vote) =>
+                        vote.username === currentUser?.username &&
+                        vote.vote_value === -1
+                    )
+                  ? "text-red-500"
+                  : ""
+              }
+            >
               {post.votes.reduce(
                 (accumulator, vote) => accumulator + vote.vote_value,
                 0
               )}
             </span>
-            <IoArrowDownOutline className="text-[19px] cursor-pointer" />
+            <IoArrowDownOutline
+              className={`text-[19px] cursor-pointer ${
+                post.votes.some(
+                  (vote) =>
+                    vote.username === currentUser?.username &&
+                    vote.vote_value === -1
+                )
+                  ? "text-red-500"
+                  : ""
+              }`}
+              onClick={(e) => {
+                e.stopPropagation(); // Prevent bubbling up to the observer
+                handleVote(post.id, -1);
+              }}
+            />
             <div
               className="bg-[#EAEAEA] cursor-pointer rounded-md w-[19px] h-[19px] mt-2 border-[1.5px] flex items-center justify-center"
               style={{ zoom: "1.2" }}

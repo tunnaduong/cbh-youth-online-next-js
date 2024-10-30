@@ -39,3 +39,7 @@ export const incrementPostView = (id) => {
 export const incrementPostViewAuthenticated = (id) => {
   return Api.postRequest("/topics/" + id + "/views/authenticated");
 };
+
+export const votePost = (id, params) => {
+  return Api.postRequest("/topics/" + id + "/votes", params);
+};

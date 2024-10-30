@@ -9,11 +9,8 @@ axiosInstance.interceptors.request.use((config) => {
   try {
     // Check if we're running on the client side
     if (typeof window !== "undefined") {
-      console.log("we are running on the client side");
-
       const token = localStorage.getItem("TOKEN") || "";
       config.headers.Authorization = `Bearer ${token}`;
-      console.log(token);
     }
     return config;
   } catch (error) {
