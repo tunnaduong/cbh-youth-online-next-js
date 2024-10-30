@@ -43,3 +43,11 @@ export const incrementPostViewAuthenticated = (id) => {
 export const votePost = (id, params) => {
   return Api.postRequest("/topics/" + id + "/votes", params);
 };
+
+export const savePost = (id) => {
+  return Api.postRequest("/user/saved-topics", { topic_id: id });
+};
+
+export const unsavePost = (id) => {
+  return Api.deleteRequest("/user/saved-topics/" + id);
+};

@@ -14,6 +14,8 @@ import {
   incrementPostView,
   incrementPostViewAuthenticated,
   votePost,
+  savePost,
+  unsavePost,
 } from "@/app/Api";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { User } from "lucide-react";
@@ -129,6 +131,35 @@ export default function HomePosts() {
       console.error("Error voting on post:", error);
       // If there's an error, revert to the previous state
       setPosts(previousPosts);
+    }
+  };
+
+  const handleSavePost = async (id) => {
+    const isCurrentlySaved = posts.find((post) => post.id === id)?.saved;
+
+    // Optimistically update the UI
+    setPosts((prevPosts) =>
+      prevPosts.map((post) =>
+        post.id === id ? { ...post, saved: !isCurrentlySaved } : post
+      )
+    );
+
+    try {
+      if (isCurrentlySaved) {
+        // Call the API to unsave the post
+        await unsavePost(id); // Make sure you have this function to call the DELETE API
+      } else {
+        // Call the API to save the post
+        await savePost(id);
+      }
+    } catch (error) {
+      console.error("Error saving/unsaving post:", error);
+      // Rollback the UI in case of an error
+      setPosts((prevPosts) =>
+        prevPosts.map((post) =>
+          post.id === id ? { ...post, saved: isCurrentlySaved } : post
+        )
+      );
     }
   };
 
@@ -259,6 +290,7 @@ export default function HomePosts() {
                   : "bg-[#EAEAEA]"
               } cursor-pointer rounded-md w-[19px] h-[19px] mt-2 border-[1.5px] flex items-center justify-center`}
               style={{ zoom: "1.2" }}
+              onClick={() => handleSavePost(post.id)}
             >
               <IoBookmark style={{ zoom: "0.9" }} />
             </div>
