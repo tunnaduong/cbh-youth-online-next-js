@@ -29,7 +29,7 @@ export default function CreatePost({ trigger }) {
             variant="outline"
             className="w-full justify-start text-muted-foreground"
           >
-            What's on your mind?
+            Tạo bài viết mới
           </Button>
         )}
       </DialogTrigger>
