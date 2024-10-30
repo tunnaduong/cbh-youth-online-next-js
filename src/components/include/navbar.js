@@ -24,47 +24,15 @@ import { logoutRequest } from "@/app/Api";
 const menuItems = [
   { name: "Cộng đồng", href: "/" },
   { name: "Báo cáo", href: "/reports" },
-  { name: "Tra cứu", href: "/search" },
+  { name: "Tra cứu", href: "/lookup" },
   { name: "Khám phá", href: "/explore" },
 ];
 
-export default function Navbar({ selected = null, opacity = 1 }) {
+export default function Navbar({ selected = null }) {
   const { loggedIn, currentUser, setCurrentUser, setUserToken } =
     useAuthContext();
   const [activeItem, setActiveItem] = React.useState(selected);
-  const [indicatorStyle, setIndicatorStyle] = React.useState({
-    width: 98,
-    transform: "translateX(0px)",
-    opacity,
-  });
   const navRef = React.useRef(null);
-
-  React.useEffect(() => {
-    const updateIndicator = () => {
-      const navElement = navRef.current;
-      if (navElement && activeItem !== null) {
-        const activeElement = navElement.children[activeItem];
-        if (activeElement) {
-          setIndicatorStyle({
-            width: `${activeElement.offsetWidth}px`,
-            transform: `translateX(${activeElement.offsetLeft}px)`,
-            opacity: "1", // Show indicator when item is active
-          });
-        }
-      } else {
-        // Reset indicator when no item is active
-        setIndicatorStyle({
-          width: "0",
-          transform: "translateX(0)",
-          opacity: "0",
-        });
-      }
-    };
-
-    updateIndicator();
-    window.addEventListener("resize", updateIndicator);
-    return () => window.removeEventListener("resize", updateIndicator);
-  }, [activeItem]);
 
   const onLogout = (ev) => {
     ev.preventDefault();
@@ -184,13 +152,12 @@ export default function Navbar({ selected = null, opacity = 1 }) {
             {menuItems.map((item, index) => (
               <Link
                 href={item.href}
-                className={`px-3 py-2 mr-5 menu-btn text-sm font-medium transition-colors duration-200 ${
+                className={`px-3 py-2 mr-5 flex h-full items-center  text-sm font-medium transition-colors duration-200 ${
                   index === activeItem
-                    ? "text-green-600"
-                    : "text-gray-600 hover:text-gray-900"
+                    ? "text-green-600 nav-active"
+                    : "text-gray-600 menu-btn hover:text-gray-900"
                 }`}
                 onClick={(e) => {
-                  e.preventDefault();
                   setActiveItem(index);
                 }}
                 key={index}
@@ -198,10 +165,6 @@ export default function Navbar({ selected = null, opacity = 1 }) {
                 {item.name}
               </Link>
             ))}
-            <div
-              className="absolute bottom-0 h-[3px] mt-9 bg-green-600 transition-all duration-300 ease-in-out"
-              style={indicatorStyle}
-            />
           </div>
         </div>
         {/* <div id="myModal" class="modal"></div> */}

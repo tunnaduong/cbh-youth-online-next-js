@@ -113,26 +113,13 @@ nav {
   z-index: 50;
 }
 
-.nav-active::after {
-  content: "";
-  display: block;
-  height: 3px;
-  background: #319528;
-  transform: translateY(31px);
+.nav-active {
+  border-bottom: 3px solid #319528;
 }
 
-.nav-active::after {
-  transition: 300ms;
+.menu-btn {
+  border-bottom: 3px solid transparent;
 }
-
-/* .menu-btn {
-  height: 85%;
-  font-size: 13.5px;
-  font-weight: 600;
-  color: #6b6b6b;
-  transition: 300ms;
-  white-space: nowrap;
-} */
 
 /* .nav-active {
   height: 85%;
