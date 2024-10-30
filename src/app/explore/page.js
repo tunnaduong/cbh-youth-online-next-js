@@ -5,7 +5,7 @@ import RightSidebar from "@/components/include/rightSidebar";
 export default function Explore() {
   return (
     <div className="mt-[66px]">
-      <Navbar selected={2} />
+      <Navbar selected={3} />
       <div className="flex flex-row">
         <LeftSidebar selected="feed" />
         <div className="flex-1"></div>
