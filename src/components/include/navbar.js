@@ -21,6 +21,13 @@ import {
 import { useAuthContext } from "@/contexts/Support";
 import { logoutRequest } from "@/app/Api";
 
+const menuItems = [
+  { name: "Cộng đồng", href: "/" },
+  { name: "Báo cáo", href: "/reports" },
+  { name: "Tra cứu", href: "/search" },
+  { name: "Khám phá", href: "/explore" },
+];
+
 export default function Navbar() {
   const { loggedIn, currentUser, setCurrentUser, setUserToken } =
     useAuthContext();
@@ -35,7 +42,7 @@ export default function Navbar() {
         const activeElement = navElement.children[activeItem];
         setIndicatorStyle({
           width: `${activeElement.offsetWidth}px`,
-          transform: `translateX(${activeElement.offsetLeft}px)`,
+          transform: `translateX(${activeElement.offsetLeft}px) translateY(25px)`,
         });
       }
     };
@@ -156,19 +163,28 @@ export default function Navbar() {
             </div>
           </div>
           {/* Main menu */}
-          <div className="flex flex-row-reverse gap-x-3">
-            <Link href="/explore" className="menu-btn mr-14">
-              Khám phá
-            </Link>
-            <Link href="/lookup" className="menu-btn mr-5">
-              Tra cứu
-            </Link>
-            <Link href="/report" className="menu-btn mr-5">
-              Báo cáo
-            </Link>
-            <Link href="/" className="menu-btn nav-active mr-5">
-              Cộng đồng
-            </Link>
+          <div className="flex flex-row gap-x-3 pr-14 relative" ref={navRef}>
+            {menuItems.map((item, index) => (
+              <Link
+                href={item.href}
+                className={`px-3 py-2 mr-5 menu-btn text-sm font-medium transition-colors duration-200 ${
+                  index === activeItem
+                    ? "text-green-600"
+                    : "text-gray-600 hover:text-gray-900"
+                }`}
+                onClick={(e) => {
+                  e.preventDefault();
+                  setActiveItem(index);
+                }}
+                key={index}
+              >
+                {item.name}
+              </Link>
+            ))}
+            <div
+              className="absolute bottom-0 h-[3px] w-5 bg-green-600 transition-all duration-300 ease-in-out"
+              style={indicatorStyle}
+            />
           </div>
         </div>
         {/* <div id="myModal" class="modal"></div> */}
