@@ -41,7 +41,7 @@ export default function HomePosts() {
       setPosts(res.data);
     } catch (err) {
       console.error("Error fetching posts:", err);
-      setError("Failed to load posts. Please try again.");
+      setError("Có lỗi khi tải bài viết. Vui lòng thử lại sau.");
     } finally {
       setLoading(false); // Set loading to false after the API call completes
     }

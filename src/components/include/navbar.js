@@ -32,7 +32,10 @@ export default function Navbar() {
   const { loggedIn, currentUser, setCurrentUser, setUserToken } =
     useAuthContext();
   const [activeItem, setActiveItem] = React.useState(0);
-  const [indicatorStyle, setIndicatorStyle] = React.useState({});
+  const [indicatorStyle, setIndicatorStyle] = React.useState({
+    width: 98,
+    transform: "translateX(0px)",
+  });
   const navRef = React.useRef(null);
 
   React.useEffect(() => {
@@ -42,7 +45,7 @@ export default function Navbar() {
         const activeElement = navElement.children[activeItem];
         setIndicatorStyle({
           width: `${activeElement.offsetWidth}px`,
-          transform: `translateX(${activeElement.offsetLeft}px) translateY(25px)`,
+          transform: `translateX(${activeElement.offsetLeft}px)`,
         });
       }
     };
@@ -163,7 +166,10 @@ export default function Navbar() {
             </div>
           </div>
           {/* Main menu */}
-          <div className="flex flex-row gap-x-3 pr-14 relative" ref={navRef}>
+          <div
+            className="h-full items-center flex flex-row gap-x-3 pr-14 relative"
+            ref={navRef}
+          >
             {menuItems.map((item, index) => (
               <Link
                 href={item.href}
@@ -182,7 +188,7 @@ export default function Navbar() {
               </Link>
             ))}
             <div
-              className="absolute bottom-0 h-[3px] w-5 bg-green-600 transition-all duration-300 ease-in-out"
+              className="absolute bottom-0 h-[3px] mt-9 bg-green-600 transition-all duration-300 ease-in-out"
               style={indicatorStyle}
             />
           </div>
