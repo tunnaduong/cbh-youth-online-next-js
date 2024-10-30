@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { IoAddOutline, IoTrophy } from "react-icons/io5";
+import { Button } from "../ui/button";
 
 export default function RightSidebar() {
   return (
@@ -8,13 +9,13 @@ export default function RightSidebar() {
       className="w-60 p-5 h-min sticky top-[48px]"
       id="right-sidebar"
     >
-      <button
+      <Button
         id="openModalBtn"
-        className="mb-2 text-[11px] font-semibold bg-[#319527] flex items-center justify-center w-[100%] text-left leading-3 text-white rounded-lg p-1.5"
+        className="mb-2 text-[11px] font-semibold bg-[#319527] hover:bg-green-700 flex items-center justify-center w-[100%] text-left leading-3 text-white rounded-lg p-1.5 h-7"
       >
-        <IoAddOutline className="text-[16px] mr-1" />
+        <IoAddOutline className="text-[16px] -mr-1" />
         Tạo bài viết mới
-      </button>
+      </Button>
       <div className="bg-white text-[11px] p-2.5 mt-4 rounded-lg long-shadow">
         <span className="font-bold text-[#6B6B6B] block">Xếp hạng tháng</span>
         <div className="flex flex-row items-center mt-2">
