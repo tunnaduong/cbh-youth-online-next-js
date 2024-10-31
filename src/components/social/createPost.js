@@ -179,6 +179,7 @@ export default function CreatePost({ trigger, type = "feed" }) {
                 variant="ghost"
                 size="icon"
                 className="h-9 w-9 shrink-0 rounded-full"
+                type="button"
               >
                 <Image className="h-5 w-5 text-emerald-500" />
               </Button>

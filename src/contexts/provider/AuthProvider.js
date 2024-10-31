@@ -44,7 +44,7 @@ const AuthProvider = ({ children }) => {
     if (currentUser && Object.keys(currentUser).length > 0) {
       localStorage.setItem("CURRENT_USER", JSON.stringify(currentUser));
     } else {
-      localStorage.removeItem("CURRENT_USER");
+      // localStorage.removeItem("CURRENT_USER");
     }
   }, [currentUser]);
 

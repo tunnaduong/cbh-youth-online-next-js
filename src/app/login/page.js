@@ -122,7 +122,10 @@ export default function LoginScreen() {
               )}
             </Button>
             <div className="flex justify-between text-sm">
-              <Link href="#" className="text-green-600 hover:underline">
+              <Link
+                href="/password/reset"
+                className="text-green-600 hover:underline"
+              >
                 Quên mật khẩu?
               </Link>
               <Link href="/register" className="text-green-600 hover:underline">

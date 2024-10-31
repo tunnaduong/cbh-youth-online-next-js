@@ -32,7 +32,8 @@ axiosInstance.interceptors.response.use(
           localStorage.removeItem("CURRENT_USER");
           // Optionally reload the page to reflect the logout status
           // window.location.reload();
-          window.location.href = "/login";
+          if (window.location.pathname !== "/login")
+            window.location.href = "/login";
         }
       }
       return Promise.reject(error);

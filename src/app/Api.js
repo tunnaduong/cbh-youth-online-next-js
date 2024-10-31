@@ -57,5 +57,7 @@ export const createPost = (params) => {
 };
 
 export const verifyEmail = (token) => {
-  return Api.getRequest("/email/verify/" + token);
+  return Api.getRequest("/v1.0/email/verify/" + token);
 };
+
+export const forgotPassword = () => {};
