@@ -204,7 +204,11 @@ export default function HomePosts() {
   }, [posts]);
 
   React.useEffect(() => {
-    getPosts();
+    if (posts.length === 0) {
+      getPosts();
+    } else {
+      setLoading(false); // No need to fetch if posts already exist
+    }
   }, []);
 
   if (loading) {
