@@ -320,13 +320,13 @@ export default function HomePosts() {
                 <Image
                   src={
                     process.env.NEXT_PUBLIC_API_URL +
-                    "/storage/" +
+                    (process.env.NEXT_PUBLIC_STORAGE_URL || "/storage/") +
                     post.image_url
                   }
                   width={700}
                   height={700}
                   alt="Ảnh bài viết"
-                  className="object-contain max-h-96"
+                  className="object-contain max-h-96 text-[11px]"
                 />
               </div>
             )}
