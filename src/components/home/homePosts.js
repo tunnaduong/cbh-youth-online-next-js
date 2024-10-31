@@ -24,6 +24,7 @@ import { useAuthContext } from "@/contexts/Support";
 import SkeletonPost from "./skeletonPost";
 import { useRouter } from "next/navigation";
 import { useHomePost } from "@/contexts/HomePostContext";
+import Image from "next/image";
 
 export default function HomePosts() {
   const { posts, setPosts } = useHomePost();
@@ -314,6 +315,22 @@ export default function HomePosts() {
             <div className="text-[11px] max-w-[600px] overflow-wrap">
               <TruncateText text={post.content} maxWordsLength={90} />
             </div>
+            {post.image_url && (
+              <div className="rounded-md bg-[#E4EEE3] border overflow-hidden mt-4 max-h-96 flex items-center justify-center">
+                <Image
+                  src={
+                    process.env.NEXT_PUBLIC_API_URL +
+                    "/storage/" +
+                    post.image_url
+                  }
+                  width={700}
+                  height={700}
+                  alt="Ảnh bài viết"
+                  className="object-contain max-h-96"
+                />
+              </div>
+            )}
+
             <hr className="my-3 border-t-2" />
             <div className="flex-row flex text-[9px] items-center">
               <Link href={"/" + post.author.username}>

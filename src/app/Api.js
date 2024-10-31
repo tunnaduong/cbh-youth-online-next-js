@@ -61,3 +61,7 @@ export const verifyEmail = (token) => {
 };
 
 export const forgotPassword = () => {};
+
+export const uploadFile = (formData) => {
+  return Api.postFormDataRequest("/v1.0/upload", formData);
+};

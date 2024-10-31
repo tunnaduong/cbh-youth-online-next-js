@@ -11,12 +11,12 @@ import {
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Image, Earth, X, User, AlertCircle, Loader2 } from "lucide-react";
-import { useState } from "react";
+import React, { useState } from "react";
 import { useAuthContext } from "@/contexts/Support";
 import { Input } from "@/components/ui/input";
 import { useRouter } from "next/navigation";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { createPost } from "@/app/Api";
+import { createPost, uploadFile } from "@/app/Api";
 import { useHomePost } from "@/contexts/HomePostContext";
 import {
   Select,
@@ -37,6 +37,27 @@ export default function CreatePost({ trigger, type = "feed" }) {
   const { currentUser, loggedIn } = useAuthContext();
   const router = useRouter();
   const { setPosts } = useHomePost();
+  const fileInputRef = React.useRef(null);
+  const [image, setImage] = useState(null);
+  const [previewUrl, setPreviewUrl] = useState(null); // State for image preview URL
+
+  // Handle image selection and preview
+  const handleImageChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setImage(file);
+
+      // Generate image preview
+      const reader = new FileReader();
+      reader.onloadend = () => setPreviewUrl(reader.result); // Set preview URL to file reader result
+      reader.readAsDataURL(file); // Read file as a data URL
+    }
+  };
+
+  // Trigger file input click
+  const handleImageUploadClick = () => {
+    fileInputRef.current.click();
+  };
 
   const onSubmit = async (ev) => {
     ev.preventDefault();
@@ -44,7 +65,24 @@ export default function CreatePost({ trigger, type = "feed" }) {
     setIsLoading(true);
 
     try {
-      const response = await createPost({ title, description: content });
+      var cdnId = null;
+
+      if (image) {
+        const formData = new FormData();
+        formData.append("file", image);
+        const res = await uploadFile(formData);
+        console.log("user_content_id_1", res.data.id);
+        cdnId = res.data.id;
+      }
+
+      const response = await createPost({
+        title,
+        description: content,
+        user_content_id: cdnId,
+      });
+
+      console.log("user_content_id", cdnId);
+
       // Assuming the newly created post is returned in response.data
       const newPost = response.data;
 
@@ -56,7 +94,7 @@ export default function CreatePost({ trigger, type = "feed" }) {
       return response;
     } catch (error) {
       setIsLoading(false);
-      setError(error.response.data.message);
+      setError(error?.response?.data?.message);
       console.log(error);
     } finally {
       setIsLoading(false);
@@ -170,16 +208,34 @@ export default function CreatePost({ trigger, type = "feed" }) {
             value={content}
             onChange={(e) => setContent(e.target.value)}
           />
+          {previewUrl && (
+            <div>
+              <img
+                src={previewUrl}
+                alt="Preview"
+                className="border rounded-md"
+                style={{ width: "100px", height: "100px", objectFit: "cover" }}
+              />
+            </div>
+          )}
           <div className="flex flex-row items-center rounded-lg border bg-card text-card-foreground p-3">
             <p className="text-sm font-medium flex-1">
               Thêm ảnh vào bài viết của bạn
             </p>
+            <input
+              type="file"
+              accept="image/*"
+              onChange={handleImageChange}
+              ref={fileInputRef}
+              style={{ display: "none" }} // Hide the file input
+            />
             <div className="flex gap-1">
               <Button
                 variant="ghost"
                 size="icon"
                 className="h-9 w-9 shrink-0 rounded-full"
                 type="button"
+                onClick={handleImageUploadClick}
               >
                 <Image className="h-5 w-5 text-emerald-500" />
               </Button>

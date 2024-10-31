@@ -19,3 +19,12 @@ export const putRequest = (endpoint, params = {}) => {
 export const deleteRequest = (endpoint, params = {}) => {
   return axiosInstance.delete(endpoint, params);
 };
+
+// Post Data with form-data content type
+export const postFormDataRequest = (endpoint, params = {}) => {
+  return axiosInstance.post(endpoint, params, {
+    headers: {
+      "Content-Type": "multipart/form-data",
+    },
+  });
+};
