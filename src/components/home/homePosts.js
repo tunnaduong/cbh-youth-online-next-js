@@ -320,7 +320,7 @@ export default function HomePosts() {
                 <Image
                   src={
                     process.env.NEXT_PUBLIC_API_URL +
-                    (process.env.NEXT_PUBLIC_STORAGE_URL || "/storage/") +
+                    (process.env.NEXT_PUBLIC_STORAGE_URL || "/") +
                     post.image_url
                   }
                   width={700}

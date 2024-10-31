@@ -78,7 +78,7 @@ export default function CreatePost({ trigger, type = "feed" }) {
       const response = await createPost({
         title,
         description: content,
-        user_content_id: cdnId,
+        cdn_image_id: cdnId,
       });
 
       console.log("user_content_id", cdnId);
