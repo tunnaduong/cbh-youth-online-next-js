@@ -60,8 +60,14 @@ export const verifyEmail = (token) => {
   return Api.getRequest("/v1.0/email/verify/" + token);
 };
 
-export const forgotPassword = () => {};
+export const forgotPassword = (params) => {
+  return Api.postRequest("/v1.0/password/reset", params);
+};
 
 export const uploadFile = (formData) => {
   return Api.postFormDataRequest("/v1.0/upload", formData);
+};
+
+export const forgotPasswordVerify = (params) => {
+  return Api.postRequest("/v1.0/password/reset/verify", params);
 };

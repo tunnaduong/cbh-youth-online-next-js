@@ -17,6 +17,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuthContext } from "@/contexts/Support";
+import { forgotPassword } from "@/app/Api";
 
 export default function ForgotPassword() {
   const [email, setEmail] = useState("");
@@ -45,12 +46,11 @@ export default function ForgotPassword() {
       return;
     }
 
-    // Simulate API call
     try {
-      await new Promise((resolve) => setTimeout(resolve, 2000)); // 2 second delay
+      await forgotPassword({ email }); // 2 second delay
       setSuccess(true);
     } catch (err) {
-      setError("Đã có lỗi xảy ra. Vui lòng thử lại sau.");
+      setError(err.response.data.message);
     } finally {
       setIsLoading(false);
     }
