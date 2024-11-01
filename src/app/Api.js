@@ -79,3 +79,7 @@ export const getPostDetail = (id) => {
 export const commentPost = (id, params) => {
   return Api.postRequest("/v1.0/topics/" + id + "/comments", params);
 };
+
+export const voteComment = (id, params) => {
+  return Api.postRequest("/v1.0/comments/" + id + "/votes", params);
+};

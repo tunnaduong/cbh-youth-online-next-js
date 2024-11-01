@@ -12,6 +12,7 @@ import {
   incrementPostViewAuthenticated,
   incrementPostView,
   commentPost,
+  voteComment,
 } from "@/app/Api";
 import {
   IoArrowUpOutline,
@@ -31,9 +32,11 @@ import { Textarea } from "@/components/ui/textarea";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { useRouter } from "next/navigation";
 
 export default function PostDetail({ params }) {
   const { postId } = use(params);
+  const router = useRouter();
   const [post, setPost] = React.useState(null);
   const { currentUser, loggedIn } = useAuthContext();
   const [newComment, setNewComment] = React.useState("");
@@ -55,6 +58,69 @@ export default function PostDetail({ params }) {
       incrementPostViewAuthenticated(id);
     } else {
       incrementPostView(id);
+    }
+  };
+
+  const handleVoteComment = async (comment, commentId, vote_value) => {
+    if (!loggedIn) {
+      router.push("/login");
+      return;
+    }
+
+    const existingVote = comment.votes.find(
+      (vote) => vote.username === currentUser?.username
+    );
+
+    // Optimistic UI update
+    setPost((prevPost) => ({
+      ...prevPost,
+      comments: prevPost.comments.map((c) => {
+        if (c.id === commentId) {
+          let newVotes = [...c.votes];
+
+          if (existingVote) {
+            if (existingVote.vote_value === vote_value) {
+              // Remove the vote
+              newVotes = newVotes.filter(
+                (vote) => vote.username !== currentUser?.username
+              );
+            } else {
+              // Update the existing vote
+              newVotes = newVotes.map((vote) =>
+                vote.username === currentUser?.username
+                  ? { ...vote, vote_value }
+                  : vote
+              );
+            }
+          } else {
+            // Add a new vote
+            newVotes.push({ username: currentUser?.username, vote_value });
+          }
+
+          // Update vote count
+          const newVoteCount = newVotes.reduce(
+            (acc, vote) => acc + vote.vote_value,
+            0
+          );
+
+          return {
+            ...c,
+            votes: newVotes,
+            voteCount: newVoteCount,
+          };
+        }
+        return c;
+      }),
+    }));
+
+    try {
+      const voteToSend =
+        existingVote && existingVote.vote_value === vote_value ? 0 : vote_value;
+      await voteComment(commentId, { vote_value: voteToSend });
+    } catch (error) {
+      console.error("Error voting on comment:", error);
+      // Revert the UI if there's an error
+      _getPostDetail(); // Refetch post details to restore original state
     }
   };
 
@@ -331,42 +397,51 @@ export default function PostDetail({ params }) {
                     Bình luận
                   </CardHeader>
                   <CardContent>
-                    <form
-                      onSubmit={handleSubmitComment}
-                      className="space-y-4 mb-7"
-                      style={{ zoom: "0.7" }}
-                    >
-                      {error && (
-                        <Alert variant="destructive">
-                          <AlertCircle className="h-4 w-4" />
-                          <AlertTitle>Lỗi</AlertTitle>
-                          <AlertDescription>{error}</AlertDescription>
-                        </Alert>
-                      )}
-                      <Textarea
-                        placeholder="Viết bình luận của bạn..."
-                        value={newComment}
-                        onChange={(e) => setNewComment(e.target.value)}
-                      />
-
-                      <Button
-                        type="submit"
-                        className="w-full bg-green-600 hover:bg-green-700"
-                        disabled={isLoading}
+                    {loggedIn ? (
+                      <form
+                        onSubmit={handleSubmitComment}
+                        className="space-y-4 mb-7"
+                        style={{ zoom: "0.7" }}
                       >
-                        {isLoading ? (
-                          <>
-                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                            Đang gửi...
-                          </>
-                        ) : (
-                          <>
-                            <Send className="mr-2 h-4 w-4" />
-                            Gửi bình luận
-                          </>
+                        {error && (
+                          <Alert variant="destructive">
+                            <AlertCircle className="h-4 w-4" />
+                            <AlertTitle>Lỗi</AlertTitle>
+                            <AlertDescription>{error}</AlertDescription>
+                          </Alert>
                         )}
-                      </Button>
-                    </form>
+                        <Textarea
+                          placeholder="Viết bình luận của bạn..."
+                          value={newComment}
+                          onChange={(e) => setNewComment(e.target.value)}
+                        />
+
+                        <Button
+                          type="submit"
+                          className="w-full bg-green-600 hover:bg-green-700"
+                          disabled={isLoading}
+                        >
+                          {isLoading ? (
+                            <>
+                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                              Đang gửi...
+                            </>
+                          ) : (
+                            <>
+                              <Send className="mr-2 h-4 w-4" />
+                              Gửi bình luận
+                            </>
+                          )}
+                        </Button>
+                      </form>
+                    ) : (
+                      <div className="text-[11px] mb-6">
+                        <Link href="/login" className="text-green-600">
+                          Đăng nhập
+                        </Link>{" "}
+                        để bình luận và tham gia thảo luận cùng cộng đồng.
+                      </div>
+                    )}
                     {post.comments.length == 0 ? (
                       <center className="text-[9px] text-gray-400">
                         Không có bình luận nào cho bài viết này.
@@ -403,7 +478,22 @@ export default function PostDetail({ params }) {
                                 {comment.content}
                               </p>
                               <div className="mt-2 flex items-center space-x-2 text-gray-400">
-                                <IoArrowUpOutline className="cursor-pointer" />
+                                <IoArrowUpOutline
+                                  className={`cursor-pointer ${
+                                    comment.votes.some(
+                                      (vote) =>
+                                        vote.username ===
+                                          currentUser?.username &&
+                                        vote.vote_value === 1
+                                    )
+                                      ? "text-green-600 cursor-pointer"
+                                      : "cursor-pointer"
+                                  }`}
+                                  onClick={(e) => {
+                                    e.stopPropagation(); // Prevent bubbling up to the observer
+                                    handleVoteComment(comment, comment.id, 1);
+                                  }}
+                                />
                                 <span className="text-sm font-semibold select-none">
                                   {comment.votes.reduce(
                                     (accumulator, vote) =>
@@ -411,7 +501,22 @@ export default function PostDetail({ params }) {
                                     0
                                   )}
                                 </span>
-                                <IoArrowDownOutline className="cursor-pointer" />
+                                <IoArrowDownOutline
+                                  className={`cursor-pointer ${
+                                    comment.votes.some(
+                                      (vote) =>
+                                        vote.username ===
+                                          currentUser?.username &&
+                                        vote.vote_value === -1
+                                    )
+                                      ? "text-red-500 cursor-pointer"
+                                      : "cursor-pointer"
+                                  }`}
+                                  onClick={(e) => {
+                                    e.stopPropagation(); // Prevent bubbling up to the observer
+                                    handleVoteComment(comment, comment.id, -1);
+                                  }}
+                                />
                               </div>
                             </div>
                           </div>
