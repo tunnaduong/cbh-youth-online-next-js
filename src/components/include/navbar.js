@@ -74,8 +74,42 @@ export default function Navbar({ selected = null }) {
             </div>
           </div>
         </div>
-        <div className="flex flex-row-reverse items-center gap-x-5 px-6">
-          <div className="flex flex-row-reverse items-center gap-x-5 w-24">
+        <div className="flex flex items-center gap-x-5">
+          {/* Main menu */}
+          <div
+            className="h-full items-center flex flex-row gap-x-3 relative"
+            ref={navRef}
+          >
+            {menuItems.map((item, index) => (
+              <Link
+                href={item.href}
+                className={`px-3 py-2 mr-5 flex h-full items-center  text-sm font-medium transition-colors duration-200 ${
+                  index === activeItem
+                    ? "text-green-600 nav-active"
+                    : "text-gray-600 menu-btn hover:text-gray-900"
+                }`}
+                onClick={(e) => {
+                  setActiveItem(index);
+                }}
+                key={index}
+              >
+                {item.name}
+              </Link>
+            ))}
+          </div>
+          <div className="flex flex-row items-center gap-x-5 mr-4">
+            {loggedIn && (
+              <>
+                <div className="cursor-pointer">
+                  <IoChatbubbleOutline className="text-[#6B6B6B] text-[23px]" />
+                  <IoFlash className="paw text-[#6B6B6B] text-[23px]" />
+                </div>
+                <div className="cursor-pointer">
+                  <IoNotificationsOutline className="text-[#6B6B6B] text-[23px]" />
+                </div>
+                {/* new noti icon <div className="bg-red-500 w-[6px] h-[6px] rounded-full absolute translate-x-[13px] -translate-y-5" /> */}
+              </>
+            )}
             <div>
               {/* <Image
                 src="/images/hoangphat.jpeg"
@@ -134,37 +168,6 @@ export default function Navbar({ selected = null }) {
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>
-            <div className="cursor-pointer">
-              <IoNotificationsOutline className="text-[#6B6B6B] text-[23px]" />
-              {/* <div className="bg-red-500 w-[6px] h-[6px] rounded-full absolute translate-x-[13px] -translate-y-5" /> */}
-            </div>
-            <div className="cursor-pointer">
-              <IoChatbubbleOutline className="text-[#6B6B6B] text-[23px]" />
-              <IoFlash className="paw text-[#6B6B6B] text-[23px]" />
-              {/* <div className="bg-red-500 w-[6px] h-[6px] rounded-full absolute translate-x-[16px] -translate-y-5" /> */}
-            </div>
-          </div>
-          {/* Main menu */}
-          <div
-            className="h-full items-center flex flex-row gap-x-3 pr-14 relative"
-            ref={navRef}
-          >
-            {menuItems.map((item, index) => (
-              <Link
-                href={item.href}
-                className={`px-3 py-2 mr-5 flex h-full items-center  text-sm font-medium transition-colors duration-200 ${
-                  index === activeItem
-                    ? "text-green-600 nav-active"
-                    : "text-gray-600 menu-btn hover:text-gray-900"
-                }`}
-                onClick={(e) => {
-                  setActiveItem(index);
-                }}
-                key={index}
-              >
-                {item.name}
-              </Link>
-            ))}
           </div>
         </div>
         {/* <div id="myModal" class="modal"></div> */}
