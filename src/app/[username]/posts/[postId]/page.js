@@ -498,7 +498,25 @@ export default function PostDetail({ params }) {
                                     handleVoteComment(comment, comment.id, 1);
                                   }}
                                 />
-                                <span className="text-sm font-semibold select-none">
+                                <span
+                                  className={
+                                    comment.votes.some(
+                                      (vote) =>
+                                        vote.username ===
+                                          currentUser?.username &&
+                                        vote.vote_value === 1
+                                    )
+                                      ? "text-green-600 text-sm font-semibold select-none"
+                                      : comment.votes.some(
+                                          (vote) =>
+                                            vote.username ===
+                                              currentUser?.username &&
+                                            vote.vote_value === -1
+                                        )
+                                      ? "text-red-500 text-sm font-semibold select-none"
+                                      : "select-none text-sm font-semibold"
+                                  }
+                                >
                                   {comment.votes.reduce(
                                     (accumulator, vote) =>
                                       accumulator + vote.vote_value,
