@@ -456,20 +456,24 @@ export default function PostDetail({ params }) {
                             key={comment.id}
                             className="flex space-x-4"
                           >
-                            <Avatar>
-                              <AvatarImage
-                                src={`${process.env.NEXT_PUBLIC_API_URL}/v1.0/users/${comment.author.username}/avatar`}
-                                alt={comment.author.profile_name}
-                              />
-                              <AvatarFallback>
-                                <User />
-                              </AvatarFallback>
-                            </Avatar>
+                            <Link href={"/" + comment.author.username}>
+                              <Avatar>
+                                <AvatarImage
+                                  src={`${process.env.NEXT_PUBLIC_API_URL}/v1.0/users/${comment.author.username}/avatar`}
+                                  alt={comment.author.profile_name}
+                                />
+                                <AvatarFallback>
+                                  <User />
+                                </AvatarFallback>
+                              </Avatar>
+                            </Link>
                             <div className="flex-1">
                               <div className="flex items-center justify-between">
-                                <h4 className="text-sm font-semibold">
-                                  {comment.author.profile_name}
-                                </h4>
+                                <Link href={"/" + comment.author.username}>
+                                  <h4 className="text-sm font-semibold">
+                                    {comment.author.profile_name}
+                                  </h4>
+                                </Link>
                                 <span className="text-xs text-gray-500">
                                   {comment.created_at}
                                 </span>
