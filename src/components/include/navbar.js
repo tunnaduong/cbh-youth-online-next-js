@@ -111,13 +111,6 @@ export default function Navbar({ selected = null }) {
               </>
             )}
             <div>
-              {/* <Image
-                src="/images/hoangphat.jpeg"
-                alt="Account"
-                width={70}
-                height={70}
-                className="min-w-8 min-h-8 rounded-full"
-              /> */}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Avatar className="cursor-pointer">
