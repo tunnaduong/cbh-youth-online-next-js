@@ -75,3 +75,7 @@ export const forgotPasswordVerify = (params) => {
 export const getPostDetail = (id) => {
   return Api.getRequest("/v1.0/topics/" + id);
 };
+
+export const commentPost = (id, params) => {
+  return Api.postRequest("/v1.0/topics/" + id + "/comments", params);
+};

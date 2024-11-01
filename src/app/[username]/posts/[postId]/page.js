@@ -11,6 +11,7 @@ import {
   unsavePost,
   incrementPostViewAuthenticated,
   incrementPostView,
+  commentPost,
 } from "@/app/Api";
 import {
   IoArrowUpOutline,
@@ -22,7 +23,7 @@ import {
 import Link from "next/link";
 import TruncateText from "@/components/home/truncate";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Loader2, Send, User } from "lucide-react";
+import { AlertCircle, Loader2, Send, User } from "lucide-react";
 import Image from "next/image";
 import SkeletonPost from "@/components/home/skeletonPost";
 import { useAuthContext } from "@/contexts/Support";
@@ -153,6 +154,41 @@ export default function PostDetail({ params }) {
           post.id === id ? { ...post, saved: isCurrentlySaved } : post
         )
       );
+    }
+  };
+
+  const handleSubmitComment = async (e) => {
+    e.preventDefault();
+    setIsLoading(true);
+    setError("");
+
+    try {
+      // Send the new comment to the API and get the response
+      const response = await commentPost(postId, { comment: newComment });
+
+      // Add the new comment to the UI
+      const newCommentObject = {
+        id: response.data.id, // or response.data.commentId, depending on your API response
+        content: newComment,
+        author: {
+          username: currentUser?.username,
+          profile_name: currentUser?.profile_name,
+        },
+        created_at: response.data.created_at, // or response.data.createdAt
+        votes: [],
+      };
+
+      setPost((prevPost) => ({
+        ...prevPost,
+        comments: [newCommentObject, ...prevPost.comments],
+      }));
+
+      // Clear the comment input field and stop loading
+      setNewComment("");
+      setIsLoading(false);
+    } catch (error) {
+      setError(error.response?.data?.message || "Error adding comment.");
+      setIsLoading(false);
     }
   };
 
@@ -295,21 +331,28 @@ export default function PostDetail({ params }) {
                     Bình luận
                   </CardHeader>
                   <CardContent>
-                    <form className="space-y-4 mb-7" style={{ zoom: "0.7" }}>
+                    <form
+                      onSubmit={handleSubmitComment}
+                      className="space-y-4 mb-7"
+                      style={{ zoom: "0.7" }}
+                    >
+                      {error && (
+                        <Alert variant="destructive">
+                          <AlertCircle className="h-4 w-4" />
+                          <AlertTitle>Lỗi</AlertTitle>
+                          <AlertDescription>{error}</AlertDescription>
+                        </Alert>
+                      )}
                       <Textarea
                         placeholder="Viết bình luận của bạn..."
                         value={newComment}
                         onChange={(e) => setNewComment(e.target.value)}
                       />
-                      {error && (
-                        <Alert variant="destructive">
-                          <AlertTitle>Lỗi</AlertTitle>
-                          <AlertDescription>{error}</AlertDescription>
-                        </Alert>
-                      )}
+
                       <Button
                         type="submit"
                         className="w-full bg-green-600 hover:bg-green-700"
+                        disabled={isLoading}
                       >
                         {isLoading ? (
                           <>
@@ -330,47 +373,49 @@ export default function PostDetail({ params }) {
                         đầu tiên để lại ý kiến của bạn!
                       </div>
                     ) : (
-                      post.comments.map((comment) => (
-                        <div
-                          style={{ zoom: "0.7" }}
-                          key={comment.id}
-                          className="flex space-x-4"
-                        >
-                          <Avatar>
-                            <AvatarImage
-                              src={`${process.env.NEXT_PUBLIC_API_URL}/v1.0/users/${comment.author.username}/avatar`}
-                              alt={comment.author.profile_name}
-                            />
-                            <AvatarFallback>
-                              <User />
-                            </AvatarFallback>
-                          </Avatar>
-                          <div className="flex-1">
-                            <div className="flex items-center justify-between">
-                              <h4 className="text-sm font-semibold">
-                                {comment.author.profile_name}
-                              </h4>
-                              <span className="text-xs text-gray-500">
-                                {comment.created_at}
-                              </span>
-                            </div>
-                            <p className="mt-1 text-sm text-gray-700">
-                              {comment.content}
-                            </p>
-                            <div className="mt-2 flex items-center space-x-2 text-gray-400">
-                              <IoArrowUpOutline className="cursor-pointer" />
-                              <span className="text-sm font-semibold select-none">
-                                {comment.votes.reduce(
-                                  (accumulator, vote) =>
-                                    accumulator + vote.vote_value,
-                                  0
-                                )}
-                              </span>
-                              <IoArrowDownOutline className="cursor-pointer" />
+                      <div className="gap-y-4 flex flex-col">
+                        {post.comments.map((comment) => (
+                          <div
+                            style={{ zoom: "0.7" }}
+                            key={comment.id}
+                            className="flex space-x-4"
+                          >
+                            <Avatar>
+                              <AvatarImage
+                                src={`${process.env.NEXT_PUBLIC_API_URL}/v1.0/users/${comment.author.username}/avatar`}
+                                alt={comment.author.profile_name}
+                              />
+                              <AvatarFallback>
+                                <User />
+                              </AvatarFallback>
+                            </Avatar>
+                            <div className="flex-1">
+                              <div className="flex items-center justify-between">
+                                <h4 className="text-sm font-semibold">
+                                  {comment.author.profile_name}
+                                </h4>
+                                <span className="text-xs text-gray-500">
+                                  {comment.created_at}
+                                </span>
+                              </div>
+                              <p className="mt-1 text-sm text-gray-700">
+                                {comment.content}
+                              </p>
+                              <div className="mt-2 flex items-center space-x-2 text-gray-400">
+                                <IoArrowUpOutline className="cursor-pointer" />
+                                <span className="text-sm font-semibold select-none">
+                                  {comment.votes.reduce(
+                                    (accumulator, vote) =>
+                                      accumulator + vote.vote_value,
+                                    0
+                                  )}
+                                </span>
+                                <IoArrowDownOutline className="cursor-pointer" />
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      ))
+                        ))}
+                      </div>
                     )}
                   </CardContent>
                 </Card>
