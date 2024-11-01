@@ -71,3 +71,7 @@ export const uploadFile = (formData) => {
 export const forgotPasswordVerify = (params) => {
   return Api.postRequest("/v1.0/password/reset/verify", params);
 };
+
+export const getPostDetail = (id) => {
+  return Api.getRequest("/v1.0/topics/" + id);
+};
