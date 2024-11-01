@@ -368,10 +368,11 @@ export default function PostDetail({ params }) {
                       </Button>
                     </form>
                     {post.comments.length == 0 ? (
-                      <div className="text-[11px]">
-                        Không có bình luận nào cho bài viết này. Hãy là người
-                        đầu tiên để lại ý kiến của bạn!
-                      </div>
+                      <center className="text-[9px] text-gray-400">
+                        Không có bình luận nào cho bài viết này.
+                        <br />
+                        Hãy là người đầu tiên để lại ý kiến của bạn!
+                      </center>
                     ) : (
                       <div className="gap-y-4 flex flex-col">
                         {post.comments.map((comment) => (
