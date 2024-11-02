@@ -327,6 +327,7 @@ export default function HomePosts() {
                   height={700}
                   alt="Ảnh bài viết"
                   className="object-contain max-h-96 text-[11px]"
+                  priority={true}
                 />
               </div>
             )}

@@ -187,7 +187,7 @@ export default function PostDetail({ params }) {
     } catch (error) {
       console.error("Error voting on post:", error);
       // If there's an error, revert to the previous state
-      setPosts(previousPosts);
+      setPost(previousPosts);
     }
   };
 
@@ -215,10 +215,8 @@ export default function PostDetail({ params }) {
     } catch (error) {
       console.error("Error saving/unsaving post:", error);
       // Rollback the UI in case of an error
-      setPosts((prevPosts) =>
-        prevPosts.map((post) =>
-          post.id === id ? { ...post, saved: isCurrentlySaved } : post
-        )
+      setPost((post) =>
+        post.id === id ? { ...post, saved: isCurrentlySaved } : post
       );
     }
   };
@@ -355,6 +353,7 @@ export default function PostDetail({ params }) {
                           height={700}
                           alt="Ảnh bài viết"
                           className="object-contain max-h-96 text-[11px]"
+                          priority={true}
                         />
                       </div>
                     )}
