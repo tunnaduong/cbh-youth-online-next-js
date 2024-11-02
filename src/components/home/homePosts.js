@@ -357,8 +357,13 @@ export default function HomePosts() {
               <div className="flex flex-1 flex-row-reverse items-center text-gray-500">
                 <span>{post.views}</span>
                 <IoEyeOutline className="text-[15px] mr-1 ml-2" />
-                <span>{post.comments}</span>
-                <IoChatboxOutline className="text-[15px] mr-1" />
+                <Link
+                  className="flex flex-row-reverse items-center"
+                  href={"/" + post.author.username + "/posts/" + post.id}
+                >
+                  <span>{post.comments}</span>
+                  <IoChatboxOutline className="text-[15px] mr-1" />
+                </Link>
               </div>
             </div>
           </div>
