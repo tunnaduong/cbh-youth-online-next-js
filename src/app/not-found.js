@@ -45,13 +45,12 @@ export default function Custom404() {
               Đi tới Bảng tin
             </Button>
             <br />
-            <Link
-              href="#"
+            <div
               onClick={() => router.back()}
-              className="text-[#319528] text-[12px] mt-2 inline-block font-semibold"
+              className="text-[#319528] cursor-pointer text-[12px] mt-2 inline-block font-semibold"
             >
               Quay lại
-            </Link>
+            </div>
           </center>
         </div>
       </div>
