@@ -9,8 +9,8 @@ const SkeletonLoader = () => {
         <div className="h-4 bg-gray-300 rounded mb-2 w-[30%]"></div>
         <div className="bg-white rounded-lg long-shadow">
           {/* Skeleton for the subforum items */}
-          {[...Array(3)].map((_, index) => (
-            <div key={index} className="flex flex-row items-center mb-4">
+          {[...Array(4)].map((_, index) => (
+            <div key={index} className="flex flex-row items-center">
               <IoChatbubblesSharp className="text-gray-400 text-[23px] m-4" />
               <div className="flex flex-col flex-1">
                 <div className="h-4 bg-gray-300 rounded mb-1 w-1/3"></div>
@@ -41,8 +41,8 @@ const SkeletonLoader = () => {
         <div className="h-4 bg-gray-300 rounded mb-2 w-[30%]"></div>
         <div className="bg-white rounded-lg long-shadow">
           {/* Skeleton for the subforum items */}
-          {[...Array(3)].map((_, index) => (
-            <div key={index} className="flex flex-row items-center mb-4">
+          {[...Array(4)].map((_, index) => (
+            <div key={index} className="flex flex-row items-center">
               <IoChatbubblesSharp className="text-gray-400 text-[23px] m-4" />
               <div className="flex flex-col flex-1">
                 <div className="h-4 bg-gray-300 rounded mb-1 w-1/3"></div>
