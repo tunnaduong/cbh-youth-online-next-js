@@ -38,17 +38,20 @@ export default function Forum() {
           {forum ? (
             forum.map((item) => (
               <div className="max-w-lg w-[100%] mb-6" key={item.id}>
-                <p className="text-[13px] font-semibold px-4 mb-2">
+                <Link
+                  href={`/forum/${item.id}`}
+                  className="text-[13px] font-semibold px-4"
+                >
                   {item.name.toUpperCase()}
-                </p>
-                <div className="bg-white long-shadow rounded-lg">
+                </Link>
+                <div className="bg-white long-shadow rounded-lg mt-2">
                   {item.subforums.map((subforum, index) => (
                     <div key={subforum.id}>
                       <div className="flex flex-row items-center">
                         <IoChatbubblesSharp className="text-[#319528] text-[23px] m-4" />
                         <div className="flex flex-col flex-1">
                           <Link
-                            href={`/forum/subforum/${subforum.id}`}
+                            href={`/forum/${item.id}/subforum/${subforum.id}`}
                             className="text-[#319528] text-[12px] font-bold w-fit"
                           >
                             {subforum.name}
