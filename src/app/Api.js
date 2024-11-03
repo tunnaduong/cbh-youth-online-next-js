@@ -83,3 +83,7 @@ export const commentPost = (id, params) => {
 export const voteComment = (id, params) => {
   return Api.postRequest("/v1.0/comments/" + id + "/votes", params);
 };
+
+export const getForumCategories = () => {
+  return Api.getRequest("/v1.0/forum/categories");
+};
