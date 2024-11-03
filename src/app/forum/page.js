@@ -42,13 +42,13 @@ export default function Forum() {
                   {item.name.toUpperCase()}
                 </p>
                 <div className="bg-white long-shadow rounded-lg">
-                  {item.subforums.map((subforum) => (
+                  {item.subforums.map((subforum, index) => (
                     <div key={subforum.id}>
                       <div className="flex flex-row items-center">
                         <IoChatbubblesSharp className="text-[#319528] text-[23px] m-4" />
                         <div className="flex flex-col flex-1">
                           <Link
-                            href="#"
+                            href={`/forum/subforum/${subforum.id}`}
                             className="text-[#319528] text-[12px] font-bold w-fit"
                           >
                             {subforum.name}
@@ -94,7 +94,7 @@ export default function Forum() {
                           </div>
                         )}
                       </div>
-                      <hr />
+                      {index !== item.subforums.length - 1 && <hr />}
                     </div>
                   ))}
                 </div>
