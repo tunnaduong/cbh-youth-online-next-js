@@ -77,14 +77,17 @@ export default function Forum() {
                                 Mới nhất:
                               </span>
                               <Link
-                                href="#"
+                                href={`/${subforum.latest_post.user.username}/post/${subforum.latest_post.id}`}
                                 className="text-[10px] text-[#319528] inline-block leading-3 text-ellipsis whitespace-nowrap overflow-hidden"
                               >
                                 {subforum.latest_post.title}
                               </Link>
                             </div>
                             <div className="leading-3 flex items-center mt-1 text-[#319528]">
-                              <Link href="#" className="text-[10px]">
+                              <Link
+                                href={`/${subforum.latest_post.user.username}`}
+                                className="text-[10px]"
+                              >
                                 {subforum.latest_post.user.name}
                               </Link>
                               {subforum.latest_post.user.verified == 1 && (
@@ -104,7 +107,10 @@ export default function Forum() {
               </div>
             ))
           ) : (
-            <SkeletonLoader />
+            <>
+              <SkeletonLoader />
+              <SkeletonLoader />
+            </>
           )}
         </div>
         <RightSidebar />
