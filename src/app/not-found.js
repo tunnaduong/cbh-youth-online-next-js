@@ -3,7 +3,6 @@
 import Navbar from "@/components/include/navbar";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
 
 export default function Custom404() {
   const router = useRouter();
