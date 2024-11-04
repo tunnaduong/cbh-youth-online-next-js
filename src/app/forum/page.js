@@ -77,7 +77,7 @@ export default function Forum() {
                                 Mới nhất:
                               </span>
                               <Link
-                                href={`/${subforum.latest_post.user.username}/post/${subforum.latest_post.id}`}
+                                href={`/${subforum.latest_post.user.username}/posts/${subforum.latest_post.id}`}
                                 className="text-[10px] text-[#319528] inline-block leading-3 text-ellipsis whitespace-nowrap overflow-hidden"
                               >
                                 {subforum.latest_post.title}
