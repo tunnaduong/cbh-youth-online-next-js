@@ -2,12 +2,20 @@
 
 import React from "react";
 import Link from "next/link";
-import { User, LogOut, Settings, HelpCircle } from "lucide-react";
+import {
+  User,
+  LogOut,
+  Settings,
+  HelpCircle,
+  Menu,
+  ChevronDown,
+} from "lucide-react";
 import {
   IoSearch,
   IoNotificationsOutline,
   IoChatbubbleOutline,
   IoFlash,
+  IoSearchOutline,
 } from "react-icons/io5";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -20,6 +28,19 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useAuthContext } from "@/contexts/Support";
 import { logoutRequest } from "@/app/Api";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
+import { Button } from "../ui/button";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 
 const menuItems = [
   { name: "Cộng đồng", href: "/" },
@@ -43,11 +64,82 @@ export default function Navbar({ selected = null }) {
     location.href = "/login";
   };
 
+  const menuItems2 = [
+    {
+      label: "Cộng đồng",
+      icon: "👥",
+      subItems: [
+        { icon: "🏠", label: "Bảng tin", active: true },
+        { icon: "💬", label: "Diễn đàn" },
+        { icon: "📢", label: "Loa lớn" },
+        { icon: "ℹ️", label: "Tin tức Đoàn" },
+        { icon: "🔖", label: "Đã lưu" },
+      ],
+    },
+    { label: "Báo cáo", icon: "📊" },
+    { label: "Tra cứu", icon: "🔍" },
+    { label: "Khám phá", icon: "🌟" },
+  ];
+
+  const renderMenuItems = (items, mobile = false) => {
+    return items.map((item, index) =>
+      item.subItems ? (
+        <Collapsible key={index}>
+          <CollapsibleTrigger className="flex items-center justify-between w-full px-4 py-3 text-left text-gray-700 hover:bg-gray-100">
+            <span className="flex items-center">
+              <span className="mr-3">{item.icon}</span>
+              {item.label}
+            </span>
+            <ChevronDown className="h-4 w-4" />
+          </CollapsibleTrigger>
+          <CollapsibleContent>
+            {item.subItems.map((subItem, subIndex) => (
+              <Link
+                key={subIndex}
+                href="#"
+                className={`flex items-center px-4 py-3 pl-8 text-gray-700 hover:bg-gray-100 ${
+                  subItem.active ? "bg-green-50 text-green-600" : ""
+                }`}
+              >
+                <span className="mr-3">{subItem.icon}</span>
+                {subItem.label}
+              </Link>
+            ))}
+          </CollapsibleContent>
+        </Collapsible>
+      ) : (
+        <Link
+          key={index}
+          href="#"
+          className={`flex items-center px-4 py-3 text-gray-700 hover:bg-gray-100 ${
+            mobile ? "text-base" : ""
+          }`}
+        >
+          <span className="mr-3">{item.icon}</span>
+          {item.label}
+        </Link>
+      )
+    );
+  };
+
   return (
     <>
       {/* Navbar */}
       <nav className="fixed w-[100%] overflow-hidden top-0 bg-white shadow-md leading-[0] flex justify-between">
         <div className="flex flex-row px-6 py-3.5">
+          <Sheet>
+            <SheetTrigger asChild>
+              <Button variant="outline" size="icon" className="lg:hidden mr-3">
+                <Menu className="h-6 w-6" />
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="left" className="w-[300px] sm:w-[400px]">
+              <SheetHeader>
+                <SheetTitle>Menu</SheetTitle>
+              </SheetHeader>
+              <nav className="mt-6">{renderMenuItems(menuItems2, true)}</nav>
+            </SheetContent>
+          </Sheet>
           {/* Logo */}
           <Link id="logo" href="/" className="inline-block">
             <div className="flex gap-x-1 items-center">
@@ -63,7 +155,7 @@ export default function Navbar({ selected = null }) {
             </div>
           </Link>
           {/* Search box */}
-          <div className="w-52 flex flex-row items-center bg-[#F7F7F7] rounded-lg pr-1 ml-7 pl-1">
+          <div className="w-52 lg:flex flex-row items-center bg-[#F7F7F7] rounded-lg pr-1 ml-7 pl-1 hidden">
             <input
               type="text"
               placeholder="Tìm kiếm"
@@ -74,7 +166,7 @@ export default function Navbar({ selected = null }) {
             </div>
           </div>
         </div>
-        <div className="flex flex items-center gap-x-5">
+        <div className="flex items-center gap-x-5">
           {/* Main menu */}
           <div
             className="h-full items-center flex flex-row gap-x-3 relative"
@@ -83,7 +175,7 @@ export default function Navbar({ selected = null }) {
             {menuItems.map((item, index) => (
               <Link
                 href={item.href}
-                className={`px-3 py-2 mr-5 flex h-full items-center  text-sm font-medium transition-colors duration-200 ${
+                className={`lg:flex px-3 py-2 mr-5 hidden h-full items-center text-sm font-medium transition-colors duration-200 ${
                   index === activeItem
                     ? "text-green-600 nav-active"
                     : "text-gray-600 menu-btn hover:text-gray-900"
@@ -98,6 +190,7 @@ export default function Navbar({ selected = null }) {
             ))}
           </div>
           <div className="flex flex-row items-center gap-x-5 mr-4">
+            <IoSearchOutline className="lg:hidden cursor-pointer text-[23px] text-[#6B6B6B]" />
             {loggedIn && (
               <>
                 <div className="cursor-pointer">
