@@ -129,7 +129,11 @@ export default function Navbar({ selected = null }) {
         <div className="flex flex-row px-6 py-3.5">
           <Sheet>
             <SheetTrigger asChild>
-              <Button variant="outline" size="icon" className="lg:hidden mr-3">
+              <Button
+                variant="outline"
+                size="icon"
+                className="lg:hidden mr-3 min-w-max"
+              >
                 <Menu className="h-6 w-6" />
               </Button>
             </SheetTrigger>
@@ -192,7 +196,7 @@ export default function Navbar({ selected = null }) {
           <div className="flex flex-row items-center gap-x-5 mr-4">
             <IoSearchOutline className="lg:hidden cursor-pointer text-[23px] text-[#6B6B6B]" />
             {loggedIn && (
-              <>
+              <div className="lg:flex hidden gap-x-4">
                 <div className="cursor-pointer">
                   <IoChatbubbleOutline className="text-[#6B6B6B] text-[23px]" />
                   <IoFlash className="paw text-[#6B6B6B] text-[23px]" />
@@ -201,7 +205,7 @@ export default function Navbar({ selected = null }) {
                   <IoNotificationsOutline className="text-[#6B6B6B] text-[23px]" />
                 </div>
                 {/* new noti icon <div className="bg-red-500 w-[6px] h-[6px] rounded-full absolute translate-x-[13px] -translate-y-5" /> */}
-              </>
+              </div>
             )}
             <div>
               <DropdownMenu>
