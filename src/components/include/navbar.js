@@ -142,7 +142,7 @@ export default function Navbar({ selected = null }) {
           </Sheet>
           {/* Logo */}
           <Link id="logo" href="/" className="inline-block">
-            <div className="flex gap-x-1 items-center">
+            <div className="flex gap-x-1 items-center min-w-max">
               <img
                 src="/images/logo.png"
                 alt="CYO's Logo"
