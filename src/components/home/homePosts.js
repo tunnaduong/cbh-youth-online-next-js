@@ -232,14 +232,14 @@ export default function HomePosts() {
 
   return (
     <div
-      className="flex flex-1 p-5 items-center flex-col"
+      className="flex flex-col items-center w-full  flex-1 lg:w-2/3 xl:w-1/2 p-2 lg:p-5"
       style={{ zoom: "1.4" }}
     >
       {posts.map((post) => (
         <div
           key={post.id}
           data-post-id={post.id}
-          className="max-w-[485px] mb-5 long-shadow w-[100%] h-min flex flex-row rounded-lg p-3.5 bg-white"
+          className="w-full mb-5 shadow-lg rounded-lg p-4 bg-white flex flex-row md:max-w-[485px]"
         >
           <div className="min-w-[60px] items-center mt-1 flex-col flex ml-[-15px] text-[13px] font-semibold text-gray-400">
             <IoArrowUpOutline
@@ -345,10 +345,12 @@ export default function HomePosts() {
                   </AvatarFallback>
                 </Avatar>
               </Link>
-              <span className="text-gray-500 ml-1.5">Đăng bởi</span>
+              <span className="text-gray-500 hidden md:block ml-1.5">
+                Đăng bởi
+              </span>
               <Link
                 href={"/" + post.author.username}
-                className="text-[#319527] font-bold ml-0.5"
+                className="ml-1.5 md:ml-0.5 text-[#319527] font-bold"
               >
                 {post.author.profile_name}
               </Link>

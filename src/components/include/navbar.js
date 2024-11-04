@@ -160,7 +160,7 @@ export default function Navbar({ selected = null }) {
             </div>
           </Link>
           {/* Search box */}
-          <div className="w-52 lg:flex flex-row items-center bg-[#F7F7F7] rounded-lg pr-1 ml-7 pl-1 hidden">
+          <div className="max-w-52 lg:flex flex-row items-center bg-[#F7F7F7] rounded-lg pr-1 ml-7 pl-1 hidden">
             <input
               type="text"
               placeholder="Tìm kiếm"
@@ -180,7 +180,7 @@ export default function Navbar({ selected = null }) {
             {menuItems.map((item, index) => (
               <Link
                 href={item.href}
-                className={`lg:flex px-3 py-2 mr-5 hidden h-full items-center text-center text-sm font-medium transition-colors duration-200 ${
+                className={`lg:flex px-3 py-2 mr-5 hidden h-full items-center min-w-max text-center text-sm font-medium transition-colors duration-200 ${
                   index === activeItem
                     ? "text-green-600 nav-active"
                     : "text-gray-600 menu-btn hover:text-gray-900"
