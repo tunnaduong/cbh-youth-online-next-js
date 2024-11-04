@@ -132,7 +132,7 @@ export default function Navbar({ selected = null }) {
               <Button
                 variant="outline"
                 size="icon"
-                className="lg:hidden mr-3 min-w-max"
+                className="lg:hidden mr-3 min-w-[36px]"
               >
                 <Menu className="h-6 w-6" />
               </Button>
@@ -152,7 +152,7 @@ export default function Navbar({ selected = null }) {
                 alt="CYO's Logo"
                 className="w-10 h-10"
               />
-              <div className="text-[14.5px] font-light text-[#319527] leading-4">
+              <div className="text-[14.5px] font-light text-[#319527] leading-4 hidden lg:block">
                 <h1>Thanh niên</h1>
                 <h1 className="font-bold">Chuyên Biên Hòa Online</h1>
               </div>
@@ -196,7 +196,7 @@ export default function Navbar({ selected = null }) {
           <div className="flex flex-row items-center gap-x-5 mr-4">
             <IoSearchOutline className="lg:hidden cursor-pointer text-[23px] text-[#6B6B6B]" />
             {loggedIn && (
-              <div className="lg:flex hidden gap-x-4">
+              <>
                 <div className="cursor-pointer">
                   <IoChatbubbleOutline className="text-[#6B6B6B] text-[23px]" />
                   <IoFlash className="paw text-[#6B6B6B] text-[23px]" />
@@ -205,7 +205,7 @@ export default function Navbar({ selected = null }) {
                   <IoNotificationsOutline className="text-[#6B6B6B] text-[23px]" />
                 </div>
                 {/* new noti icon <div className="bg-red-500 w-[6px] h-[6px] rounded-full absolute translate-x-[13px] -translate-y-5" /> */}
-              </div>
+              </>
             )}
             <div>
               <DropdownMenu>
