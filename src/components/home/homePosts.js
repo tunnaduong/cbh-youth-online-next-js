@@ -215,7 +215,7 @@ export default function HomePosts() {
   if (loading) {
     return (
       <div
-        className="flex flex-1 p-5 items-center flex-col"
+        className="flex flex-col items-center w-full flex-1 lg:w-2/3 xl:w-1/2 p-2 lg:p-5"
         style={{ zoom: "1.4" }}
       >
         {/* Use a loop to display multiple skeletons */}
@@ -227,12 +227,16 @@ export default function HomePosts() {
   }
 
   if (error) {
-    return <div className="flex flex-1 p-5 items-center flex-col">{error}</div>;
+    return (
+      <div className="flex flex-col items-center w-full flex-1 lg:w-2/3 xl:w-1/2 p-2 lg:p-5">
+        {error}
+      </div>
+    );
   }
 
   return (
     <div
-      className="flex flex-col items-center w-full  flex-1 lg:w-2/3 xl:w-1/2 p-2 lg:p-5"
+      className="flex flex-col items-center w-full flex-1 lg:w-2/3 xl:w-1/2 p-2 lg:p-5"
       style={{ zoom: "1.4" }}
     >
       {posts.map((post) => (
