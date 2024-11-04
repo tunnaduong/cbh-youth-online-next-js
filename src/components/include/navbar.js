@@ -68,17 +68,18 @@ export default function Navbar({ selected = null }) {
     {
       label: "Cộng đồng",
       icon: "👥",
+      href: "/",
       subItems: [
-        { icon: "🏠", label: "Bảng tin", active: true },
-        { icon: "💬", label: "Diễn đàn" },
-        { icon: "📢", label: "Loa lớn" },
-        { icon: "ℹ️", label: "Tin tức Đoàn" },
-        { icon: "🔖", label: "Đã lưu" },
+        { icon: "🏠", href: "/", label: "Bảng tin", active: true },
+        { icon: "💬", href: "/forum", label: "Diễn đàn" },
+        { icon: "📢", href: "/recordings", label: "Loa lớn" },
+        { icon: "ℹ️", href: "/youth-news", label: "Tin tức Đoàn" },
+        { icon: "🔖", href: "/saved", label: "Đã lưu" },
       ],
     },
-    { label: "Báo cáo", icon: "📊" },
-    { label: "Tra cứu", icon: "🔍" },
-    { label: "Khám phá", icon: "🌟" },
+    { label: "Báo cáo", icon: "📊", href: "/reports" },
+    { label: "Tra cứu", icon: "🔍", href: "/lookup" },
+    { label: "Khám phá", icon: "🌟", href: "/explore" },
   ];
 
   const renderMenuItems = (items, mobile = false) => {
@@ -96,7 +97,7 @@ export default function Navbar({ selected = null }) {
             {item.subItems.map((subItem, subIndex) => (
               <Link
                 key={subIndex}
-                href="#"
+                href={subItem.href}
                 className={`flex items-center px-4 py-3 pl-8 text-gray-700 hover:bg-gray-100 ${
                   subItem.active ? "bg-green-50 text-green-600" : ""
                 }`}
@@ -110,7 +111,7 @@ export default function Navbar({ selected = null }) {
       ) : (
         <Link
           key={index}
-          href="#"
+          href={item.href}
           className={`flex items-center px-4 py-3 text-gray-700 hover:bg-gray-100 ${
             mobile ? "text-base" : ""
           }`}
