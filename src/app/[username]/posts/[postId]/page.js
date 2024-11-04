@@ -262,7 +262,7 @@ export default function PostDetail({ params }) {
       <div className="flex flex-row">
         <LeftSidebar selected="feed" />
         <div
-          className="flex flex-col items-center w-full flex-1 lg:w-2/3 xl:w-1/2 p-2 lg:p-5"
+          className="flex flex-col items-center w-full flex-1 lg:w-2/3 xl:w-1/2 p-2 pt-5 lg:p-5"
           style={{ zoom: "1.4" }}
         >
           {post ? (
