@@ -179,7 +179,7 @@ export default function Navbar({ selected = null }) {
             {menuItems.map((item, index) => (
               <Link
                 href={item.href}
-                className={`lg:flex px-3 py-2 mr-5 hidden h-full items-center text-sm font-medium transition-colors duration-200 ${
+                className={`lg:flex px-3 py-2 mr-5 hidden h-full items-center text-center text-sm font-medium transition-colors duration-200 ${
                   index === activeItem
                     ? "text-green-600 nav-active"
                     : "text-gray-600 menu-btn hover:text-gray-900"

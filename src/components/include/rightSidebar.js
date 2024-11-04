@@ -7,7 +7,7 @@ export default function RightSidebar() {
   return (
     <div
       style={{ zoom: "1.4" }}
-      className="w-60 p-5 h-min sticky top-[48px]"
+      className="w-60 p-5 h-min sticky top-[48px] hidden xl:block"
       id="right-sidebar"
     >
       <CreatePost

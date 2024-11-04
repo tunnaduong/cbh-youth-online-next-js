@@ -10,7 +10,7 @@ import {
 export default function LeftSidebar({ selected = "feed" }) {
   return (
     <div
-      className="w-60 p-5 h-min sticky top-[48px]"
+      className="w-60 p-5 h-min sticky top-[48px] hidden xl:block"
       style={{ zoom: "1.4" }}
       id="left-sidebar"
     >
