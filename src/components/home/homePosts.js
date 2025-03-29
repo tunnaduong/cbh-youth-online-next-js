@@ -38,7 +38,7 @@ export default function HomePosts() {
   const getPosts = async () => {
     try {
       const res = await getHomePosts();
-      setPosts(res.data);
+      setPosts(res.data.data);
     } catch (err) {
       console.error("Error fetching posts:", err);
       setError("Có lỗi khi tải bài viết. Vui lòng thử lại sau.");
