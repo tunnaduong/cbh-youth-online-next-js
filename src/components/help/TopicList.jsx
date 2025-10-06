@@ -24,7 +24,7 @@ export default function TopicList() {
               href={`/help/${currentCategory.slug}/${article.slug}`}
               className={`block px-3 py-2 text-sm font-medium rounded-md ${
                 article.slug === articleSlug
-                  ? "bg-gray-100 dark:bg-gray-600 text-gray-900 dark:text-white"
+                  ? "bg-gray-100 dark:bg-gray-600 text-gray-900 dark:text-neutral-300"
                   : "text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600"
               }`}
             >

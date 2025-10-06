@@ -57,7 +57,7 @@ export default function ForumSection() {
         <>
           <Link
             href={`/forum/${category.slug}`}
-            className="text-lg font-semibold px-4 uppercase"
+            className="text-lg font-semibold px-4 uppercase dark:text-neutral-300"
           >
             {category.name}
           </Link>
@@ -74,7 +74,7 @@ export default function ForumSection() {
                   <div className="flex flex-col flex-1">
                     <Link
                       href={`/forum/${category.slug}/${subforum.slug}`}
-                      className="text-[#319528] hover:text-[#319528] text-base font-bold w-fit"
+                      className="text-primary-500 hover:text-primary-500 text-base font-bold w-fit"
                     >
                       {subforum.name}
                     </Link>
@@ -96,7 +96,7 @@ export default function ForumSection() {
                       className="flex-1 bg-[#E7FFE4] dark:!bg-[#2b2d2c] dark:!border-[#545454] text-[13px] p-2 px-2 rounded-md flex-col hidden sm:flex border-all"
                     >
                       <div className="flex">
-                        <span className="whitespace-nowrap mr-1">
+                        <span className="whitespace-nowrap mr-1 dark:text-neutral-300">
                           Mới nhất:
                         </span>
                         <Link
@@ -108,14 +108,14 @@ export default function ForumSection() {
                             subforum.latest_topic?.id,
                             subforum.latest_topic?.title
                           )}`}
-                          className="text-[#319528] hover:text-[#319528] hover:underline inline-block text-ellipsis whitespace-nowrap overflow-hidden"
+                          className="text-primary-500 hover:text-primary-500 hover:underline inline-block text-ellipsis whitespace-nowrap overflow-hidden"
                         >
                           {subforum.latest_topic?.title}
                         </Link>
                       </div>
-                      <div className="flex items-center mt-1 text-[#319528]">
+                      <div className="flex items-center mt-1 text-primary-500">
                         {subforum.latest_topic?.anonymous ? (
-                          <span className="hover:text-[#319528] truncate">
+                          <span className="hover:text-primary-500 truncate">
                             Người dùng ẩn danh
                           </span>
                         ) : (
@@ -124,13 +124,13 @@ export default function ForumSection() {
                               href={`/${
                                 subforum.latest_topic?.username || "anonymous"
                               }`}
-                              className="hover:text-[#319528] hover:underline truncate"
+                              className="hover:text-primary-500 hover:underline truncate"
                             >
                               {subforum.latest_topic?.author_name}
                             </Link>
                           </>
                         )}
-                        <span className="text-black shrink-0 dark:!text-[#f3f4f6]">
+                        <span className="text-black shrink-0 dark:!text-neutral-300">
                           ,{" "}
                           {subforum.latest_topic?.created_at
                             ? moment(subforum.latest_topic.created_at).fromNow()

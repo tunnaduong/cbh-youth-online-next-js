@@ -50,7 +50,7 @@ export default function BottomCTA() {
                 href={`/register?continue=${encodeURIComponent(
                   window.location.href
                 )}`}
-                className="mt-3 px-4 py-2 bg-[#319528] !text-white rounded-lg zoom-btn"
+                className="mt-3 px-4 py-2 bg-primary-500 !text-white rounded-lg zoom-btn"
               >
                 Tham gia ngay
               </Link>

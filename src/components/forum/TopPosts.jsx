@@ -53,7 +53,13 @@ export default function TopPosts() {
           }`}
           scroll={false}
         >
-          <span className="py-2">Bài mới</span>
+          <span
+            className={`py-2 dark:text-neutral-300 ${
+              currentSort === "latest" ? "!text-primary-500" : ""
+            }`}
+          >
+            Bài mới
+          </span>
         </Link>
         <Link
           href="?sort=most_viewed"
@@ -62,7 +68,13 @@ export default function TopPosts() {
           }`}
           scroll={false}
         >
-          <span className="py-2">Chủ đề xem nhiều</span>
+          <span
+            className={`py-2 dark:text-neutral-300 ${
+              currentSort === "most_viewed" ? "!text-primary-500" : ""
+            }`}
+          >
+            Chủ đề xem nhiều
+          </span>
         </Link>
         <Link
           href="?sort=most_engaged"
@@ -71,7 +83,13 @@ export default function TopPosts() {
           }`}
           scroll={false}
         >
-          <span className="py-2">Tương tác nhiều</span>
+          <span
+            className={`py-2 dark:text-neutral-300 ${
+              currentSort === "most_engaged" ? "!text-primary-500" : ""
+            }`}
+          >
+            Tương tác nhiều
+          </span>
         </Link>
         <Dropdown>
           <Dropdown.Trigger>
@@ -106,7 +124,7 @@ export default function TopPosts() {
         </Dropdown>
         <div className="ml-auto flex">
           <button
-            className="h-9 w-9 border-l dark:border-[#585857] flex items-center justify-center tab-button hover:bg-gray-50 dark:hover:bg-neutral-500"
+            className="h-9 w-9 border-l dark:border-[#585857] dark:text-neutral-300 flex items-center justify-center tab-button hover:bg-gray-50 dark:hover:bg-neutral-500"
             onClick={handleRefresh}
           >
             <svg
@@ -183,7 +201,7 @@ export default function TopPosts() {
                   href={`/${
                     post.anonymous ? "anonymous" : post.username || "anonymous"
                   }/posts/${generatePostSlug(post.id, post.title)}`}
-                  className="truncate block w-full text-[12.7px] text-[#319528] hover:underline"
+                  className="truncate block w-full text-[12.7px] !text-primary-500 hover:underline"
                 >
                   {post.title}
                 </Link>
@@ -194,13 +212,13 @@ export default function TopPosts() {
               <div className="sm:flex items-center pl-2 hidden text-right text-[11px] whitespace-nowrap w-[150px] max-w-[150px]">
                 <div className="flex items-center justify-end">
                   {post.anonymous ? (
-                    <span className="text-[#319528] truncate inline-block max-w-[150px]">
+                    <span className="!text-primary-500 truncate inline-block max-w-[150px]">
                       Người dùng ẩn danh
                     </span>
                   ) : (
                     <Link
                       href={`/${post.username || "anonymous"}`}
-                      className="text-[#319528] hover:underline truncate inline-block max-w-[150px]"
+                      className="!text-primary-500 hover:underline truncate inline-block max-w-[150px]"
                     >
                       {post.author_name}
                     </Link>

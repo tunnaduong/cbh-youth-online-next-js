@@ -23,8 +23,8 @@ export default function RootLayout({ children }) {
         <title>Thanh niên Chuyên Biên Hòa Online</title>
       </head>
       <body className="bg-[#F8F8F8]">
-        <LoadingWrapper>
-          <ThemeProvider>
+        <ThemeProvider>
+          <LoadingWrapper>
             <App>
               <AntdProvider>
                 <AuthProvider>
@@ -43,8 +43,8 @@ export default function RootLayout({ children }) {
                 </AuthProvider>
               </AntdProvider>
             </App>
-          </ThemeProvider>
-        </LoadingWrapper>
+          </LoadingWrapper>
+        </ThemeProvider>
       </body>
     </html>
   );

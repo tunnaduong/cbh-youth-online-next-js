@@ -184,7 +184,7 @@ export default function RightSidebar() {
                   </Link>
                   <Link
                     href={`/${user.username}`}
-                    className="ml-1.5 font-semibold flex-1 truncate text-left"
+                    className="ml-1.5 font-semibold flex-1 truncate text-left dark:text-neutral-300"
                   >
                     {user.profile_name || user.username}
                   </Link>

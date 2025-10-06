@@ -296,7 +296,7 @@ const CreateStoryModal = ({ open, onClose, onStoryCreated }) => {
                 checked={useCustomColor}
                 onChange={(e) => setUseCustomColor(e.target.checked)}
               >
-                <span className="text-sm text-gray-600 dark:text-white">
+                <span className="text-sm text-gray-600 dark:text-neutral-300">
                   Tùy chỉnh màu
                 </span>
               </Checkbox>

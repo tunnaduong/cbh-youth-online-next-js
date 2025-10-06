@@ -6,7 +6,7 @@ import splash from "@/assets/splash.json";
 export default function LoadingScreen({ isLoading, children }) {
   if (isLoading) {
     return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-white dark:!bg-[#2D2F2E] transition-colors duration-300">
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-white dark:bg-[#2D2F2E] transition-colors duration-300">
         <div className="text-center flex flex-col h-full loading-fade-in">
           {/* Logo or Brand */}
           <div className="flex-1 flex flex-col items-center justify-center">

@@ -108,7 +108,7 @@ function StoriesSection() {
         <div className="bg-primary-500 rounded-full border-[4px] border-white dark:border-[#3c3c3c] absolute -top-[20px]">
           <IoIosAdd size={30} color="white" />
         </div>
-        <span className="font-semibold text-[13px] text-black dark:text-white mt-3">
+        <span className="font-semibold text-[13px] text-black dark:text-neutral-300 mt-3">
           Tạo tin
         </span>
       </div>
