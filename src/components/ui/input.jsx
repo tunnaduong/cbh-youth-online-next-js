@@ -1,6 +1,14 @@
 import { Input as AntdInput } from "antd";
 
-import { cn } from "@/lib/utils"
+const Input = ({ className = "", ...props }) => {
+  return (
+    <AntdInput
+      {...props}
+      prefix={<></>}
+      className={`!pl-2 shadow-sm focus:shadow-md-ring ${className}`}
+    />
+  );
+};
 
 Input.TextArea = ({ className = "", shadow = true, ...props }) => {
   return (
