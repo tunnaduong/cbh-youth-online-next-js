@@ -1,6 +1,6 @@
 import React from "react";
 import Link from "next/link";
-// import { usePage } from "@inertiajs/react"; // TODO: Replace with Next.js equivalent
+import { useRouter } from "next/router";
 import { helpArticles } from "@/data/helpArticles";
 import {
   HiBookOpen,
@@ -25,7 +25,8 @@ const iconMap = {
 };
 
 export default function LeftSidebar() {
-  const { categorySlug } = usePage().props;
+  const router = useRouter();
+  const { categorySlug } = router.query;
 
   const mainTopics = helpArticles.map((topic) => ({
     name: topic.category,
@@ -47,7 +48,7 @@ export default function LeftSidebar() {
     <aside className="w-full md:w-1/4 px-4">
       <div className="sticky top-0 p-4">
         <Link
-          href={route("help.index")}
+          href="/help"
           className="text-lg font-semibold text-gray-900 dark:text-gray-100"
         >
           Trung tâm trợ giúp
@@ -76,7 +77,7 @@ export default function LeftSidebar() {
               key={page.name}
               href={page.href}
               className={`flex items-center px-3 py-2 text-sm font-medium rounded-md ${
-                usePage().url.startsWith(page.href)
+                router.asPath.startsWith(page.href)
                   ? "bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white"
                   : "text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
               }`}

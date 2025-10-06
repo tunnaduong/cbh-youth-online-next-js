@@ -237,7 +237,7 @@ export default function CreatePost({ trigger, type = "feed" }) {
                 type="button"
                 onClick={handleImageUploadClick}
               >
-                <Image className="h-5 w-5 text-emerald-500" />
+                <Image className="h-5 w-5 text-emerald-500" alt="" />
               </Button>
             </div>
           </div>

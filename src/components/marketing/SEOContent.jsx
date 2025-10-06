@@ -29,7 +29,7 @@ export default function SEOContent() {
 
           <p className="text-gray-700 dark:text-gray-300 mb-4">
             Dù bạn đang theo học lớp chuyên Toán, Lý, Hóa, Sinh, Tin, Văn, hay Anh, bạn đều sẽ tìm
-            thấy "ngôi nhà" của mình. Các box chuyên môn được tổ chức khoa học, nơi các thành viên
+            thấy &ldquo;ngôi nhà&rdquo; của mình. Các box chuyên môn được tổ chức khoa học, nơi các thành viên
             tích cực chia sẻ phương pháp giải nhanh, mẹo học hiệu quả và cùng nhau giải đáp những
             bài toán khó. Đặc biệt, khu vực Đề Thi Thử được cập nhật liên tục với các bài kiểm tra
             định kỳ, đề thi học sinh giỏi cấp Tỉnh, cấp Quốc gia, giúp bạn luyện tập và đánh giá

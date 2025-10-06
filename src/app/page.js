@@ -1,9 +1,13 @@
+import { Suspense } from "react";
 import ForumSection from "@/components/forum/ForumSection";
 import ForumStats from "@/components/forum/ForumStats";
 import TopPosts from "@/components/forum/TopPosts";
 import SEOContent from "@/components/marketing/SEOContent";
 import StoriesSection from "@/components/stories/StoriesSection";
 import HomeLayout from "@/layouts/HomeLayout";
+
+// Force dynamic rendering to avoid SSG issues with window/browser APIs
+export const dynamic = 'force-dynamic';
 
 export default function Home() {
   return (
@@ -14,7 +18,9 @@ export default function Home() {
             Diễn đàn
           </h1>
           <StoriesSection />
-          <TopPosts />
+          <Suspense fallback={<div className="animate-pulse bg-gray-200 dark:bg-gray-700 h-32 rounded-lg"></div>}>
+            <TopPosts />
+          </Suspense>
           <ForumSection />
           <ForumStats />
           <SEOContent />

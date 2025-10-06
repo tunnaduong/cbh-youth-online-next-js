@@ -3,13 +3,14 @@
 import { forwardRef, useEffect, useRef } from 'react';
 
 export default forwardRef(function TextInput({ type = 'text', className = '', isFocused = false, ...props }, ref) {
-    const input = ref ? ref : useRef();
+    const inputRef = useRef();
+    const input = ref || inputRef;
 
     useEffect(() => {
-        if (isFocused) {
+        if (isFocused && input.current) {
             input.current.focus();
         }
-    }, []);
+    }, [isFocused, input]);
 
     return (
         <input

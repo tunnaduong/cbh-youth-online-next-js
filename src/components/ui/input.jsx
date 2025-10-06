@@ -10,7 +10,7 @@ const Input = ({ className = "", ...props }) => {
   );
 };
 
-Input.TextArea = ({ className = "", shadow = true, ...props }) => {
+const InputTextArea = ({ className = "", shadow = true, ...props }) => {
   return (
     <AntdInput.TextArea
       {...props}
@@ -20,5 +20,7 @@ Input.TextArea = ({ className = "", shadow = true, ...props }) => {
     />
   );
 };
+InputTextArea.displayName = "InputTextArea";
+Input.TextArea = InputTextArea;
 
 export default Input;

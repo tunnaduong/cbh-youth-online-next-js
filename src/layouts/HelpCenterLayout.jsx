@@ -1,11 +1,13 @@
 import React from "react";
-// import { Head } from "@inertiajs/react"; // TODO: Replace with Next.js equivalent
+import Head from "next/head";
 import AuthenticatedLayout from "@/layouts/AuthenticatedLayout";
 
 export default function HelpCenterLayout({ children, title, auth }) {
   return (
     <AuthenticatedLayout user={auth.user}>
-      <Head title={title} />
+      <Head>
+        <title>{title}</title>
+      </Head>
       <div className="py-6">
         <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
           <div className="bg-white dark:bg-[#3c3c3c] overflow-hidden shadow-md sm:rounded-xl">

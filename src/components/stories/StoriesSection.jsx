@@ -102,6 +102,7 @@ function StoriesSection() {
             : "/images/story_user.jpg"
         }
         className="object-cover w-full flex-1 h-[145px]"
+        alt={auth?.user ? "Your profile picture" : "Create story"}
       />
       <div className="bg-white dark:bg-[#3c3c3c] flex flex-col items-center justify-center h-[50px] relative">
         <div className="bg-primary-500 rounded-full border-[4px] border-white dark:border-[#3c3c3c] absolute -top-[20px]">

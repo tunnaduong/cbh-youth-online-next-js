@@ -275,9 +275,11 @@ export default function Navbar({ activeNav = null }) {
           {!loggedIn ? (
             <div className="min-w-max mr-4">
               <Link
-                href={`/login?continue=${encodeURIComponent(
-                  window.location.href
-                )}`}
+                href={`/login?continue=${
+                  typeof window !== "undefined"
+                    ? encodeURIComponent(window.location.href)
+                    : "/"
+                }`}
                 className="flex items-center gap-x-1 text-sm font-medium transition-colors duration-200 text-[#319527] hover:text-[#3dbb31]"
                 style={{ borderBottom: "3px solid transparent" }}
               >
