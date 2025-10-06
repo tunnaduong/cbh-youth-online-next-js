@@ -32,10 +32,13 @@ export default function RightSidebar() {
         setLoading(true);
         setError(null);
         const response = await getTopUsers(8);
-        setTopUsers(response.data || response);
+        // Ensure we always have an array
+        const usersData = response.data || response;
+        setTopUsers(Array.isArray(usersData) ? usersData : []);
       } catch (err) {
         console.error("Error fetching top users:", err);
         setError(err.message || "Lỗi tải dữ liệu xếp hạng");
+        setTopUsers([]); // Set empty array on error
       } finally {
         setLoading(false);
       }
@@ -151,11 +154,13 @@ export default function RightSidebar() {
                     setError(null);
                     getTopUsers(8)
                       .then((response) => {
-                        setTopUsers(response.data || response);
+                        const usersData = response.data || response;
+                        setTopUsers(Array.isArray(usersData) ? usersData : []);
                         setLoading(false);
                       })
                       .catch((err) => {
                         setError(err.message || "Lỗi tải dữ liệu xếp hạng");
+                        setTopUsers([]); // Set empty array on error
                         setLoading(false);
                       });
                   }}
@@ -164,7 +169,7 @@ export default function RightSidebar() {
                   Thử lại
                 </button>
               </div>
-            ) : (
+            ) : Array.isArray(topUsers) && topUsers.length > 0 ? (
               topUsers.map((user, index) => (
                 <div key={user.uid} className="flex flex-row items-center mt-2">
                   <Link href={`/${user.username}`}>
@@ -189,6 +194,12 @@ export default function RightSidebar() {
                   <span className="text-green-500 font-bold">#{index + 1}</span>
                 </div>
               ))
+            ) : (
+              <div className="flex flex-col justify-center items-center py-4">
+                <div className="text-gray-400 text-sm">
+                  Không có dữ liệu xếp hạng
+                </div>
+              </div>
             )}
           </div>
           <div className="hidden xl:block">
