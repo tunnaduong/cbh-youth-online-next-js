@@ -91,3 +91,7 @@ export const getForumCategories = () => {
 export const getHomeData = (sort = "latest") => {
   return Api.getRequest(`/v1.0/home?sort=${sort}`);
 };
+
+export const getTopUsers = (limit = 8) => {
+  return Api.getRequest(`/v1.0/users/ranking?limit=${limit}`);
+};

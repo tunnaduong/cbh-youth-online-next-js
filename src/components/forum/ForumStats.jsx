@@ -118,7 +118,7 @@ const ForumStats = () => {
           <p className="text-gray-500">Người dùng</p>
         </div>
       </div>
-      <div className="mt-6">
+      <div className="mt-6 text-base">
         <p className="text-gray-600 dark:!text-gray-50">
           Chúng ta cùng chào mừng thành viên mới nhất đã tham gia diễn đàn:
           {stats.latestUser ? (

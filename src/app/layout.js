@@ -8,6 +8,7 @@ import { TopUsersProvider } from "@/contexts/TopUsersContext";
 import LoadingWrapper from "@/components/LoadingWrapper";
 import AntdProvider from "@/components/AntdProvider";
 import { AppProgressProvider as ProgressProvider } from "@bprogress/next";
+import { App } from "antd";
 
 export default function RootLayout({ children }) {
   return (
@@ -24,22 +25,24 @@ export default function RootLayout({ children }) {
       <body className="bg-[#F8F8F8]">
         <LoadingWrapper>
           <ThemeProvider>
-            <AntdProvider>
-              <AuthProvider>
-                <TopUsersProvider>
-                  <HomePostProvider>
-                    <ProgressProvider
-                      height="3px"
-                      color="#319528"
-                      options={{ showSpinner: true }}
-                      shallowRouting
-                    >
-                      {children}
-                    </ProgressProvider>
-                  </HomePostProvider>
-                </TopUsersProvider>
-              </AuthProvider>
-            </AntdProvider>
+            <App>
+              <AntdProvider>
+                <AuthProvider>
+                  <TopUsersProvider>
+                    <HomePostProvider>
+                      <ProgressProvider
+                        height="3px"
+                        color="#319528"
+                        options={{ showSpinner: true }}
+                        shallowRouting
+                      >
+                        {children}
+                      </ProgressProvider>
+                    </HomePostProvider>
+                  </TopUsersProvider>
+                </AuthProvider>
+              </AntdProvider>
+            </App>
           </ThemeProvider>
         </LoadingWrapper>
       </body>

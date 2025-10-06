@@ -4,17 +4,19 @@ import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
 import { AddOutline, HelpCircleOutline, Mic } from "react-ionicons";
 import { Skeleton, message } from "antd";
-import { useTopUsers } from "../../contexts/TopUsersContext";
 import CustomColorButton from "../ui/CustomColorButton";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import CreatePostModal from "../modals/CreatePostModal";
 import UploadRecordingModal from "../modals/UploadRecordingModal";
+import { getTopUsers } from "../../app/Api";
 
 export default function RightSidebar() {
   const iconSize = "20px";
   const router = useRouter();
   const pathname = usePathname();
-  const { topUsers, loading, error } = useTopUsers();
+  const [topUsers, setTopUsers] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [open, setOpen] = useState(false);
 
   // Get current URL to determine if we're on recordings page
@@ -22,6 +24,25 @@ export default function RightSidebar() {
 
   // Mock authentication state - replace with actual auth context
   const is_logged_in = false; // TODO: Replace with actual auth state
+
+  // Fetch top users data
+  useEffect(() => {
+    const fetchTopUsers = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const response = await getTopUsers(8);
+        setTopUsers(response.data || response);
+      } catch (err) {
+        console.error("Error fetching top users:", err);
+        setError(err.message || "Lỗi tải dữ liệu xếp hạng");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchTopUsers();
+  }, []);
 
   const handleCreatePost = () => {
     if (!is_logged_in) {
@@ -125,7 +146,19 @@ export default function RightSidebar() {
                 <div className="text-red-500 text-sm">Lỗi tải dữ liệu</div>
                 <div className="text-gray-400 text-xs mt-1">{error}</div>
                 <button
-                  onClick={() => window.location.reload()}
+                  onClick={() => {
+                    setLoading(true);
+                    setError(null);
+                    getTopUsers(8)
+                      .then((response) => {
+                        setTopUsers(response.data || response);
+                        setLoading(false);
+                      })
+                      .catch((err) => {
+                        setError(err.message || "Lỗi tải dữ liệu xếp hạng");
+                        setLoading(false);
+                      });
+                  }}
                   className="text-blue-500 text-xs mt-2 hover:underline"
                 >
                   Thử lại

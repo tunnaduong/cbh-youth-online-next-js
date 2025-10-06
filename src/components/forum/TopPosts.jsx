@@ -133,9 +133,33 @@ export default function TopPosts() {
       </div>
       <div>
         {loading ? (
-          <div className="flex items-center justify-center py-8">
-            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-[#319528]"></div>
-            <span className="ml-2 text-gray-500">Đang tải...</span>
+          <div className="animate-pulse">
+            {[...Array(10)].map((_, index) => (
+              <div
+                key={`skeleton-${index}`}
+                className={`${
+                  index === 9 ? "" : "bor-bottom"
+                } dark:!border-b-[#585857] flex py-1 px-2`}
+              >
+                {/* Skeleton for rank badge */}
+                <div className="w-5 h-5 bg-gray-300 dark:bg-gray-600 rounded-full mr-2 flex-shrink-0"></div>
+
+                {/* Skeleton for post title */}
+                <div className="flex-1 max-w-[90%] overflow-hidden flex items-center">
+                  <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded w-3/4"></div>
+                </div>
+
+                {/* Skeleton for time */}
+                <div className="sm:flex items-center justify-end hidden text-right w-[100px] max-w-[100px]">
+                  <div className="h-3 bg-gray-300 dark:bg-gray-600 rounded w-16"></div>
+                </div>
+
+                {/* Skeleton for author */}
+                <div className="sm:flex items-center pl-2 hidden text-right w-[150px] max-w-[150px]">
+                  <div className="h-3 bg-gray-300 dark:bg-gray-600 rounded w-20"></div>
+                </div>
+              </div>
+            ))}
           </div>
         ) : error ? (
           <div className="flex items-center justify-center py-8 text-red-500">
