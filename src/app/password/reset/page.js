@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import { Loader2, MailCheck, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import Input from "@/components/ui/Input";
+import Input from "@/components/ui/input";
 import {
   Card,
   CardContent,

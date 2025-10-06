@@ -8,7 +8,7 @@ import { useAuthContext } from "@/contexts/Support";
 import { logoutRequest } from "@/app/Api";
 import Dropdown from "../ui/Dropdown";
 import { message } from "antd";
-import DarkmodeToggle from "../ui/DarkmodeToggle";
+import DarkmodeToggle from "../ui/darkmodeToggle";
 import Tooltip from "../ui/Tooltip";
 import {
   LogInOutline,

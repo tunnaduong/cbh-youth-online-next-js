@@ -16,7 +16,7 @@ import {
   FileTextOutlined,
 } from "@ant-design/icons";
 // import { usePage, useForm, router } from "@inertiajs/react"; // TODO: Replace with Next.js equivalent
-import Input from "../ui/Input";
+import Input from "../ui/input";
 import { PiFileAudio } from "react-icons/pi";
 
 const gradientBackgrounds = [

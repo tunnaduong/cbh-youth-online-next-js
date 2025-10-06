@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { Modal, Input, Button, Select, message, Switch, Dropdown } from "antd";
-import CustomInput from "../ui/Input";
+import CustomInput from "../ui/input";
 import CustomColorButton from "../ui/CustomColorButton";
 // // import { usePage, useForm } from "@inertiajs/react"; // TODO: Replace with Next.js equivalent // TODO: Replace with Next.js equivalent
 import VerifiedBadge from "../ui/Badges";
