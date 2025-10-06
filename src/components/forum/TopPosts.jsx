@@ -5,15 +5,40 @@ import Link from "next/link";
 import { generatePostSlug } from "@/utils/slugify";
 import { timeAgoInVietnamese } from "@/utils/dateFormat";
 import { RxHamburgerMenu } from "react-icons/rx";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Dropdown from "../ui/Dropdown";
+import { useSearchParams } from "next/navigation";
+import { getHomeData } from "@/app/Api";
 
-export default function TopPosts({ latestPosts, currentSort = "latest" }) {
+export default function TopPosts() {
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [latestPosts, setLatestPosts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const searchParams = useSearchParams();
+  const currentSort = searchParams.get("sort") || "latest";
 
-  const handleRefresh = () => {
+  const fetchPosts = async (sort = "latest") => {
+    try {
+      setLoading(true);
+      setError(null);
+      const response = await getHomeData(sort);
+      setLatestPosts(response.data.latestPosts || []);
+    } catch (err) {
+      setError(err.message);
+      console.error("Error fetching posts:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchPosts(currentSort);
+  }, [currentSort]);
+
+  const handleRefresh = async () => {
     setIsRefreshing(true);
-    // In Next.js, we'll use router.refresh() or similar
+    await fetchPosts(currentSort);
     setTimeout(() => {
       setIsRefreshing(false);
     }, 950);
@@ -26,6 +51,7 @@ export default function TopPosts({ latestPosts, currentSort = "latest" }) {
           className={`px-4 text-sm flex items-center hover:bg-gray-50 tab-button dark:hover:bg-neutral-500 ${
             currentSort === "latest" ? "tab-button-active" : ""
           }`}
+          scroll={false}
         >
           <span className="py-2">Bài mới</span>
         </Link>
@@ -34,6 +60,7 @@ export default function TopPosts({ latestPosts, currentSort = "latest" }) {
           className={`hidden sm:flex px-4 text-sm items-center bor-left hover:bg-gray-50 tab-button dark:border-[#585857] dark:hover:bg-neutral-500 ${
             currentSort === "most_viewed" ? "tab-button-active" : ""
           }`}
+          scroll={false}
         >
           <span className="py-2">Chủ đề xem nhiều</span>
         </Link>
@@ -42,6 +69,7 @@ export default function TopPosts({ latestPosts, currentSort = "latest" }) {
           className={`px-4 text-sm hidden sm:flex items-center bor-right bor-left hover:bg-gray-50 tab-button dark:border-[#585857] dark:hover:bg-neutral-500 ${
             currentSort === "most_engaged" ? "tab-button-active" : ""
           }`}
+          scroll={false}
         >
           <span className="py-2">Tương tác nhiều</span>
         </Link>
@@ -59,6 +87,7 @@ export default function TopPosts({ latestPosts, currentSort = "latest" }) {
                   ? "bg-gray-100 dark:bg-neutral-800 font-medium"
                   : ""
               }
+              scroll={false}
             >
               Chủ đề xem nhiều
             </Dropdown.Link>
@@ -69,6 +98,7 @@ export default function TopPosts({ latestPosts, currentSort = "latest" }) {
                   ? "bg-gray-100 dark:bg-neutral-800 font-medium"
                   : ""
               }
+              scroll={false}
             >
               Tương tác nhiều
             </Dropdown.Link>
@@ -102,45 +132,60 @@ export default function TopPosts({ latestPosts, currentSort = "latest" }) {
         </div>
       </div>
       <div>
-        {latestPosts.map((post, index) => (
-          <div
-            key={`post-${post.id}`}
-            className={`${
-              index === latestPosts.length - 1 ? "" : "bor-bottom"
-            } dark:!border-b-[#585857] hover:bg-gray-50 flex py-1 px-2 dark:hover:bg-neutral-600`}
-          >
-            <RankBadge index={index} />
-            <div className="flex items-center flex-1 max-w-[90%] overflow-hidden">
-              <Link
-                href={`/${
-                  post.anonymous ? "anonymous" : post.user.username
-                }/posts/${generatePostSlug(post.id, post.title)}`}
-                className="truncate block w-full text-[12.7px] text-[#319528] hover:underline"
-              >
-                {post.title}
-              </Link>
-            </div>
-            <div className="sm:flex items-center justify-end hidden text-right text-gray-500 text-[11px] whitespace-nowrap w-[100px] max-w-[100px]">
-              {timeAgoInVietnamese(post.created_at)}
-            </div>
-            <div className="sm:flex items-center pl-2 hidden text-right text-[11px] whitespace-nowrap w-[150px] max-w-[150px]">
-              <div className="flex items-center justify-end">
-                {post.anonymous ? (
-                  <span className="text-[#319528] truncate inline-block max-w-[150px]">
-                    Người dùng ẩn danh
-                  </span>
-                ) : (
-                  <Link
-                    href={`/${post.user.username}`}
-                    className="text-[#319528] hover:underline truncate inline-block max-w-[150px]"
-                  >
-                    {post.user.profile.profile_name}
-                  </Link>
-                )}
+        {loading ? (
+          <div className="flex items-center justify-center py-8">
+            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-[#319528]"></div>
+            <span className="ml-2 text-gray-500">Đang tải...</span>
+          </div>
+        ) : error ? (
+          <div className="flex items-center justify-center py-8 text-red-500">
+            <span>Lỗi: {error}</span>
+          </div>
+        ) : latestPosts.length === 0 ? (
+          <div className="flex items-center justify-center py-8 text-gray-500">
+            <span>Không có bài viết nào</span>
+          </div>
+        ) : (
+          latestPosts.map((post, index) => (
+            <div
+              key={`post-${post.id}`}
+              className={`${
+                index === latestPosts.length - 1 ? "" : "bor-bottom"
+              } dark:!border-b-[#585857] hover:bg-gray-50 flex py-1 px-2 dark:hover:bg-neutral-600`}
+            >
+              <RankBadge index={index} />
+              <div className="flex items-center flex-1 max-w-[90%] overflow-hidden">
+                <Link
+                  href={`/${
+                    post.anonymous ? "anonymous" : post.username || "anonymous"
+                  }/posts/${generatePostSlug(post.id, post.title)}`}
+                  className="truncate block w-full text-[12.7px] text-[#319528] hover:underline"
+                >
+                  {post.title}
+                </Link>
+              </div>
+              <div className="sm:flex items-center justify-end hidden text-right text-gray-500 text-[11px] whitespace-nowrap w-[100px] max-w-[100px]">
+                {timeAgoInVietnamese(post.created_at)}
+              </div>
+              <div className="sm:flex items-center pl-2 hidden text-right text-[11px] whitespace-nowrap w-[150px] max-w-[150px]">
+                <div className="flex items-center justify-end">
+                  {post.anonymous ? (
+                    <span className="text-[#319528] truncate inline-block max-w-[150px]">
+                      Người dùng ẩn danh
+                    </span>
+                  ) : (
+                    <Link
+                      href={`/${post.username || "anonymous"}`}
+                      className="text-[#319528] hover:underline truncate inline-block max-w-[150px]"
+                    >
+                      {post.author_name}
+                    </Link>
+                  )}
+                </div>
               </div>
             </div>
-          </div>
-        ))}
+          ))
+        )}
       </div>
     </div>
   );

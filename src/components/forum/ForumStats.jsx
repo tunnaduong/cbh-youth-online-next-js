@@ -1,15 +1,61 @@
 "use client";
 
 import Link from "next/link";
-import React from "react";
+import React, { useState, useEffect } from "react";
 import {
   NewspaperOutline,
   ChatboxEllipsesOutline,
   PersonOutline,
 } from "react-ionicons";
+import { getHomeData } from "@/app/Api";
 
-const ForumStats = ({ stats }) => {
-  console.log(stats);
+const ForumStats = () => {
+  const [stats, setStats] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  const fetchStats = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const response = await getHomeData();
+      setStats(response.data.stats);
+    } catch (err) {
+      setError(err.message);
+      console.error("Error fetching stats:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchStats();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="max-w-[775px] mx-auto bg-white dark:!bg-[var(--main-white)] p-6 rounded-lg long-shadow">
+        <div className="flex items-center justify-center py-8">
+          <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-[#319528]"></div>
+          <span className="ml-2 text-gray-500">Đang tải...</span>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="max-w-[775px] mx-auto bg-white dark:!bg-[var(--main-white)] p-6 rounded-lg long-shadow">
+        <div className="flex items-center justify-center py-8 text-red-500">
+          <span>Lỗi: {error}</span>
+        </div>
+      </div>
+    );
+  }
+
+  if (!stats) {
+    return null;
+  }
   const formatDate = (dateString) => {
     const date = new Date(dateString);
     const weekdays = [

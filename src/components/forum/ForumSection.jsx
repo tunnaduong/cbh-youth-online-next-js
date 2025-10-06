@@ -5,9 +5,52 @@ import { moment } from "@/utils/momentConfig";
 import Link from "next/link";
 import { generatePostSlug } from "@/utils/slugify";
 import VerifiedBadge from "@/components/ui/Badges";
+import { useState, useEffect } from "react";
+import { getHomeData } from "@/app/Api";
+import SkeletonLoader from "./skeletonLoader";
 
-export default function ForumSection({ mainCategories }) {
-  console.log(mainCategories);
+export default function ForumSection() {
+  const [mainCategories, setMainCategories] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  const fetchForumData = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const response = await getHomeData();
+      setMainCategories(response.data.mainCategories || []);
+    } catch (err) {
+      setError(err.message);
+      console.error("Error fetching forum data:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchForumData();
+  }, []);
+  if (loading) {
+    return (
+      <>
+        <SkeletonLoader />
+        <SkeletonLoader />
+        <SkeletonLoader />
+      </>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="max-w-[775px] w-[100%]">
+        <div className="flex items-center justify-center py-8 text-red-500">
+          <span>Lỗi: {error}</span>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="max-w-[775px] w-[100%]">
       {mainCategories.map((category) => (
@@ -47,8 +90,7 @@ export default function ForumSection({ mainCategories }) {
                     </span>
                   </div>
                   {/* Mới nhất */}
-                  {subforum.latest_public_topic &&
-                  subforum.latest_public_topic.length !== 0 ? (
+                  {subforum.latest_topic && subforum.latest_topic.title ? (
                     <div
                       style={{ maxWidth: "calc(42%)" }}
                       className="flex-1 bg-[#E7FFE4] dark:!bg-[#2b2d2c] dark:!border-[#545454] text-[13px] p-2 px-2 rounded-md flex-col hidden sm:flex border-all"
@@ -59,41 +101,39 @@ export default function ForumSection({ mainCategories }) {
                         </span>
                         <Link
                           href={`/${
-                            subforum.latest_public_topic?.user?.username
+                            subforum.latest_topic?.anonymous
+                              ? "anonymous"
+                              : subforum.latest_topic?.username || "anonymous"
                           }/posts/${generatePostSlug(
-                            subforum.latest_public_topic?.id,
-                            subforum.latest_public_topic?.title
+                            subforum.latest_topic?.id,
+                            subforum.latest_topic?.title
                           )}`}
                           className="text-[#319528] hover:text-[#319528] hover:underline inline-block text-ellipsis whitespace-nowrap overflow-hidden"
                         >
-                          {subforum.latest_public_topic?.title}
+                          {subforum.latest_topic?.title}
                         </Link>
                       </div>
                       <div className="flex items-center mt-1 text-[#319528]">
-                        {subforum.latest_public_topic?.anonymous ? (
+                        {subforum.latest_topic?.anonymous ? (
                           <span className="hover:text-[#319528] truncate">
                             Người dùng ẩn danh
                           </span>
                         ) : (
                           <>
                             <Link
-                              href={`/${subforum.latest_public_topic?.user?.username}`}
+                              href={`/${
+                                subforum.latest_topic?.username || "anonymous"
+                              }`}
                               className="hover:text-[#319528] hover:underline truncate"
                             >
-                              {subforum.latest_public_topic?.user?.profile
-                                ?.profile_name ||
-                                subforum.latest_public_topic?.user?.username}
+                              {subforum.latest_topic?.author_name}
                             </Link>
-                            {subforum.latest_public_topic?.user?.profile
-                              ?.verified === "1" && <VerifiedBadge />}
                           </>
                         )}
                         <span className="text-black shrink-0 dark:!text-[#f3f4f6]">
                           ,{" "}
-                          {subforum.latest_public_topic?.created_at
-                            ? moment(
-                                subforum.latest_public_topic.created_at
-                              ).fromNow()
+                          {subforum.latest_topic?.created_at
+                            ? moment(subforum.latest_topic.created_at).fromNow()
                             : ""}
                         </span>
                       </div>

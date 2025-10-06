@@ -87,3 +87,7 @@ export const voteComment = (id, params) => {
 export const getForumCategories = () => {
   return Api.getRequest("/v1.0/forum/categories");
 };
+
+export const getHomeData = (sort = "latest") => {
+  return Api.getRequest(`/v1.0/home?sort=${sort}`);
+};

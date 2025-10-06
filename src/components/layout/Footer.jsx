@@ -1,6 +1,6 @@
 import React from "react";
-import { LogoFacebook, LogoGithub } from "react-ionicons";
 import Link from "next/link";
+import { IoLogoFacebook, IoLogoGithub } from "react-icons/io5";
 
 export default function Footer() {
   return (
@@ -46,14 +46,14 @@ export default function Footer() {
                 target="_blank"
                 className="rounded-full h-[35px] w-[35px] flex justify-center items-center bg-[#3b5998] text-white"
               >
-                <LogoFacebook color={"white"} />
+                <IoLogoFacebook color={"white"} />
               </a>
               <a
                 href="https://github.com/tunnaduong/cbh-youth-online-api"
                 target="_blank"
                 className="rounded-full h-[35px] w-[35px] flex justify-center items-center bg-black text-white"
               >
-                <LogoGithub color={"white"} />
+                <IoLogoGithub color={"white"} />
               </a>
             </div>
             <p className="text-[13px] mt-5">
@@ -79,17 +79,26 @@ export default function Footer() {
                 </Link>
               </li>
               <li>
-                <Link href="/forum/hoat-dong-ngoai-khoa" className="hover:text-[#319527]">
+                <Link
+                  href="/forum/hoat-dong-ngoai-khoa"
+                  className="hover:text-[#319527]"
+                >
                   Hoạt động
                 </Link>
               </li>
               <li>
-                <Link href="/forum/giai-tri-xa-hoi" className="hover:text-[#319527]">
+                <Link
+                  href="/forum/giai-tri-xa-hoi"
+                  className="hover:text-[#319527]"
+                >
                   Giải trí
                 </Link>
               </li>
               <li>
-                <Link href="/forum/hoc-tap/ebook-giao-trinh" className="hover:text-[#319527]">
+                <Link
+                  href="/forum/hoc-tap/ebook-giao-trinh"
+                  className="hover:text-[#319527]"
+                >
                   Tài liệu ôn thi
                 </Link>
               </li>
@@ -99,7 +108,10 @@ export default function Footer() {
             <h3 className="font-bold text-[16px]">Chính sách</h3>
             <ul className="list-none mt-3 flex flex-col gap-2">
               <li>
-                <Link href="/policy/forum-rules" className="hover:text-[#319527]">
+                <Link
+                  href="/policy/forum-rules"
+                  className="hover:text-[#319527]"
+                >
                   Nội quy diễn đàn
                 </Link>
               </li>
@@ -120,7 +132,10 @@ export default function Footer() {
             <ul className="list-none mt-3 flex flex-col gap-2">
               <li>
                 Email:{" "}
-                <a href="mailto:hotro@chuyenbienhoa.com" className="hover:text-[#319527]">
+                <a
+                  href="mailto:hotro@chuyenbienhoa.com"
+                  className="hover:text-[#319527]"
+                >
                   hotro@chuyenbienhoa.com
                 </a>
               </li>

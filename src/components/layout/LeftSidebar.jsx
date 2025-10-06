@@ -75,7 +75,10 @@ export default function LeftSidebar({
     if (!auth?.user) {
       e.preventDefault();
       message.error("Vui lòng đăng nhập để xem các bài viết đã lưu của bạn.");
-      router.push("/login?continue=" + encodeURIComponent("/saved"));
+      router.push(
+        "/login?continue=" +
+          encodeURIComponent(window.location.origin + "/saved")
+      );
     }
   };
 

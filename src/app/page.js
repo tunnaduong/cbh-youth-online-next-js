@@ -6,27 +6,6 @@ import StoriesSection from "@/components/stories/StoriesSection";
 import HomeLayout from "@/layouts/HomeLayout";
 
 export default function Home() {
-  // Mock data for now - these should be fetched from API in production
-  const latestPosts = [];
-  const currentSort = "latest";
-  const mainCategories = [];
-  const stats = {
-    postCount: 0,
-    commentCount: 0,
-    userCount: 0,
-    latestUser: null,
-    visitors: {
-      total: 0,
-      registered: 0,
-      hidden: 0,
-      guests: 0,
-    },
-    record: {
-      max_online: 0,
-      recorded_at: new Date().toISOString(),
-    },
-  };
-
   return (
     <HomeLayout activeNav="home">
       <div className="px-2.5">
@@ -35,9 +14,9 @@ export default function Home() {
             Diễn đàn
           </h1>
           <StoriesSection />
-          <TopPosts latestPosts={latestPosts} currentSort={currentSort} />
-          <ForumSection mainCategories={mainCategories} />
-          <ForumStats stats={stats} />
+          <TopPosts />
+          <ForumSection />
+          <ForumStats />
           <SEOContent />
         </div>
       </div>
