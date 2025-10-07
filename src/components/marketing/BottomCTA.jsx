@@ -2,16 +2,14 @@
 
 import { useState } from "react";
 import Link from "next/link";
-// // import { usePage } from "@inertiajs/react"; // TODO: Replace with Next.js equivalent // TODO: Replace with Next.js equivalent
 import { IoCloseCircle } from "react-icons/io5";
+import { useAuthContext } from "@/contexts/Support";
 
 export default function BottomCTA() {
   const [isVisible, setIsVisible] = useState(true);
-  // const { props } = usePage(); // TODO: Replace with Next.js equivalent
-  // const user = props.auth?.user; // TODO: Replace with Next.js equivalent
-  const user = null; // Temporary placeholder
+  const { currentUser } = useAuthContext();
 
-  if (user || !isVisible) {
+  if (currentUser || !isVisible) {
     return null;
   }
 

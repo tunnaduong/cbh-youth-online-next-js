@@ -1,6 +1,6 @@
 // hàm tạo layout + height tự động
 export default function getCollageSetting(photos) {
-  const count = photos.length;
+  const count = photos?.length;
 
   if (count === 1) {
     return {

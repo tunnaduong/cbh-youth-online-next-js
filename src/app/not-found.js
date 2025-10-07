@@ -29,10 +29,10 @@ export default function Custom404() {
               alt={404}
               className="w-[80px] h-[80px] mb-2"
             />
-            <h4 className="font-bold text-gray-500 text-[14px]">
+            <h4 className="font-bold text-gray-500 text-[14px] dark:text-neutral-300">
               Bạn hiện không xem được nội dung này
             </h4>
-            <p className="text-[12px] text-gray-500">
+            <p className="text-[12px] text-gray-500 dark:text-neutral-400">
               Lỗi này thường do chủ sở hữu chỉ chia sẻ nội dung với một
               <br />
               nhóm nhỏ, thay đổi người được xem hoặc đã xóa nội dung.

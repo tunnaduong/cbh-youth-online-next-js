@@ -24,10 +24,12 @@ import { useAuthContext } from "@/contexts/Support";
 import SkeletonPost from "./skeletonPost";
 import { useRouter } from "next/navigation";
 import { useHomePost } from "@/contexts/HomePostContext";
+import { usePostRefresh } from "@/contexts/PostRefreshContext";
 import Image from "next/image";
 
 export default function HomePosts() {
   const { posts, setPosts } = useHomePost();
+  const { refreshTrigger } = usePostRefresh();
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState(null);
   const observerRef = React.useRef(null);
@@ -211,6 +213,13 @@ export default function HomePosts() {
       setLoading(false); // No need to fetch if posts already exist
     }
   }, []);
+
+  // Listen for refresh triggers
+  React.useEffect(() => {
+    if (refreshTrigger > 0) {
+      getPosts();
+    }
+  }, [refreshTrigger]);
 
   if (loading) {
     return (

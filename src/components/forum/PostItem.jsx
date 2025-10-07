@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useAuthContext } from "@/contexts/Support";
 // import { router, usePage } from "@inertiajs/react"; // TODO: Replace with Next.js equivalent
 import {
   ArrowUpOutline,
@@ -15,20 +16,22 @@ import VerifiedBadge from "@/components/ui/Badges";
 import getCollageSetting from "@/utils/getCollageSetting";
 import { useState, useEffect } from "react";
 import { Button, ConfigProvider, message, Tooltip } from "antd";
-import { useViewTracking } from "@/Hooks/useViewTracking";
+import { useViewTracking } from "@/hooks/useViewTracking";
+import { useRouter } from "next/navigation";
 
 export default function PostItem({ post, single = false, onVote }) {
-  const { auth } = usePage().props;
+  const currentUser = useAuthContext();
   const [showFullContent, setShowFullContent] = useState(false);
   const [isSaved, setIsSaved] = useState(!!post.is_saved);
   const maxLength = 300; // Số ký tự tối đa trước khi truncate
   const myVote =
-    post.votes?.find((v) => v.username === auth?.user?.username)?.vote_value ||
-    0;
+    post.votes?.find((v) => v.username === currentUser?.user?.username)
+      ?.vote_value || 0;
   const votesCount =
     post?.votes?.reduce((sum, v) => sum + v.vote_value, 0) ||
     post.votes_sum_vote_value ||
     0;
+  const router = useRouter();
 
   // Sử dụng hook để theo dõi lượt xem
   const {
@@ -52,32 +55,20 @@ export default function PostItem({ post, single = false, onVote }) {
 
   const savePost = (topicId) =>
     new Promise((resolve, reject) => {
-      router.post(
-        route("saved.store"),
-        { topic_id: topicId },
-        {
-          preserveScroll: true,
-          showProgress: false,
-          onSuccess: () => resolve(),
-          onError: (err) => reject(err),
-        }
-      );
+      // TODO: Implement save post
+      resolve();
     });
 
   const unsavePost = (topicId) =>
     new Promise((resolve, reject) => {
-      router.delete(route("saved.destroy", { savedPost: topicId }), {
-        preserveScroll: true,
-        showProgress: false,
-        onSuccess: () => resolve(),
-        onError: (err) => reject(err),
-      });
+      // TODO: Implement unsave post
+      resolve();
     });
 
   const handleSavePost = async () => {
-    if (!auth?.user) {
-      router.visit(
-        route("login") + "?continue=" + encodeURIComponent(window.location.href)
+    if (!currentUser?.user) {
+      router.push(
+        "/login?continue=" + encodeURIComponent(window.location.href)
       );
       message.error("Bạn cần đăng nhập để thực hiện hành động này");
       return;
@@ -149,7 +140,7 @@ export default function PostItem({ post, single = false, onVote }) {
 
   const setting = {
     ...getCollageSetting(post.image_urls),
-    photos: post.image_urls.map((url) => ({ source: url })),
+    photos: post.image_urls?.map((url) => ({ source: url })),
     showNumOfRemainingPhotos: true,
   };
 
@@ -248,15 +239,21 @@ export default function PostItem({ post, single = false, onVote }) {
         </div>
         <div className="flex-1 overflow-hidden break-words">
           {single ? (
-            <h1 className="text-xl font-semibold mb-1">{post.title}</h1>
+            <h1 className="text-xl font-semibold mb-1 dark:text-neutral-300">
+              {post.title}
+            </h1>
           ) : (
             <Link
-              href={route("posts.show", {
-                id: generatePostSlug(post.id, post.title),
-                username: post.anonymous ? "anonymous" : post.author.username,
-              })}
+              href={
+                "/" +
+                post.author.username +
+                "/posts/" +
+                generatePostSlug(post.id, post.title)
+              }
             >
-              <h1 className="text-xl font-semibold mb-1">{post.title}</h1>
+              <h1 className="text-xl font-semibold mb-1 dark:text-neutral-300">
+                {post.title}
+              </h1>
             </Link>
           )}
           <div
@@ -273,7 +270,7 @@ export default function PostItem({ post, single = false, onVote }) {
 
           {post.document_urls && post.document_urls.length > 0 && (
             <div className="flex flex-wrap gap-2 mt-3">
-              {post.document_urls.map((doc, index) => {
+              {post.document_urls?.map((doc, index) => {
                 const fileName = doc.split("/").pop();
                 const fileNameWithoutExt = fileName
                   .split(".")
@@ -334,7 +331,7 @@ export default function PostItem({ post, single = false, onVote }) {
             </div>
           )}
 
-          {post.image_urls.length != 0 && (
+          {post.image_urls?.length != 0 && (
             <div className="square-wrapper mt-3 rounded overflow-hidden">
               <ReactPhotoCollage {...setting} />
             </div>
@@ -359,11 +356,7 @@ export default function PostItem({ post, single = false, onVote }) {
               </>
             ) : (
               <>
-                <Link
-                  href={route("profile.show", {
-                    username: post.author.username,
-                  })}
-                >
+                <Link href={"/" + post.author.username}>
                   <span className="relative flex shrink-0 overflow-hidden rounded-full w-8 h-8">
                     <img
                       className="border rounded-full aspect-square h-full w-full"
@@ -377,9 +370,7 @@ export default function PostItem({ post, single = false, onVote }) {
                 </span>
                 <Link
                   className="flex flex-row items-center ml-2 md:ml-1 text-[#319527] hover:text-[#319527] font-bold hover:underline inline-verified truncate"
-                  href={route("profile.show", {
-                    username: post.author.username,
-                  })}
+                  href={"/" + post.author.username}
                 >
                   <span className="inline-verified__text truncate">
                     {post.author?.profile_name ||
@@ -407,12 +398,12 @@ export default function PostItem({ post, single = false, onVote }) {
               />
               {!single ? (
                 <Link
-                  href={route("posts.show", {
-                    id: generatePostSlug(post.id, post.title),
-                    username: post.anonymous
-                      ? "anonymous"
-                      : post.author.username,
-                  })}
+                  href={
+                    "/" +
+                    post.author.username +
+                    "/posts/" +
+                    generatePostSlug(post.id, post.title)
+                  }
                   className="flex flex-row-reverse items-center"
                 >
                   <span>{post.reply_count || post.comments_count}</span>

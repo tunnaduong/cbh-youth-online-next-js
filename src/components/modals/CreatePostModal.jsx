@@ -10,10 +10,12 @@ import { IoEarth, IoCaretDown } from "react-icons/io5";
 import { FaExternalLinkAlt, FaMarkdown } from "react-icons/fa";
 import { FaFileLines } from "react-icons/fa6";
 import { useAuthContext } from "@/contexts/Support";
-import { getForumData } from "@/app/Api";
+import { usePostRefresh } from "@/contexts/PostRefreshContext";
+import { getForumData, createPost } from "@/app/Api";
 
 const CreatePostModal = ({ open, onClose }) => {
   const { currentUser } = useAuthContext();
+  const { triggerRefresh } = usePostRefresh();
 
   const [selectedSubforum, setSelectedSubforum] = useState(null);
   const [imageFiles, setImageFiles] = useState([]);
@@ -69,9 +71,12 @@ const CreatePostModal = ({ open, onClose }) => {
       anonymous: false,
     });
     setErrors({});
+    setImageFiles([]);
+    setImagePreviews([]);
+    setDocumentFiles([]);
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     console.log("Form data:", data);
     console.log("Auth user:", currentUser);
@@ -96,20 +101,64 @@ const CreatePostModal = ({ open, onClose }) => {
       return;
     }
 
-    // Replace with actual API call
+    // Create FormData for API call
     setProcessing(true);
 
-    // Mock API call - replace with actual implementation
-    setTimeout(() => {
-      console.log("Success: Post created");
-      message.success("Bài viết đã được tạo thành công!");
-      reset();
-      setSelectedSubforum(null);
-      setImageFiles([]);
-      setImagePreviews([]);
+    try {
+      const formData = new FormData();
+
+      // Add basic post data
+      formData.append("title", data.title);
+      formData.append("description", data.description);
+      if (data.subforum_id !== null && data.subforum_id !== undefined) {
+        formData.append("subforum_id", data.subforum_id);
+      }
+      formData.append("visibility", data.visibility);
+      formData.append("privacy", data.privacy);
+      formData.append("anonymous", data.anonymous ? "1" : "0");
+
+      // Add image files
+      imageFiles.forEach((file, index) => {
+        formData.append(`image_files[${index}]`, file);
+      });
+
+      // Add document files
+      documentFiles.forEach((file, index) => {
+        formData.append(`document_files[${index}]`, file);
+      });
+
+      // Make API call
+      const response = await createPost(formData);
+
+      if (response.status === 201) {
+        console.log("Success: Post created", response.data);
+        message.success("Bài viết đã được tạo thành công!");
+        reset();
+        setSelectedSubforum(null);
+        setImageFiles([]);
+        setImagePreviews([]);
+        setDocumentFiles([]);
+        setProcessing(false);
+        triggerRefresh(); // Trigger refresh of posts
+        onClose();
+      } else {
+        throw new Error("Unexpected response status");
+      }
+    } catch (error) {
+      console.error("Error creating post:", error);
       setProcessing(false);
-      onClose();
-    }, 1000);
+
+      if (error.response?.data?.message) {
+        message.error(error.response.data.message);
+      } else if (error.response?.data?.errors) {
+        // Handle validation errors
+        const errors = error.response.data.errors;
+        setErrors(errors);
+        message.error("Vui lòng kiểm tra lại thông tin đã nhập");
+      } else {
+        message.error("Có lỗi xảy ra khi tạo bài viết. Vui lòng thử lại sau.");
+      }
+    }
   };
 
   const handleImageChange = (e) => {

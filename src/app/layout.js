@@ -5,6 +5,7 @@ import { AuthProvider } from "../contexts";
 import { HomePostProvider } from "@/contexts/HomePostContext";
 import { ThemeProvider } from "@/contexts/themeContext";
 import { TopUsersProvider } from "@/contexts/TopUsersContext";
+import { PostRefreshProvider } from "@/contexts/PostRefreshContext";
 import LoadingWrapper from "@/components/LoadingWrapper";
 import AntdProvider from "@/components/AntdProvider";
 import { AppProgressProvider as ProgressProvider } from "@bprogress/next";
@@ -30,14 +31,16 @@ export default function RootLayout({ children }) {
                 <AuthProvider>
                   <TopUsersProvider>
                     <HomePostProvider>
-                      <ProgressProvider
-                        height="3px"
-                        color="#319528"
-                        options={{ showSpinner: true }}
-                        shallowRouting
-                      >
-                        {children}
-                      </ProgressProvider>
+                      <PostRefreshProvider>
+                        <ProgressProvider
+                          height="3px"
+                          color="#319528"
+                          options={{ showSpinner: true }}
+                          shallowRouting
+                        >
+                          {children}
+                        </ProgressProvider>
+                      </PostRefreshProvider>
                     </HomePostProvider>
                   </TopUsersProvider>
                 </AuthProvider>

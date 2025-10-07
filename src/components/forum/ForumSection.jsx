@@ -7,6 +7,7 @@ import { generatePostSlug } from "@/utils/slugify";
 import VerifiedBadge from "@/components/ui/Badges";
 import { useState, useEffect } from "react";
 import { getHomeData } from "@/app/Api";
+import { usePostRefresh } from "@/contexts/PostRefreshContext";
 import SkeletonLoader from "./skeletonLoader";
 import Badges from "@/components/ui/Badges";
 
@@ -14,6 +15,7 @@ export default function ForumSection() {
   const [mainCategories, setMainCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const { refreshTrigger } = usePostRefresh();
 
   const fetchForumData = async () => {
     try {
@@ -32,6 +34,13 @@ export default function ForumSection() {
   useEffect(() => {
     fetchForumData();
   }, []);
+
+  // Listen for refresh triggers
+  useEffect(() => {
+    if (refreshTrigger > 0) {
+      fetchForumData();
+    }
+  }, [refreshTrigger]);
   if (loading) {
     return (
       <>
@@ -121,17 +130,19 @@ export default function ForumSection() {
                           </span>
                         ) : (
                           <>
-                            <Link
-                              href={`/${
-                                subforum.latest_topic?.username || "anonymous"
-                              }`}
-                              className="hover:text-primary-500 hover:underline truncate"
-                            >
-                              {subforum.latest_topic?.author_name}
+                            <div className="flex items-center truncate">
+                              <Link
+                                href={`/${
+                                  subforum.latest_topic?.username || "anonymous"
+                                }`}
+                                className="hover:text-primary-500 hover:underline truncate"
+                              >
+                                {subforum.latest_topic?.author_name}
+                              </Link>
                               {subforum.latest_topic?.verified && (
-                                <Badges className="ml-0.5 mb-0.5 inline-verified__badge" />
+                                <Badges className="ml-0.5 mb-0.5 inline-verified__badge flex-shrink-0" />
                               )}
-                            </Link>
+                            </div>
                           </>
                         )}
                         <span className="text-black shrink-0 dark:!text-neutral-300">

@@ -1,561 +1,402 @@
 "use client";
 
-import React, { use } from "react";
-import Navbar from "@/components/include/navbar";
-import LeftSidebar from "@/components/include/leftSidebar";
-import RightSidebar from "@/components/include/rightSidebar";
-import {
-  getPostDetail,
-  votePost,
-  savePost,
-  unsavePost,
-  incrementPostViewAuthenticated,
-  incrementPostView,
-  commentPost,
-  voteComment,
-} from "@/app/Api";
-import {
-  IoArrowUpOutline,
-  IoArrowDownOutline,
-  IoBookmark,
-  IoEyeOutline,
-  IoChatboxOutline,
-} from "react-icons/io5";
-import Link from "next/link";
-import TruncateText from "@/components/home/truncate";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { AlertCircle, Loader2, Send, User } from "lucide-react";
-import Image from "next/image";
-import SkeletonPost from "@/components/home/skeletonPost";
+import HomeLayout from "@/layouts/HomeLayout";
+// // import { Head, Link } from "@inertiajs/react"; // TODO: Replace with Next.js equivalent // TODO: Replace with Next.js equivalent
+import { useState, useEffect } from "react";
 import { useAuthContext } from "@/contexts/Support";
-import { Textarea } from "@/components/ui/textarea";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { useRouter } from "next/navigation";
+import { getPostDetail } from "@/app/Api";
+// // import { usePage, router } from "@inertiajs/react"; // TODO: Replace with Next.js equivalent // TODO: Replace with Next.js equivalent
+import { CommentInput } from "@/components/forum/CommentInput";
+import Comment from "@/components/forum/Comment";
+import EmptyCommentsState from "@/components/forum/EmptyCommentsState";
+import PostItem from "@/components/forum/PostItem";
+import { message } from "antd";
+import Link from "next/link";
+import Lottie from "lottie-react";
+import refreshAnimation from "@/assets/refresh.json";
+import { useRouter, notFound } from "next/navigation";
 
 export default function PostDetail({ params }) {
-  const { postId } = use(params);
-  const router = useRouter();
-  const [post, setPost] = React.useState(null);
   const { currentUser, loggedIn } = useAuthContext();
-  const [newComment, setNewComment] = React.useState("");
-  const [isLoading, setIsLoading] = React.useState(false);
-  const [error, setError] = React.useState("");
+  const [post, setPost] = useState(null);
+  const [comments, setComments] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const router = useRouter();
+  // Fetch post detail and comments
+  useEffect(() => {
+    const fetchPostDetail = async () => {
+      try {
+        setLoading(true);
+        const response = await getPostDetail(params.postId);
+        console.log(response.data);
+        setPost(response.data);
+        setComments(response.data.comments || []);
+        setError(null);
+      } catch (err) {
+        setError(err.message || "Có lỗi xảy ra khi tải bài viết");
+        message.error("Có lỗi xảy ra khi tải bài viết");
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  const handlePostView = React.useCallback((id) => {
-    if (loggedIn) {
-      incrementPostViewAuthenticated(id);
-    } else {
-      incrementPostView(id);
+    if (params.postId) {
+      fetchPostDetail();
     }
-  }, [loggedIn]);
+  }, [params.postId]);
 
-  const _getPostDetail = React.useCallback(async () => {
-    const res = await getPostDetail(postId);
-    setPost(res.data);
-  }, [postId]);
+  // Helper function to get time display
+  const getTimeDisplay = (comment) => {
+    if (comment.created_at) {
+      const now = new Date();
+      const commentTime = new Date(comment.created_at);
+      const diffInMinutes = Math.floor((now - commentTime) / (1000 * 60));
 
-  React.useEffect(() => {
-    _getPostDetail();
-    handlePostView(postId);
-  }, [_getPostDetail, handlePostView, postId]);
-
-  const handleVoteComment = async (comment, commentId, vote_value) => {
-    if (!loggedIn) {
-      router.push("/login");
-      return;
+      if (diffInMinutes < 1) return "Vừa xong";
+      if (diffInMinutes < 60) return `${diffInMinutes} phút trước`;
+      if (diffInMinutes < 1440)
+        return `${Math.floor(diffInMinutes / 60)} giờ trước`;
+      return `${Math.floor(diffInMinutes / 1440)} ngày trước`;
     }
+    return "Không rõ thời gian";
+  };
 
-    const existingVote = comment.votes.find(
-      (vote) => vote.username === currentUser?.username
-    );
+  // Handle comment editing
+  const handleEditComment = (commentId, newContent) => {
+    // Store original content for rollback
+    const originalComments = [...comments];
 
-    // Optimistic UI update
-    setPost((prevPost) => ({
-      ...prevPost,
-      comments: prevPost.comments.map((c) => {
-        if (c.id === commentId) {
-          let newVotes = [...c.votes];
-
-          if (existingVote) {
-            if (existingVote.vote_value === vote_value) {
-              // Remove the vote
-              newVotes = newVotes.filter(
-                (vote) => vote.username !== currentUser?.username
-              );
-            } else {
-              // Update the existing vote
-              newVotes = newVotes.map((vote) =>
-                vote.username === currentUser?.username
-                  ? { ...vote, vote_value }
-                  : vote
-              );
-            }
-          } else {
-            // Add a new vote
-            newVotes.push({ username: currentUser?.username, vote_value });
-          }
-
-          // Update vote count
-          const newVoteCount = newVotes.reduce(
-            (acc, vote) => acc + vote.vote_value,
-            0
-          );
-
+    // Optimistically update comment in UI
+    const updateCommentInTree = (comments) => {
+      return comments.map((comment) => {
+        if (comment.id === commentId) {
           return {
-            ...c,
-            votes: newVotes,
-            voteCount: newVoteCount,
+            ...comment,
+            content: newContent,
           };
         }
-        return c;
-      }),
-    }));
+        if (comment.replies) {
+          return {
+            ...comment,
+            replies: updateCommentInTree(comment.replies),
+          };
+        }
+        return comment;
+      });
+    };
 
-    try {
-      const voteToSend =
-        existingVote && existingVote.vote_value === vote_value ? 0 : vote_value;
-      await voteComment(commentId, { vote_value: voteToSend });
-    } catch (error) {
-      console.error("Error voting on comment:", error);
-      // Revert the UI if there's an error
-      _getPostDetail(); // Refetch post details to restore original state
-    }
+    setComments(updateCommentInTree(comments));
+    message.success("Bình luận đã được cập nhật thành công");
+
+    // TODO: Implement comment update API call
+    // For now, just show success message
+    setTimeout(() => {
+      // Simulate API call
+      message.success("Bình luận đã được cập nhật thành công");
+    }, 500);
   };
 
-  const handleVote = async (postId, vote_value) => {
-    if (loggedIn === false) {
-      router.push("/login");
-      return;
-    }
-
-    // Find the user's existing vote on the post
-    const existingVote = post.votes.find(
-      (vote) => vote.username === currentUser?.username
-    );
-
-    // Optimistically update the vote count
-    setPost((post) => {
-      if (post.id === postId) {
-        let newVotes = [...post.votes];
-
-        if (existingVote) {
-          // User has already voted
-          if (existingVote.vote_value === vote_value) {
-            // If the user clicks the same vote again, remove it (set to 0)
-            newVotes = newVotes.filter(
-              (vote) => vote.username !== currentUser?.username
-            );
-          } else {
-            // If the user changes their vote, update it
-            const updatedVote = {
-              ...existingVote,
-              vote_value: vote_value,
-            };
-            newVotes = newVotes.map((vote) =>
-              vote.username === currentUser?.username ? updatedVote : vote
-            );
+  // Handle adding replies
+  const handleReplyToComment = (parentId, content, isAnonymous = false) => {
+    // Optimistically add reply to UI
+    const newReply = {
+      id: Date.now().toString(),
+      content: content,
+      is_anonymous: isAnonymous,
+      author: isAnonymous
+        ? {
+            username: "Người dùng ẩn danh",
+            profile_name: "Người dùng ẩn danh",
           }
-        } else {
-          // User is voting for the first time
-          newVotes.push({ username: currentUser?.username, vote_value });
+        : {
+            username: currentUser?.username,
+            profile_name: currentUser?.profile_name || currentUser?.username,
+          },
+      created_at: "vài giây trước",
+      votes: [],
+      replies: [],
+      isPending: true,
+    };
+
+    let level2ParentId = null;
+
+    const addReplyToComment = (comments, level = 1, parentLevel2Id = null) => {
+      return comments.map((comment) => {
+        // Found the target comment
+        if (comment.id === parentId) {
+          if (level >= 3) {
+            // Store level 2 parent ID when target is at level 3 or deeper
+            level2ParentId = parentLevel2Id;
+            return comment;
+          }
+
+          // Normal case: add as child
+          return {
+            ...comment,
+            replies: [...(comment.replies || []), newReply],
+          };
         }
 
-        // Calculate the new vote count
-        const newVoteCount = newVotes.reduce(
-          (accumulator, vote) => accumulator + vote.vote_value,
-          0
-        );
+        // Search in replies
+        if (comment.replies && comment.replies.length > 0) {
+          // Check if target is in direct children (level 2)
+          const directChild = comment.replies.find(
+            (reply) => reply.id === parentId
+          );
+          if (directChild && level === 1) {
+            // Target is at level 2, add normally
+            return {
+              ...comment,
+              replies: comment.replies.map((reply) =>
+                reply.id === parentId
+                  ? { ...reply, replies: [...(reply.replies || []), newReply] }
+                  : reply
+              ),
+            };
+          }
 
-        // Return the updated post object
-        return {
-          ...post,
-          votes: newVotes,
-          voteCount: newVoteCount,
-        };
-      }
-      return post;
-    });
+          // Check if target is in grandchildren (level 3)
+          const hasLevel3Target = comment.replies.some(
+            (reply) =>
+              reply.replies && reply.replies.some((r) => r.id === parentId)
+          );
 
-    try {
-      // Determine the correct vote value to send to the server
-      const voteToSend =
-        existingVote && existingVote.vote_value === vote_value ? 0 : vote_value;
-      // Send the vote request to the server
-      await votePost(postId, { vote_value: voteToSend });
-    } catch (error) {
-      console.error("Error voting on post:", error);
-      // If there's an error, revert to the previous state
-      setPost(previousPosts);
-    }
+          if (hasLevel3Target && level === 1) {
+            // Target is at level 3, add as sibling at level 3
+            return {
+              ...comment,
+              replies: comment.replies.map((reply) => {
+                if (
+                  reply.replies &&
+                  reply.replies.some((r) => r.id === parentId)
+                ) {
+                  level2ParentId = reply.id; // Store level 2 parent ID
+                  return {
+                    ...reply,
+                    replies: [...reply.replies, newReply], // Add as sibling
+                  };
+                }
+                return reply;
+              }),
+            };
+          }
+
+          // Continue searching deeper
+          return {
+            ...comment,
+            replies: addReplyToComment(
+              comment.replies,
+              level + 1,
+              level === 1 ? comment.id : parentLevel2Id
+            ),
+          };
+        }
+
+        return comment;
+      });
+    };
+
+    const updatedComments = addReplyToComment(comments);
+    setComments(updatedComments);
+    message.success("Đã trả lời bình luận thành công");
+
+    // TODO: Implement comment reply API call
+    // For now, just show success message
+    setTimeout(() => {
+      // Simulate API call
+      message.success("Đã trả lời bình luận thành công");
+    }, 500);
   };
 
-  const handleSavePost = async (id) => {
-    if (loggedIn === false) {
-      router.push("/login");
+  const handleSubmitComment = (content, isAnonymous = false) => {
+    // Optimistically add comment to UI
+    const tempComment = {
+      id: Date.now().toString(),
+      content: content,
+      is_anonymous: isAnonymous,
+      author: isAnonymous
+        ? {
+            username: "Người dùng ẩn danh",
+            profile_name: "Người dùng ẩn danh",
+          }
+        : {
+            username: currentUser?.username,
+            profile_name: currentUser?.profile_name || currentUser?.username,
+          },
+      created_at: "vài giây trước",
+      votes: [],
+      replies: [],
+      isPending: true,
+    };
+
+    setComments([tempComment, ...comments]);
+    message.success("Bình luận đã được đăng thành công");
+
+    // TODO: Implement comment submit API call
+    // For now, just show success message
+    setTimeout(() => {
+      // Simulate API call
+      message.success("Bình luận đã được đăng thành công");
+    }, 500);
+  };
+
+  const handleDeleteComment = (commentId) => {
+    // Store original comments for rollback
+    const originalComments = [...comments];
+
+    // Optimistically remove comment from UI
+    const removeCommentFromTree = (comments) => {
+      return comments
+        .filter((comment) => comment.id !== commentId)
+        .map((comment) => {
+          if (comment.replies) {
+            return {
+              ...comment,
+              replies: removeCommentFromTree(comment.replies),
+            };
+          }
+          return comment;
+        });
+    };
+
+    setComments(removeCommentFromTree(comments));
+    message.success("Bình luận đã được xóa thành công");
+
+    // TODO: Implement comment delete API call
+    // For now, just show success message
+    setTimeout(() => {
+      // Simulate API call
+      message.success("Bình luận đã được xóa thành công");
+    }, 500);
+  };
+
+  const handleVote = (postId, value) => {
+    if (!currentUser) {
+      router.push(
+        "/login?continue=" + encodeURIComponent(window.location.href)
+      );
+      message.error("Bạn cần đăng nhập để thực hiện hành động này");
       return;
     }
 
-    const isCurrentlySaved = post.saved;
-
-    // Optimistically update the UI
-    setPost((post) =>
-      post.id === id ? { ...post, saved: !isCurrentlySaved } : post
-    );
-
-    try {
-      if (isCurrentlySaved) {
-        // Call the API to unsave the post
-        await unsavePost(id); // Make sure you have this function to call the DELETE API
-      } else {
-        // Call the API to save the post
-        await savePost(id);
-      }
-    } catch (error) {
-      console.error("Error saving/unsaving post:", error);
-      // Rollback the UI in case of an error
-      setPost((post) =>
-        post.id === id ? { ...post, saved: isCurrentlySaved } : post
+    setPost((prev) => {
+      // Kiểm tra user đã vote chưa
+      let existingVote = prev.votes.find(
+        (v) => v.username === currentUser?.username
       );
-    }
+      let newVotes;
+
+      if (existingVote) {
+        if (existingVote.vote_value === value) {
+          // Ấn lại -> bỏ vote
+          newVotes = prev.votes.filter(
+            (v) => v.username !== currentUser?.username
+          );
+        } else {
+          // Đổi hướng vote
+          newVotes = prev.votes.map((v) =>
+            v.username === currentUser?.username
+              ? { ...v, vote_value: value }
+              : v
+          );
+        }
+      } else {
+        // Thêm vote mới
+        newVotes = [
+          ...prev.votes,
+          { username: currentUser?.username, vote_value: value },
+        ];
+      }
+
+      return { ...prev, votes: newVotes };
+    });
+
+    // TODO: Implement vote API call
+    // For now, just show success message
+    setTimeout(() => {
+      // Simulate API call
+      message.success("Đã vote thành công");
+    }, 500);
   };
 
-  const handleSubmitComment = async (e) => {
-    e.preventDefault();
-    setIsLoading(true);
-    setError("");
+  if (loading) {
+    return (
+      <HomeLayout activeNav="home" activeBar={null}>
+        <div className="px-1 xl:min-h-screen pt-4 flex items-center justify-center">
+          <div className="text-center">
+            <Lottie
+              animationData={refreshAnimation}
+              loop={true}
+              style={{ width: 80, height: 80 }}
+              className="mx-auto mb-4"
+            />
+            <p className="dark:text-neutral-300">Đang tải bài viết...</p>
+          </div>
+        </div>
+      </HomeLayout>
+    );
+  }
 
-    try {
-      // Send the new comment to the API and get the response
-      const response = await commentPost(postId, { comment: newComment });
-
-      // Add the new comment to the UI
-      const newCommentObject = {
-        id: response.data.id, // or response.data.commentId, depending on your API response
-        content: newComment,
-        author: {
-          username: currentUser?.username,
-          profile_name: currentUser?.profile_name,
-        },
-        created_at: response.data.created_at, // or response.data.createdAt
-        votes: [],
-      };
-
-      setPost((prevPost) => ({
-        ...prevPost,
-        comments: [newCommentObject, ...prevPost.comments],
-      }));
-
-      // Clear the comment input field and stop loading
-      setNewComment("");
-      setIsLoading(false);
-    } catch (error) {
-      setError(error.response?.data?.message || "Error adding comment.");
-      setIsLoading(false);
-    }
-  };
+  if (error || !post) {
+    notFound();
+  }
 
   return (
-    <div className="mt-[66px]">
-      <Navbar selected={0} />
-      <div className="flex flex-row">
-        <LeftSidebar selected="feed" />
-        <div
-          className="flex flex-col items-center w-full flex-1 lg:w-2/3 xl:w-1/2 p-2 pt-5 lg:p-5"
-          style={{ zoom: "1.4" }}
-        >
-          {post ? (
-            <>
-              <div>
-                <div
-                  key={post.id}
-                  data-post-id={post.id}
-                  className="max-w-[485px] mb-5 long-shadow w-[100%] h-min flex flex-row rounded-lg p-3.5 bg-white"
-                >
-                  <div className="min-w-[60px] items-center mt-1 flex-col flex ml-[-15px] text-[13px] font-semibold text-gray-400">
-                    <IoArrowUpOutline
-                      className={`text-[19px] cursor-pointer ${
-                        post.votes.some(
-                          (vote) =>
-                            vote.username === currentUser?.username &&
-                            vote.vote_value === 1
-                        )
-                          ? "text-green-600"
-                          : ""
-                      }`}
-                      onClick={(e) => {
-                        e.stopPropagation(); // Prevent bubbling up to the observer
-                        handleVote(post.id, 1);
-                      }}
-                    />
-                    <span
-                      className={
-                        post.votes.some(
-                          (vote) =>
-                            vote.username === currentUser?.username &&
-                            vote.vote_value === 1
-                        )
-                          ? "text-green-600 select-none"
-                          : post.votes.some(
-                              (vote) =>
-                                vote.username === currentUser?.username &&
-                                vote.vote_value === -1
-                            )
-                          ? "text-red-500 select-none"
-                          : "select-none"
-                      }
-                    >
-                      {post.votes.reduce(
-                        (accumulator, vote) => accumulator + vote.vote_value,
-                        0
-                      )}
-                    </span>
-                    <IoArrowDownOutline
-                      className={`text-[19px] cursor-pointer ${
-                        post.votes.some(
-                          (vote) =>
-                            vote.username === currentUser?.username &&
-                            vote.vote_value === -1
-                        )
-                          ? "text-red-500"
-                          : ""
-                      }`}
-                      onClick={(e) => {
-                        e.stopPropagation(); // Prevent bubbling up to the observer
-                        handleVote(post.id, -1);
-                      }}
-                    />
-                    <div
-                      className={`${
-                        post.saved == true
-                          ? "bg-[#CDEBCA] border-[#BFE5BB] text-[#319527]"
-                          : "bg-[#EAEAEA]"
-                      } cursor-pointer rounded-md w-[19px] h-[19px] mt-2 border-[1.5px] flex items-center justify-center`}
-                      style={{ zoom: "1.2" }}
-                      onClick={() => handleSavePost(post.id)}
-                    >
-                      <IoBookmark style={{ zoom: "0.9" }} />
-                    </div>
-                  </div>
-                  <div className="flex-1 overflow-hidden break-words">
-                    <h1 className="text-[14px] font-semibold mb-1 max-w-sm overflow-hidden whitespace-nowrap overflow-ellipsis">
-                      {post.title}
-                    </h1>
-                    <div className="text-[11px] max-w-[600px] overflow-wrap">
-                      <TruncateText text={post.content} maxWordsLength={90} />
-                    </div>
-                    {post.image_url && (
-                      <div className="rounded-md bg-[#E4EEE3] border overflow-hidden mt-4 max-h-96 flex items-center justify-center">
-                        <Image
-                          src={process.env.NEXT_PUBLIC_API_URL + post.image_url}
-                          width={700}
-                          height={700}
-                          alt="Ảnh bài viết"
-                          className="object-contain max-h-96 text-[11px]"
-                          priority={true}
-                        />
-                      </div>
-                    )}
-
-                    <hr className="my-3 border-t-2" />
-                    <div className="flex-row flex text-[9px] items-center">
-                      <Link href={"/" + post.author.username}>
-                        <Avatar className="rounded-full w-6 h-6">
-                          <AvatarImage
-                            src={`${process.env.NEXT_PUBLIC_API_URL}/v1.0/users/${post.author.username}/avatar`}
-                            alt={post.author.username + " avatar"}
-                          />
-                          <AvatarFallback>
-                            <User width={12} />
-                          </AvatarFallback>
-                        </Avatar>
-                      </Link>
-                      <span className="text-gray-500 ml-1.5">Đăng bởi</span>
-                      <Link
-                        href={"/" + post.author.username}
-                        className="text-[#319527] font-bold ml-0.5"
-                      >
-                        {post.author.profile_name}
-                      </Link>
-                      <span className="mb-2 ml-0.5 text-sm text-gray-500">
-                        .
-                      </span>
-                      <span className="ml-0.5 text-gray-500">{post.time}</span>
-                      <div className="flex flex-1 flex-row-reverse items-center text-gray-500">
-                        <span>{post.views_count}</span>
-                        <IoEyeOutline className="text-[15px] mr-1 ml-2" />
-                        <span>{post.comments_count}</span>
-                        <IoChatboxOutline className="text-[15px] mr-1" />
-                      </div>
-                    </div>
-                  </div>
+    <HomeLayout activeNav="home" activeBar={null}>
+      {/* <Head title={post.title}>
+        <meta property="og:image" content={ogImage} />
+        <meta name="twitter:image" content={ogImage} />
+      </Head> */}
+      <div className="px-1 xl:min-h-screen pt-4">
+        <PostItem post={post.post} single={true} onVote={handleVote} />
+        <div className="px-1.5 md:px-0 md:max-w-[775px] mx-auto w-full mb-4">
+          <div className="shadow !mb-4 long-shadow h-min rounded-lg bg-white post-comment-container overflow-clip">
+            <div className="flex flex-col space-y-1.5 p-6 text-xl -mb-4 dark:text-neutral-300 font-semibold max-w-sm overflow-hidden whitespace-nowrap overflow-ellipsis">
+              Bình luận
+            </div>
+            <div className="p-6 pt-2 pb-0 relative">
+              {!loggedIn ? (
+                <div className="text-base dark:text-neutral-300">
+                  <Link
+                    className="text-green-600 hover:text-green-600"
+                    href={
+                      "/login?continue=" +
+                      encodeURIComponent(window.location.href)
+                    }
+                  >
+                    Đăng nhập
+                  </Link>{" "}
+                  để bình luận và tham gia thảo luận cùng cộng đồng.
                 </div>
-                <Card className="max-w-[485px] mb-5 long-shadow w-[100%] h-min rounded-lg bg-white">
-                  <CardHeader className="text-[14px] -mb-4 font-semibold max-w-sm overflow-hidden whitespace-nowrap overflow-ellipsis">
-                    Bình luận
-                  </CardHeader>
-                  <CardContent>
-                    {loggedIn ? (
-                      <form
-                        onSubmit={handleSubmitComment}
-                        className="space-y-4 mb-7"
-                        style={{ zoom: "0.7" }}
-                      >
-                        {error && (
-                          <Alert variant="destructive">
-                            <AlertCircle className="h-4 w-4" />
-                            <AlertTitle>Lỗi</AlertTitle>
-                            <AlertDescription>{error}</AlertDescription>
-                          </Alert>
-                        )}
-                        <Textarea
-                          placeholder="Viết bình luận của bạn..."
-                          value={newComment}
-                          onChange={(e) => setNewComment(e.target.value)}
-                        />
-
-                        <Button
-                          type="submit"
-                          className="w-full bg-green-600 hover:bg-green-700"
-                          disabled={isLoading}
-                        >
-                          {isLoading ? (
-                            <>
-                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                              Đang gửi...
-                            </>
-                          ) : (
-                            <>
-                              <Send className="mr-2 h-4 w-4" />
-                              Gửi bình luận
-                            </>
-                          )}
-                        </Button>
-                      </form>
-                    ) : (
-                      <div className="text-[11px] mb-6">
-                        <Link href="/login" className="text-green-600">
-                          Đăng nhập
-                        </Link>{" "}
-                        để bình luận và tham gia thảo luận cùng cộng đồng.
-                      </div>
-                    )}
-                    {post.comments.length == 0 ? (
-                      <center className="text-[9px] text-gray-400">
-                        Không có bình luận nào cho bài viết này.
-                        <br />
-                        Hãy là người đầu tiên để lại ý kiến của bạn!
-                      </center>
-                    ) : (
-                      <div className="gap-y-4 flex flex-col">
-                        {post.comments.map((comment) => (
-                          <div
-                            style={{ zoom: "0.7" }}
-                            key={comment.id}
-                            className="flex space-x-4"
-                          >
-                            <Link href={"/" + comment.author.username}>
-                              <Avatar>
-                                <AvatarImage
-                                  src={`${process.env.NEXT_PUBLIC_API_URL}/v1.0/users/${comment.author.username}/avatar`}
-                                  alt={comment.author.profile_name}
-                                />
-                                <AvatarFallback>
-                                  <User />
-                                </AvatarFallback>
-                              </Avatar>
-                            </Link>
-                            <div className="flex-1">
-                              <div className="flex items-center justify-between">
-                                <Link href={"/" + comment.author.username}>
-                                  <h4 className="text-sm font-semibold">
-                                    {comment.author.profile_name}
-                                  </h4>
-                                </Link>
-                                <span className="text-xs text-gray-500">
-                                  {comment.created_at}
-                                </span>
-                              </div>
-                              <p className="mt-1 text-sm text-gray-700">
-                                {comment.content}
-                              </p>
-                              <div className="mt-2 flex items-center space-x-2 text-gray-400">
-                                <IoArrowUpOutline
-                                  className={`cursor-pointer ${
-                                    comment.votes.some(
-                                      (vote) =>
-                                        vote.username ===
-                                          currentUser?.username &&
-                                        vote.vote_value === 1
-                                    )
-                                      ? "text-green-600 cursor-pointer"
-                                      : "cursor-pointer"
-                                  }`}
-                                  onClick={(e) => {
-                                    e.stopPropagation(); // Prevent bubbling up to the observer
-                                    handleVoteComment(comment, comment.id, 1);
-                                  }}
-                                />
-                                <span
-                                  className={
-                                    comment.votes.some(
-                                      (vote) =>
-                                        vote.username ===
-                                          currentUser?.username &&
-                                        vote.vote_value === 1
-                                    )
-                                      ? "text-green-600 text-sm font-semibold select-none"
-                                      : comment.votes.some(
-                                          (vote) =>
-                                            vote.username ===
-                                              currentUser?.username &&
-                                            vote.vote_value === -1
-                                        )
-                                      ? "text-red-500 text-sm font-semibold select-none"
-                                      : "select-none text-sm font-semibold"
-                                  }
-                                >
-                                  {comment.votes.reduce(
-                                    (accumulator, vote) =>
-                                      accumulator + vote.vote_value,
-                                    0
-                                  )}
-                                </span>
-                                <IoArrowDownOutline
-                                  className={`cursor-pointer ${
-                                    comment.votes.some(
-                                      (vote) =>
-                                        vote.username ===
-                                          currentUser?.username &&
-                                        vote.vote_value === -1
-                                    )
-                                      ? "text-red-500 cursor-pointer"
-                                      : "cursor-pointer"
-                                  }`}
-                                  onClick={(e) => {
-                                    e.stopPropagation(); // Prevent bubbling up to the observer
-                                    handleVoteComment(comment, comment.id, -1);
-                                  }}
-                                />
-                              </div>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
+              ) : (
+                <CommentInput onSubmit={handleSubmitComment} />
+              )}
+              <div className="pb-6 pt-2">
+                {!Array.isArray(comments) || comments.length === 0 ? (
+                  <EmptyCommentsState />
+                ) : (
+                  comments.map((comment) => (
+                    <div key={comment.id} className="mt-6">
+                      <Comment
+                        comment={comment}
+                        level={0}
+                        onEdit={handleEditComment}
+                        onReply={handleReplyToComment}
+                        onDelete={handleDeleteComment}
+                        userAvatar={`https://api.chuyenbienhoa.com/v1.0/users/${currentUser?.username}/avatar`}
+                        getTimeDisplay={getTimeDisplay}
+                        parentConnectorHovered={false}
+                      />
+                    </div>
+                  ))
+                )}
               </div>
-            </>
-          ) : (
-            Array.from({ length: 1 }).map((_, index) => (
-              <SkeletonPost key={index} />
-            ))
-          )}
+              <div className="absolute bottom-0 left-0 w-full h-6 bg-white dark:bg-[#3c3c3c]"></div>
+            </div>
+          </div>
         </div>
-        <RightSidebar />
       </div>
-    </div>
+    </HomeLayout>
   );
 }

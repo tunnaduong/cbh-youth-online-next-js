@@ -9,6 +9,7 @@ import { useState, useEffect } from "react";
 import Dropdown from "../ui/Dropdown";
 import { useSearchParams } from "next/navigation";
 import { getHomeData } from "@/app/Api";
+import { usePostRefresh } from "@/contexts/PostRefreshContext";
 
 export default function TopPosts() {
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -17,6 +18,7 @@ export default function TopPosts() {
   const [error, setError] = useState(null);
   const searchParams = useSearchParams();
   const currentSort = searchParams.get("sort") || "latest";
+  const { refreshTrigger } = usePostRefresh();
 
   const fetchPosts = async (sort = "latest") => {
     try {
@@ -35,6 +37,13 @@ export default function TopPosts() {
   useEffect(() => {
     fetchPosts(currentSort);
   }, [currentSort]);
+
+  // Listen for refresh triggers
+  useEffect(() => {
+    if (refreshTrigger > 0) {
+      fetchPosts(currentSort);
+    }
+  }, [refreshTrigger, currentSort]);
 
   const handleRefresh = async () => {
     setIsRefreshing(true);

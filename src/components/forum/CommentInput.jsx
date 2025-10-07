@@ -4,19 +4,23 @@ import { useEffect, useRef, useState, useContext } from "react";
 import { Button, Popover, Dropdown } from "antd";
 import { LuImage, LuType, LuArrowUp, LuChevronDown } from "react-icons/lu";
 import { RiEmojiStickerLine } from "react-icons/ri";
-// // import { usePage } from "@inertiajs/react"; // TODO: Replace with Next.js equivalent // TODO: Replace with Next.js equivalent
+import { useAuthContext } from "@/contexts/Support";
 import data from "@emoji-mart/data";
 import Picker from "@emoji-mart/react";
 import { useTheme } from "@/contexts/themeContext";
 
-export function CommentInput({ placeholder = "Nhập bình luận của bạn...", onSubmit, onCancel }) {
+export function CommentInput({
+  placeholder = "Nhập bình luận của bạn...",
+  onSubmit,
+  onCancel,
+}) {
   const [comment, setComment] = useState("");
   const [isFocused, setIsFocused] = useState(false);
   const [showEmoji, setShowEmoji] = useState(false);
   const [isAnonymous, setIsAnonymous] = useState(false);
   const wrapperRef = useRef(null);
   const textareaRef = useRef(null);
-  const { auth } = usePage().props;
+  const { currentUser } = useAuthContext();
   const { theme } = useTheme();
 
   const handleSubmit = () => {
@@ -40,11 +44,11 @@ export function CommentInput({ placeholder = "Nhập bình luận của bạn...
       label: (
         <div className="flex items-center gap-2">
           <img
-            src={`https://api.chuyenbienhoa.com/v1.0/users/${auth?.user?.username}/avatar`}
+            src={`https://api.chuyenbienhoa.com/v1.0/users/${currentUser?.username}/avatar`}
             alt="Avatar của bạn"
             className="w-6 h-6 rounded-full"
           />
-          <span>{auth?.user?.profile?.profile_name || auth?.user?.username}</span>
+          <span>{currentUser?.profile_name || currentUser?.username}</span>
         </div>
       ),
       onClick: () => setIsAnonymous(false),
@@ -113,9 +117,9 @@ export function CommentInput({ placeholder = "Nhập bình luận của bạn...
       <div
         onClick={() => setIsFocused(true)}
         className={`
-        relative bg-muted/30 border border-border rounded-2xl
+        relative border rounded-2xl
         transition-all duration-200 dark:!border-gray-600
-        ${isFocused ? "ring-2 ring-ring/20 border-ring/40" : ""}
+        ${isFocused ? "ring-2 ring-ring/20" : ""}
       `}
       >
         <div className={`flex gap-3 p-4 pb-0 ${!isFocused ? "pb-3" : ""}`}>
@@ -126,7 +130,7 @@ export function CommentInput({ placeholder = "Nhập bình luận của bạn...
               </div>
             ) : (
               <img
-                src={`https://api.chuyenbienhoa.com/v1.0/users/${auth?.user?.username}/avatar`}
+                src={`https://api.chuyenbienhoa.com/v1.0/users/${currentUser?.username}/avatar`}
                 alt="Avatar của bạn"
                 className="w-8 h-8 rounded-full flex-shrink-0"
               />
@@ -213,10 +217,18 @@ export function CommentInput({ placeholder = "Nhập bình luận của bạn...
                 <RiEmojiStickerLine className="h-5 w-5 text-muted-foreground" />
               </Button>
             </Popover>
-            <Button variant="ghost" size="sm" className="h-8 w-8 p-0 rounded-full hover:bg-muted">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-8 w-8 p-0 rounded-full hover:bg-muted"
+            >
               <LuImage className="h-4 w-4 text-muted-foreground" />
             </Button>
-            <Button variant="ghost" size="sm" className="h-8 w-8 p-0 rounded-full hover:bg-muted">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-8 w-8 p-0 rounded-full hover:bg-muted"
+            >
               <LuType className="h-4 w-4 text-muted-foreground" />
             </Button>
           </div>
