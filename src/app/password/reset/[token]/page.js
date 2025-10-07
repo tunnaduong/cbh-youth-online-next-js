@@ -1,187 +1,186 @@
 "use client";
 
-import { useState, use } from "react";
-import {
-  Loader2,
-  Eye,
-  EyeOff,
-  AlertCircle,
-  UserRoundCheck,
-  User,
-} from "lucide-react";
-import { Button } from "@/components/ui/button";
-import Input from "@/components/ui/input";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Label } from "@/components/ui/label";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
+import { useRouter } from "next/navigation";
+import CustomColorButton from "@/components/ui/CustomColorButton";
+import InputError from "@/components/ui/InputError";
+import { Input } from "antd";
+import {
+  LockOutlined,
+  EyeOutlined,
+  EyeInvisibleOutlined,
+} from "@ant-design/icons";
 import { forgotPasswordVerify } from "@/app/Api";
 import { useSearchParams } from "next/navigation";
 
 export default function PasswordReset({ params }) {
-  const { token } = use(params);
-  const [newPassword, setNewPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState("");
+  const { token } = params;
+  const [data, setData] = useState({
+    password: "",
+    password_confirmation: "",
+  });
+  const [errors, setErrors] = useState({});
+  const [processing, setProcessing] = useState(false);
+  const [error, setError] = useState(null);
   const [success, setSuccess] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const searchParams = useSearchParams();
   const email = searchParams.get("email");
+  const router = useRouter();
 
-  const handleSubmit = async (e) => {
+  const submit = async (e) => {
     e.preventDefault();
-    setIsLoading(true);
-    setError("");
+    setProcessing(true);
+    setErrors({});
 
     // Password validation
-    if (newPassword.length < 6) {
+    if (data.password.length < 6) {
       setError("Mật khẩu phải từ 6 ký tự trở lên.");
-      setIsLoading(false);
+      setProcessing(false);
       return;
     }
 
-    if (newPassword !== confirmPassword) {
+    if (data.password !== data.password_confirmation) {
       setError("Mật khẩu xác nhận không khớp.");
-      setIsLoading(false);
+      setProcessing(false);
       return;
     }
 
     try {
       await forgotPasswordVerify({
         token,
-        password: newPassword,
-        password_confirmation: confirmPassword,
+        password: data.password,
+        password_confirmation: data.password_confirmation,
         email,
       });
       setSuccess(true);
     } catch (err) {
       console.log(err);
-
       setError(err.response.data.message);
     } finally {
-      setIsLoading(false);
+      setProcessing(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center bg-gray-100 justify-center px-4">
-      <Card className="w-full max-w-md">
-        <CardHeader className="space-y-1">
-          <CardTitle className="text-2xl font-bold text-center">
-            Thiết lập lại mật khẩu
-          </CardTitle>
-          <CardDescription className="text-center">
-            Điền mật khẩu mới của bạn bên dưới.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {error && (
-            <Alert variant="destructive" className="mb-4">
-              <AlertCircle className="h-4 w-4" />
-              <AlertTitle>Lỗi</AlertTitle>
-              <AlertDescription>{error}</AlertDescription>
-            </Alert>
-          )}
-          {success ? (
-            <Alert variant="success" className="mb-4">
-              <UserRoundCheck className="h-4 w-4" />
-              <AlertTitle>Thành công</AlertTitle>
-              <AlertDescription>
-                Mật khẩu của bạn đã được thiết lập lại thành công. Bạn có thể
-                đăng nhập với mật khẩu mới ngay bây giờ.
-              </AlertDescription>
-            </Alert>
-          ) : (
-            <form onSubmit={handleSubmit}>
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="newPassword">Mật khẩu mới</Label>
-                  <div className="relative">
-                    <Input
-                      id="newPassword"
-                      type={showPassword ? "text" : "password"}
-                      value={newPassword}
-                      onChange={(e) => setNewPassword(e.target.value)}
-                      required
-                    />
-                    <Button
+    <>
+      <div className="min-h-screen flex items-center justify-center auth-background bg-[#eaf3ef] dark:bg-neutral-800 px-4">
+        <div className="rounded-xl border bg-card text-card-foreground shadow w-full bg-white dark:!bg-neutral-700 dark:!border-neutral-500 max-w-md">
+          <div className="flex flex-col p-6 -mb-5 space-y-4 text-center">
+            <div className="flex justify-center">
+              <Link className="flex gap-x-1 items-center" href="/">
+                <Image
+                  alt="CYO's Logo"
+                  width={50}
+                  height={50}
+                  src="/images/logo.png"
+                />
+                <div className="text-[18px] text-left font-light text-[#319527] leading-5">
+                  <h1 className="font-light">Diễn đàn học sinh</h1>
+                  <h1 className="font-bold">Chuyên Biên Hòa</h1>
+                </div>
+              </Link>
+            </div>
+          </div>
+          <div className="p-6 pt-0">
+            <form className="space-y-4" onSubmit={submit}>
+              <input type="hidden" name="_token" defaultValue="" />
+              <div className="space-y-2">
+                <Input
+                  placeholder="Mật khẩu mới"
+                  prefix={<LockOutlined />}
+                  type={showPassword ? "text" : "password"}
+                  name="password"
+                  value={data.password}
+                  onChange={(e) =>
+                    setData((prev) => ({ ...prev, password: e.target.value }))
+                  }
+                  status={errors.password ? "error" : ""}
+                  suffix={
+                    <button
                       type="button"
-                      variant="ghost"
-                      size="icon"
-                      className="absolute right-0 top-0"
                       onClick={() => setShowPassword(!showPassword)}
+                      className="text-gray-400 hover:text-gray-600"
                     >
                       {showPassword ? (
-                        <EyeOff className="h-4 w-4" />
+                        <EyeInvisibleOutlined />
                       ) : (
-                        <Eye className="h-4 w-4" />
+                        <EyeOutlined />
                       )}
-                    </Button>
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="confirmPassword">Xác nhận mật khẩu mới</Label>
-                  <div className="relative">
-                    <Input
-                      id="confirmPassword"
-                      type={showConfirmPassword ? "text" : "password"}
-                      value={confirmPassword}
-                      onChange={(e) => setConfirmPassword(e.target.value)}
-                      required
-                    />
-                    <Button
+                    </button>
+                  }
+                />
+
+                <InputError message={errors.password} className="mt-2" />
+              </div>
+              <div className="space-y-2">
+                <Input
+                  placeholder="Xác nhận mật khẩu mới"
+                  prefix={<LockOutlined />}
+                  type={showConfirmPassword ? "text" : "password"}
+                  name="password_confirmation"
+                  value={data.password_confirmation}
+                  onChange={(e) =>
+                    setData((prev) => ({
+                      ...prev,
+                      password_confirmation: e.target.value,
+                    }))
+                  }
+                  status={errors.password_confirmation ? "error" : ""}
+                  suffix={
+                    <button
                       type="button"
-                      variant="ghost"
-                      size="icon"
-                      className="absolute right-0 top-0"
                       onClick={() =>
                         setShowConfirmPassword(!showConfirmPassword)
                       }
+                      className="text-gray-400 hover:text-gray-600"
                     >
                       {showConfirmPassword ? (
-                        <EyeOff className="h-4 w-4" />
+                        <EyeInvisibleOutlined />
                       ) : (
-                        <Eye className="h-4 w-4" />
+                        <EyeOutlined />
                       )}
-                    </Button>
-                  </div>
+                    </button>
+                  }
+                />
+
+                <InputError
+                  message={errors.password_confirmation}
+                  className="mt-2"
+                />
+              </div>
+              {success ? (
+                <div className="text-green-500 text-center mb-3">
+                  Mật khẩu của bạn đã được thiết lập lại thành công. Bạn có thể
+                  đăng nhập với mật khẩu mới ngay bây giờ.
                 </div>
-                <Button
-                  type="submit"
-                  className="w-full bg-green-600 hover:bg-green-700"
-                  disabled={isLoading}
+              ) : error ? (
+                <div className="text-red-500 text-center mb-3">{error}</div>
+              ) : null}
+              <CustomColorButton
+                bgColor={"#319527"}
+                block
+                className="text-white font-semibold py-[17px] mb-1.5 rounded"
+                loading={processing}
+                htmlType="submit"
+              >
+                Thiết lập lại mật khẩu
+              </CustomColorButton>
+              <div className="flex justify-center text-sm">
+                <Link
+                  className="text-primary-500 hover:text-primary-500 hover:underline"
+                  href="/login"
                 >
-                  {isLoading ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Đang thiết lập lại mật khẩu...
-                    </>
-                  ) : (
-                    "Thiết lập lại mật khẩu"
-                  )}
-                </Button>
+                  Quay lại Đăng nhập
+                </Link>
               </div>
             </form>
-          )}
-        </CardContent>
-        <CardFooter>
-          <p className="text-center text-sm text-gray-600 mt-2 w-full">
-            Đã nhớ mật khẩu?{" "}
-            <Link href="/login" className="text-green-600 hover:underline">
-              Quay lại Đăng nhập
-            </Link>
-          </p>
-        </CardFooter>
-      </Card>
-    </div>
+          </div>
+        </div>
+      </div>
+    </>
   );
 }

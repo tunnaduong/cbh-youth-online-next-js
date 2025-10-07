@@ -1,13 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Head from "next/head";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import CustomColorButton from "@/components/ui/CustomColorButton";
 import InputError from "@/components/ui/InputError";
-import { Input, Checkbox, message } from "antd";
+import { Input } from "antd";
 import { LockOutlined, UserOutlined } from "@ant-design/icons";
 import { useAuthContext } from "@/contexts/Support";
 import { loginRequest } from "../Api";
@@ -20,12 +19,10 @@ export default function Login() {
   const [data, setData] = useState({
     email: "",
     password: "",
-    remember: false,
   });
 
   const [errors, setErrors] = useState({});
   const [processing, setProcessing] = useState(false);
-  const [flashMessage, setFlashMessage] = useState(null);
   const [error, setError] = useState(null);
 
   // Check if user is already logged in
@@ -34,21 +31,6 @@ export default function Login() {
       router.push("/");
     }
   }, [loggedIn, router]);
-
-  // Handle flash messages from URL parameters
-  useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const message = urlParams.get("message");
-    const error = urlParams.get("error");
-
-    if (message) {
-      setFlashMessage(message);
-      message.info(message);
-    }
-    if (error) {
-      setError(error);
-    }
-  }, []);
 
   // Reset password on unmount
   useEffect(() => {
@@ -61,7 +43,6 @@ export default function Login() {
     e.preventDefault();
     setProcessing(true);
     setErrors({});
-    setError(null);
 
     try {
       // Get continue from current URL parameters
@@ -88,16 +69,20 @@ export default function Login() {
       }
     } catch (error) {
       setProcessing(false);
-      setError(error.message);
+
+      // Handle backend validation errors
+      if (error.response && error.response.data && error.response.data.errors) {
+        setErrors(error.response.data.errors);
+        console.log("err1", error.response.data.errors);
+      } else {
+        setError(error.message);
+        console.log("err2", error);
+      }
     }
   };
 
   return (
     <>
-      <Head>
-        <title>Đăng nhập</title>
-      </Head>
-
       <div className="min-h-screen flex items-center justify-center auth-background bg-[#eaf3ef] dark:bg-neutral-800 px-4">
         <div className="rounded-xl border bg-card text-card-foreground shadow w-full bg-white dark:!bg-neutral-700 dark:!border-neutral-500 max-w-md">
           <div className="flex flex-col p-6 -mb-5 space-y-4 text-center">
@@ -129,10 +114,10 @@ export default function Login() {
                   onChange={(e) =>
                     setData((prev) => ({ ...prev, email: e.target.value }))
                   }
-                  status={errors.email ? "error" : ""}
+                  status={errors.username ? "error" : ""}
                 />
 
-                <InputError message={errors.email} className="mt-2" />
+                <InputError message={errors.username} className="mt-2" />
               </div>
               <div className="space-y-2">
                 <Input
@@ -149,23 +134,6 @@ export default function Login() {
 
                 <InputError message={errors.password} className="mt-2" />
               </div>
-              <div className="mt-3 flex justify-between text-sm">
-                <Checkbox
-                  name="remember"
-                  checked={data.remember}
-                  onChange={(e) =>
-                    setData((prev) => ({ ...prev, remember: e.target.checked }))
-                  }
-                >
-                  Ghi nhớ đăng nhập
-                </Checkbox>
-                <Link
-                  className="text-primary-500 hover:text-primary-500 hover:underline"
-                  href="/password/reset"
-                >
-                  Quên mật khẩu?
-                </Link>
-              </div>
               <CustomColorButton
                 bgColor={"#319527"}
                 block
@@ -175,7 +143,13 @@ export default function Login() {
               >
                 Đăng nhập
               </CustomColorButton>
-              <div className="flex justify-center text-sm">
+              <div className="flex justify-between text-sm">
+                <Link
+                  className="text-primary-500 hover:text-primary-500 hover:underline"
+                  href="/password/reset"
+                >
+                  Quên mật khẩu?
+                </Link>
                 <Link
                   className="text-primary-500 hover:text-primary-500 hover:underline"
                   href="/register"
@@ -190,9 +164,12 @@ export default function Login() {
           )}
           <div className="flex items-center p-6 pt-0">
             <div className="w-full space-y-2">
+              <div className="text-center text-gray-500 text-sm mb-2">
+                Đăng nhập bằng
+              </div>
               <div className="flex justify-center space-x-4">
                 <a
-                  href="/auth/facebook"
+                  href="/login/facebook"
                   className="inline-flex dark:!border-neutral-500 dark:bg-[#2c2c2c] items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 border border-input shadow-sm hover:bg-[#eeeeee] hover:text-accent-foreground w-10 h-10"
                 >
                   <svg
@@ -213,7 +190,7 @@ export default function Login() {
                   <span className="sr-only">Facebook</span>
                 </a>
                 <a
-                  href="/auth/google"
+                  href="/login/google"
                   className="inline-flex dark:!border-neutral-500 dark:bg-[#2c2c2c] items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 border border-input shadow-sm hover:bg-[#eeeeee] hover:text-accent-foreground w-10 h-10"
                 >
                   <svg

@@ -22,7 +22,7 @@ export default function RootLayout({ children }) {
         />
         <title>Thanh niên Chuyên Biên Hòa Online</title>
       </head>
-      <body className="bg-[#F8F8F8]">
+      <body className="bg-[#F8F8F8] dark:bg-neutral-800">
         <ThemeProvider>
           <LoadingWrapper>
             <App>

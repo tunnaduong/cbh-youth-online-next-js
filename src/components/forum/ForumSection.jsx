@@ -8,6 +8,7 @@ import VerifiedBadge from "@/components/ui/Badges";
 import { useState, useEffect } from "react";
 import { getHomeData } from "@/app/Api";
 import SkeletonLoader from "./skeletonLoader";
+import Badges from "@/components/ui/Badges";
 
 export default function ForumSection() {
   const [mainCategories, setMainCategories] = useState([]);
@@ -127,6 +128,9 @@ export default function ForumSection() {
                               className="hover:text-primary-500 hover:underline truncate"
                             >
                               {subforum.latest_topic?.author_name}
+                              {subforum.latest_topic?.verified && (
+                                <Badges className="ml-0.5 mb-0.5 inline-verified__badge" />
+                              )}
                             </Link>
                           </>
                         )}

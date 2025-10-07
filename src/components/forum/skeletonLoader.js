@@ -6,7 +6,7 @@ const SkeletonLoader = () => {
     <div className="max-w-[775px] w-[100%]">
       <div className="rounded-lg animate-pulse mb-6">
         {/* Skeleton for the item title */}
-        <div className="h-6 bg-gray-300 dark:bg-gray-600 rounded mb-2 w-[30%]"></div>
+        <div className="h-6 bg-gray-300 dark:bg-gray-600 rounded mb-2 w-[20%]"></div>
         <div className="bg-white dark:!bg-[var(--main-white)] rounded-lg long-shadow">
           {/* Skeleton for the subforum items */}
           {[...Array(4)].map((_, index) => (
@@ -31,7 +31,7 @@ const SkeletonLoader = () => {
               </div>
               <div
                 style={{ maxWidth: "calc(42%)" }}
-                className="flex-1 bg-gray-100 dark:bg-[#2b2d2c] p-2 px-2 mr-2 rounded-md"
+                className="flex-1 bg-gray-100 dark:bg-[#2b2d2c] p-2 px-2 mr-2 rounded-md hidden sm:block"
               >
                 <div className="h-5 bg-gray-300 dark:bg-gray-600 rounded mb-1 w-2/3"></div>
                 <div className="flex items-center mt-1 text-gray-400 dark:text-gray-500">

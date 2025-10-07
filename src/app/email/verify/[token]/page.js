@@ -1,14 +1,14 @@
 "use client";
 
 import Navbar from "@/components/include/navbar";
-import React, { use } from "react";
+import React from "react";
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { verifyEmail } from "@/app/Api";
 
 const EmailVerify = ({ params }) => {
-  const { token } = use(params);
+  const { token } = params;
   const router = useRouter();
   const [error, setError] = React.useState(null);
 

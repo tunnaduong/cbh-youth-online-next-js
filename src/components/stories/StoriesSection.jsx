@@ -6,6 +6,7 @@ import { IoIosAdd } from "react-icons/io";
 import CreateStoryModal from "../modals/CreateStoryModal";
 import { Drawer, message } from "antd";
 import { StoryViewer } from "./StoryViewer";
+import { useRouter } from "next/navigation";
 
 function StoriesSection() {
   // Mock data for now - these should be fetched from API in production
@@ -45,11 +46,13 @@ function StoriesSection() {
     }
   }, [viewerModalOpen]);
 
+  const router = useRouter();
+
   const handleCreateStory = () => {
     if (!auth?.user) {
       message.error("Bạn cần đăng nhập để tạo tin");
-      // TODO: Replace with Next.js router navigation
-      // router.visit("/login", { preserveScroll: true, showProgress: true });
+      // Next.js router navigation without full reload
+      router.push("/login");
       return;
     }
     setCreateModalOpen(true);
@@ -58,8 +61,8 @@ function StoriesSection() {
   const handleViewStory = (userStories, storyIndex = 0) => {
     if (!auth?.user) {
       message.error("Bạn cần đăng nhập để xem tin");
-      // TODO: Replace with Next.js router navigation
-      // router.visit("/login", { preserveScroll: true });
+      // Next.js router navigation without full reload
+      router.push("/login");
       return;
     }
 

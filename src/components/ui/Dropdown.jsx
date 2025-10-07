@@ -128,7 +128,7 @@ const DropdownLink = ({
 
   return (
     <Link
-      href={href}
+      href={href || "#"}
       method={method}
       as={as}
       {...props}

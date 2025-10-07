@@ -1,23 +1,8 @@
 import * as Api from "../services/api/ApiByAxios";
 
 // Authentication
-export const loginRequest = async (params) => {
-  try {
-    const response = await Api.postRequest("/v1.0/login", params);
-    return response;
-  } catch (error) {
-    if (error.response && error.response.data && error.response.data.error) {
-      throw new Error(error.response.data.error);
-    } else if (
-      error.response &&
-      error.response.data &&
-      error.response.data.message
-    ) {
-      throw new Error(error.response.data.message);
-    } else {
-      throw new Error("Đã có lỗi không mong muốn xảy ra.");
-    }
-  }
+export const loginRequest = (params) => {
+  return Api.postRequest("/v1.0/login", params);
 };
 
 export const logoutRequest = () => {
@@ -86,6 +71,10 @@ export const voteComment = (id, params) => {
 
 export const getForumCategories = () => {
   return Api.getRequest("/v1.0/forum/categories");
+};
+
+export const getForumData = () => {
+  return Api.getRequest("/v1.0/forum-data");
 };
 
 export const getHomeData = (sort = "latest") => {

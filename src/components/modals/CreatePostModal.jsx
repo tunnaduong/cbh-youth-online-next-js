@@ -9,10 +9,12 @@ import VerifiedBadge from "../ui/Badges";
 import { IoEarth, IoCaretDown } from "react-icons/io5";
 import { FaExternalLinkAlt, FaMarkdown } from "react-icons/fa";
 import { FaFileLines } from "react-icons/fa6";
+import { useAuthContext } from "@/contexts/Support";
+import { getForumData } from "@/app/Api";
 
 const CreatePostModal = ({ open, onClose }) => {
-  // Mock auth data - replace with actual auth context
-  const auth = { user: null }; // TODO: Replace with actual auth state
+  const { currentUser } = useAuthContext();
+
   const [selectedSubforum, setSelectedSubforum] = useState(null);
   const [imageFiles, setImageFiles] = useState([]);
   const [imagePreviews, setImagePreviews] = useState([]);
@@ -23,21 +25,23 @@ const CreatePostModal = ({ open, onClose }) => {
 
   // Fetch forum data when modal opens
   useEffect(() => {
-    if (open && auth?.user) {
+    if (open && currentUser) {
       setLoading(true);
-      fetch("/api/forum-data")
-        .then((response) => response.json())
-        .then((data) => {
-          setForumData(data);
+      getForumData()
+        .then((response) => {
+          setForumData(response.data || { main_categories: [] });
           setLoading(false);
         })
         .catch((error) => {
           console.error("Error fetching forum data:", error);
-          message.error("Không thể tải dữ liệu diễn đàn");
+          setForumData({ main_categories: [] }); // Ensure we have a fallback structure
+          message.error(
+            "Không thể tải dữ liệu diễn đàn. Vui lòng thử lại sau."
+          );
           setLoading(false);
         });
     }
-  }, [open, auth?.user]);
+  }, [open, currentUser]);
 
   // Replace useForm with regular state management
   const [data, setData] = useState({
@@ -70,13 +74,13 @@ const CreatePostModal = ({ open, onClose }) => {
   const handleSubmit = (e) => {
     e.preventDefault();
     console.log("Form data:", data);
-    console.log("Auth user:", auth?.user);
+    console.log("Auth user:", currentUser);
     console.log("Form validation - Title:", data.title);
     console.log("Form validation - Description:", data.description);
     console.log("Form validation - Subforum:", data.subforum_id);
 
     // Check if user is authenticated
-    if (!auth?.user) {
+    if (!currentUser) {
       message.error("Bạn cần đăng nhập để tạo bài viết");
       return;
     }
@@ -129,7 +133,7 @@ const CreatePostModal = ({ open, onClose }) => {
     // Add new files to existing ones
     const newFiles = [...imageFiles, ...files];
     setImageFiles(newFiles);
-    setData("image_files", newFiles);
+    setData((prev) => ({ ...prev, image_files: newFiles }));
 
     // Create previews for new files
     files.forEach((file) => {
@@ -182,7 +186,7 @@ const CreatePostModal = ({ open, onClose }) => {
     // Add new files to existing ones
     const newFiles = [...documentFiles, ...files];
     setDocumentFiles(newFiles);
-    setData("document_files", newFiles);
+    setData((prev) => ({ ...prev, document_files: newFiles }));
   };
 
   const removeImage = (index) => {
@@ -191,26 +195,24 @@ const CreatePostModal = ({ open, onClose }) => {
 
     setImageFiles(newFiles);
     setImagePreviews(newPreviews);
-    setData("image_files", newFiles);
+    setData((prev) => ({ ...prev, image_files: newFiles }));
   };
 
   const removeDocument = (index) => {
     const newFiles = documentFiles.filter((_, i) => i !== index);
     setDocumentFiles(newFiles);
-    setData("document_files", newFiles);
+    setData((prev) => ({ ...prev, document_files: newFiles }));
   };
 
   const handleSubforumChange = (value) => {
     setSelectedSubforum(value);
-    setData("subforum_id", value);
+    setData((prev) => ({ ...prev, subforum_id: value }));
   };
 
   const handleVisibilityChange = (value) => {
     setSelectedVisibility(value);
     // Always set visibility to 0 (not hidden from feed)
-    setData("visibility", 0);
-    // Set privacy based on selection
-    setData("privacy", value);
+    setData((prev) => ({ ...prev, visibility: 0, privacy: value }));
   };
 
   const visibilityMenuItems = [
@@ -295,8 +297,8 @@ const CreatePostModal = ({ open, onClose }) => {
               </div>
             ) : (
               <img
-                src={`https://api.chuyenbienhoa.com/v1.0/users/${auth?.user?.username}/avatar`}
-                alt={auth?.user?.username}
+                src={`https://api.chuyenbienhoa.com/v1.0/users/${currentUser?.username}/avatar`}
+                alt={currentUser?.username}
                 className="border w-11 h-11 rounded-full"
               />
             )}
@@ -306,8 +308,8 @@ const CreatePostModal = ({ open, onClose }) => {
                   "Người dùng ẩn danh"
                 ) : (
                   <>
-                    {auth?.user?.profile?.profile_name}
-                    {auth?.user?.profile?.verified == "1" && <VerifiedBadge />}
+                    {currentUser?.profile_name}
+                    {currentUser?.verified && <VerifiedBadge />}
                   </>
                 )}
               </span>
@@ -370,7 +372,9 @@ const CreatePostModal = ({ open, onClose }) => {
             <CustomInput
               placeholder="Tiêu đề bài viết"
               value={data.title}
-              onChange={(e) => setData("title", e.target.value)}
+              onChange={(e) =>
+                setData((prev) => ({ ...prev, title: e.target.value }))
+              }
               error={errors.title}
             />
             <div className="rounded-md border shadow-sm pb-2 bg-gray-100 dark:bg-neutral-600 dark:!border-neutral-500">
@@ -383,7 +387,12 @@ const CreatePostModal = ({ open, onClose }) => {
                   spellCheck="false"
                   data-ms-editor="true"
                   value={data.description}
-                  onChange={(e) => setData("description", e.target.value)}
+                  onChange={(e) =>
+                    setData((prev) => ({
+                      ...prev,
+                      description: e.target.value,
+                    }))
+                  }
                   rows={5}
                 />
                 {errors.description && (
@@ -428,14 +437,17 @@ const CreatePostModal = ({ open, onClose }) => {
               onChange={handleSubforumChange}
               style={{ width: "100%" }}
               loading={loading}
-              options={forumData.main_categories.map((category) => ({
-                label: <span>{category.name}</span>,
-                title: category.name,
-                options: category.sub_forums.map((subforum) => ({
-                  label: <span>{subforum.name}</span>,
-                  value: subforum.id,
-                })),
-              }))}
+              options={
+                forumData?.main_categories?.map((category) => ({
+                  label: <span>{category.name}</span>,
+                  title: category.name,
+                  options:
+                    category.sub_forums?.map((subforum) => ({
+                      label: <span>{subforum.name}</span>,
+                      value: subforum.id,
+                    })) || [],
+                })) || []
+              }
               placeholder={loading ? "Đang tải..." : "Chọn chuyên mục phù hợp"}
               className="shadow-sm"
             />
@@ -456,7 +468,9 @@ const CreatePostModal = ({ open, onClose }) => {
                 </div>
                 <Switch
                   checked={data.anonymous}
-                  onChange={(checked) => setData("anonymous", checked)}
+                  onChange={(checked) =>
+                    setData((prev) => ({ ...prev, anonymous: checked }))
+                  }
                   size="default"
                 />
               </div>

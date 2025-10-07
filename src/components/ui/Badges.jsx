@@ -1,4 +1,4 @@
-export default function Badges({ color = "text-green-600" }) {
+export default function Badges({ color = "text-green-600", className }) {
   return (
     <svg
       stroke="currentColor"
@@ -6,7 +6,7 @@ export default function Badges({ color = "text-green-600" }) {
       strokeWidth={0}
       viewBox="0 0 20 20"
       aria-hidden="true"
-      className={`text-base leading-5 ml-0.5 shrink-0 ${color}`}
+      className={`text-base leading-5 ml-0.5 shrink-0 ${color} ${className}`}
       height="1em"
       width="1em"
       xmlns="http://www.w3.org/2000/svg"

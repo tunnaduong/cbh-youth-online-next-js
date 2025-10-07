@@ -39,17 +39,21 @@ export default function BottomCTA() {
             </p>
             <div className="flex gap-2 sm:!gap-10">
               <Link
-                href={`/login?continue=${encodeURIComponent(
-                  window.location.href
-                )}`}
+                href={`/login?continue=${
+                  typeof window !== "undefined"
+                    ? encodeURIComponent(window.location.href)
+                    : "/"
+                }`}
                 className="mt-3 px-4 py-2 bg-gray-500 !text-white rounded-lg zoom-btn"
               >
                 Đã có tài khoản?
               </Link>
               <Link
-                href={`/register?continue=${encodeURIComponent(
-                  window.location.href
-                )}`}
+                href={`/register?continue=${
+                  typeof window !== "undefined"
+                    ? encodeURIComponent(window.location.href)
+                    : "/"
+                }`}
                 className="mt-3 px-4 py-2 bg-primary-500 !text-white rounded-lg zoom-btn"
               >
                 Tham gia ngay

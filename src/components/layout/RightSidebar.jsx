@@ -9,6 +9,7 @@ import { useState, useEffect } from "react";
 import CreatePostModal from "../modals/CreatePostModal";
 import UploadRecordingModal from "../modals/UploadRecordingModal";
 import { getTopUsers } from "../../app/Api";
+import { useAuthContext } from "@/contexts/Support";
 
 export default function RightSidebar() {
   const iconSize = "20px";
@@ -22,8 +23,7 @@ export default function RightSidebar() {
   // Get current URL to determine if we're on recordings page
   const isRecordingsPage = pathname.startsWith("/recordings");
 
-  // Mock authentication state - replace with actual auth context
-  const is_logged_in = false; // TODO: Replace with actual auth state
+  const { loggedIn } = useAuthContext();
 
   // Fetch top users data
   useEffect(() => {
@@ -48,7 +48,7 @@ export default function RightSidebar() {
   }, []);
 
   const handleCreatePost = () => {
-    if (!is_logged_in) {
+    if (!loggedIn) {
       message.error("Bạn cần đăng nhập để tạo cuộc thảo luận");
       router.push(
         "/login?continue=" + encodeURIComponent(window.location.href)
