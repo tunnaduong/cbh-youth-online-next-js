@@ -5,7 +5,7 @@ import React, { createContext, useContext } from "react";
 // Create the context
 const ForumDataContext = createContext({
   // Home data
-  latestPosts: [],
+  latestPosts: {},
   setLatestPosts: () => {},
   mainCategories: [],
   setMainCategories: () => {},
@@ -41,7 +41,7 @@ const ForumDataContext = createContext({
   setPostDataError: () => {},
 
   // Cache management
-  lastHomeDataFetch: null,
+  lastHomeDataFetch: {},
   setLastHomeDataFetch: () => {},
   lastForumDataFetch: null,
   setLastForumDataFetch: () => {},

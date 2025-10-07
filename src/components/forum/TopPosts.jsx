@@ -18,13 +18,11 @@ export default function TopPosts() {
   const { refreshTrigger } = usePostRefresh();
 
   // Use context data
-  const {
-    latestPosts,
-    homeDataLoading,
-    homeDataError,
-    fetchHomeData,
-    setLatestPosts,
-  } = useForumData();
+  const { latestPosts, homeDataLoading, homeDataError, fetchHomeData } =
+    useForumData();
+
+  // Get posts for current sort
+  const currentPosts = latestPosts[currentSort] || [];
 
   // Fetch posts when sort changes or refresh is triggered
   useEffect(() => {
@@ -185,16 +183,16 @@ export default function TopPosts() {
           <div className="flex items-center justify-center py-8 text-red-500">
             <span>Lỗi: {homeDataError}</span>
           </div>
-        ) : latestPosts.length === 0 ? (
+        ) : currentPosts.length === 0 ? (
           <div className="flex items-center justify-center py-8 text-gray-500">
             <span>Không có bài viết nào</span>
           </div>
         ) : (
-          latestPosts.map((post, index) => (
+          currentPosts.map((post, index) => (
             <div
               key={`post-${post.id}`}
               className={`${
-                index === latestPosts.length - 1 ? "" : "bor-bottom"
+                index === currentPosts.length - 1 ? "" : "bor-bottom"
               } dark:!border-b-[#585857] hover:bg-gray-50 flex py-1 px-2 dark:hover:bg-neutral-600`}
             >
               <RankBadge index={index} />

@@ -5,8 +5,8 @@ import { getHomeData, getForumCategories, getPostDetail } from "../../app/Api";
 import ForumDataContext from "../ForumDataContext";
 
 export const ForumDataProvider = ({ children }) => {
-  // Home data states
-  const [latestPosts, setLatestPosts] = useState([]);
+  // Home data states - now sort-specific
+  const [latestPosts, setLatestPosts] = useState({});
   const [mainCategories, setMainCategories] = useState([]);
   const [stats, setStats] = useState(null);
 
@@ -29,7 +29,7 @@ export const ForumDataProvider = ({ children }) => {
   const [postDataError, setPostDataError] = useState(null);
 
   // Cache management
-  const [lastHomeDataFetch, setLastHomeDataFetch] = useState(null);
+  const [lastHomeDataFetch, setLastHomeDataFetch] = useState({});
   const [lastForumDataFetch, setLastForumDataFetch] = useState(null);
   const [lastPostDataFetch, setLastPostDataFetch] = useState({});
 
@@ -42,12 +42,13 @@ export const ForumDataProvider = ({ children }) => {
   const fetchHomeData = async (sort = "latest", forceRefresh = false) => {
     const now = Date.now();
 
-    // Check if we have cached data and it's still fresh
+    // Check if we have cached data for this specific sort and it's still fresh
     if (
       !forceRefresh &&
-      lastHomeDataFetch &&
-      now - lastHomeDataFetch < HOME_CACHE_DURATION &&
-      (latestPosts.length > 0 || mainCategories.length > 0)
+      lastHomeDataFetch[sort] &&
+      now - lastHomeDataFetch[sort] < HOME_CACHE_DURATION &&
+      latestPosts[sort] &&
+      latestPosts[sort].length > 0
     ) {
       return;
     }
@@ -59,10 +60,16 @@ export const ForumDataProvider = ({ children }) => {
       const data = response.data;
 
       if (data) {
-        setLatestPosts(data.latestPosts || []);
+        setLatestPosts((prev) => ({
+          ...prev,
+          [sort]: data.latestPosts || [],
+        }));
         setMainCategories(data.mainCategories || []);
         setStats(data.stats || null);
-        setLastHomeDataFetch(now);
+        setLastHomeDataFetch((prev) => ({
+          ...prev,
+          [sort]: now,
+        }));
       }
     } catch (err) {
       console.error("Error fetching home data:", err);
@@ -150,14 +157,14 @@ export const ForumDataProvider = ({ children }) => {
 
   // Clear all cached data
   const clearCache = () => {
-    setLatestPosts([]);
+    setLatestPosts({});
     setMainCategories([]);
     setStats(null);
     setForumCategories([]);
     setCurrentCategory(null);
     setPostDetails({});
     setPostComments({});
-    setLastHomeDataFetch(null);
+    setLastHomeDataFetch({});
     setLastForumDataFetch(null);
     setLastPostDataFetch({});
     setHomeDataError(null);
