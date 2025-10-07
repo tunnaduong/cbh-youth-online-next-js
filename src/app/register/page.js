@@ -211,7 +211,11 @@ export default function RegisterScreen() {
               </div>
               <div className="flex justify-center space-x-4">
                 <a
-                  href="/login/facebook"
+                  href={`/login/facebook?continue=${encodeURIComponent(
+                    typeof window !== "undefined"
+                      ? new URLSearchParams(window.location.search).get("continue") || "/"
+                      : "/"
+                  )}`}
                   className="inline-flex dark:!border-neutral-500 dark:bg-[#2c2c2c] items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 border border-input shadow-sm hover:bg-[#eeeeee] hover:text-accent-foreground w-10 h-10"
                 >
                   <svg
@@ -232,7 +236,11 @@ export default function RegisterScreen() {
                   <span className="sr-only">Facebook</span>
                 </a>
                 <a
-                  href="/login/google"
+                  href={`/login/google?continue=${encodeURIComponent(
+                    typeof window !== "undefined"
+                      ? new URLSearchParams(window.location.search).get("continue") || "/"
+                      : "/"
+                  )}`}
                   className="inline-flex dark:!border-neutral-500 dark:bg-[#2c2c2c] items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 border border-input shadow-sm hover:bg-[#eeeeee] hover:text-accent-foreground w-10 h-10"
                 >
                   <svg
