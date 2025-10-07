@@ -1,7 +1,7 @@
-import React, { use } from "react";
+import React from "react";
 
 export default function UserProfile({ params }) {
-  const { username } = use(params);
+  const { username } = params;
 
   return (
     <div>

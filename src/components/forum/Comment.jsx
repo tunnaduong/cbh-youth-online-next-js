@@ -115,9 +115,13 @@ export default function Comment({
 
   const userVoteValue = userVote ? userVote.vote_value : 0;
 
-  const CollapseIcon = () => <ChevronDown className="w-4 h-4" />;
+  const CollapseIcon = () => (
+    <ChevronDown className="w-4 h-4 dark:text-neutral-300" />
+  );
 
-  const ExpandIcon = () => <ChevronRight className="w-4 h-4" />;
+  const ExpandIcon = () => (
+    <ChevronRight className="w-4 h-4 dark:text-neutral-300" />
+  );
 
   const UpvoteIcon = () => <IoArrowUpSharp size={16} />;
   const DownvoteIcon = () => <IoArrowDownSharp size={16} />;
@@ -212,7 +216,7 @@ export default function Comment({
                 <span className="text-2xl text-white font-medium">?</span>
               </div>
             ) : (
-              <Link href={`/profile/${comment.author.username}`}>
+              <Link href={`/${comment.author.username}`}>
                 <img
                   src={`https://api.chuyenbienhoa.com/v1.0/users/${comment.author.username}/avatar`}
                   alt={`${comment.author.profile_name}'s avatar`}
@@ -231,7 +235,7 @@ export default function Comment({
                   Người dùng ẩn danh
                 </span>
               ) : (
-                <Link href={`/profile/${comment.author.username}`}>
+                <Link href={`/${comment.author.username}`}>
                   <span className="text-sm font-medium text-gray-900 dark:text-gray-100 hover:underline">
                     {comment.author.profile_name}
                   </span>

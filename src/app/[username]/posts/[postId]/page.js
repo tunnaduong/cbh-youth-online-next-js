@@ -4,6 +4,7 @@ import HomeLayout from "@/layouts/HomeLayout";
 // // import { Head, Link } from "@inertiajs/react"; // TODO: Replace with Next.js equivalent // TODO: Replace with Next.js equivalent
 import { useState, useEffect } from "react";
 import { useAuthContext } from "@/contexts/Support";
+import { useForumData } from "@/contexts/ForumDataContext";
 import { getPostDetail } from "@/app/Api";
 // // import { usePage, router } from "@inertiajs/react"; // TODO: Replace with Next.js equivalent // TODO: Replace with Next.js equivalent
 import { CommentInput } from "@/components/forum/CommentInput";
@@ -23,16 +24,34 @@ export default function PostDetail({ params }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const router = useRouter();
+
+  // Use context data for caching
+  const {
+    postDetails,
+    postComments,
+    postDataLoading,
+    postDataError,
+    fetchPostDetail,
+  } = useForumData();
   // Fetch post detail and comments
   useEffect(() => {
-    const fetchPostDetail = async () => {
+    const fetchPostData = async () => {
       try {
         setLoading(true);
-        const response = await getPostDetail(params.postId);
-        console.log(response.data);
-        setPost(response.data);
-        setComments(response.data.comments || []);
         setError(null);
+
+        // First try to get from context cache
+        if (postDetails[params.postId]) {
+          setPost(postDetails[params.postId]);
+          setComments(postComments[params.postId] || []);
+          setLoading(false);
+          return;
+        }
+
+        // If not in cache, fetch from API
+        const data = await fetchPostDetail(params.postId);
+        setPost(data);
+        setComments(data.comments || []);
       } catch (err) {
         setError(err.message || "Có lỗi xảy ra khi tải bài viết");
         message.error("Có lỗi xảy ra khi tải bài viết");
@@ -42,9 +61,9 @@ export default function PostDetail({ params }) {
     };
 
     if (params.postId) {
-      fetchPostDetail();
+      fetchPostData();
     }
-  }, [params.postId]);
+  }, [params.postId, postDetails, postComments, fetchPostDetail]);
 
   // Helper function to get time display
   const getTimeDisplay = (comment) => {
@@ -320,7 +339,7 @@ export default function PostDetail({ params }) {
     }, 500);
   };
 
-  if (loading) {
+  if (loading || postDataLoading) {
     return (
       <HomeLayout activeNav="home" activeBar={null}>
         <div className="px-1 xl:min-h-screen pt-4 flex items-center justify-center">
@@ -338,7 +357,7 @@ export default function PostDetail({ params }) {
     );
   }
 
-  if (error || !post) {
+  if (error || postDataError || !post) {
     notFound();
   }
 

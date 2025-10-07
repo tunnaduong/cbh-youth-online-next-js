@@ -7,32 +7,14 @@ import {
   ChatboxEllipsesOutline,
   PersonOutline,
 } from "react-ionicons";
-import { getHomeData } from "@/app/Api";
+import { useForumData } from "@/contexts/ForumDataContext";
 
 const ForumStats = () => {
-  const [stats, setStats] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  // Use context data
+  const { stats, homeDataLoading, homeDataError, fetchHomeData } =
+    useForumData();
 
-  const fetchStats = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      const response = await getHomeData();
-      setStats(response.data.stats);
-    } catch (err) {
-      setError(err.message);
-      console.error("Error fetching stats:", err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchStats();
-  }, []);
-
-  if (loading) {
+  if (homeDataLoading) {
     return (
       <div className="max-w-[775px] mx-auto bg-white dark:!bg-[var(--main-white)] p-6 rounded-lg long-shadow">
         <div className="flex items-center justify-center py-8">
@@ -43,11 +25,11 @@ const ForumStats = () => {
     );
   }
 
-  if (error) {
+  if (homeDataError) {
     return (
       <div className="max-w-[775px] mx-auto bg-white dark:!bg-[var(--main-white)] p-6 rounded-lg long-shadow">
         <div className="flex items-center justify-center py-8 text-red-500">
-          <span>Lỗi: {error}</span>
+          <span>Lỗi: {homeDataError}</span>
         </div>
       </div>
     );

@@ -65,7 +65,8 @@ export default function Navbar({ activeNav = null }) {
     logoutRequest();
     setCurrentUser({});
     setUserToken(null);
-    localStorage.clear();
+    localStorage.removeItem("CURRENT_USER");
+    localStorage.removeItem("TOKEN");
     location.href = "/login";
   };
 

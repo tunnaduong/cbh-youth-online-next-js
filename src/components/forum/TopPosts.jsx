@@ -8,46 +8,39 @@ import { RxHamburgerMenu } from "react-icons/rx";
 import { useState, useEffect } from "react";
 import Dropdown from "../ui/Dropdown";
 import { useSearchParams } from "next/navigation";
-import { getHomeData } from "@/app/Api";
+import { useForumData } from "@/contexts/ForumDataContext";
 import { usePostRefresh } from "@/contexts/PostRefreshContext";
 
 export default function TopPosts() {
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const [latestPosts, setLatestPosts] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
   const searchParams = useSearchParams();
   const currentSort = searchParams.get("sort") || "latest";
   const { refreshTrigger } = usePostRefresh();
 
-  const fetchPosts = async (sort = "latest") => {
-    try {
-      setLoading(true);
-      setError(null);
-      const response = await getHomeData(sort);
-      setLatestPosts(response.data.latestPosts || []);
-    } catch (err) {
-      setError(err.message);
-      console.error("Error fetching posts:", err);
-    } finally {
-      setLoading(false);
-    }
-  };
+  // Use context data
+  const {
+    latestPosts,
+    homeDataLoading,
+    homeDataError,
+    fetchHomeData,
+    setLatestPosts,
+  } = useForumData();
 
+  // Fetch posts when sort changes or refresh is triggered
   useEffect(() => {
-    fetchPosts(currentSort);
-  }, [currentSort]);
+    fetchHomeData(currentSort);
+  }, [currentSort, fetchHomeData]);
 
   // Listen for refresh triggers
   useEffect(() => {
     if (refreshTrigger > 0) {
-      fetchPosts(currentSort);
+      fetchHomeData(currentSort, true); // Force refresh
     }
-  }, [refreshTrigger, currentSort]);
+  }, [refreshTrigger, currentSort, fetchHomeData]);
 
   const handleRefresh = async () => {
     setIsRefreshing(true);
-    await fetchPosts(currentSort);
+    await fetchHomeData(currentSort, true); // Force refresh
     setTimeout(() => {
       setIsRefreshing(false);
     }, 950);
@@ -159,7 +152,7 @@ export default function TopPosts() {
         </div>
       </div>
       <div>
-        {loading ? (
+        {homeDataLoading ? (
           <div className="animate-pulse">
             {[...Array(10)].map((_, index) => (
               <div
@@ -188,9 +181,9 @@ export default function TopPosts() {
               </div>
             ))}
           </div>
-        ) : error ? (
+        ) : homeDataError ? (
           <div className="flex items-center justify-center py-8 text-red-500">
-            <span>Lỗi: {error}</span>
+            <span>Lỗi: {homeDataError}</span>
           </div>
         ) : latestPosts.length === 0 ? (
           <div className="flex items-center justify-center py-8 text-gray-500">

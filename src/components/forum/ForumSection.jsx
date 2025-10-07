@@ -6,42 +6,25 @@ import Link from "next/link";
 import { generatePostSlug } from "@/utils/slugify";
 import VerifiedBadge from "@/components/ui/Badges";
 import { useState, useEffect } from "react";
-import { getHomeData } from "@/app/Api";
+import { useForumData } from "@/contexts/ForumDataContext";
 import { usePostRefresh } from "@/contexts/PostRefreshContext";
 import SkeletonLoader from "./skeletonLoader";
 import Badges from "@/components/ui/Badges";
 
 export default function ForumSection() {
-  const [mainCategories, setMainCategories] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
   const { refreshTrigger } = usePostRefresh();
 
-  const fetchForumData = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      const response = await getHomeData();
-      setMainCategories(response.data.mainCategories || []);
-    } catch (err) {
-      setError(err.message);
-      console.error("Error fetching forum data:", err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchForumData();
-  }, []);
+  // Use context data
+  const { mainCategories, homeDataLoading, homeDataError, fetchHomeData } =
+    useForumData();
 
   // Listen for refresh triggers
   useEffect(() => {
     if (refreshTrigger > 0) {
-      fetchForumData();
+      fetchHomeData("latest", true); // Force refresh
     }
-  }, [refreshTrigger]);
-  if (loading) {
+  }, [refreshTrigger, fetchHomeData]);
+  if (homeDataLoading) {
     return (
       <>
         <SkeletonLoader />
@@ -51,11 +34,11 @@ export default function ForumSection() {
     );
   }
 
-  if (error) {
+  if (homeDataError) {
     return (
       <div className="max-w-[775px] w-[100%]">
         <div className="flex items-center justify-center py-8 text-red-500">
-          <span>Lỗi: {error}</span>
+          <span>Lỗi: {homeDataError}</span>
         </div>
       </div>
     );

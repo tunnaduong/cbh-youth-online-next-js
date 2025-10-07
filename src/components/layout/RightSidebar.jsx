@@ -5,47 +5,24 @@ import { useRouter, usePathname } from "next/navigation";
 import { AddOutline, HelpCircleOutline, Mic } from "react-ionicons";
 import { Skeleton, message } from "antd";
 import CustomColorButton from "../ui/CustomColorButton";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import CreatePostModal from "../modals/CreatePostModal";
 import UploadRecordingModal from "../modals/UploadRecordingModal";
-import { getTopUsers } from "../../app/Api";
-import { useAuthContext } from "@/contexts/Support";
+import { useAuthContext, useTopUsersContext } from "@/contexts/Support";
 
 export default function RightSidebar() {
   const iconSize = "20px";
   const router = useRouter();
   const pathname = usePathname();
-  const [topUsers, setTopUsers] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
   const [open, setOpen] = useState(false);
 
   // Get current URL to determine if we're on recordings page
   const isRecordingsPage = pathname.startsWith("/recordings");
 
   const { loggedIn } = useAuthContext();
+  const { topUsers, loading, error, fetchTopUsers } = useTopUsersContext();
 
-  // Fetch top users data
-  useEffect(() => {
-    const fetchTopUsers = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-        const response = await getTopUsers(8);
-        // Ensure we always have an array
-        const usersData = response.data || response;
-        setTopUsers(Array.isArray(usersData) ? usersData : []);
-      } catch (err) {
-        console.error("Error fetching top users:", err);
-        setError(err.message || "Lỗi tải dữ liệu xếp hạng");
-        setTopUsers([]); // Set empty array on error
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchTopUsers();
-  }, []);
+  // No need to fetch data here anymore - it's handled by the context
 
   const handleCreatePost = () => {
     if (!loggedIn) {
@@ -149,21 +126,7 @@ export default function RightSidebar() {
                 <div className="text-red-500 text-sm">Lỗi tải dữ liệu</div>
                 <div className="text-gray-400 text-xs mt-1">{error}</div>
                 <button
-                  onClick={() => {
-                    setLoading(true);
-                    setError(null);
-                    getTopUsers(8)
-                      .then((response) => {
-                        const usersData = response.data || response;
-                        setTopUsers(Array.isArray(usersData) ? usersData : []);
-                        setLoading(false);
-                      })
-                      .catch((err) => {
-                        setError(err.message || "Lỗi tải dữ liệu xếp hạng");
-                        setTopUsers([]); // Set empty array on error
-                        setLoading(false);
-                      });
-                  }}
+                  onClick={() => fetchTopUsers(true)}
                   className="text-blue-500 text-xs mt-2 hover:underline"
                 >
                   Thử lại
