@@ -23,6 +23,23 @@ export default function RootLayout({ children }) {
           sizes="32x32"
         />
         <title>Diễn đàn học sinh Chuyên Biên Hòa</title>
+
+        {/* Meta tag dành cho SEO */}
+        <meta property="og:title" content="Diễn đàn học sinh Chuyên Biên Hòa" />
+        <meta
+          name="description"
+          content="Diễn đàn học sinh Chuyên Biên Hòa thuộc Trường THPT Chuyên Hà Nam"
+        />
+        <meta
+          property="og:description"
+          content="Diễn đàn học sinh Chuyên Biên Hòa thuộc Trường THPT Chuyên Hà Nam"
+        />
+        <meta name="author" content="Đội ngũ CBH Youth Online" />
+        <meta
+          name="keywords"
+          content="thpt chuyen ha nam, thanh nien chuyen bien hoa, thanh nien chuyen bien hoa online, thpt chuyen bien hoa, chuyen bien hoa, chuyen ha nam, cyo, cbh youth online, chuyen bien hoa online, chuyên biên hòa online"
+        />
+        <meta property="og:image" content="/images/cyo_thumbnail.png" />
       </head>
       <body className="bg-[#F8F8F8] dark:bg-neutral-800">
         <ThemeProvider>
