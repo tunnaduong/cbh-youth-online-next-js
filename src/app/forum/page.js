@@ -48,11 +48,11 @@ export default function Forum() {
                   {item.subforums.map((subforum, index) => (
                     <div key={subforum.id}>
                       <div className="flex flex-row items-center">
-                        <IoChatbubblesSharp className="text-[#319528] text-[23px] m-4" />
+                        <IoChatbubblesSharp className="text-primary-500 text-[23px] m-4" />
                         <div className="flex flex-col flex-1">
                           <Link
                             href={`/forum/${item.id}/subforum/${subforum.id}`}
-                            className="text-[#319528] text-[12px] font-bold w-fit"
+                            className="text-primary-500 text-[12px] font-bold w-fit"
                           >
                             {subforum.name}
                           </Link>
@@ -78,12 +78,12 @@ export default function Forum() {
                               </span>
                               <Link
                                 href={`/${subforum.latest_post.user.username}/posts/${subforum.latest_post.id}`}
-                                className="text-[10px] text-[#319528] inline-block leading-3 text-ellipsis whitespace-nowrap overflow-hidden"
+                                className="text-[10px] text-primary-500 inline-block leading-3 text-ellipsis whitespace-nowrap overflow-hidden"
                               >
                                 {subforum.latest_post.title}
                               </Link>
                             </div>
-                            <div className="leading-3 flex items-center mt-1 text-[#319528]">
+                            <div className="leading-3 flex items-center mt-1 text-primary-500">
                               <Link
                                 href={`/${subforum.latest_post.user.username}`}
                                 className="text-[10px]"

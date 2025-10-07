@@ -13,7 +13,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Image, Earth, X, User, AlertCircle, Loader2 } from "lucide-react";
 import React, { useState } from "react";
 import { useAuthContext } from "@/contexts/Support";
-import { Input } from "@/components/ui/input";
+import Input from "../ui/input";
 import { useRouter } from "next/navigation";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { createPost, uploadFile } from "@/app/Api";
@@ -237,7 +237,7 @@ export default function CreatePost({ trigger, type = "feed" }) {
                 type="button"
                 onClick={handleImageUploadClick}
               >
-                <Image className="h-5 w-5 text-emerald-500" />
+                <Image className="h-5 w-5 text-emerald-500" alt="" />
               </Button>
             </div>
           </div>

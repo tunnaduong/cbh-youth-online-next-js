@@ -38,7 +38,7 @@ export default function Custom404() {
               nhóm nhỏ, thay đổi người được xem hoặc đã xóa nội dung.
             </p>
             <Button
-              className="bg-[#319528] hover:bg-green-700 text-white text-[12px] font-semibold rounded-[5px] py-[5px] px-6 mt-3 h-7"
+              className="bg-primary-500 hover:bg-green-700 text-white text-[12px] font-semibold rounded-[5px] py-[5px] px-6 mt-3 h-7"
               onClick={() => router.push("/")}
             >
               Đi tới Bảng tin
@@ -46,7 +46,7 @@ export default function Custom404() {
             <br />
             <div
               onClick={() => router.back()}
-              className="text-[#319528] cursor-pointer text-[12px] mt-2 inline-block font-semibold"
+              className="text-primary-500 cursor-pointer text-[12px] mt-2 inline-block font-semibold"
             >
               Quay lại
             </div>

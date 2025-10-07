@@ -43,23 +43,23 @@ export default function PostDetail({ params }) {
   const [isLoading, setIsLoading] = React.useState(false);
   const [error, setError] = React.useState("");
 
-  const _getPostDetail = async () => {
-    const res = await getPostDetail(postId);
-    setPost(res.data);
-  };
-
-  React.useEffect(() => {
-    _getPostDetail();
-    handlePostView(postId);
-  }, []);
-
-  const handlePostView = (id) => {
+  const handlePostView = React.useCallback((id) => {
     if (loggedIn) {
       incrementPostViewAuthenticated(id);
     } else {
       incrementPostView(id);
     }
-  };
+  }, [loggedIn]);
+
+  const _getPostDetail = React.useCallback(async () => {
+    const res = await getPostDetail(postId);
+    setPost(res.data);
+  }, [postId]);
+
+  React.useEffect(() => {
+    _getPostDetail();
+    handlePostView(postId);
+  }, [_getPostDetail, handlePostView, postId]);
 
   const handleVoteComment = async (comment, commentId, vote_value) => {
     if (!loggedIn) {

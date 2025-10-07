@@ -4,6 +4,11 @@ import Link from "next/link";
 export default function TruncateText({ text, maxLength = 400 }) {
   const [isExpanded, setIsExpanded] = useState(false);
 
+  // Handle null or undefined text
+  if (!text) {
+    return <div></div>;
+  }
+
   // Render the full text if it's less than or equal to the maxLength
   if (text.length <= maxLength) {
     return <div dangerouslySetInnerHTML={{ __html: text }}></div>;
@@ -16,7 +21,10 @@ export default function TruncateText({ text, maxLength = 400 }) {
     <div className="space-y-2">
       <div>
         {/* Use a span instead of a p to avoid block-level styling */}
-        <span dangerouslySetInnerHTML={{ __html: truncatedText }} />
+        <span
+          className="prose"
+          dangerouslySetInnerHTML={{ __html: truncatedText }}
+        />
         {!isExpanded && (
           <Link
             href="#"

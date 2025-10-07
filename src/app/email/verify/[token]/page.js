@@ -1,14 +1,14 @@
 "use client";
 
 import Navbar from "@/components/include/navbar";
-import React, { use } from "react";
+import React from "react";
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { verifyEmail } from "@/app/Api";
 
 const EmailVerify = ({ params }) => {
-  const { token } = use(params);
+  const { token } = params;
   const router = useRouter();
   const [error, setError] = React.useState(null);
 
@@ -66,7 +66,7 @@ const EmailVerify = ({ params }) => {
                   sau.
                 </p>
                 <Button
-                  className="bg-[#319528] hover:bg-green-700 text-white text-[12px] font-semibold rounded-[5px] py-[5px] px-6 mt-3 h-7"
+                  className="bg-primary-500 hover:bg-green-700 text-white text-[12px] font-semibold rounded-[5px] py-[5px] px-6 mt-3 h-7"
                   onClick={() => router.push("/")}
                 >
                   Đi tới Bảng tin
@@ -89,7 +89,7 @@ const EmailVerify = ({ params }) => {
                   thể tận hưởng quyền truy cập đầy đủ vào tất cả các tính năng.
                 </p>
                 <Button
-                  className="bg-[#319528] hover:bg-green-700 text-white text-[12px] font-semibold rounded-[5px] py-[5px] px-6 mt-3 h-7"
+                  className="bg-primary-500 hover:bg-green-700 text-white text-[12px] font-semibold rounded-[5px] py-[5px] px-6 mt-3 h-7"
                   onClick={() => router.push("/")}
                 >
                   Đi tới Bảng tin

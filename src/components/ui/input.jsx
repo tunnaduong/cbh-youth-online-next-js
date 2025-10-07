@@ -1,19 +1,26 @@
-import * as React from "react"
+import { Input as AntdInput } from "antd";
 
-import { cn } from "@/lib/utils"
-
-const Input = React.forwardRef(({ className, type, ...props }, ref) => {
+const Input = ({ className = "", ...props }) => {
   return (
-    (<input
-      type={type}
-      className={cn(
-        "flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50",
-        className
-      )}
-      ref={ref}
-      {...props} />)
+    <AntdInput
+      {...props}
+      prefix={<></>}
+      className={`!pl-2 shadow-sm focus:shadow-md-ring ${className}`}
+    />
   );
-})
-Input.displayName = "Input"
+};
 
-export { Input }
+const InputTextArea = ({ className = "", shadow = true, ...props }) => {
+  return (
+    <AntdInput.TextArea
+      {...props}
+      className={`${
+        shadow ? "shadow-sm focus:shadow-md-ring" : ""
+      } focus:!bg-transparent ${className}`}
+    />
+  );
+};
+InputTextArea.displayName = "InputTextArea";
+Input.TextArea = InputTextArea;
+
+export default Input;
