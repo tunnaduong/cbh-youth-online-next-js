@@ -7,6 +7,7 @@ import { Swiper, SwiperSlide } from "swiper/react";
 import { EffectCube } from "swiper/modules";
 import { useRouter } from "next/navigation";
 import { X, ChevronLeft, ChevronRight, VolumeX, Volume2 } from "lucide-react";
+import { markStoryAsViewed } from "@/app/Api";
 
 // Import Swiper styles
 import "swiper/css";
@@ -50,7 +51,10 @@ const StoryProgress = ({ stories, currentStoryIndex, progress }) => {
   return (
     <div className="absolute top-4 left-4 right-4 z-50 flex gap-1">
       {stories.map((_, index) => (
-        <div key={index} className="flex-1 h-1 bg-white/30 rounded-full overflow-hidden">
+        <div
+          key={index}
+          className="flex-1 h-1 bg-white/30 rounded-full overflow-hidden"
+        >
           <div
             className="h-full bg-white transition-all duration-100 ease-linear"
             style={{
@@ -68,7 +72,14 @@ const StoryProgress = ({ stories, currentStoryIndex, progress }) => {
   );
 };
 
-const UserHeader = ({ user, onClose, storyType, isMuted, onToggleMute, createdAt }) => {
+const UserHeader = ({
+  user,
+  onClose,
+  storyType,
+  isMuted,
+  onToggleMute,
+  createdAt,
+}) => {
   return (
     <div className="absolute top-10 left-4 right-4 z-50 flex items-center justify-between">
       <div className="flex items-center gap-3">
@@ -78,9 +89,13 @@ const UserHeader = ({ user, onClose, storyType, isMuted, onToggleMute, createdAt
           className="w-10 h-10 rounded-full border-2 border-white object-cover"
         />
         <div className="flex flex-col leading-tight">
-          <span className="text-white font-medium text-sm drop-shadow">{user.name}</span>
+          <span className="text-white font-medium text-sm drop-shadow">
+            {user.name}
+          </span>
           {createdAt && (
-            <span className="text-white/80 text-xs drop-shadow">{formatTimeAgo(createdAt)}</span>
+            <span className="text-white/80 text-xs drop-shadow">
+              {formatTimeAgo(createdAt)}
+            </span>
           )}
         </div>
       </div>
@@ -97,7 +112,10 @@ const UserHeader = ({ user, onClose, storyType, isMuted, onToggleMute, createdAt
             )}
           </button>
         )}
-        <button onClick={onClose} className="text-white hover:text-white/80 transition-colors p-2">
+        <button
+          onClick={onClose}
+          className="text-white hover:text-white/80 transition-colors p-2"
+        >
           <X size={24} className="drop-shadow" />
         </button>
       </div>
@@ -144,7 +162,7 @@ const StoryContent = ({ story, isActive, onNext, isMuted }) => {
     return (
       <video
         ref={videoRef}
-        src={story.media_url}
+        src={process.env.NEXT_PUBLIC_API_URL + story.media_url}
         className="w-full h-full object-cover"
         autoPlay={isActive}
         muted={isMuted}
@@ -162,7 +180,10 @@ const StoryContent = ({ story, isActive, onNext, isMuted }) => {
           background: (() => {
             if (!story.background_color) return "#1877f2";
 
-            if (story.background_color.startsWith("[") || story.background_color.startsWith("{")) {
+            if (
+              story.background_color.startsWith("[") ||
+              story.background_color.startsWith("{")
+            ) {
               try {
                 const bgColor = JSON.parse(story.background_color);
                 if (Array.isArray(bgColor) && bgColor.length === 2) {
@@ -192,7 +213,7 @@ const StoryContent = ({ story, isActive, onNext, isMuted }) => {
         </div>
         <audio
           ref={audioRef}
-          src={story.media_url}
+          src={process.env.NEXT_PUBLIC_API_URL + story.media_url}
           autoPlay={isActive}
           muted={isMuted}
           playsInline
@@ -207,7 +228,11 @@ const StoryContent = ({ story, isActive, onNext, isMuted }) => {
 
   return (
     <img
-      src={story.media_url || "/placeholder.svg"}
+      src={
+        (typeof process !== "undefined" && process.env.NEXT_PUBLIC_API_URL
+          ? process.env.NEXT_PUBLIC_API_URL + story.media_url
+          : story.media_url) || "/placeholder.svg"
+      }
       alt="Story content"
       className="h-full object-contain mx-auto"
     />
@@ -231,18 +256,14 @@ const StorySlide = ({
 
   useEffect(() => {
     if (currentStory) {
-      router.post(
-        `/api/stories/${currentStory.id}/view`,
-        {},
-        {
-          preserveScroll: true,
-          preserveState: true,
-          onError: (err) => {
-            console.error("Failed to mark story as viewed", err);
-          },
-          showProgress: false,
-        }
-      );
+      // Mark story as viewed using API call
+      markStoryAsViewed(currentStory.id)
+        .then((response) => {
+          console.log("Story marked as viewed:", response);
+        })
+        .catch((error) => {
+          console.error("Failed to mark story as viewed:", error);
+        });
     }
   }, [currentStory]);
 
@@ -307,13 +328,19 @@ const StorySlide = ({
   }, [onUserChange, stopProgress]);
 
   useEffect(() => {
-    if (progress >= 100 && (currentStory?.type === "image" || currentStory?.type === "text")) {
+    if (
+      progress >= 100 &&
+      (currentStory?.type === "image" || currentStory?.type === "text")
+    ) {
       handleNextStory();
     }
   }, [progress, currentStory?.type, handleNextStory]);
 
   useEffect(() => {
-    if (isActive && (currentStory?.type === "image" || currentStory?.type === "text")) {
+    if (
+      isActive &&
+      (currentStory?.type === "image" || currentStory?.type === "text")
+    ) {
       startProgress();
     } else {
       stopProgress();
@@ -414,7 +441,10 @@ export const StoryViewer = ({
     if (isOpen) {
       api.start({ y: 0, opacity: 1, immediate: true });
       setCurrentUserIndex(selectedUserIndex);
-      if (swiperRef.current && typeof swiperRef.current.slideTo === "function") {
+      if (
+        swiperRef.current &&
+        typeof swiperRef.current.slideTo === "function"
+      ) {
         swiperRef.current.slideTo(selectedUserIndex, 0); // no animation
       }
     }
@@ -434,7 +464,10 @@ export const StoryViewer = ({
         if (swiperRef.current) {
           swiperRef.current.slidePrev();
         }
-      } else if (direction === "next" && currentUserIndex === users.length - 1) {
+      } else if (
+        direction === "next" &&
+        currentUserIndex === users.length - 1
+      ) {
         handleClose();
       }
     },
@@ -497,7 +530,9 @@ export const StoryViewer = ({
               isViewerOpen={isOpen}
               onClose={handleClose}
               onUserChange={handleUserChange}
-              initialStoryIndex={index === selectedUserIndex ? selectedStoryIndex : 0}
+              initialStoryIndex={
+                index === selectedUserIndex ? selectedStoryIndex : 0
+              }
             />
           </SwiperSlide>
         ))}

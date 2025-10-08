@@ -1,0 +1,85 @@
+---
+alwaysApply: true
+---
+
+- below is the list of available api routes:
+
+  GET|HEAD v1.0/activities .................................... ActivityController@getActivities
+  GET|HEAD v1.0/activities/commented ...................... ActivityController@getCommentedPosts
+  GET|HEAD v1.0/activities/liked .............................. ActivityController@getLikedPosts
+  GET|HEAD v1.0/activities/posts ............................ ActivityController@getCreatedPosts
+  GET|HEAD v1.0/chat/conversations ............................. ChatController@getConversations
+  POST v1.0/chat/conversations .................... ChatController@createPrivateConversation
+  GET|HEAD v1.0/chat/conversations/{conversationId}/messages ........ ChatController@getMessages
+  POST v1.0/chat/conversations/{conversationId}/messages ........ ChatController@sendMessage
+  POST v1.0/chat/conversations/{conversationId}/read ............. ChatController@markAsRead
+  POST v1.0/chat/groups ............................. ChatController@createGroupConversation
+  PUT v1.0/chat/groups/{conversationId} ............ ChatController@updateGroupConversation
+  POST v1.0/chat/groups/{conversationId}/participants .. ChatController@addGroupParticipants
+  DELETE v1.0/chat/groups/{conversationId}/participants/{userId} ChatController@removeGroupPa…
+  DELETE v1.0/chat/messages/{messageId} ......................... ChatController@deleteMessage
+  PUT v1.0/chat/messages/{messageId} ........................... ChatController@editMessage
+  GET|HEAD v1.0/chat/search/users ............................. ChatController@searchUserForChat
+  GET|HEAD v1.0/comments/{commentId}/replies ....................... TopicsController@getReplies
+  PUT v1.0/comments/{id} ................................... TopicsController@updateComment
+  DELETE v1.0/comments/{id} .................................. TopicsController@destroyComment
+  GET|HEAD v1.0/comments/{id}/votes ........................ TopicsController@getVotesForComment
+  POST v1.0/comments/{id}/votes ............................. TopicsController@voteOnComment
+  DELETE v1.0/comments/{id}/votes ........................ TopicsController@destroyCommentVote
+  GET|HEAD v1.0/email/verify/{verificationCode} .................. VerificationController@verify
+  GET|HEAD v1.0/forum-data .....................................................................
+  GET|HEAD v1.0/forum/categories ................................. ForumController@getCategories
+  GET|HEAD v1.0/forum/categories/{mainCategory}/subforums ......... ForumController@getSubforums
+  GET|HEAD v1.0/forum/subforums ............................. ForumController@getSubforumsByRole
+  GET|HEAD v1.0/forum/subforums/{subforum}/topics ............. ForumController@getSubforumPosts
+  GET|HEAD v1.0/home ..................................................... ForumController@index
+  POST v1.0/login ..................................................... AuthController@login
+  POST v1.0/logout ................................................... AuthController@logout
+  POST v1.0/online-status ............................ ActivityController@updateLastActivity
+  POST v1.0/password/change ......................... PasswordResetController@changePassword
+  POST v1.0/password/email ..................... ForgotPasswordController@sendResetLinkEmail
+  POST v1.0/password/reset .................. ForgotPasswordController@sendResetLinkResponse
+  POST v1.0/password/reset/verify ........................... ForgotPasswordController@reset
+  POST v1.0/register ............................................... AuthController@register
+  POST v1.0/reports ............................................. UserReportController@store
+  GET|HEAD v1.0/reports ............................................. UserReportController@index
+  GET|HEAD v1.0/reports/stats .................................... UserReportController@getStats
+  POST v1.0/reports/{report}/review ............................ UserReportController@review
+  GET|HEAD v1.0/search ................................................. SearchController@search
+  GET|HEAD v1.0/stories .................................................. StoryController@index
+  POST v1.0/stories .................................................. StoryController@store
+  GET|HEAD v1.0/stories/{story} ........................................... StoryController@show
+  DELETE v1.0/stories/{story} ........................................ StoryController@destroy
+  POST v1.0/stories/{story}/react .................................... StoryController@react
+  DELETE v1.0/stories/{story}/react ........................... StoryController@removeReaction
+  POST v1.0/stories/{story}/view .............................. StoryController@markAsViewed
+  GET|HEAD v1.0/topics .................................................. TopicsController@index
+  POST v1.0/topics .................................................. TopicsController@store
+  GET|HEAD v1.0/topics/pinned .................................. ForumController@getPinnedTopics
+  GET|HEAD v1.0/topics/{id} .............................................. TopicsController@show
+  DELETE v1.0/topics/{id} ...................................... TopicsController@destroyTopic
+  GET|HEAD v1.0/topics/{id}/comments .............................. TopicsController@getComments
+  POST v1.0/topics/{id}/comments ............................... TopicsController@addComment
+  GET|HEAD v1.0/topics/{id}/views .................................... TopicsController@getViews
+  POST v1.0/topics/{id}/views ................................ TopicsController@registerView
+  GET|HEAD v1.0/topics/{id}/votes .................................... TopicsController@getVotes
+  POST v1.0/topics/{id}/votes ................................ TopicsController@registerVote
+  DELETE v1.0/topics/{id}/votes ............................ TopicsController@destroyTopicVote
+  POST v1.0/upload ............................................. FileUploadController@upload
+  GET|HEAD v1.0/user ...........................................................................
+  GET|HEAD v1.0/user-content/{id} .................................... FileUploadController@show
+  DELETE v1.0/user-content/{id} ................................. FileUploadController@destroy
+  GET|HEAD v1.0/user/saved-topics .............................. TopicsController@getSavedTopics
+  POST v1.0/user/saved-topics ............................ TopicsController@saveTopicForUser
+  DELETE v1.0/user/saved-topics/{id} ...................... TopicsController@destroySavedTopic
+  GET|HEAD v1.0/users/ranking ..................................... PointsController@getTopUsers
+  GET|HEAD v1.0/users/top-active ............................. UserController@getTop8ActiveUsers
+  GET|HEAD v1.0/users/{username}/avatar ............................... UserController@getAvatar
+  POST v1.0/users/{username}/avatar ............................ UserController@updateAvatar
+  POST v1.0/users/{username}/follow ................................ FollowController@follow
+  GET|HEAD v1.0/users/{username}/online-status .................. UserController@getOnlineStatus
+  GET|HEAD v1.0/users/{username}/profile ............................. UserController@getProfile
+  PUT v1.0/users/{username}/profile .......................... UserController@updateProfile
+  DELETE v1.0/users/{username}/unfollow ............................ FollowController@unfollow
+
+                                                                              Showing [77] routes

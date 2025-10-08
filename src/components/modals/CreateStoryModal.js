@@ -18,6 +18,8 @@ import {
 // import { usePage, useForm, router } from "@inertiajs/react"; // TODO: Replace with Next.js equivalent
 import Input from "../ui/input";
 import { PiFileAudio } from "react-icons/pi";
+import { useAuthContext } from "@/contexts/Support";
+import { createStory } from "@/app/Api";
 
 const gradientBackgrounds = [
   ["#FF6B6B", "#4ECDC4"],
@@ -29,7 +31,7 @@ const gradientBackgrounds = [
 
 const CreateStoryModal = ({ open, onClose, onStoryCreated }) => {
   // Mock data for now - these should be fetched from API in production
-  const auth = { user: null };
+  const { currentUser } = useAuthContext();
   const [mediaType, setMediaType] = useState("text");
   const [mediaFile, setMediaFile] = useState(null);
   const [previewUrl, setPreviewUrl] = useState(null);
@@ -53,7 +55,7 @@ const CreateStoryModal = ({ open, onClose, onStoryCreated }) => {
   const handleSubmit = (e) => {
     e.preventDefault();
 
-    if (!auth?.user) {
+    if (!currentUser) {
       message.error("Bạn cần đăng nhập để tạo tin");
       return;
     }
@@ -107,12 +109,24 @@ const CreateStoryModal = ({ open, onClose, onStoryCreated }) => {
     // Set loading state
     setIsSubmitting(true);
 
-    // Use router.post with FormData
-    router.post(route("api.stories.store"), formData, {
-      showProgress: false,
-      onSuccess: (page) => {
+    // Make API call to create story
+    createStory(formData)
+      .then((response) => {
         message.success("Tin đã được tạo thành công!");
-        reset();
+
+        // Reset form data
+        setData({
+          content: "",
+          media_type: "text",
+          media_file: null,
+          background_color: ["#FF6B6B", "#4ECDC4"],
+          font_style: "normal",
+          text_position: { x: 50, y: 50 },
+          privacy: "public",
+          duration: 5,
+        });
+
+        // Reset other states
         setMediaFile(null);
         setPreviewUrl(null);
         setUseCustomColor(false);
@@ -123,19 +137,27 @@ const CreateStoryModal = ({ open, onClose, onStoryCreated }) => {
         if (onStoryCreated) {
           onStoryCreated();
         }
-      },
-      onError: (errors) => {
-        console.error("Form errors:", errors);
+      })
+      .catch((error) => {
+        console.error("Story creation error:", error);
         setIsSubmitting(false);
-        if (errors.media_file) {
-          message.error(`Lỗi file: ${errors.media_file}`);
-        } else if (errors.content) {
-          message.error(`Lỗi nội dung: ${errors.content}`);
+
+        // Handle different types of errors
+        if (error.response?.data?.errors) {
+          const errors = error.response.data.errors;
+          if (errors.media_file) {
+            message.error(`Lỗi file: ${errors.media_file}`);
+          } else if (errors.content) {
+            message.error(`Lỗi nội dung: ${errors.content}`);
+          } else {
+            message.error("Có lỗi xảy ra khi tạo tin. Vui lòng thử lại.");
+          }
+        } else if (error.response?.data?.message) {
+          message.error(error.response.data.message);
         } else {
           message.error("Có lỗi xảy ra khi tạo tin. Vui lòng thử lại.");
         }
-      },
-    });
+      });
   };
 
   const handleMediaChange = (info) => {
@@ -149,7 +171,7 @@ const CreateStoryModal = ({ open, onClose, onStoryCreated }) => {
 
   const handleMediaTypeChange = (type) => {
     setMediaType(type);
-    setData("media_type", type);
+    setData({ ...data, media_type: type });
     setMediaFile(null);
     setPreviewUrl(null);
   };
@@ -205,7 +227,7 @@ const CreateStoryModal = ({ open, onClose, onStoryCreated }) => {
             <Input.TextArea
               name="description"
               value={data.content}
-              onChange={(e) => setData("content", e.target.value)}
+              onChange={(e) => setData({ ...data, content: e.target.value })}
               placeholder="Nhập nội dung tin..."
               rows={4}
             />
@@ -281,7 +303,7 @@ const CreateStoryModal = ({ open, onClose, onStoryCreated }) => {
                           : "#e5e7eb",
                     }}
                     onClick={() => {
-                      setData("background_color", gradient);
+                      setData({ ...data, background_color: gradient });
                       setUseCustomColor(false);
                     }}
                   />
@@ -314,12 +336,15 @@ const CreateStoryModal = ({ open, onClose, onStoryCreated }) => {
                   onChange={(color) => {
                     const newColor = color.toHexString();
                     if (Array.isArray(data.background_color)) {
-                      setData("background_color", [
-                        newColor,
-                        data.background_color[1],
-                      ]);
+                      setData({
+                        ...data,
+                        background_color: [newColor, data.background_color[1]],
+                      });
                     } else {
-                      setData("background_color", [newColor, "#6C5B7B"]);
+                      setData({
+                        ...data,
+                        background_color: [newColor, "#6C5B7B"],
+                      });
                     }
                   }}
                   className="!bg-white dark:!bg-[#3c3c3c]"
@@ -333,15 +358,15 @@ const CreateStoryModal = ({ open, onClose, onStoryCreated }) => {
                   onChange={(color) => {
                     const newColor = color.toHexString();
                     if (Array.isArray(data.background_color)) {
-                      setData("background_color", [
-                        data.background_color[0],
-                        newColor,
-                      ]);
+                      setData({
+                        ...data,
+                        background_color: [data.background_color[0], newColor],
+                      });
                     } else {
-                      setData("background_color", [
-                        data.background_color,
-                        newColor,
-                      ]);
+                      setData({
+                        ...data,
+                        background_color: [data.background_color, newColor],
+                      });
                     }
                   }}
                   className="!bg-white dark:!bg-[#3c3c3c]"
@@ -358,7 +383,7 @@ const CreateStoryModal = ({ open, onClose, onStoryCreated }) => {
           </label>
           <Select
             value={data.privacy}
-            onChange={(value) => setData("privacy", value)}
+            onChange={(value) => setData({ ...data, privacy: value })}
             style={{ width: "100%" }}
             options={[
               { label: "Công khai", value: "public" },
@@ -375,7 +400,9 @@ const CreateStoryModal = ({ open, onClose, onStoryCreated }) => {
             <Input
               type="number"
               value={data.duration}
-              onChange={(e) => setData("duration", parseInt(e.target.value))}
+              onChange={(e) =>
+                setData({ ...data, duration: parseInt(e.target.value) })
+              }
               min={1}
               max={30}
               className="shadow-none"

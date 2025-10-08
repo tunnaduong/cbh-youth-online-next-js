@@ -1,0 +1,12 @@
+---
+alwaysApply: true
+---
+
+## First and foremost:
+
+- Dont run npm run dev and npm run build or any similar commands like php artisan serve without my permission
+- Never create a new README file for each feature
+
+## Others:
+
+- API routes for client are defined in src/app/Api.js

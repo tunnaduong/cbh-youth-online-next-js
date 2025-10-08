@@ -204,7 +204,7 @@ export const getStories = () => {
 };
 
 export const createStory = (params) => {
-  return Api.postRequest("/v1.0/stories", params);
+  return Api.postFormDataRequest("/v1.0/stories", params);
 };
 
 export const getStory = (storyId) => {
