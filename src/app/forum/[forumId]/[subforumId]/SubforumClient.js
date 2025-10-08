@@ -8,6 +8,7 @@ import { useForumData } from "@/contexts/ForumDataContext";
 import { generatePostSlug } from "@/utils/slugify";
 import { notFound } from "next/navigation";
 import SkeletonLoader from "./skeletonLoader";
+import SEOContent from "@/components/marketing/SEOContent";
 
 export default function SubforumClient({
   params,
@@ -168,7 +169,7 @@ export default function SubforumClient({
 
   return (
     <HomeLayout activeNav="home">
-      <div className="px-2.5 min-h-screen py-6 flex justify-center">
+      <div className="px-2.5 py-6 flex justify-center">
         <div className="max-w-[775px] w-full">
           {/* Breadcrumb */}
           <nav aria-label="breadcrumb">
@@ -383,6 +384,7 @@ export default function SubforumClient({
           </div>
         </div>
       </div>
+      <SEOContent seoDescription={subforum.seo_description} />
     </HomeLayout>
   );
 }

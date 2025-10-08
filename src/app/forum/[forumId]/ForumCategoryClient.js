@@ -9,6 +9,7 @@ import { Chatbubbles } from "react-ionicons";
 import Badges from "@/components/ui/Badges";
 import { notFound } from "next/navigation";
 import SkeletonLoader from "./skeletonLoader";
+import SEOContent from "@/components/marketing/SEOContent";
 
 export default function ForumCategoryClient({ params, initialCategory }) {
   const { forumId } = params;
@@ -96,8 +97,8 @@ export default function ForumCategoryClient({ params, initialCategory }) {
 
   return (
     <HomeLayout>
-      <div className="px-2.5 xl:min-h-screen py-6 flex justify-center">
-        <div className="max-w-[775px] w-[100%] mb-6">
+      <div className="px-2.5 py-6 flex justify-center">
+        <div className="max-w-[775px] w-[100%]">
           {/* Breadcrumb */}
           <nav aria-label="breadcrumb">
             <ol className="flex items-center space-x-2 text-sm px-1.5">
@@ -235,6 +236,7 @@ export default function ForumCategoryClient({ params, initialCategory }) {
           </div>
         </div>
       </div>
+      <SEOContent seoDescription={category.seo_description} />
     </HomeLayout>
   );
 }

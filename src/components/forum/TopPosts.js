@@ -9,13 +9,11 @@ import { useState, useEffect } from "react";
 import Dropdown from "../ui/Dropdown";
 import { useSearchParams } from "next/navigation";
 import { useForumData } from "@/contexts/ForumDataContext";
-import { usePostRefresh } from "@/contexts/PostRefreshContext";
 
 export default function TopPosts() {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const searchParams = useSearchParams();
   const currentSort = searchParams.get("sort") || "latest";
-  const { refreshTrigger } = usePostRefresh();
 
   // Use context data
   const { latestPosts, homeDataLoading, homeDataError, fetchHomeData } =
@@ -24,17 +22,10 @@ export default function TopPosts() {
   // Get posts for current sort
   const currentPosts = latestPosts[currentSort] || [];
 
-  // Fetch posts when sort changes or refresh is triggered
+  // Fetch posts when sort changes
   useEffect(() => {
     fetchHomeData(currentSort);
   }, [currentSort, fetchHomeData]);
-
-  // Listen for refresh triggers
-  useEffect(() => {
-    if (refreshTrigger > 0) {
-      fetchHomeData(currentSort, true); // Force refresh
-    }
-  }, [refreshTrigger, currentSort, fetchHomeData]);
 
   const handleRefresh = async () => {
     setIsRefreshing(true);

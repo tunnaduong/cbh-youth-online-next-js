@@ -20,8 +20,8 @@ export default function ClientProviders({ children }) {
             <AuthProvider>
               <TopUsersProvider>
                 <HomePostProvider>
-                  <ForumDataProvider>
-                    <PostRefreshProvider>
+                  <PostRefreshProvider>
+                    <ForumDataProvider>
                       <ProgressProvider
                         height="3px"
                         color="#319528"
@@ -30,8 +30,8 @@ export default function ClientProviders({ children }) {
                       >
                         {children}
                       </ProgressProvider>
-                    </PostRefreshProvider>
-                  </ForumDataProvider>
+                    </ForumDataProvider>
+                  </PostRefreshProvider>
                 </HomePostProvider>
               </TopUsersProvider>
             </AuthProvider>

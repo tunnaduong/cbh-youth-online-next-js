@@ -7,23 +7,13 @@ import { generatePostSlug } from "@/utils/slugify";
 import VerifiedBadge from "@/components/ui/Badges";
 import { useState, useEffect } from "react";
 import { useForumData } from "@/contexts/ForumDataContext";
-import { usePostRefresh } from "@/contexts/PostRefreshContext";
 import SkeletonLoader from "./skeletonLoader";
 import Badges from "@/components/ui/Badges";
 
 export default function ForumSection() {
-  const { refreshTrigger } = usePostRefresh();
-
   // Use context data
-  const { mainCategories, homeDataLoading, homeDataError, fetchHomeData } =
-    useForumData();
+  const { mainCategories, homeDataLoading, homeDataError } = useForumData();
 
-  // Listen for refresh triggers
-  useEffect(() => {
-    if (refreshTrigger > 0) {
-      fetchHomeData("latest", true); // Force refresh
-    }
-  }, [refreshTrigger, fetchHomeData]);
   if (homeDataLoading) {
     return (
       <>
