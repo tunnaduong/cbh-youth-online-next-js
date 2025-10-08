@@ -24,6 +24,10 @@ const ForumDataContext = createContext({
   postComments: {},
   setPostComments: () => {},
 
+  // Subforum data
+  subforumTopics: {},
+  setSubforumTopics: () => {},
+
   // Loading states
   homeDataLoading: false,
   setHomeDataLoading: () => {},
@@ -52,6 +56,7 @@ const ForumDataContext = createContext({
   fetchHomeData: () => {},
   fetchForumCategories: () => {},
   fetchPostDetail: () => {},
+  fetchSubforumTopics: () => {},
   clearCache: () => {},
   refreshData: () => {},
 });

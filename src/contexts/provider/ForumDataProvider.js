@@ -1,7 +1,12 @@
 "use client";
 
 import React, { useState, useEffect, createContext } from "react";
-import { getHomeData, getForumCategories, getPostDetail } from "../../app/Api";
+import {
+  getHomeData,
+  getForumCategories,
+  getPostDetail,
+  getSubforumPosts,
+} from "../../app/Api";
 import ForumDataContext from "../ForumDataContext";
 
 export const ForumDataProvider = ({ children }) => {
@@ -18,25 +23,32 @@ export const ForumDataProvider = ({ children }) => {
   const [postDetails, setPostDetails] = useState({});
   const [postComments, setPostComments] = useState({});
 
+  // Subforum data states
+  const [subforumTopics, setSubforumTopics] = useState({});
+
   // Loading states
   const [homeDataLoading, setHomeDataLoading] = useState(false);
   const [forumDataLoading, setForumDataLoading] = useState(false);
   const [postDataLoading, setPostDataLoading] = useState(false);
+  const [subforumDataLoading, setSubforumDataLoading] = useState(false);
 
   // Error states
   const [homeDataError, setHomeDataError] = useState(null);
   const [forumDataError, setForumDataError] = useState(null);
   const [postDataError, setPostDataError] = useState(null);
+  const [subforumDataError, setSubforumDataError] = useState(null);
 
   // Cache management
   const [lastHomeDataFetch, setLastHomeDataFetch] = useState({});
   const [lastForumDataFetch, setLastForumDataFetch] = useState(null);
   const [lastPostDataFetch, setLastPostDataFetch] = useState({});
+  const [lastSubforumDataFetch, setLastSubforumDataFetch] = useState({});
 
-  // Cache duration: 5 minutes for home data, 10 minutes for forum categories, 3 minutes for post details
+  // Cache duration: 5 minutes for home data, 10 minutes for forum categories, 3 minutes for post details, 5 minutes for subforum topics
   const HOME_CACHE_DURATION = 5 * 60 * 1000;
   const FORUM_CACHE_DURATION = 10 * 60 * 1000;
   const POST_CACHE_DURATION = 3 * 60 * 1000;
+  const SUBFORUM_CACHE_DURATION = 5 * 60 * 1000;
 
   // Fetch home data with caching
   const fetchHomeData = async (sort = "latest", forceRefresh = false) => {
@@ -155,6 +167,46 @@ export const ForumDataProvider = ({ children }) => {
     }
   };
 
+  // Fetch subforum topics with caching
+  const fetchSubforumTopics = async (subforumId, forceRefresh = false) => {
+    const now = Date.now();
+
+    // Check if we have cached data and it's still fresh
+    if (
+      !forceRefresh &&
+      lastSubforumDataFetch[subforumId] &&
+      now - lastSubforumDataFetch[subforumId] < SUBFORUM_CACHE_DURATION &&
+      subforumTopics[subforumId]
+    ) {
+      return subforumTopics[subforumId];
+    }
+
+    try {
+      setSubforumDataLoading(true);
+      setSubforumDataError(null);
+      const response = await getSubforumPosts(subforumId);
+      const data = response.data?.topics || [];
+
+      if (data) {
+        setSubforumTopics((prev) => ({
+          ...prev,
+          [subforumId]: Array.isArray(data) ? data : [],
+        }));
+        setLastSubforumDataFetch((prev) => ({
+          ...prev,
+          [subforumId]: now,
+        }));
+        return Array.isArray(data) ? data : [];
+      }
+    } catch (err) {
+      console.error("Error fetching subforum topics:", err);
+      setSubforumDataError(err.message || "Lỗi tải dữ liệu chủ đề");
+      throw err;
+    } finally {
+      setSubforumDataLoading(false);
+    }
+  };
+
   // Clear all cached data
   const clearCache = () => {
     setLatestPosts({});
@@ -164,12 +216,15 @@ export const ForumDataProvider = ({ children }) => {
     setCurrentCategory(null);
     setPostDetails({});
     setPostComments({});
+    setSubforumTopics({});
     setLastHomeDataFetch({});
     setLastForumDataFetch(null);
     setLastPostDataFetch({});
+    setLastSubforumDataFetch({});
     setHomeDataError(null);
     setForumDataError(null);
     setPostDataError(null);
+    setSubforumDataError(null);
   };
 
   // Refresh all data
@@ -221,6 +276,10 @@ export const ForumDataProvider = ({ children }) => {
     postComments,
     setPostComments,
 
+    // Subforum data
+    subforumTopics,
+    setSubforumTopics,
+
     // Loading states
     homeDataLoading,
     setHomeDataLoading,
@@ -228,6 +287,8 @@ export const ForumDataProvider = ({ children }) => {
     setForumDataLoading,
     postDataLoading,
     setPostDataLoading,
+    subforumDataLoading,
+    setSubforumDataLoading,
 
     // Error states
     homeDataError,
@@ -236,6 +297,8 @@ export const ForumDataProvider = ({ children }) => {
     setForumDataError,
     postDataError,
     setPostDataError,
+    subforumDataError,
+    setSubforumDataError,
 
     // Cache management
     lastHomeDataFetch,
@@ -244,11 +307,14 @@ export const ForumDataProvider = ({ children }) => {
     setLastForumDataFetch,
     lastPostDataFetch,
     setLastPostDataFetch,
+    lastSubforumDataFetch,
+    setLastSubforumDataFetch,
 
     // Actions
     fetchHomeData,
     fetchForumCategories,
     fetchPostDetail,
+    fetchSubforumTopics,
     clearCache,
     refreshData,
     findCategoryBySlug,
