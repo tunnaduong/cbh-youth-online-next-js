@@ -411,9 +411,10 @@ export default function PostClient({ params, postData }) {
                 <Link
                   className="text-green-600 hover:text-green-600"
                   href={
-                    "/login?continue=" + typeof window !== "undefined"
+                    "/login?continue=" +
+                    (typeof window !== "undefined"
                       ? encodeURIComponent(window.location.href)
-                      : "/"
+                      : "/")
                   }
                 >
                   Đăng nhập

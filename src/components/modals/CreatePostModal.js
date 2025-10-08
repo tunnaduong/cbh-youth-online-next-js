@@ -12,10 +12,12 @@ import { FaFileLines } from "react-icons/fa6";
 import { useAuthContext } from "@/contexts/Support";
 import { usePostRefresh } from "@/contexts/PostRefreshContext";
 import { getForumData, createPost } from "@/app/Api";
+import { useForumData } from "@/contexts/ForumDataContext";
 
 const CreatePostModal = ({ open, onClose }) => {
   const { currentUser } = useAuthContext();
   const { triggerRefresh } = usePostRefresh();
+  const { fetchHomeData } = useForumData();
 
   const [selectedSubforum, setSelectedSubforum] = useState(null);
   const [imageFiles, setImageFiles] = useState([]);
@@ -129,6 +131,8 @@ const CreatePostModal = ({ open, onClose }) => {
 
       // Make API call
       const response = await createPost(formData);
+
+      fetchHomeData("latest", true); // Trigger refresh of posts
 
       if (response.status === 201) {
         console.log("Success: Post created", response.data);

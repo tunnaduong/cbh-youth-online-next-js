@@ -24,12 +24,14 @@ export default function TopPosts() {
 
   // Fetch posts when sort changes
   useEffect(() => {
-    fetchHomeData(currentSort);
-  }, [currentSort, fetchHomeData]);
+    if (!latestPosts[currentSort]) {
+      fetchHomeData(currentSort);
+    }
+  }, [currentSort, fetchHomeData, latestPosts]);
 
   const handleRefresh = async () => {
     setIsRefreshing(true);
-    await fetchHomeData(currentSort, true); // Force refresh
+    fetchHomeData(currentSort, true); // Force refresh
     setTimeout(() => {
       setIsRefreshing(false);
     }, 950);

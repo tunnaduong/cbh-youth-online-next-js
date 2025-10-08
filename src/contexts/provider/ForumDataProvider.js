@@ -8,75 +8,99 @@ import {
   getSubforumPosts,
 } from "../../app/Api";
 import ForumDataContext from "../ForumDataContext";
-import { usePostRefresh } from "../PostRefreshContext";
+
+// Cache durations (vẫn giữ để hạn chế fetch quá nhiều nếu muốn)
+const CACHE_DURATIONS = {
+  home: 5 * 60 * 1000,
+  forum: 10 * 60 * 1000,
+  post: 3 * 60 * 1000,
+  subforum: 5 * 60 * 1000,
+};
 
 export const ForumDataProvider = ({ children }) => {
-  // Home data states - now sort-specific
+  // --- State ---
   const [latestPosts, setLatestPosts] = useState({});
   const [mainCategories, setMainCategories] = useState([]);
   const [stats, setStats] = useState(null);
-
-  // Forum category data states
   const [forumCategories, setForumCategories] = useState([]);
   const [currentCategory, setCurrentCategory] = useState(null);
-
-  // Post detail data states
   const [postDetails, setPostDetails] = useState({});
   const [postComments, setPostComments] = useState({});
-
-  // Subforum data states
   const [subforumTopics, setSubforumTopics] = useState({});
-
-  // Loading states
   const [homeDataLoading, setHomeDataLoading] = useState(false);
-  const [forumDataLoading, setForumDataLoading] = useState(false);
-  const [postDataLoading, setPostDataLoading] = useState(false);
-  const [subforumDataLoading, setSubforumDataLoading] = useState(false);
 
-  // Error states
-  const [homeDataError, setHomeDataError] = useState(null);
-  const [forumDataError, setForumDataError] = useState(null);
-  const [postDataError, setPostDataError] = useState(null);
-  const [subforumDataError, setSubforumDataError] = useState(null);
+  const [loading, setLoading] = useState({
+    home: false,
+    forum: false,
+    post: false,
+    subforum: false,
+  });
 
-  // Cache management
-  const [lastHomeDataFetch, setLastHomeDataFetch] = useState({});
-  const [lastForumDataFetch, setLastForumDataFetch] = useState(null);
-  const [lastPostDataFetch, setLastPostDataFetch] = useState({});
-  const [lastSubforumDataFetch, setLastSubforumDataFetch] = useState({});
+  const [error, setError] = useState({
+    home: null,
+    forum: null,
+    post: null,
+    subforum: null,
+  });
 
-  // Cache duration: 5 minutes for home data, 10 minutes for forum categories, 3 minutes for post details, 5 minutes for subforum topics
-  const HOME_CACHE_DURATION = 5 * 60 * 1000;
-  const FORUM_CACHE_DURATION = 10 * 60 * 1000;
-  const POST_CACHE_DURATION = 3 * 60 * 1000;
-  const SUBFORUM_CACHE_DURATION = 5 * 60 * 1000;
+  const [lastFetch, setLastFetch] = useState({
+    home: {},
+    forum: null,
+    post: {},
+    subforum: {},
+  });
 
-  // Fetch home data with caching
-  const fetchHomeData = useCallback(
-    async (sort = "latest", forceRefresh = false) => {
+  // --- Helper fetch function with caching ---
+  const fetchWithCache = useCallback(
+    async (key, fetcher, cacheDuration, forceRefresh = false) => {
       const now = Date.now();
-
-      // Check if we have cached data for this specific sort and it's still fresh
       if (
         !forceRefresh &&
-        lastHomeDataFetch[sort] &&
-        now - lastHomeDataFetch[sort] < HOME_CACHE_DURATION &&
-        latestPosts[sort] &&
-        latestPosts[sort].length > 0
+        lastFetch[key] &&
+        now - lastFetch[key] < cacheDuration
+      ) {
+        return;
+      }
+      setLoading((prev) => ({ ...prev, [key]: true }));
+      setError((prev) => ({ ...prev, [key]: null }));
+      try {
+        const response = await fetcher();
+        return response?.data;
+      } catch (err) {
+        console.error(`Error fetching ${key}:`, err);
+        setError((prev) => ({
+          ...prev,
+          [key]: err.message || `Lỗi tải ${key}`,
+        }));
+        return null;
+      } finally {
+        setLoading((prev) => ({ ...prev, [key]: false }));
+        setLastFetch((prev) => ({ ...prev, [key]: now }));
+      }
+    },
+    [lastFetch]
+  );
+
+  // --- Specific fetchers ---
+  const fetchHomeData = useCallback(
+    async (sort = "latest", forceRefresh = false) => {
+      setHomeDataLoading(true);
+      const now = Date.now();
+      if (
+        !forceRefresh &&
+        latestPosts[sort]?.length > 0 &&
+        lastFetch.home[sort] &&
+        now - lastFetch.home[sort] < CACHE_DURATIONS.home
       ) {
         return;
       }
 
-      // On force refresh, don't show a jarring loading skeleton, let data update in background
-      if (!forceRefresh) {
-        setHomeDataLoading(true);
-      }
-      setHomeDataError(null);
+      setLoading((prev) => ({ ...prev, home: true }));
+      setError((prev) => ({ ...prev, home: null }));
 
       try {
         const response = await getHomeData(sort);
         const data = response.data;
-
         if (data) {
           setLatestPosts((prev) => ({
             ...prev,
@@ -84,147 +108,82 @@ export const ForumDataProvider = ({ children }) => {
           }));
           setMainCategories(data.mainCategories || []);
           setStats(data.stats || null);
-          setLastHomeDataFetch((prev) => ({
+          setLastFetch((prev) => ({
             ...prev,
-            [sort]: now,
+            home: { ...prev.home, [sort]: now },
           }));
         }
       } catch (err) {
-        console.error("Error fetching home data:", err);
-        setHomeDataError(err.message || "Lỗi tải dữ liệu trang chủ");
+        setError((prev) => ({
+          ...prev,
+          home: err.message || "Lỗi tải bảng tin",
+        }));
       } finally {
+        setLoading((prev) => ({ ...prev, home: false }));
         setHomeDataLoading(false);
       }
     },
-    [lastHomeDataFetch, latestPosts]
+    [latestPosts, lastFetch]
   );
 
-  // Fetch forum categories with caching
   const fetchForumCategories = useCallback(
-    async (forceRefresh = false) => {
-      const now = Date.now();
-
-      // Check if we have cached data and it's still fresh
-      if (
-        !forceRefresh &&
-        lastForumDataFetch &&
-        now - lastForumDataFetch < FORUM_CACHE_DURATION &&
-        forumCategories.length > 0
-      ) {
-        return;
-      }
-
-      try {
-        setForumDataLoading(true);
-        setForumDataError(null);
-        const response = await getForumCategories();
-        const categories = response.data;
-
-        if (categories) {
-          setForumCategories(Array.isArray(categories) ? categories : []);
-          setLastForumDataFetch(now);
-        }
-      } catch (err) {
-        console.error("Error fetching forum categories:", err);
-        setForumDataError(err.message || "Lỗi tải dữ liệu diễn đàn");
-      } finally {
-        setForumDataLoading(false);
-      }
+    (forceRefresh = false) => {
+      return fetchWithCache(
+        "forum",
+        getForumCategories,
+        CACHE_DURATIONS.forum,
+        forceRefresh
+      ).then((categories) => {
+        if (!categories) return;
+        setForumCategories(Array.isArray(categories) ? categories : []);
+      });
     },
-    [lastForumDataFetch, forumCategories]
+    [fetchWithCache]
   );
 
-  // Fetch post detail with caching
   const fetchPostDetail = useCallback(
-    async (postId, forceRefresh = false) => {
-      const now = Date.now();
-
-      // Check if we have cached data and it's still fresh
-      if (
-        !forceRefresh &&
-        lastPostDataFetch[postId] &&
-        now - lastPostDataFetch[postId] < POST_CACHE_DURATION &&
-        postDetails[postId]
-      ) {
-        return postDetails[postId];
-      }
-
-      try {
-        setPostDataLoading(true);
-        setPostDataError(null);
-        const response = await getPostDetail(postId);
-        const data = response.data;
-
-        if (data) {
-          setPostDetails((prev) => ({
-            ...prev,
-            [postId]: data,
-          }));
-          setPostComments((prev) => ({
-            ...prev,
-            [postId]: data.comments || [],
-          }));
-          setLastPostDataFetch((prev) => ({
-            ...prev,
-            [postId]: now,
-          }));
-          return data;
-        }
-      } catch (err) {
-        console.error("Error fetching post detail:", err);
-        setPostDataError(err.message || "Lỗi tải dữ liệu bài viết");
-        throw err;
-      } finally {
-        setPostDataLoading(false);
-      }
+    (postId, forceRefresh = false) => {
+      return fetchWithCache(
+        `post_${postId}`,
+        () => getPostDetail(postId),
+        CACHE_DURATIONS.post,
+        forceRefresh
+      ).then((data) => {
+        if (!data) return null;
+        setPostDetails((prev) => ({ ...prev, [postId]: data }));
+        setPostComments((prev) => ({ ...prev, [postId]: data.comments || [] }));
+        return data;
+      });
     },
-    [lastPostDataFetch, postDetails]
+    [fetchWithCache]
   );
 
-  // Fetch subforum topics with caching
   const fetchSubforumTopics = useCallback(
-    async (subforumId, forceRefresh = false) => {
-      const now = Date.now();
-
-      // Check if we have cached data and it's still fresh
-      if (
-        !forceRefresh &&
-        lastSubforumDataFetch[subforumId] &&
-        now - lastSubforumDataFetch[subforumId] < SUBFORUM_CACHE_DURATION &&
-        subforumTopics[subforumId]
-      ) {
-        return subforumTopics[subforumId];
-      }
-
-      try {
-        setSubforumDataLoading(true);
-        setSubforumDataError(null);
-        const response = await getSubforumPosts(subforumId);
-        const data = response.data?.topics || [];
-
-        if (data) {
-          setSubforumTopics((prev) => ({
-            ...prev,
-            [subforumId]: Array.isArray(data) ? data : [],
-          }));
-          setLastSubforumDataFetch((prev) => ({
-            ...prev,
-            [subforumId]: now,
-          }));
-          return Array.isArray(data) ? data : [];
-        }
-      } catch (err) {
-        console.error("Error fetching subforum topics:", err);
-        setSubforumDataError(err.message || "Lỗi tải dữ liệu chủ đề");
-        throw err;
-      } finally {
-        setSubforumDataLoading(false);
-      }
+    (subforumId, forceRefresh = false) => {
+      return fetchWithCache(
+        `subforum_${subforumId}`,
+        () => getSubforumPosts(subforumId),
+        CACHE_DURATIONS.subforum,
+        forceRefresh
+      ).then((data) => {
+        const topics = data?.topics || [];
+        setSubforumTopics((prev) => ({
+          ...prev,
+          [subforumId]: Array.isArray(topics) ? topics : [],
+        }));
+        return topics;
+      });
     },
-    [lastSubforumDataFetch, subforumTopics]
+    [fetchWithCache]
   );
 
-  // Clear all cached data
+  // --- Initial fetch ---
+  useEffect(() => {
+    if (Object.keys(latestPosts).length === 0) fetchHomeData();
+    if (forumCategories.length === 0) fetchForumCategories();
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // --- Cache clearing ---
   const clearCache = useCallback(() => {
     setLatestPosts({});
     setMainCategories([]);
@@ -234,130 +193,30 @@ export const ForumDataProvider = ({ children }) => {
     setPostDetails({});
     setPostComments({});
     setSubforumTopics({});
-    setLastHomeDataFetch({});
-    setLastForumDataFetch(null);
-    setLastPostDataFetch({});
-    setLastSubforumDataFetch({});
-    setHomeDataError(null);
-    setForumDataError(null);
-    setPostDataError(null);
-    setSubforumDataError(null);
+    setLastFetch({ home: {}, forum: null, post: {}, subforum: {} });
+    setError({ home: null, forum: null, post: null, subforum: null });
   }, []);
 
-  // Refresh all data
-  const refreshData = useCallback(
-    async (sort = "latest") => {
-      await Promise.all([
-        fetchHomeData(sort, true),
-        fetchForumCategories(true),
-      ]);
-    },
-    [fetchHomeData, fetchForumCategories]
-  );
-
-  // Find category by slug
-  const findCategoryBySlug = useCallback(
-    (slug) => {
-      return forumCategories.find((cat) => cat.slug === slug);
-    },
-    [forumCategories]
-  );
-
-  // Set current category
-  const setCategoryBySlug = useCallback(
-    (slug) => {
-      const category = findCategoryBySlug(slug);
-      setCurrentCategory(category || null);
-      return category;
-    },
-    [findCategoryBySlug]
-  );
-
-  // Listen for external refresh triggers
-  const { refreshTrigger } = usePostRefresh();
-  useEffect(() => {
-    if (refreshTrigger > 0) {
-      // Refresh home data when a new post is made
-      refreshData();
-    }
-  }, [refreshTrigger, refreshData]);
-
-  // Initial data fetch on mount
-  useEffect(() => {
-    // Only fetch if we don't have any cached data
-    if (Object.keys(latestPosts).length === 0 && mainCategories.length === 0) {
-      fetchHomeData();
-    }
-    if (forumCategories.length === 0) {
-      fetchForumCategories();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
+  // --- Context value ---
   const value = {
-    // Home data
     latestPosts,
-    setLatestPosts,
     mainCategories,
-    setMainCategories,
     stats,
-    setStats,
-
-    // Forum category data
     forumCategories,
-    setForumCategories,
     currentCategory,
     setCurrentCategory,
-
-    // Post detail data
     postDetails,
-    setPostDetails,
     postComments,
-    setPostComments,
-
-    // Subforum data
     subforumTopics,
-    setSubforumTopics,
-
-    // Loading states
-    homeDataLoading,
-    setHomeDataLoading,
-    forumDataLoading,
-    setForumDataLoading,
-    postDataLoading,
-    setPostDataLoading,
-    subforumDataLoading,
-    setSubforumDataLoading,
-
-    // Error states
-    homeDataError,
-    setHomeDataError,
-    forumDataError,
-    setForumDataError,
-    postDataError,
-    setPostDataError,
-    subforumDataError,
-    setSubforumDataError,
-
-    // Cache management
-    lastHomeDataFetch,
-    setLastHomeDataFetch,
-    lastForumDataFetch,
-    setLastForumDataFetch,
-    lastPostDataFetch,
-    setLastPostDataFetch,
-    lastSubforumDataFetch,
-    setLastSubforumDataFetch,
-
-    // Actions
+    loading,
+    error,
     fetchHomeData,
     fetchForumCategories,
     fetchPostDetail,
     fetchSubforumTopics,
     clearCache,
-    refreshData,
-    findCategoryBySlug,
-    setCategoryBySlug,
+    homeDataLoading,
+    setHomeDataLoading,
   };
 
   return (
