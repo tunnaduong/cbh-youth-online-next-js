@@ -4,7 +4,7 @@ import ClientProviders from "./ClientProviders";
 export const metadata = {
   title: {
     default: "Diễn đàn học sinh Chuyên Biên Hòa",
-    template: "%s - Diễn đàn học sinh Chuyên Biên Hòa",
+    // template: "%s - Diễn đàn học sinh Chuyên Biên Hòa",
   },
   description:
     "Diễn đàn học sinh Chuyên Biên Hòa thuộc Trường THPT Chuyên Hà Nam",

@@ -86,6 +86,7 @@ export default async function PostDetail({ params }) {
 
     postData = await getPostDetailServer(numericId);
     console.log("API Response:", postData);
+    console.log("🔍 Inspecting postData structure:", postData);
   } catch (error) {
     console.error("❌ Error fetching post data:", error);
     console.error("Post ID:", params.postId);
@@ -106,6 +107,18 @@ export default async function PostDetail({ params }) {
     console.error("postData:", postData);
     console.error("postData.post:", postData?.post);
     notFound();
+  }
+
+  if (postData && postData.post) {
+    const expectedUsername = postData.post.anonymous
+      ? "anonymous"
+      : postData.post.author.username;
+    if (params.username !== expectedUsername) {
+      console.error(
+        `❌ Username mismatch: expected ${expectedUsername}, got ${params.username}`
+      );
+      notFound();
+    }
   }
 
   return (
