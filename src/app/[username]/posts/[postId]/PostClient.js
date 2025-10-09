@@ -61,9 +61,17 @@ export default function PostClient({ params, postData }) {
             );
             const currentSlug = params.postId;
 
-            // If the current slug doesn't match the correct slug, redirect
-            if (currentSlug !== correctSlug) {
-              const correctUrl = `/${params.username}/posts/${correctSlug}`;
+            // Determine correct username
+            const correctUsername = cachedData.post.anonymous
+              ? "anonymous"
+              : cachedData.post.author.username;
+
+            // If the current slug or username doesn't match, redirect
+            if (
+              currentSlug !== correctSlug ||
+              params.username !== correctUsername
+            ) {
+              const correctUrl = `/${correctUsername}/posts/${correctSlug}`;
               router.replace(correctUrl);
               return;
             }
@@ -83,9 +91,17 @@ export default function PostClient({ params, postData }) {
           const correctSlug = generatePostSlug(data.post.id, data.post.title);
           const currentSlug = params.postId;
 
-          // If the current slug doesn't match the correct slug, redirect
-          if (currentSlug !== correctSlug) {
-            const correctUrl = `/${params.username}/posts/${correctSlug}`;
+          // Determine correct username
+          const correctUsername = data.post.anonymous
+            ? "anonymous"
+            : data.post.author.username;
+
+          // If the current slug or username doesn't match, redirect
+          if (
+            currentSlug !== correctSlug ||
+            params.username !== correctUsername
+          ) {
+            const correctUrl = `/${correctUsername}/posts/${correctSlug}`;
             router.replace(correctUrl);
             return;
           }

@@ -1,7 +1,8 @@
 import HomeLayout from "@/layouts/HomeLayout";
 import { getPostDetail } from "@/app/Api";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import PostClient from "./PostClient";
+import { generatePostSlug } from "@/utils/slugify";
 
 // Server-side API call without authentication
 const getPostDetailServer = async (id) => {
@@ -26,6 +27,12 @@ const getPostDetailServer = async (id) => {
 const extractNumericId = (postId) => {
   const match = postId.match(/^(\d+)/);
   return match ? match[1] : postId;
+};
+
+// Helper function to generate canonical URL with proper slug
+const generateCanonicalUrl = (postId, postTitle) => {
+  const numericId = extractNumericId(postId);
+  return generatePostSlug(numericId, postTitle);
 };
 
 // Generate metadata for SEO and social sharing
@@ -109,16 +116,27 @@ export default async function PostDetail({ params }) {
     notFound();
   }
 
-  if (postData && postData.post) {
-    const expectedUsername = postData.post.anonymous
-      ? "anonymous"
-      : postData.post.author.username;
-    if (params.username !== expectedUsername) {
-      console.error(
-        `❌ Username mismatch: expected ${expectedUsername}, got ${params.username}`
-      );
-      notFound();
-    }
+  // Determine the correct username based on post data
+  const correctUsername = postData.post.anonymous
+    ? "anonymous"
+    : postData.post.author.username;
+
+  // Generate canonical URL and redirect if needed
+  const canonicalSlug = generateCanonicalUrl(
+    params.postId,
+    postData.post.title
+  );
+
+  // Check if we need to redirect to the correct URL
+  if (params.username !== correctUsername || params.postId !== canonicalSlug) {
+    console.log("🔄 Redirecting to canonical URL:");
+    console.log("Current username:", params.username);
+    console.log("Correct username:", correctUsername);
+    console.log("Current slug:", params.postId);
+    console.log("Canonical slug:", canonicalSlug);
+
+    const correctUrl = `/${correctUsername}/posts/${canonicalSlug}`;
+    redirect(correctUrl);
   }
 
   return (
