@@ -875,3 +875,13 @@ body {
   background-image: url(/images/auth_bg_dark.jpg);
   background-size: cover;
 }
+
+@layer components {
+  .custom-modal .ant-modal-content {
+    @apply p-4 sm:p-5;
+  }
+
+  .custom-modal {
+    @apply !top-3 lg:!top-[40px];
+  }
+}

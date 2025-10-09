@@ -335,6 +335,7 @@ const CreatePostModal = ({ open, onClose }) => {
         onCancel={onClose}
         footer={null}
         style={{ top: 40 }}
+        className="custom-modal"
       >
         <div>
           <div className="flex flex-row justify-center items-center pb-[34px] relative">
@@ -355,15 +356,19 @@ const CreatePostModal = ({ open, onClose }) => {
                 className="border w-11 h-11 rounded-full"
               />
             )}
-            <div className="flex flex-col ml-2">
-              <span className="text-base font-semibold mb-0.5 flex items-center">
+            <div className="ml-2">
+              <span className="text-base font-semibold mb-0.5 flex items-center min-w-0">
                 {data.anonymous ? (
                   "Người dùng ẩn danh"
                 ) : (
-                  <>
-                    {currentUser?.profile_name}
-                    {currentUser?.verified && <VerifiedBadge />}
-                  </>
+                  <span className="inline">
+                    <span className="line-clamp-1 inline">
+                      {currentUser?.profile_name}
+                    </span>
+                    {currentUser?.verified && (
+                      <VerifiedBadge className="ml-1 mb-0.5" />
+                    )}
+                  </span>
                 )}
               </span>
               <Dropdown
@@ -698,7 +703,7 @@ const CreatePostModal = ({ open, onClose }) => {
             <CustomColorButton
               block
               bgColor="#318527"
-              className="text-base font-semibold py-[19px] mb-1.5 hidden xl:flex"
+              className="text-base font-semibold py-[19px] mb-1.5"
               type="submit"
               disabled={processing}
               onClick={handleSubmit}
