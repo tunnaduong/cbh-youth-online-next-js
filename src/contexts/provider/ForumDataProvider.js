@@ -82,7 +82,7 @@ export const ForumDataProvider = ({ children }) => {
         setLastFetch((prev) => ({ ...prev, [key]: now }));
       }
     },
-    [lastFetch]
+    [] // Remove lastFetch dependency to prevent loops
   );
 
   // --- Specific fetchers ---
@@ -96,6 +96,7 @@ export const ForumDataProvider = ({ children }) => {
         lastFetch.home[sort] &&
         now - lastFetch.home[sort] < CACHE_DURATIONS.home
       ) {
+        setHomeDataLoading(false);
         return;
       }
 
@@ -127,7 +128,7 @@ export const ForumDataProvider = ({ children }) => {
         setHomeDataLoading(false);
       }
     },
-    [latestPosts, lastFetch]
+    [] // Remove dependencies to prevent infinite loops
   );
 
   const fetchForumCategories = useCallback(
@@ -142,7 +143,7 @@ export const ForumDataProvider = ({ children }) => {
         setForumCategories(Array.isArray(categories) ? categories : []);
       });
     },
-    [fetchWithCache]
+    [] // Remove fetchWithCache dependency
   );
 
   const fetchPostDetail = useCallback(
@@ -159,7 +160,7 @@ export const ForumDataProvider = ({ children }) => {
         return data;
       });
     },
-    [fetchWithCache]
+    [] // Remove fetchWithCache dependency
   );
 
   const fetchSubforumTopics = useCallback(
@@ -178,7 +179,7 @@ export const ForumDataProvider = ({ children }) => {
         return topics;
       });
     },
-    [fetchWithCache]
+    [] // Remove fetchWithCache dependency
   );
 
   // --- Initial fetch (reduced for SSR) ---
@@ -208,11 +209,12 @@ export const ForumDataProvider = ({ children }) => {
   // --- Listen for refresh triggers ---
   useEffect(() => {
     if (refreshTrigger > 0) {
+      console.log("🔄 ForumDataProvider: Refresh triggered, fetching data...");
       // Force refresh all data when triggered
-      fetchHomeData("latest", true); // Force refresh
+      fetchHomeData("latest", true); // Force refresh (includes stats)
       fetchForumCategories(true); // Force refresh
     }
-  }, [refreshTrigger, fetchHomeData, fetchForumCategories]);
+  }, [refreshTrigger]); // Only depend on refreshTrigger
 
   // --- Cache clearing ---
   const clearCache = useCallback(() => {

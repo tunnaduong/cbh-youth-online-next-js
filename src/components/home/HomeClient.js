@@ -12,6 +12,7 @@ export default function HomeClient({
   initialHomeData,
   initialMainCategories,
   initialLatestPosts,
+  initialStats,
 }) {
   const [handleCreatePost, setHandleCreatePost] = useState(null);
 
@@ -38,7 +39,7 @@ export default function HomeClient({
           <TopPosts initialLatestPosts={initialLatestPosts} />
         </Suspense>
         <ForumSection initialMainCategories={initialMainCategories} />
-        <ForumStats />
+        <ForumStats initialStats={initialStats} />
         <SEOContent />
       </div>
     </div>

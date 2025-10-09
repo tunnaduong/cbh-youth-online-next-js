@@ -39,6 +39,7 @@ export default async function Home() {
     latest: homeData.latestPosts || [],
   };
   const initialMainCategories = homeData.mainCategories || [];
+  const initialStats = homeData.stats || null;
 
   return (
     <HomeLayout activeNav="home">
@@ -46,6 +47,7 @@ export default async function Home() {
         initialHomeData={homeData}
         initialMainCategories={initialMainCategories}
         initialLatestPosts={initialLatestPosts}
+        initialStats={initialStats}
       />
     </HomeLayout>
   );

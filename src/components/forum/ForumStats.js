@@ -1,39 +1,16 @@
 "use client";
 
 import Link from "next/link";
-import React, { useState, useEffect } from "react";
+import React from "react";
 import {
   NewspaperOutline,
   ChatboxEllipsesOutline,
   PersonOutline,
 } from "react-ionicons";
-import { useForumData } from "@/contexts/ForumDataContext";
 
-const ForumStats = () => {
-  // Use context data
-  const { stats, homeDataLoading, homeDataError, fetchHomeData } =
-    useForumData();
-
-  if (homeDataLoading) {
-    return (
-      <div className="max-w-[775px] mx-auto bg-white dark:!bg-[var(--main-white)] p-6 rounded-lg long-shadow">
-        <div className="flex items-center justify-center py-8">
-          <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary-500"></div>
-          <span className="ml-2 text-gray-500">Đang tải...</span>
-        </div>
-      </div>
-    );
-  }
-
-  if (homeDataError) {
-    return (
-      <div className="max-w-[775px] mx-auto bg-white dark:!bg-[var(--main-white)] p-6 rounded-lg long-shadow">
-        <div className="flex items-center justify-center py-8 text-red-500">
-          <span>Lỗi: {homeDataError}</span>
-        </div>
-      </div>
-    );
-  }
+const ForumStats = ({ initialStats = null }) => {
+  // Use only initial data from server
+  const stats = initialStats;
 
   if (!stats) {
     return null;
