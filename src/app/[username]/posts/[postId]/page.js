@@ -2,24 +2,17 @@ import HomeLayout from "@/layouts/HomeLayout";
 import { notFound, redirect } from "next/navigation";
 import PostClient from "./PostClient";
 import { generatePostSlug } from "@/utils/slugify";
+import { getServer } from "@/utils/serverFetch";
 
-// Server-side API call without authentication
+// Server-side API call with authentication support
 const getPostDetailServer = async (id) => {
-  const baseURL =
-    process.env.NEXT_PUBLIC_API_URL || "https://api.chuyenbienhoa.com";
-  const response = await fetch(`${baseURL}/v1.0/topics/${id}`, {
-    method: "GET",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    cache: "no-store", // Ensure fresh data
-  });
-
-  if (!response.ok) {
-    throw new Error(`HTTP error! status: ${response.status}`);
+  try {
+    const data = await getServer(`/v1.0/topics/${id}`);
+    return data;
+  } catch (error) {
+    console.error("Error fetching post detail:", error);
+    throw error;
   }
-
-  return response.json();
 };
 
 // Helper function to extract numeric ID from postId (e.g., "399873567-giveaway" -> "399873567")
@@ -140,7 +133,7 @@ export default async function PostDetail({ params }) {
 
   return (
     <HomeLayout activeNav="home" activeBar={null}>
-      <PostClient params={params} />
+      <PostClient params={params} initialPost={postData} />
     </HomeLayout>
   );
 }

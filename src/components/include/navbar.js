@@ -64,7 +64,7 @@ export default function Navbar({ activeNav = null }) {
     ev.preventDefault();
     logoutRequest();
     setCurrentUser({});
-    setUserToken(null);
+    setUserToken(null); // This will now clear both localStorage and cookies
     localStorage.removeItem("CURRENT_USER");
     localStorage.removeItem("TOKEN");
     location.href = "/login";

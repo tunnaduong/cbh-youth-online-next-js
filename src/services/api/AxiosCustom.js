@@ -1,4 +1,5 @@
 import axios from "axios";
+import { getTokenFromAnywhere } from "@/utils/cookies";
 
 // Hàm tạo một instance của axios với cấu hình tùy chỉnh
 const axiosInstance = axios.create({
@@ -9,7 +10,7 @@ axiosInstance.interceptors.request.use((config) => {
   try {
     // Check if we're running on the client side
     if (typeof window !== "undefined") {
-      const token = localStorage.getItem("TOKEN") || "";
+      const token = getTokenFromAnywhere() || "";
       config.headers.Authorization = `Bearer ${token}`;
     }
     return config;
@@ -30,6 +31,9 @@ axiosInstance.interceptors.response.use(
           // WHEN: ERROR 401 (Unauthorized)
           localStorage.removeItem("TOKEN");
           localStorage.removeItem("CURRENT_USER");
+          // Also clear cookies
+          const { removeAuthCookie } = require("@/utils/cookies");
+          removeAuthCookie();
           // Optionally reload the page to reflect the logout status
           // window.location.reload();
           if (window.location.pathname !== "/login")

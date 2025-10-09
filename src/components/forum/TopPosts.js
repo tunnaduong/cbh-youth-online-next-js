@@ -10,25 +10,32 @@ import Dropdown from "../ui/Dropdown";
 import { useSearchParams } from "next/navigation";
 import { useForumData } from "@/contexts/ForumDataContext";
 
-export default function TopPosts() {
+export default function TopPosts({ initialLatestPosts = {} }) {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [refreshTimeout, setRefreshTimeout] = useState(null);
   const searchParams = useSearchParams();
   const currentSort = searchParams.get("sort") || "latest";
 
-  // Use context data
-  const { latestPosts, homeDataLoading, homeDataError, fetchHomeData } =
-    useForumData();
+  // Use context data for fallback and refresh
+  const {
+    latestPosts: contextLatestPosts,
+    homeDataLoading,
+    homeDataError,
+    fetchHomeData,
+  } = useForumData();
+
+  // Merge initial data with context data
+  const latestPosts = { ...contextLatestPosts, ...initialLatestPosts };
 
   // Get posts for current sort
   const currentPosts = latestPosts[currentSort] || [];
 
-  // Fetch posts when sort changes
+  // Fetch posts when sort changes (only if not in initial data)
   useEffect(() => {
-    if (!latestPosts[currentSort]) {
+    if (!latestPosts[currentSort] && !initialLatestPosts[currentSort]) {
       fetchHomeData(currentSort);
     }
-  }, [currentSort, fetchHomeData, latestPosts]);
+  }, [currentSort, fetchHomeData, latestPosts, initialLatestPosts]);
 
   // Cleanup timeout on unmount
   useEffect(() => {
@@ -169,7 +176,7 @@ export default function TopPosts() {
         </div>
       </div>
       <div>
-        {homeDataLoading ? (
+        {!initialLatestPosts[currentSort] && homeDataLoading ? (
           <div className="animate-pulse">
             {[...Array(10)].map((_, index) => (
               <div
@@ -198,7 +205,7 @@ export default function TopPosts() {
               </div>
             ))}
           </div>
-        ) : homeDataError ? (
+        ) : !initialLatestPosts[currentSort] && homeDataError ? (
           <div className="flex items-center justify-center py-8 text-red-500">
             <span>Lỗi: {homeDataError}</span>
           </div>

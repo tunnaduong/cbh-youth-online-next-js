@@ -10,11 +10,23 @@ import { useForumData } from "@/contexts/ForumDataContext";
 import SkeletonLoader from "./skeletonLoader";
 import Badges from "@/components/ui/Badges";
 
-export default function ForumSection() {
-  // Use context data
-  const { mainCategories, homeDataLoading, homeDataError } = useForumData();
+export default function ForumSection({ initialMainCategories = [] }) {
+  // Use context data for fallback and refresh
+  const {
+    mainCategories: contextCategories,
+    homeDataLoading,
+    homeDataError,
+    fetchHomeData,
+  } = useForumData();
 
-  if (homeDataLoading) {
+  // Use initial data from server, fallback to context
+  const mainCategories =
+    initialMainCategories.length > 0
+      ? initialMainCategories
+      : contextCategories;
+
+  // Only show loading if we don't have initial data and context is loading
+  if (initialMainCategories.length === 0 && homeDataLoading) {
     return (
       <>
         <SkeletonLoader />
@@ -24,7 +36,8 @@ export default function ForumSection() {
     );
   }
 
-  if (homeDataError) {
+  // Only show error if we don't have initial data and context has error
+  if (initialMainCategories.length === 0 && homeDataError) {
     return (
       <div className="max-w-[775px] w-[100%]">
         <div className="flex items-center justify-center py-8 text-red-500">

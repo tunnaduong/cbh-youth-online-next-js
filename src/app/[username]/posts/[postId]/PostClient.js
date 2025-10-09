@@ -22,11 +22,11 @@ const extractNumericId = (postId) => {
   return match ? match[1] : postId;
 };
 
-export default function PostClient({ params }) {
+export default function PostClient({ params, initialPost = null }) {
   const { currentUser, loggedIn } = useAuthContext();
-  const [post, setPost] = useState(null);
-  const [comments, setComments] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [post, setPost] = useState(initialPost);
+  const [comments, setComments] = useState(initialPost?.comments || []);
+  const [loading, setLoading] = useState(!initialPost);
   const [error, setError] = useState(null);
   const router = useRouter();
 
@@ -39,8 +39,14 @@ export default function PostClient({ params }) {
     fetchPostDetail,
   } = useForumData();
 
-  // Fetch post detail and comments
+  // Fetch post detail and comments (only if no initial data)
   useEffect(() => {
+    // If we have initial data, don't fetch
+    if (initialPost) {
+      setLoading(false);
+      return;
+    }
+
     const fetchPostData = async () => {
       try {
         setLoading(true);
@@ -121,7 +127,7 @@ export default function PostClient({ params }) {
     }
 
     console.log(post);
-  }, [params.postId, postDetails, postComments, fetchPostDetail]);
+  }, [params.postId, postDetails, postComments, fetchPostDetail, initialPost]);
 
   // Helper function to get time display
   const getTimeDisplay = (comment) => {

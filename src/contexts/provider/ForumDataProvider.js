@@ -177,10 +177,28 @@ export const ForumDataProvider = ({ children }) => {
     [fetchWithCache]
   );
 
-  // --- Initial fetch ---
+  // --- Initial fetch (reduced for SSR) ---
   useEffect(() => {
-    if (Object.keys(latestPosts).length === 0) fetchHomeData();
-    if (forumCategories.length === 0) fetchForumCategories();
+    // Only fetch if we don't have any data and we're not on a page that provides initial data
+    // This prevents unnecessary fetches when data is already provided by SSR
+    const hasHomeData = Object.keys(latestPosts).length > 0;
+    const hasForumData = forumCategories.length > 0;
+
+    // Only fetch if we truly have no data
+    if (!hasHomeData && !hasForumData) {
+      // Check if we're on a page that might have provided initial data
+      const isHomePage =
+        typeof window !== "undefined" && window.location.pathname === "/";
+      const isForumPage =
+        typeof window !== "undefined" &&
+        window.location.pathname.startsWith("/forum/");
+
+      // Only fetch if we're not on pages that provide initial data
+      if (!isHomePage && !isForumPage) {
+        fetchHomeData();
+        fetchForumCategories();
+      }
+    }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // --- Cache clearing ---

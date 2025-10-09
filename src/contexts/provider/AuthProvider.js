@@ -3,6 +3,13 @@
 import { useState, useEffect } from "react";
 import PropTypes from "prop-types";
 import { AuthContext } from "..";
+import {
+  setAuthCookie,
+  getAuthCookie,
+  removeAuthCookie,
+  migrateTokenToCookies,
+  getTokenFromAnywhere,
+} from "@/utils/cookies";
 
 const AuthProvider = ({ children }) => {
   const [currentUser, setCurrentUser] = useState(null);
@@ -12,9 +19,13 @@ const AuthProvider = ({ children }) => {
 
   const setUserToken = (token) => {
     if (token) {
+      // Set in both localStorage (for backward compatibility) and cookies
       localStorage.setItem("TOKEN", token);
+      setAuthCookie(token);
     } else {
+      // Remove from both localStorage and cookies
       localStorage.removeItem("TOKEN");
+      removeAuthCookie();
     }
     _setUserToken(token);
   };
@@ -26,10 +37,13 @@ const AuthProvider = ({ children }) => {
     }, 5000);
   };
 
-  // Retrieve initial values from localStorage on mount
+  // Retrieve initial values from cookies/localStorage on mount
   useEffect(() => {
+    // Migrate token from localStorage to cookies if needed
+    migrateTokenToCookies();
+
     const storedUser = localStorage.getItem("CURRENT_USER");
-    const storedToken = localStorage.getItem("TOKEN");
+    const storedToken = getTokenFromAnywhere(); // Try cookies first, then localStorage
 
     if (storedUser) {
       setCurrentUser(JSON.parse(storedUser));
