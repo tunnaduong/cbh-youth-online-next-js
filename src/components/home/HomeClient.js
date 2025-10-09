@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useState } from "react";
+import { Suspense } from "react";
 import ForumSection from "@/components/forum/ForumSection";
 import ForumStats from "@/components/forum/ForumStats";
 import TopPosts from "@/components/forum/TopPosts";
@@ -13,13 +13,8 @@ export default function HomeClient({
   initialMainCategories,
   initialLatestPosts,
   initialStats,
+  onHandleCreatePost,
 }) {
-  const [handleCreatePost, setHandleCreatePost] = useState(null);
-
-  const handleCreatePostCallback = (fn) => {
-    setHandleCreatePost(() => fn);
-  };
-
   return (
     <div className="px-2.5">
       <div className="px-1 xl:min-h-screen pt-4 md:max-w-[775px] mx-auto space-y-6 mb-4">
@@ -27,7 +22,7 @@ export default function HomeClient({
           <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">
             Diễn đàn
           </h1>
-          <MobileButton handleCreatePost={handleCreatePost} />
+          <MobileButton handleCreatePost={onHandleCreatePost} />
         </div>
 
         <StoriesSection />
