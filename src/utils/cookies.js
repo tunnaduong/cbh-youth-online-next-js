@@ -15,7 +15,7 @@ export function setAuthCookie(token, options = {}) {
 
   const defaultOptions = {
     path: "/",
-    maxAge: 7 * 24 * 60 * 60, // 7 days
+    // No maxAge or expires - cookie will persist until browser is cleared
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax",
     ...options,
