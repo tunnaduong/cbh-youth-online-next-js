@@ -1,5 +1,5 @@
 import { useRef, useEffect, useCallback, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter } from "@bprogress/next/app";
 
 /**
  * Hook để theo dõi lượt xem bài viết bằng Intersection Observer
@@ -71,7 +71,12 @@ export const useViewTracking = (postId, options = {}) => {
     return () => {
       observer.disconnect();
     };
-  }, [postId, trackView, observerOptions.threshold, observerOptions.rootMargin]);
+  }, [
+    postId,
+    trackView,
+    observerOptions.threshold,
+    observerOptions.rootMargin,
+  ]);
 
   return {
     ref: elementRef,

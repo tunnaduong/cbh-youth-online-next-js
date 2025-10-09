@@ -14,7 +14,7 @@ import { Image, Earth, X, User, AlertCircle, Loader2 } from "lucide-react";
 import React, { useState } from "react";
 import { useAuthContext } from "@/contexts/Support";
 import Input from "../ui/input";
-import { useRouter } from "next/navigation";
+import { useRouter } from "@bprogress/next/app";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { createPost, uploadFile } from "@/app/Api";
 import { useHomePost } from "@/contexts/HomePostContext";

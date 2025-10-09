@@ -222,7 +222,7 @@ export default function TopPosts() {
                   }/posts/${generatePostSlug(post.id, post.title)}`}
                   className="truncate block w-full text-[12.7px] !text-primary-500 hover:underline"
                 >
-                  {post.title}
+                  {post.title || <span>(Chưa có tiêu đề)</span>}
                 </Link>
               </div>
               <div className="sm:flex items-center justify-end hidden text-right text-gray-500 text-[11px] whitespace-nowrap w-[100px] max-w-[100px]">

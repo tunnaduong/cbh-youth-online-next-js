@@ -6,7 +6,7 @@ import { IoIosAdd } from "react-icons/io";
 import CreateStoryModal from "../modals/CreateStoryModal";
 import { Drawer, message } from "antd";
 import { StoryViewer } from "./StoryViewer";
-import { useRouter } from "next/navigation";
+import { useRouter } from "@bprogress/next/app";
 import { useAuthContext } from "@/contexts/Support";
 import { getStories } from "@/app/Api";
 

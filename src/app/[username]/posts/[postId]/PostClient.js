@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useAuthContext } from "@/contexts/Support";
 import { useForumData } from "@/contexts/ForumDataContext";
-import { getPostDetail } from "@/app/Api";
+import { getPostDetail, votePost } from "@/app/Api";
 import { CommentInput } from "@/components/forum/CommentInput";
 import Comment from "@/components/forum/Comment";
 import EmptyCommentsState from "@/components/forum/EmptyCommentsState";
@@ -12,7 +12,8 @@ import { message } from "antd";
 import Link from "next/link";
 import Lottie from "lottie-react";
 import refreshAnimation from "@/assets/refresh.json";
-import { useRouter, notFound } from "next/navigation";
+import { notFound } from "next/navigation";
+import { useRouter } from "@bprogress/next/app";
 import { generatePostSlug } from "@/utils/slugify";
 
 // Helper function to extract numeric ID from postId (e.g., "399873567-giveaway" -> "399873567")
@@ -21,11 +22,11 @@ const extractNumericId = (postId) => {
   return match ? match[1] : postId;
 };
 
-export default function PostClient({ params, postData }) {
+export default function PostClient({ params }) {
   const { currentUser, loggedIn } = useAuthContext();
-  const [post, setPost] = useState(postData);
-  const [comments, setComments] = useState(postData?.comments || []);
-  const [loading, setLoading] = useState(!postData);
+  const [post, setPost] = useState(null);
+  const [comments, setComments] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const router = useRouter();
 
@@ -81,8 +82,9 @@ export default function PostClient({ params, postData }) {
           return;
         }
 
-        // If not in cache, fetch from API
-        const data = await fetchPostDetail(numericId);
+        // If not in cache, fetch from API with authentication
+        const response = await getPostDetail(numericId);
+        const data = response.data;
         setPost(data);
         setComments(data.comments || []);
 
@@ -114,10 +116,12 @@ export default function PostClient({ params, postData }) {
       }
     };
 
-    if (params.postId && !postData) {
+    if (params.postId) {
       fetchPostData();
     }
-  }, [params.postId, postDetails, postComments, fetchPostDetail, postData]);
+
+    console.log(post);
+  }, [params.postId, postDetails, postComments, fetchPostDetail]);
 
   // Helper function to get time display
   const getTimeDisplay = (comment) => {
@@ -344,7 +348,7 @@ export default function PostClient({ params, postData }) {
     }, 500);
   };
 
-  const handleVote = (postId, value) => {
+  const handleVote = async (postId, value) => {
     if (!currentUser) {
       router.push(
         "/login?continue=" + encodeURIComponent(window.location.href)
@@ -353,9 +357,12 @@ export default function PostClient({ params, postData }) {
       return;
     }
 
+    // Store original state for rollback
+    const originalPost = post;
+
     setPost((prev) => {
       // Kiểm tra user đã vote chưa
-      let existingVote = prev.votes.find(
+      let existingVote = prev.post.votes.find(
         (v) => v.username === currentUser?.username
       );
       let newVotes;
@@ -363,12 +370,12 @@ export default function PostClient({ params, postData }) {
       if (existingVote) {
         if (existingVote.vote_value === value) {
           // Ấn lại -> bỏ vote
-          newVotes = prev.votes.filter(
+          newVotes = prev.post.votes.filter(
             (v) => v.username !== currentUser?.username
           );
         } else {
           // Đổi hướng vote
-          newVotes = prev.votes.map((v) =>
+          newVotes = prev.post.votes.map((v) =>
             v.username === currentUser?.username
               ? { ...v, vote_value: value }
               : v
@@ -377,25 +384,28 @@ export default function PostClient({ params, postData }) {
       } else {
         // Thêm vote mới
         newVotes = [
-          ...prev.votes,
+          ...prev.post.votes,
           { username: currentUser?.username, vote_value: value },
         ];
       }
 
-      return { ...prev, votes: newVotes };
+      return { ...prev, post: { ...prev.post, votes: newVotes } };
     });
 
-    // TODO: Implement vote API call
-    // For now, just show success message
-    setTimeout(() => {
-      // Simulate API call
-      message.success("Đã vote thành công");
-    }, 500);
+    try {
+      // Call the vote API
+      await votePost(postId, { vote_value: value });
+    } catch (error) {
+      // Rollback on error
+      setPost(originalPost);
+      message.error("Có lỗi xảy ra khi vote. Vui lòng thử lại.");
+      console.error("Vote error:", error);
+    }
   };
 
   if (loading || postDataLoading) {
     return (
-      <div className="px-1 xl:min-h-screen pt-4 flex items-center justify-center">
+      <div className="px-1 min-h-[calc(100vh-68px)] flex items-center justify-center">
         <div className="text-center">
           <Lottie
             animationData={refreshAnimation}

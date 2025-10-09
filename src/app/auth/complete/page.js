@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, Suspense } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
+import { useRouter } from "@bprogress/next/app";
 import { useAuthContext } from "@/contexts/Support";
 
 function decodeBase64UrlToJson(base64url) {

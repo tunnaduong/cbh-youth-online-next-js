@@ -34,7 +34,7 @@ import {
 } from "react-icons/bs";
 import { Drawer } from "antd";
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter } from "@bprogress/next/app";
 
 export default function Navbar({ activeNav = null }) {
   const { loggedIn, currentUser, setCurrentUser, setUserToken } =

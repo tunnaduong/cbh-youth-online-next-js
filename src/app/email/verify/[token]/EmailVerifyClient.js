@@ -4,7 +4,7 @@ import Navbar from "@/components/include/navbar";
 import React from "react";
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
+import { useRouter } from "@bprogress/next/app";
 import { verifyEmail } from "@/app/Api";
 
 const EmailVerifyClient = ({ token }) => {

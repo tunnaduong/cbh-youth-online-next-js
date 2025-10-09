@@ -2,7 +2,7 @@
 
 import Navbar from "@/components/include/navbar";
 import { Button } from "@/components/ui/button";
-import { useRouter } from "next/navigation";
+import { useRouter } from "@bprogress/next/app";
 
 export default function Custom404() {
   const router = useRouter();

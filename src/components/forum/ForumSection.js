@@ -93,7 +93,9 @@ export default function ForumSection() {
                           )}`}
                           className="text-primary-500 hover:text-primary-500 hover:underline inline-block text-ellipsis whitespace-nowrap overflow-hidden"
                         >
-                          {subforum.latest_topic?.title}
+                          {subforum.latest_topic?.title || (
+                            <span>(Chưa có tiêu đề)</span>
+                          )}
                         </Link>
                       </div>
                       <div className="flex items-center mt-1 text-primary-500">

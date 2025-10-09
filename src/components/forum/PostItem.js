@@ -17,20 +17,22 @@ import getCollageSetting from "@/utils/getCollageSetting";
 import { useState, useEffect } from "react";
 import { Button, ConfigProvider, message, Tooltip } from "antd";
 import { useViewTracking } from "@/hooks/useViewTracking";
-import { useRouter } from "next/navigation";
+import { useRouter } from "@bprogress/next/app";
+import {
+  savePost as savePostApi,
+  unsavePost as unsavePostApi,
+} from "@/app/Api";
 
 export default function PostItem({ post, single = false, onVote }) {
-  const currentUser = useAuthContext();
+  const { currentUser } = useAuthContext();
   const [showFullContent, setShowFullContent] = useState(false);
   const [isSaved, setIsSaved] = useState(!!post.is_saved);
   const maxLength = 300; // Số ký tự tối đa trước khi truncate
   const myVote =
-    post.votes?.find((v) => v.username === currentUser?.user?.username)
-      ?.vote_value || 0;
-  const votesCount =
-    post?.votes?.reduce((sum, v) => sum + v.vote_value, 0) ||
-    post.votes_sum_vote_value ||
+    post.votes?.find((v) => v.username === currentUser?.username)?.vote_value ||
     0;
+  const votesCount =
+    post?.votes?.reduce((sum, v) => sum + v.vote_value, 0) || 0;
   const router = useRouter();
 
   // Sử dụng hook để theo dõi lượt xem
@@ -53,20 +55,28 @@ export default function PostItem({ post, single = false, onVote }) {
     setShowFullContent(!showFullContent);
   };
 
-  const savePost = (topicId) =>
-    new Promise((resolve, reject) => {
-      // TODO: Implement save post
-      resolve();
-    });
+  const savePost = async (topicId) => {
+    try {
+      await savePostApi(topicId);
+    } catch (error) {
+      // If the post is already saved, we can consider this a success
+      if (error?.response?.data?.message?.includes("already saved")) {
+        return; // Don't throw error for already saved posts
+      }
+      throw error;
+    }
+  };
 
-  const unsavePost = (topicId) =>
-    new Promise((resolve, reject) => {
-      // TODO: Implement unsave post
-      resolve();
-    });
+  const unsavePost = async (topicId) => {
+    try {
+      await unsavePostApi(topicId);
+    } catch (error) {
+      throw error;
+    }
+  };
 
   const handleSavePost = async () => {
-    if (!currentUser?.user) {
+    if (!currentUser) {
       router.push(
         "/login?continue=" + encodeURIComponent(window.location.href)
       );
@@ -87,7 +97,18 @@ export default function PostItem({ post, single = false, onVote }) {
     } catch (error) {
       // Revert UI if API call fails
       setIsSaved(!newSavedStatus);
-      message.error("Có lỗi xảy ra khi lưu/bỏ lưu");
+
+      // Handle specific error cases
+      if (error?.response?.data?.message) {
+        const errorMessage = error.response.data.message;
+        if (errorMessage.includes("already saved")) {
+          message.info("Bài viết đã được lưu trước đó");
+        } else {
+          message.error(errorMessage);
+        }
+      } else {
+        message.error("Có lỗi xảy ra khi lưu/bỏ lưu");
+      }
     }
   };
 
@@ -240,7 +261,9 @@ export default function PostItem({ post, single = false, onVote }) {
         <div className="flex-1 overflow-hidden break-words">
           {single ? (
             <h1 className="text-xl font-semibold mb-1 dark:text-neutral-300">
-              {post.title}
+              {post.title || (
+                <span className="text-gray-500">(Chưa có tiêu đề)</span>
+              )}
             </h1>
           ) : (
             <Link
@@ -252,7 +275,9 @@ export default function PostItem({ post, single = false, onVote }) {
               }
             >
               <h1 className="text-xl font-semibold mb-1 dark:text-neutral-300">
-                {post.title}
+                {post.title || (
+                  <span className="text-gray-500">Chưa có tiêu đề</span>
+                )}
               </h1>
             </Link>
           )}

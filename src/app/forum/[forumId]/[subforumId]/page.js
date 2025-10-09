@@ -2,7 +2,7 @@ import {
   getForumCategoriesServer,
   getSubforumPostsServer,
 } from "../../serverData";
-import { notFound } from "next/navigation";
+import { metadata as layoutMetadata } from "@/app/layout";
 import SubforumClient from "./SubforumClient";
 
 // Generate metadata for SEO and social sharing
@@ -14,55 +14,60 @@ export async function generateMetadata({ params }) {
     const category = categories.find((cat) => cat.slug === forumId);
 
     if (!category) {
+      // Fallback to layout metadata if category not found
       return {
-        title: "Diễn đàn học sinh Chuyên Biên Hòa",
-        description:
-          "Diễn đàn học sinh Chuyên Biên Hòa thuộc Trường THPT Chuyên Hà Nam",
+        ...layoutMetadata,
       };
     }
 
     const subforum = category.subforums.find((sub) => sub.slug === subforumId);
 
     if (!subforum) {
+      // Fallback to layout metadata if subforum not found
       return {
-        title: `${category.name} - Diễn đàn học sinh Chuyên Biên Hòa`,
-        description:
-          category.description ||
-          "Diễn đàn học sinh Chuyên Biên Hòa thuộc Trường THPT Chuyên Hà Nam",
+        ...layoutMetadata,
       };
     }
 
+    // NOTE: Next.js 13/14 expects the metadata object to be flat for title/description.
+    // If you return { title: { default: ... } }, it will not override the <title>.
+    // You must return { title: "..." } directly.
+    // Also, make sure you do NOT spread ...layoutMetadata at the top level,
+    // as it will override your dynamic title/description with the defaults.
+
+    const dynamicTitle = `${subforum.name} - Diễn đàn học sinh Chuyên Biên Hòa`;
+    const dynamicDescription =
+      subforum.description ||
+      category.description ||
+      "Diễn đàn học sinh Chuyên Biên Hòa thuộc Trường THPT Chuyên Hà Nam";
+
     return {
-      title: `${subforum.name} - ${category.name} - Diễn đàn học sinh Chuyên Biên Hòa`,
-      description:
-        subforum.description ||
-        category.description ||
-        "Diễn đàn học sinh Chuyên Biên Hòa thuộc Trường THPT Chuyên Hà Nam",
+      title: dynamicTitle,
+      description: dynamicDescription,
       openGraph: {
-        title: subforum.name,
-        description:
-          subforum.description ||
-          category.description ||
-          "Diễn đàn học sinh Chuyên Biên Hòa thuộc Trường THPT Chuyên Hà Nam",
-        images: [`/images/${subforum.background_image}`],
-        type: "website",
+        ...layoutMetadata.openGraph,
+        title: dynamicTitle,
+        description: dynamicDescription,
       },
       twitter: {
-        card: "summary_large_image",
-        title: subforum.name,
-        description:
-          subforum.description ||
-          category.description ||
-          "Diễn đàn học sinh Chuyên Biên Hòa thuộc Trường THPT Chuyên Hà Nam",
-        images: [`/images/${subforum.background_image}`],
+        ...layoutMetadata.twitter,
+        title: dynamicTitle,
+        description: dynamicDescription,
       },
     };
   } catch (error) {
     console.error("Error generating metadata:", error);
+    // Fallback to layout metadata, but flatten title/description for Next.js
     return {
-      title: "Diễn đàn học sinh Chuyên Biên Hòa",
+      title:
+        layoutMetadata.title?.default ||
+        layoutMetadata.title ||
+        "Diễn đàn học sinh Chuyên Biên Hòa",
       description:
+        layoutMetadata.description ||
         "Diễn đàn học sinh Chuyên Biên Hòa thuộc Trường THPT Chuyên Hà Nam",
+      openGraph: layoutMetadata.openGraph,
+      twitter: layoutMetadata.twitter,
     };
   }
 }

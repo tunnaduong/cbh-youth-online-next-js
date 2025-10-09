@@ -190,7 +190,9 @@ export default function ForumCategoryClient({ params, initialCategory }) {
                           })}
                           className="text-[#319528] hover:text-[#319528] hover:underline inline-block text-ellipsis whitespace-nowrap overflow-hidden"
                         >
-                          {subforum.latest_post?.title}
+                          {subforum.latest_post?.title || (
+                            <span>(Chưa có tiêu đề)</span>
+                          )}
                         </Link>
                       </div>
                       <div className="flex items-center mt-1 text-[#319528]">

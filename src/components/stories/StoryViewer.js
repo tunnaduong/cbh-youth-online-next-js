@@ -5,7 +5,7 @@ import { animated, useSpring, config } from "@react-spring/web";
 import { Drawer } from "antd";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { EffectCube } from "swiper/modules";
-import { useRouter } from "next/navigation";
+import { useRouter } from "@bprogress/next/app";
 import { X, ChevronLeft, ChevronRight, VolumeX, Volume2 } from "lucide-react";
 import { markStoryAsViewed } from "@/app/Api";
 

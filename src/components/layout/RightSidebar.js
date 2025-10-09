@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter, usePathname } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { AddOutline, HelpCircleOutline, Mic } from "react-ionicons";
 import { Skeleton, message } from "antd";
 import CustomColorButton from "../ui/CustomColorButton";
@@ -9,6 +9,7 @@ import { useState, useEffect, useCallback } from "react";
 import CreatePostModal from "../modals/CreatePostModal";
 import UploadRecordingModal from "../modals/UploadRecordingModal";
 import { useAuthContext, useTopUsersContext } from "@/contexts/Support";
+import { useRouter } from "@bprogress/next/app";
 
 export default function RightSidebar({ onHandleCreatePost }) {
   const iconSize = "20px";

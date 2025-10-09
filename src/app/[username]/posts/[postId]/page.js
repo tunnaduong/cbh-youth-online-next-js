@@ -1,5 +1,4 @@
 import HomeLayout from "@/layouts/HomeLayout";
-import { getPostDetail } from "@/app/Api";
 import { notFound, redirect } from "next/navigation";
 import PostClient from "./PostClient";
 import { generatePostSlug } from "@/utils/slugify";
@@ -141,7 +140,7 @@ export default async function PostDetail({ params }) {
 
   return (
     <HomeLayout activeNav="home" activeBar={null}>
-      <PostClient params={params} postData={postData} />
+      <PostClient params={params} />
     </HomeLayout>
   );
 }

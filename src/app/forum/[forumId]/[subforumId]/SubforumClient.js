@@ -252,7 +252,10 @@ export default function SubforumClient({
               <tbody className="divide-y divide-gray-200 dark:divide-neutral-600">
                 {!Array.isArray(topics) || topics.length === 0 ? (
                   <tr>
-                    <td className="!p-3 text-center" colSpan={4}>
+                    <td
+                      className="!p-3 text-center dark:!text-neutral-400"
+                      colSpan={4}
+                    >
                       Không có bài viết nào trong diễn đàn này.
                     </td>
                   </tr>

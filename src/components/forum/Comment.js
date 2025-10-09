@@ -17,7 +17,7 @@ import {
 } from "lucide-react";
 import { IoArrowUpSharp, IoArrowDownSharp } from "react-icons/io5";
 import { CommentInput } from "./CommentInput";
-import { useRouter } from "next/navigation";
+import { useRouter } from "@bprogress/next/app";
 
 export default function Comment({
   comment,
@@ -162,12 +162,12 @@ export default function Comment({
 
   return (
     <div className="relative">
-      {/* Connector lines for nested comments */}
+      {/* Reddit-style curved connector lines for nested comments */}
       {comment.replies?.length > 0 && !isCollapsed && (
         <div
           className={`absolute ${
             isConnectorHovered
-              ? "bg-black  dark:!bg-white"
+              ? "bg-black dark:!bg-white"
               : "bg-gray-200 dark:!bg-gray-600"
           }`}
           style={{
@@ -182,20 +182,23 @@ export default function Comment({
       )}
 
       {level > 0 && (
-        <div
-          className={`absolute w-3 ${
-            parentConnectorHovered
-              ? "bg-black dark:!bg-white"
-              : "bg-gray-200 dark:!bg-gray-600"
-          }`}
-          style={{ left: "-12px", top: "20px", height: "1px" }}
-        />
+        <div className="absolute" style={{ left: "-12px", top: "7px" }}>
+          {/* Curved connector like Reddit */}
+          <div
+            className={`box-border h-md border-0 border-tone-4 border-solid border-b-[1px] cursor-pointer w-[12px] border-s-[1px] rounded-es-[12px] ${
+              parentConnectorHovered
+                ? "border-black dark:!border-white"
+                : "border-gray-200 dark:!border-gray-600"
+            }`}
+            style={{ height: "14px" }}
+          />
+        </div>
       )}
 
       {isLast && (
         <div
           className="absolute bg-background"
-          style={{ left: "-12px", top: "21px", height: "100%", width: "1px" }}
+          style={{ left: "-12px", top: "12px", height: "128%", width: "1px" }}
         />
       )}
 
