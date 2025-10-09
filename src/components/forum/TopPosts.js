@@ -14,6 +14,7 @@ import { usePostRefresh } from "@/contexts/PostRefreshContext";
 export default function TopPosts({ initialLatestPosts = {} }) {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [refreshTimeout, setRefreshTimeout] = useState(null);
+  const [isTabLoading, setIsTabLoading] = useState(false);
   const searchParams = useSearchParams();
   const currentSort = searchParams.get("sort") || "latest";
 
@@ -34,14 +35,22 @@ export default function TopPosts({ initialLatestPosts = {} }) {
   // Get posts for current sort
   const currentPosts = latestPosts[currentSort] || [];
 
-  // Fetch posts when sort changes (only if not in initial data)
+  // Handle tab loading state and data fetching
   useEffect(() => {
     const hasContextData = contextLatestPosts[currentSort];
     const hasInitialData = initialLatestPosts[currentSort];
 
-    if (!hasContextData && !hasInitialData) {
-      fetchHomeData(currentSort);
+    // If we have data, stop loading immediately
+    if (hasContextData || hasInitialData) {
+      setIsTabLoading(false);
+      return;
     }
+
+    // If we don't have data, start loading and fetch
+    setIsTabLoading(true);
+    fetchHomeData(currentSort).finally(() => {
+      setIsTabLoading(false);
+    });
   }, [currentSort, fetchHomeData, contextLatestPosts, initialLatestPosts]);
 
   // Listen for refresh triggers and update local state
@@ -60,6 +69,11 @@ export default function TopPosts({ initialLatestPosts = {} }) {
       }
     };
   }, [refreshTimeout]);
+
+  const handleTabClick = (sort) => {
+    // Start loading immediately when tab is clicked
+    setIsTabLoading(true);
+  };
 
   const handleRefresh = async () => {
     // Clear existing timeout if any
@@ -93,6 +107,7 @@ export default function TopPosts({ initialLatestPosts = {} }) {
             currentSort === "latest" ? "tab-button-active" : ""
           }`}
           scroll={false}
+          onClick={() => handleTabClick("latest")}
         >
           <span
             className={`py-2 dark:text-neutral-300 ${
@@ -108,6 +123,7 @@ export default function TopPosts({ initialLatestPosts = {} }) {
             currentSort === "most_viewed" ? "tab-button-active" : ""
           }`}
           scroll={false}
+          onClick={() => handleTabClick("most_viewed")}
         >
           <span
             className={`py-2 dark:text-neutral-300 ${
@@ -123,6 +139,7 @@ export default function TopPosts({ initialLatestPosts = {} }) {
             currentSort === "most_engaged" ? "tab-button-active" : ""
           }`}
           scroll={false}
+          onClick={() => handleTabClick("most_engaged")}
         >
           <span
             className={`py-2 dark:text-neutral-300 ${
@@ -147,6 +164,7 @@ export default function TopPosts({ initialLatestPosts = {} }) {
                   : ""
               }
               scroll={false}
+              onClick={() => handleTabClick("most_viewed")}
             >
               Chủ đề xem nhiều
             </Dropdown.Link>
@@ -158,6 +176,7 @@ export default function TopPosts({ initialLatestPosts = {} }) {
                   : ""
               }
               scroll={false}
+              onClick={() => handleTabClick("most_engaged")}
             >
               Tương tác nhiều
             </Dropdown.Link>
@@ -191,7 +210,7 @@ export default function TopPosts({ initialLatestPosts = {} }) {
         </div>
       </div>
       <div>
-        {!initialLatestPosts[currentSort] && homeDataLoading ? (
+        {isTabLoading ? (
           <div className="animate-pulse">
             {[...Array(10)].map((_, index) => (
               <div
@@ -220,7 +239,7 @@ export default function TopPosts({ initialLatestPosts = {} }) {
               </div>
             ))}
           </div>
-        ) : !initialLatestPosts[currentSort] && homeDataError ? (
+        ) : homeDataError ? (
           <div className="flex items-center justify-center py-8 text-red-500">
             <span>Lỗi: {homeDataError}</span>
           </div>
