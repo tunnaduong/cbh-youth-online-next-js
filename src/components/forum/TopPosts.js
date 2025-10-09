@@ -151,7 +151,7 @@ export default function TopPosts({ initialLatestPosts = {} }) {
         </Link>
         <Dropdown>
           <Dropdown.Trigger>
-            <button className="h-9 w-9 border-l items-center justify-center tab-button bor-right flex sm:hidden hover:bg-gray-50 dark:border-neutral-500 dark:hover:bg-neutral-500">
+            <button className="h-9 w-9 border-l items-center justify-center tab-button bor-right dark:text-neutral-300 flex sm:hidden hover:bg-gray-50 dark:border-neutral-500 dark:hover:bg-neutral-500">
               <RxHamburgerMenu />
             </button>
           </Dropdown.Trigger>
@@ -197,7 +197,7 @@ export default function TopPosts({ initialLatestPosts = {} }) {
               strokeWidth={2}
               strokeLinecap="round"
               strokeLinejoin="round"
-              className={`lucide lucide-refresh-cw-icon lucide-refresh-cw h-4 w-4 transition-transform duration-1000 ${
+              className={`lucide lucide-refresh-cw-icon lucide-refresh-cw h-4 w-4 transition-transform duration-1000 dark:text-neutral-300 ${
                 isRefreshing ? "animate-spin" : ""
               }`}
             >
