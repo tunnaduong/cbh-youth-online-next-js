@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import {
   getHomeData,
   getForumCategories,
@@ -33,6 +33,17 @@ export const ForumDataProvider = ({ children }) => {
   // Get refresh trigger from PostRefreshContext
   const { refreshTrigger } = usePostRefresh();
 
+  // Use refs for cache state to avoid stale closures
+  const lastFetchRef = useRef({
+    home: {},
+    forum: null,
+    post: {},
+    subforum: {},
+  });
+
+  // Track in-flight requests to prevent duplicates
+  const inFlightRequestsRef = useRef(new Set());
+
   const [loading, setLoading] = useState({
     home: false,
     forum: false,
@@ -47,28 +58,34 @@ export const ForumDataProvider = ({ children }) => {
     subforum: null,
   });
 
-  const [lastFetch, setLastFetch] = useState({
-    home: {},
-    forum: null,
-    post: {},
-    subforum: {},
-  });
-
   // --- Helper fetch function with caching ---
   const fetchWithCache = useCallback(
     async (key, fetcher, cacheDuration, forceRefresh = false) => {
       const now = Date.now();
+
+      // Check cache using ref to avoid stale closure
       if (
         !forceRefresh &&
-        lastFetch[key] &&
-        now - lastFetch[key] < cacheDuration
+        lastFetchRef.current[key] &&
+        now - lastFetchRef.current[key] < cacheDuration
       ) {
         return;
       }
+
+      // Check if request is already in flight
+      if (inFlightRequestsRef.current.has(key)) {
+        return;
+      }
+
+      // Mark as in flight
+      inFlightRequestsRef.current.add(key);
+
       setLoading((prev) => ({ ...prev, [key]: true }));
       setError((prev) => ({ ...prev, [key]: null }));
+
       try {
         const response = await fetcher();
+        lastFetchRef.current[key] = now;
         return response?.data;
       } catch (err) {
         console.error(`Error fetching ${key}:`, err);
@@ -79,26 +96,38 @@ export const ForumDataProvider = ({ children }) => {
         return null;
       } finally {
         setLoading((prev) => ({ ...prev, [key]: false }));
-        setLastFetch((prev) => ({ ...prev, [key]: now }));
+        inFlightRequestsRef.current.delete(key);
       }
     },
-    [] // Remove lastFetch dependency to prevent loops
+    []
   );
 
   // --- Specific fetchers ---
   const fetchHomeData = useCallback(
     async (sort = "latest", forceRefresh = false) => {
+      const requestKey = `home_${sort}`;
+
+      // Check if request is already in flight
+      if (inFlightRequestsRef.current.has(requestKey)) {
+        return;
+      }
+
       setHomeDataLoading(true);
       const now = Date.now();
+
+      // Check cache using ref to avoid stale closure
       if (
         !forceRefresh &&
         latestPosts[sort]?.length > 0 &&
-        lastFetch.home[sort] &&
-        now - lastFetch.home[sort] < CACHE_DURATIONS.home
+        lastFetchRef.current.home[sort] &&
+        now - lastFetchRef.current.home[sort] < CACHE_DURATIONS.home
       ) {
         setHomeDataLoading(false);
         return;
       }
+
+      // Mark as in flight
+      inFlightRequestsRef.current.add(requestKey);
 
       setLoading((prev) => ({ ...prev, home: true }));
       setError((prev) => ({ ...prev, home: null }));
@@ -113,10 +142,7 @@ export const ForumDataProvider = ({ children }) => {
           }));
           setMainCategories(data.mainCategories || []);
           setStats(data.stats || null);
-          setLastFetch((prev) => ({
-            ...prev,
-            home: { ...prev.home, [sort]: now },
-          }));
+          lastFetchRef.current.home[sort] = now;
         }
       } catch (err) {
         setError((prev) => ({
@@ -126,9 +152,10 @@ export const ForumDataProvider = ({ children }) => {
       } finally {
         setLoading((prev) => ({ ...prev, home: false }));
         setHomeDataLoading(false);
+        inFlightRequestsRef.current.delete(requestKey);
       }
     },
-    [] // Remove dependencies to prevent infinite loops
+    [latestPosts] // Include latestPosts to check for existing data
   );
 
   const fetchForumCategories = useCallback(
@@ -226,7 +253,8 @@ export const ForumDataProvider = ({ children }) => {
     setPostDetails({});
     setPostComments({});
     setSubforumTopics({});
-    setLastFetch({ home: {}, forum: null, post: {}, subforum: {} });
+    lastFetchRef.current = { home: {}, forum: null, post: {}, subforum: {} };
+    inFlightRequestsRef.current.clear();
     setError({ home: null, forum: null, post: null, subforum: null });
   }, []);
 

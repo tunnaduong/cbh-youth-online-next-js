@@ -36,10 +36,13 @@ export default function TopPosts({ initialLatestPosts = {} }) {
 
   // Fetch posts when sort changes (only if not in initial data)
   useEffect(() => {
-    if (!latestPosts[currentSort] && !initialLatestPosts[currentSort]) {
+    const hasContextData = contextLatestPosts[currentSort];
+    const hasInitialData = initialLatestPosts[currentSort];
+
+    if (!hasContextData && !hasInitialData) {
       fetchHomeData(currentSort);
     }
-  }, [currentSort, fetchHomeData, latestPosts, initialLatestPosts]);
+  }, [currentSort, fetchHomeData, contextLatestPosts, initialLatestPosts]);
 
   // Listen for refresh triggers and update local state
   useEffect(() => {
