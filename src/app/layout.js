@@ -1,5 +1,6 @@
 import "./globals.css";
 import ClientProviders from "./ClientProviders";
+import GlobalConsoleMessage from "../components/GlobalConsoleMessage";
 
 export const metadata = {
   title: {
@@ -38,6 +39,7 @@ export default function RootLayout({ children }) {
   return (
     <html lang="vi">
       <body className="bg-[#F8F8F8] dark:bg-neutral-800">
+        <GlobalConsoleMessage />
         <ClientProviders>{children}</ClientProviders>
       </body>
     </html>
