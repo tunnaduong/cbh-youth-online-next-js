@@ -11,6 +11,8 @@ export const metadata = {
   keywords:
     "thpt chuyen ha nam, thanh nien chuyen bien hoa, thanh nien chuyen bien hoa online, thpt chuyen bien hoa, chuyen bien hoa, chuyen ha nam, cyo, cbh youth online, chuyen bien hoa online, chuyên biên hòa online",
   authors: [{ name: "Đội ngũ CBH Youth Online" }],
+  viewport:
+    "width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no",
   openGraph: {
     title: "Diễn đàn học sinh Chuyên Biên Hòa",
     description:

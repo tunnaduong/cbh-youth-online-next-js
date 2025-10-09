@@ -5,12 +5,12 @@ import { useRouter, usePathname } from "next/navigation";
 import { AddOutline, HelpCircleOutline, Mic } from "react-ionicons";
 import { Skeleton, message } from "antd";
 import CustomColorButton from "../ui/CustomColorButton";
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import CreatePostModal from "../modals/CreatePostModal";
 import UploadRecordingModal from "../modals/UploadRecordingModal";
 import { useAuthContext, useTopUsersContext } from "@/contexts/Support";
 
-export default function RightSidebar() {
+export default function RightSidebar({ onHandleCreatePost }) {
   const iconSize = "20px";
   const router = useRouter();
   const pathname = usePathname();
@@ -24,7 +24,7 @@ export default function RightSidebar() {
 
   // No need to fetch data here anymore - it's handled by the context
 
-  const handleCreatePost = () => {
+  const handleCreatePost = useCallback(() => {
     if (!loggedIn) {
       message.error("Bạn cần đăng nhập để tạo cuộc thảo luận");
       router.push(
@@ -34,7 +34,14 @@ export default function RightSidebar() {
       isRecordingsPage && message.loading("Cái này ad đang làm nha ^^");
       setOpen(true);
     }
-  };
+  }, [loggedIn, isRecordingsPage, router]);
+
+  // Pass the handleCreatePost function to parent
+  useEffect(() => {
+    if (onHandleCreatePost) {
+      onHandleCreatePost(handleCreatePost);
+    }
+  }, [onHandleCreatePost, handleCreatePost]);
 
   return (
     <>

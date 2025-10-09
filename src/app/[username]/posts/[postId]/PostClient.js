@@ -398,7 +398,7 @@ export default function PostClient({ params, postData }) {
   }
 
   return (
-    <div className="px-1 xl:min-h-screen pt-4">
+    <div className="px-1 xl:min-h-screen pt-6">
       <PostItem post={post.post} single={true} onVote={handleVote} />
       <div className="px-1.5 md:px-0 md:max-w-[775px] mx-auto w-full mb-4">
         <div className="shadow !mb-4 long-shadow h-min rounded-lg bg-white post-comment-container overflow-clip">

@@ -259,7 +259,12 @@ export default function PostItem({ post, single = false, onVote }) {
           <div
             className="text-base max-w-[600px] overflow-wrap prose mt-[0.75em]"
             dangerouslySetInnerHTML={{
-              __html: single ? post.content : getContentWithReadMore(),
+              __html:
+                !post.content || post.content.trim() === ""
+                  ? '<span style="color: #9ca3af;">(Chưa có nội dung)</span>'
+                  : single
+                  ? post.content
+                  : getContentWithReadMore(),
             }}
             onClick={(e) => {
               if (!single && e.target.classList.contains("read-more-link")) {
