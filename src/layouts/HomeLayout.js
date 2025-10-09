@@ -1,19 +1,22 @@
 "use client";
 
-import { useState } from "react";
+import {
+  CreatePostProvider,
+  useCreatePost,
+} from "@/contexts/CreatePostContext";
 import Navbar from "@/components/include/navbar";
 import Footer from "@/components/layout/Footer";
 import LeftSidebar from "@/components/layout/LeftSidebar";
 import RightSidebar from "@/components/layout/RightSidebar";
 import BottomCTA from "@/components/marketing/BottomCTA";
 
-export default function HomeLayout({
+function HomeLayoutContent({
   children,
   activeNav,
   activeBar,
   onHandleCreatePost,
 }) {
-  const [handleCreatePost, setHandleCreatePost] = useState(null);
+  const { setHandleCreatePost } = useCreatePost();
 
   const handleRightSidebarCallback = (fn) => {
     setHandleCreatePost(() => fn);
@@ -34,5 +37,13 @@ export default function HomeLayout({
       </div>
       <BottomCTA />
     </div>
+  );
+}
+
+export default function HomeLayout(props) {
+  return (
+    <CreatePostProvider>
+      <HomeLayoutContent {...props} />
+    </CreatePostProvider>
   );
 }

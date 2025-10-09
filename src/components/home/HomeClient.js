@@ -7,14 +7,15 @@ import TopPosts from "@/components/forum/TopPosts";
 import SEOContent from "@/components/marketing/SEOContent";
 import StoriesSection from "@/components/stories/StoriesSection";
 import MobileButton from "@/components/home/MobileButton";
+import { useCreatePost } from "@/contexts/CreatePostContext";
 
 export default function HomeClient({
   initialHomeData,
   initialMainCategories,
   initialLatestPosts,
   initialStats,
-  onHandleCreatePost,
 }) {
+  const { handleCreatePost } = useCreatePost();
   return (
     <div className="px-2.5">
       <div className="px-1 xl:min-h-screen pt-4 md:max-w-[775px] mx-auto space-y-6 mb-4">
@@ -22,7 +23,7 @@ export default function HomeClient({
           <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">
             Diễn đàn
           </h1>
-          <MobileButton handleCreatePost={onHandleCreatePost} />
+          <MobileButton handleCreatePost={handleCreatePost} />
         </div>
 
         <StoriesSection />
