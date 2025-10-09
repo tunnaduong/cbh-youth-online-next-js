@@ -10,6 +10,7 @@ import Badges from "@/components/ui/Badges";
 import { notFound } from "next/navigation";
 import SkeletonLoader from "./skeletonLoader";
 import SEOContent from "@/components/marketing/SEOContent";
+import { generatePostSlug } from "@/utils/slugify";
 
 export default function ForumCategoryClient({ params, initialCategory }) {
   const { forumId } = params;
@@ -62,20 +63,10 @@ export default function ForumCategoryClient({ params, initialCategory }) {
     }
   }, [forumId, forumCategories, initialCategory]);
 
-  // Helper function to generate post slug
-  const generatePostSlug = (id, title) => {
-    if (!id || !title) return "";
-    const slug = title
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, "-")
-      .replace(/(^-|-$)/g, "");
-    return `${id}-${slug}`;
-  };
-
   // Helper function for routing
   const route = (name, params) => {
     if (name === "posts.show") {
-      return `/${params.username}/${params.id}`;
+      return `/${params.username}/posts/${params.id}`;
     }
     if (name === "profile.show") {
       return `/${params.username}`;
