@@ -12,6 +12,7 @@ import { useForumData } from "@/contexts/ForumDataContext";
 
 export default function TopPosts() {
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [refreshTimeout, setRefreshTimeout] = useState(null);
   const searchParams = useSearchParams();
   const currentSort = searchParams.get("sort") || "latest";
 
@@ -29,13 +30,38 @@ export default function TopPosts() {
     }
   }, [currentSort, fetchHomeData, latestPosts]);
 
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (refreshTimeout) {
+        clearTimeout(refreshTimeout);
+      }
+    };
+  }, [refreshTimeout]);
+
   const handleRefresh = async () => {
+    // Clear existing timeout if any
+    if (refreshTimeout) {
+      clearTimeout(refreshTimeout);
+    }
+
+    // Always start spinning regardless of current state
     setIsRefreshing(true);
-    fetchHomeData(currentSort, true); // Force refresh
-    setTimeout(() => {
+
+    // Only fetch data if not already refreshing to avoid spam
+    if (!isRefreshing) {
+      fetchHomeData(currentSort, true); // Force refresh
+    }
+
+    // Set timeout to stop spinning after 950ms
+    const timeout = setTimeout(() => {
       setIsRefreshing(false);
+      setRefreshTimeout(null);
     }, 950);
+
+    setRefreshTimeout(timeout);
   };
+
   return (
     <div className="border dark:!border-[#585857] rounded-lg long-shadow bg-white dark:!bg-[var(--main-white)] overflow-hidden">
       <div className="flex flex-wrap items-stretch">
