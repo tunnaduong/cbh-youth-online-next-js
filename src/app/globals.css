@@ -362,14 +362,6 @@ hr {
   border-right: 1px solid #aaaaaa;
 }
 
-.prose code::before {
-  content: "";
-}
-
-.prose code::after {
-  content: "";
-}
-
 code {
   display: inline-block;
   background-color: #f7f7f8; /* Light gray background */
@@ -379,10 +371,6 @@ code {
   padding: 2px 4px; /* Add a little padding for inline code */
   border-radius: 4px; /* Rounded corners */
   white-space: pre-wrap; /* Wrap content if needed */
-}
-
-.prose > ul > li > :first-child {
-  margin-top: 0;
 }
 
 blockquote {
@@ -411,25 +399,6 @@ blockquote p {
 
 input[type="radio"] {
   accent-color: #319527;
-}
-
-.prose hr {
-  margin-top: 1em !important;
-  margin-bottom: 1em !important;
-}
-
-.prose > ul > li > :first-child {
-  margin-bottom: 0 !important;
-}
-
-.prose p {
-  margin-top: 0.75em !important;
-  margin-bottom: 0.75rem !important;
-}
-
-.prose ul {
-  margin-top: 0 !important;
-  margin-bottom: 0 !important;
 }
 
 .dont-break-out {
@@ -553,6 +522,37 @@ input[type="radio"] {
   margin-right: 5px;
 }
 
+.prose > ul > li > :first-child {
+  margin-top: 0;
+}
+
+.prose hr {
+  margin-top: 1em !important;
+  margin-bottom: 1em !important;
+}
+
+.prose > ul > li > :first-child {
+  margin-bottom: 0 !important;
+}
+
+.prose p {
+  margin-top: 0.75em !important;
+  margin-bottom: 0.75rem !important;
+}
+
+.prose ul {
+  margin-top: 0 !important;
+  margin-bottom: 0 !important;
+}
+
+.prose code::before {
+  content: "";
+}
+
+.prose code::after {
+  content: "";
+}
+
 .prose h1,
 .prose h2,
 .prose h3,
@@ -583,6 +583,15 @@ input[type="radio"] {
 
 .dark .prose {
   color: rgb(209 213 219); /* text-gray-300 */
+}
+
+.dark .prose code {
+  background-color: #1f2937;
+}
+
+.prose code {
+  color: white;
+  background-color: #1f2937;
 }
 
 .dark .post-container {
@@ -681,15 +690,6 @@ hr {
 .dark .ant-select-focused {
   box-shadow: 0 0 0 2px rgba(73, 249, 55, 0.17) !important;
 } */
-
-.dark .prose code {
-  background-color: #1f2937;
-}
-
-.prose code {
-  color: white;
-  background-color: #1f2937;
-}
 
 /* Custom Audio Player Styles */
 .audio-player {
@@ -884,4 +884,12 @@ body {
   .custom-modal {
     @apply !top-3 lg:!top-[40px];
   }
+}
+
+.dark .markdown-preview blockquote {
+  border-left-color: #dadada;
+}
+
+.dark .prose {
+  --tw-prose-bullets: #dadada !important;
 }

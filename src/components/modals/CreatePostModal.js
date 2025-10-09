@@ -1,13 +1,15 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Modal, Input, Button, Select, message, Switch, Dropdown } from "antd";
 import CustomInput from "../ui/input";
 import CustomColorButton from "../ui/CustomColorButton";
 // // import { usePage, useForm } from "@inertiajs/react"; // TODO: Replace with Next.js equivalent // TODO: Replace with Next.js equivalent
 import VerifiedBadge from "../ui/Badges";
+import MarkdownToolbar from "../ui/MarkdownToolbar";
+import MarkdownRenderer from "../ui/MarkdownRenderer";
 import { IoEarth, IoCaretDown } from "react-icons/io5";
-import { FaExternalLinkAlt, FaMarkdown } from "react-icons/fa";
+import { FaEye, FaMarkdown, FaEdit } from "react-icons/fa";
 import { FaFileLines } from "react-icons/fa6";
 import { useAuthContext } from "@/contexts/Support";
 import { usePostRefresh } from "@/contexts/PostRefreshContext";
@@ -60,6 +62,66 @@ const CreatePostModal = ({ open, onClose }) => {
   });
   const [processing, setProcessing] = useState(false);
   const [errors, setErrors] = useState({});
+  const [isPreviewMode, setIsPreviewMode] = useState(false);
+  const textareaRef = useRef(null);
+
+  // Handle auto-continuation for lists
+  const handleTextareaKeyDown = (e) => {
+    if (e.key === "Enter") {
+      const textarea =
+        textareaRef.current?.resizableTextArea?.textArea || textareaRef.current;
+      if (!textarea) return;
+
+      const start = textarea.selectionStart;
+      const end = textarea.selectionEnd;
+      const text = textarea.value;
+
+      // Get the current line
+      const lines = text.substring(0, start).split("\n");
+      const currentLine = lines[lines.length - 1];
+
+      // Check if current line is a bullet list
+      const bulletMatch = currentLine.match(/^(\s*)(-\s)/);
+      if (bulletMatch) {
+        e.preventDefault();
+        const indent = bulletMatch[1];
+        const newLine = `\n${indent}- `;
+        const newText =
+          text.substring(0, start) + newLine + text.substring(end);
+        const newCursorPos = start + newLine.length;
+
+        textarea.value = newText;
+        setData((prev) => ({ ...prev, description: newText }));
+
+        setTimeout(() => {
+          textarea.setSelectionRange(newCursorPos, newCursorPos);
+          textarea.focus();
+        }, 0);
+        return;
+      }
+
+      // Check if current line is a numbered list
+      const numberedMatch = currentLine.match(/^(\s*)(\d+\.\s)/);
+      if (numberedMatch) {
+        e.preventDefault();
+        const indent = numberedMatch[1];
+        const currentNumber = parseInt(numberedMatch[2]);
+        const newLine = `\n${indent}${currentNumber + 1}. `;
+        const newText =
+          text.substring(0, start) + newLine + text.substring(end);
+        const newCursorPos = start + newLine.length;
+
+        textarea.value = newText;
+        setData((prev) => ({ ...prev, description: newText }));
+
+        setTimeout(() => {
+          textarea.setSelectionRange(newCursorPos, newCursorPos);
+          textarea.focus();
+        }, 0);
+        return;
+      }
+    }
+  };
 
   const reset = () => {
     setData({
@@ -436,30 +498,45 @@ const CreatePostModal = ({ open, onClose }) => {
               error={errors.title}
             />
             <div className="rounded-md border shadow-sm pb-2 bg-gray-100 dark:bg-neutral-600 dark:!border-neutral-500">
+              <MarkdownToolbar
+                textareaRef={textareaRef}
+                onTextChange={(value) =>
+                  setData((prev) => ({ ...prev, description: value }))
+                }
+                isPreviewMode={isPreviewMode}
+              />
               <div className="relative -mx-[1px] -mt-[1px]">
-                <Input.TextArea
-                  id="postDescription"
-                  name="description"
-                  className="!bg-white dark:!bg-[#3c3c3c]"
-                  placeholder="Nội dung bài viết"
-                  spellCheck="false"
-                  data-ms-editor="true"
-                  value={data.description}
-                  onChange={(e) =>
-                    setData((prev) => ({
-                      ...prev,
-                      description: e.target.value,
-                    }))
-                  }
-                  rows={5}
-                />
+                {isPreviewMode ? (
+                  <div className="min-h-[120px] p-3 bg-white dark:bg-[#3c3c3c] rounded-md border dark:!border-neutral-500">
+                    <MarkdownRenderer content={data.description} />
+                  </div>
+                ) : (
+                  <Input.TextArea
+                    ref={textareaRef}
+                    id="postDescription"
+                    name="description"
+                    className="!bg-white dark:!bg-[#3c3c3c]"
+                    placeholder="Nội dung bài viết"
+                    spellCheck="false"
+                    data-ms-editor="true"
+                    value={data.description}
+                    onChange={(e) =>
+                      setData((prev) => ({
+                        ...prev,
+                        description: e.target.value,
+                      }))
+                    }
+                    onKeyDown={handleTextareaKeyDown}
+                    rows={5}
+                  />
+                )}
                 {errors.description && (
                   <div className="text-red-500 text-sm mt-1">
                     {errors.description}
                   </div>
                 )}
               </div>
-              <div className="px-3 flex items-center gap-x-2 mt-3">
+              <div className="px-3 flex items-center gap-x-2 mt-3 text-gray-500 dark:text-neutral-400">
                 <a
                   href="/guide/markdown"
                   className="-mt-1.5 text-xs font-bold border-right pr-2 flex items-center"
@@ -476,18 +553,23 @@ const CreatePostModal = ({ open, onClose }) => {
                   <FaFileLines className="mr-1" />
                   Quy tắc
                 </a>
-                <a
-                  onClick={(e) => {
-                    e.preventDefault();
-                    message.loading("Tính năng này ad đang phát triển ^^");
-                  }}
-                  href="/publish/post"
+                <button
+                  type="button"
+                  onClick={() => setIsPreviewMode(!isPreviewMode)}
                   className="-mt-1.5 text-xs font-bold flex items-center"
-                  target="_blank"
                 >
-                  <FaExternalLinkAlt className="mr-1" />
-                  Nâng cao
-                </a>
+                  {isPreviewMode ? (
+                    <>
+                      <FaEdit className="mr-1" />
+                      Chỉnh sửa
+                    </>
+                  ) : (
+                    <>
+                      <FaEye className="mr-1" />
+                      Xem trước
+                    </>
+                  )}
+                </button>
               </div>
             </div>
             <Select
