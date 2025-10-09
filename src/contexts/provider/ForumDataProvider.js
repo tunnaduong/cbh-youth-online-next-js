@@ -8,6 +8,7 @@ import {
   getSubforumPosts,
 } from "../../app/Api";
 import ForumDataContext from "../ForumDataContext";
+import { usePostRefresh } from "../PostRefreshContext";
 
 // Cache durations (vẫn giữ để hạn chế fetch quá nhiều nếu muốn)
 const CACHE_DURATIONS = {
@@ -28,6 +29,9 @@ export const ForumDataProvider = ({ children }) => {
   const [postComments, setPostComments] = useState({});
   const [subforumTopics, setSubforumTopics] = useState({});
   const [homeDataLoading, setHomeDataLoading] = useState(false);
+
+  // Get refresh trigger from PostRefreshContext
+  const { refreshTrigger } = usePostRefresh();
 
   const [loading, setLoading] = useState({
     home: false,
@@ -200,6 +204,15 @@ export const ForumDataProvider = ({ children }) => {
       }
     }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // --- Listen for refresh triggers ---
+  useEffect(() => {
+    if (refreshTrigger > 0) {
+      // Force refresh all data when triggered
+      fetchHomeData("latest", true); // Force refresh
+      fetchForumCategories(true); // Force refresh
+    }
+  }, [refreshTrigger, fetchHomeData, fetchForumCategories]);
 
   // --- Cache clearing ---
   const clearCache = useCallback(() => {

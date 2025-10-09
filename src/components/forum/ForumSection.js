@@ -7,6 +7,7 @@ import { generatePostSlug } from "@/utils/slugify";
 import VerifiedBadge from "@/components/ui/Badges";
 import { useState, useEffect } from "react";
 import { useForumData } from "@/contexts/ForumDataContext";
+import { usePostRefresh } from "@/contexts/PostRefreshContext";
 import SkeletonLoader from "./skeletonLoader";
 import Badges from "@/components/ui/Badges";
 
@@ -19,11 +20,12 @@ export default function ForumSection({ initialMainCategories = [] }) {
     fetchHomeData,
   } = useForumData();
 
-  // Use initial data from server, fallback to context
+  // Get refresh trigger
+  const { refreshTrigger } = usePostRefresh();
+
+  // Use context data (refreshed) if available, fallback to initial server data
   const mainCategories =
-    initialMainCategories.length > 0
-      ? initialMainCategories
-      : contextCategories;
+    contextCategories.length > 0 ? contextCategories : initialMainCategories;
 
   // Only show loading if we don't have initial data and context is loading
   if (initialMainCategories.length === 0 && homeDataLoading) {

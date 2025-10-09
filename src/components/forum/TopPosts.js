@@ -9,6 +9,7 @@ import { useState, useEffect } from "react";
 import Dropdown from "../ui/Dropdown";
 import { useSearchParams } from "next/navigation";
 import { useForumData } from "@/contexts/ForumDataContext";
+import { usePostRefresh } from "@/contexts/PostRefreshContext";
 
 export default function TopPosts({ initialLatestPosts = {} }) {
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -24,8 +25,11 @@ export default function TopPosts({ initialLatestPosts = {} }) {
     fetchHomeData,
   } = useForumData();
 
-  // Merge initial data with context data
-  const latestPosts = { ...contextLatestPosts, ...initialLatestPosts };
+  // Get refresh trigger
+  const { refreshTrigger } = usePostRefresh();
+
+  // Merge initial data with context data (context data takes priority when refreshed)
+  const latestPosts = { ...initialLatestPosts, ...contextLatestPosts };
 
   // Get posts for current sort
   const currentPosts = latestPosts[currentSort] || [];
@@ -36,6 +40,14 @@ export default function TopPosts({ initialLatestPosts = {} }) {
       fetchHomeData(currentSort);
     }
   }, [currentSort, fetchHomeData, latestPosts, initialLatestPosts]);
+
+  // Listen for refresh triggers and update local state
+  useEffect(() => {
+    if (refreshTrigger > 0) {
+      // The ForumDataProvider will handle the actual fetch
+      // We just need to re-render when the context data updates
+    }
+  }, [refreshTrigger]);
 
   // Cleanup timeout on unmount
   useEffect(() => {

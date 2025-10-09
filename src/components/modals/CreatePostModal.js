@@ -132,8 +132,6 @@ const CreatePostModal = ({ open, onClose }) => {
       // Make API call
       const response = await createPost(formData);
 
-      fetchHomeData("latest", true); // Trigger refresh of posts
-
       if (response.status === 201) {
         console.log("Success: Post created", response.data);
         message.success("Bài viết đã được tạo thành công!");
@@ -143,7 +141,9 @@ const CreatePostModal = ({ open, onClose }) => {
         setImagePreviews([]);
         setDocumentFiles([]);
         setProcessing(false);
-        triggerRefresh(); // Trigger refresh of posts
+
+        // Trigger refresh of posts after successful creation
+        triggerRefresh(); // This will trigger ForumDataProvider to refresh
         onClose();
       } else {
         throw new Error("Unexpected response status");

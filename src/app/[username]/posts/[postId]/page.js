@@ -50,7 +50,7 @@ export async function generateMetadata({ params }) {
       title: `${post.title} - Diễn đàn học sinh Chuyên Biên Hòa`,
       description: description,
       openGraph: {
-        title: post.title,
+        title: `${post.title} - Diễn đàn học sinh Chuyên Biên Hòa`,
         description: description,
         images: [post.image_urls[0] || "/images/cyo_thumbnail.png"],
         type: "article",
