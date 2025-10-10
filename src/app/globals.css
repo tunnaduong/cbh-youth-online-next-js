@@ -882,7 +882,7 @@ body {
   }
 
   .custom-modal {
-    @apply !top-3 lg:!top-[40px];
+    @apply !top-3 lg:!top-8;
   }
 }
 
