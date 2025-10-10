@@ -18,6 +18,7 @@ import {
 import { IoArrowUpSharp, IoArrowDownSharp } from "react-icons/io5";
 import { CommentInput } from "./CommentInput";
 import { useRouter } from "@bprogress/next/app";
+import Badges from "../ui/Badges";
 
 export default function Comment({
   comment,
@@ -239,8 +240,11 @@ export default function Comment({
                 </span>
               ) : (
                 <Link href={`/${comment.author.username}`}>
-                  <span className="text-sm font-medium text-gray-900 dark:text-gray-100 hover:underline">
-                    {comment.author.profile_name}
+                  <span className="inline">
+                    <span className="line-clamp-1 inline dark:text-white">
+                      {comment.author.profile_name}
+                    </span>
+                    {comment.author.verified && <Badges className="ml-1" />}
                   </span>
                 </Link>
               )}

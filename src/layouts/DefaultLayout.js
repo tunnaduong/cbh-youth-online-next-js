@@ -1,4 +1,4 @@
-import Navbar from "@/components/Navbar";
+import Navbar from "@/components/include/navbar";
 
 export default function DefaultLayout({ children, activeNav }) {
   return (
