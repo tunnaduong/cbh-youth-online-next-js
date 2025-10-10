@@ -20,7 +20,6 @@ import { IoArrowUpSharp, IoArrowDownSharp } from "react-icons/io5";
 import { CommentInput } from "./CommentInput";
 import { useRouter } from "@bprogress/next/app";
 import Badges from "../ui/Badges";
-import { updateComment } from "@/app/Api";
 
 export default function Comment({
   comment,
@@ -36,10 +35,8 @@ export default function Comment({
   const { currentUser } = useAuthContext();
   const [isEditing, setIsEditing] = useState(false);
   const [editContent, setEditContent] = useState(() => {
-    // Convert HTML to plain text for editing
-    const tempDiv = document.createElement("div");
-    tempDiv.innerHTML = comment.content;
-    return tempDiv.textContent || tempDiv.innerText || "";
+    // Use raw markdown/text for editing, not HTML
+    return comment.content || "";
   });
   const [isReplying, setIsReplying] = useState(false);
   const [isConnectorHovered, setIsConnectorHovered] = useState(false);
@@ -51,16 +48,12 @@ export default function Comment({
     if (comment.isPending) return;
 
     try {
-      // Call the API to update the comment with plain text/markdown
-      await updateComment(comment.id, { comment: editContent });
-
-      // Update local state and call parent callback
+      // Call parent callback to handle the API call and state update
       if (onEdit) {
-        onEdit(comment.id, editContent);
+        await onEdit(comment.id, editContent);
       }
 
       setIsEditing(false);
-      message.success("Bình luận đã được cập nhật thành công");
     } catch (error) {
       console.error("Error updating comment:", error);
       message.error("Có lỗi xảy ra khi cập nhật bình luận. Vui lòng thử lại.");
@@ -68,10 +61,8 @@ export default function Comment({
   };
 
   const handleCancelEdit = () => {
-    // Convert HTML to plain text for editing
-    const tempDiv = document.createElement("div");
-    tempDiv.innerHTML = comment.content;
-    setEditContent(tempDiv.textContent || tempDiv.innerText || "");
+    // Use raw markdown/text for editing, not HTML
+    setEditContent(comment.content || "");
     setIsEditing(false);
   };
 
@@ -124,11 +115,9 @@ export default function Comment({
       if (existingVote && existingVote.vote_value === voteValue) {
         // User is undoing their vote - remove the vote
         await destroyCommentVote(comment.id);
-        message.success("Đã bỏ vote bình luận");
       } else {
         // User is voting or changing their vote
         await voteOnComment(comment.id, { vote_value: voteValue });
-        message.success("Đã vote bình luận thành công");
       }
     } catch (error) {
       // Revert the optimistic update on error
@@ -323,10 +312,18 @@ export default function Comment({
               </div>
             ) : (
               !isCollapsed && (
-                <div
-                  className="text-gray-700 dark:text-gray-300 text-sm mb-1 prose custom-prose dark:prose-invert flex flex-col"
-                  dangerouslySetInnerHTML={{ __html: comment.comment }}
-                />
+                <div className="relative">
+                  <div
+                    className="text-gray-700 dark:text-gray-300 text-sm mb-1 prose custom-prose markdown-preview dark:prose-invert flex flex-col"
+                    dangerouslySetInnerHTML={{ __html: comment.comment }}
+                  />
+                  {/* Show optimistic update indicator */}
+                  {comment.isOptimistic && (
+                    <div className="absolute top-0 right-0 bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-300 text-xs px-2 py-1 rounded-full">
+                      Đang cập nhật...
+                    </div>
+                  )}
+                </div>
               )
             )}
 
@@ -421,12 +418,8 @@ export default function Comment({
                     size="small"
                     className="h-8 px-2 text-xs text-gray-500 dark:!text-gray-400 hover:text-gray-700 border-0 rounded-full"
                     onClick={() => {
-                      // Convert HTML to plain text for editing
-                      const tempDiv = document.createElement("div");
-                      tempDiv.innerHTML = comment.content;
-                      setEditContent(
-                        tempDiv.textContent || tempDiv.innerText || ""
-                      );
+                      // Use raw markdown/text for editing, not HTML
+                      setEditContent(comment.content || "");
                       setIsEditing(!isEditing);
                     }}
                   >
@@ -458,6 +451,7 @@ export default function Comment({
                   onSubmit={handleSubmitReply}
                   userAvatar={userAvatar}
                   onCancel={handleCancelReply}
+                  focus={isReplying}
                 />
               </div>
             )}

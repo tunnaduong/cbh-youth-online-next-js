@@ -14,6 +14,7 @@ export function CommentInput({
   placeholder = "Nhập bình luận của bạn...",
   onSubmit,
   onCancel,
+  focus = false,
 }) {
   const [comment, setComment] = useState("");
   const [isFocused, setIsFocused] = useState(false);
@@ -113,6 +114,14 @@ export function CommentInput({
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
+
+  // Auto-focus textarea when focus prop is true
+  useEffect(() => {
+    if (focus && textareaRef.current) {
+      setIsFocused(true);
+      textareaRef.current.focus();
+    }
+  }, [focus]);
 
   return (
     <div className="w-full max-w-4xl mx-auto" ref={wrapperRef}>

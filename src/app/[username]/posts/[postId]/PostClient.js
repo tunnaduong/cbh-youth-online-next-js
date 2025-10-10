@@ -153,35 +153,63 @@ export default function PostClient({ params, initialPost = null }) {
 
   // Handle comment editing
   const handleEditComment = async (commentId, newContent) => {
-    // Store original content for rollback
+    // Store original comments for rollback
     const originalComments = [...comments];
 
-    // Optimistically update comment in UI
-    const updateCommentInTree = (comments) => {
-      return comments.map((comment) => {
-        if (comment.id === commentId) {
-          return {
-            ...comment,
-            content: newContent,
-          };
-        }
-        if (comment.replies) {
-          return {
-            ...comment,
-            replies: updateCommentInTree(comment.replies),
-          };
-        }
-        return comment;
-      });
-    };
-
-    setComments(updateCommentInTree(comments));
+    // Optimistically update comment immediately with plain text
+    setComments((prevComments) => {
+      const updateCommentInTree = (comments) => {
+        return comments.map((comment) => {
+          if (comment.id === commentId) {
+            return {
+              ...comment,
+              comment: newContent, // Show plain text immediately
+              content: newContent, // Show plain text immediately
+              isOptimistic: true, // Mark as optimistic update
+            };
+          }
+          if (comment.replies && comment.replies.length > 0) {
+            return {
+              ...comment,
+              replies: updateCommentInTree(comment.replies),
+            };
+          }
+          return comment;
+        });
+      };
+      return updateCommentInTree(prevComments);
+    });
 
     try {
-      await updateComment(commentId, { comment: newContent });
+      const response = await updateComment(commentId, { comment: newContent });
+
+      // Replace optimistic update with server response (includes processed HTML)
+      setComments((prevComments) => {
+        const updateCommentInTree = (comments) => {
+          return comments.map((comment) => {
+            if (comment.id === commentId) {
+              return {
+                ...comment,
+                comment: response.data.content, // Server's processed HTML
+                content: response.data.content, // Server's processed HTML
+                updated_at: response.data.created_at,
+                isOptimistic: false, // Remove optimistic flag
+              };
+            }
+            if (comment.replies && comment.replies.length > 0) {
+              return {
+                ...comment,
+                replies: updateCommentInTree(comment.replies),
+              };
+            }
+            return comment;
+          });
+        };
+        return updateCommentInTree(prevComments);
+      });
       message.success("Bình luận đã được cập nhật thành công");
     } catch (error) {
-      // Revert the optimistic update on error
+      // Rollback to original state on error
       setComments(originalComments);
       message.error("Có lỗi xảy ra khi cập nhật bình luận. Vui lòng thử lại.");
       console.error("Comment update error:", error);
