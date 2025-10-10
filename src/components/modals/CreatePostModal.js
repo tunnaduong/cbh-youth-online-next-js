@@ -603,7 +603,7 @@ const CreatePostModal = ({ open, onClose }) => {
                     Đăng ẩn danh
                   </span>
                   <span className="text-xs text-gray-500 dark:text-gray-400">
-                    Người kiểm duyệt vẫn sẽ thấy nội dung bạn đăng
+                    Người kiểm duyệt vẫn sẽ thấy thông tin của bạn
                   </span>
                 </div>
                 <Switch

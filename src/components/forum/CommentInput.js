@@ -2,12 +2,13 @@
 
 import { useEffect, useRef, useState, useContext } from "react";
 import { Button, Popover, Dropdown } from "antd";
-import { LuImage, LuType, LuArrowUp, LuChevronDown } from "react-icons/lu";
-import { RiEmojiStickerLine } from "react-icons/ri";
+import { LuType, LuArrowUp, LuChevronDown } from "react-icons/lu";
+import { RiEmojiStickerLine, RiAttachment2 } from "react-icons/ri";
 import { useAuthContext } from "@/contexts/Support";
 import data from "@emoji-mart/data";
 import Picker from "@emoji-mart/react";
 import { useTheme } from "@/contexts/themeContext";
+import MarkdownToolbar from "@/components/ui/MarkdownToolbar";
 
 export function CommentInput({
   placeholder = "Nhập bình luận của bạn...",
@@ -18,6 +19,7 @@ export function CommentInput({
   const [isFocused, setIsFocused] = useState(false);
   const [showEmoji, setShowEmoji] = useState(false);
   const [isAnonymous, setIsAnonymous] = useState(false);
+  const [showMarkdownToolbar, setShowMarkdownToolbar] = useState(false);
   const wrapperRef = useRef(null);
   const textareaRef = useRef(null);
   const { currentUser } = useAuthContext();
@@ -179,9 +181,9 @@ export function CommentInput({
         </div>
 
         <div
-          className={`flex items-center justify-between px-4 pb-4 ml-11 ${
-            isFocused ? "fade-in-bottom" : "hidden"
-          }`}
+          className={`flex items-center justify-between px-4 ${
+            !showMarkdownToolbar && "pb-4"
+          } ml-11 ${isFocused ? "fade-in-bottom" : "hidden"}`}
         >
           {/* Left side controls */}
           <div className="flex items-center gap-2">
@@ -222,12 +224,13 @@ export function CommentInput({
               size="sm"
               className="h-8 w-8 p-0 rounded-full hover:bg-muted"
             >
-              <LuImage className="h-4 w-4 text-muted-foreground" />
+              <RiAttachment2 className="h-4 w-4 text-muted-foreground" />
             </Button>
             <Button
               variant="ghost"
               size="sm"
               className="h-8 w-8 p-0 rounded-full hover:bg-muted"
+              onClick={() => setShowMarkdownToolbar(!showMarkdownToolbar)}
             >
               <LuType className="h-4 w-4 text-muted-foreground" />
             </Button>
@@ -244,6 +247,18 @@ export function CommentInput({
               <LuArrowUp className="h-4 w-4" />
             </Button>
           </div>
+        </div>
+
+        {/* Markdown Toolbar */}
+        <div
+          className={`ml-11 ${
+            showMarkdownToolbar ? "fade-in-bottom" : "hidden"
+          }`}
+        >
+          <MarkdownToolbar
+            textareaRef={textareaRef}
+            onTextChange={setComment}
+          />
         </div>
       </div>
     </div>

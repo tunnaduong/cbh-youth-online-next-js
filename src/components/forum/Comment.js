@@ -285,9 +285,10 @@ export default function Comment({
               </div>
             ) : (
               !isCollapsed && (
-                <div className="text-gray-700 dark:text-gray-300 text-sm mb-1 whitespace-pre-wrap">
-                  {comment.content}
-                </div>
+                <div
+                  className="text-gray-700 dark:text-gray-300 text-sm mb-1 prose custom-prose dark:prose-invert flex flex-col"
+                  dangerouslySetInnerHTML={{ __html: comment.content }}
+                />
               )
             )}
 
