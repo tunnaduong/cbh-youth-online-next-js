@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useAuthContext } from "@/contexts/Support";
 import { useForumData } from "@/contexts/ForumDataContext";
-import { getPostDetail, votePost } from "@/app/Api";
+import { getPostDetail, votePost, commentPost } from "@/app/Api";
 import { CommentInput } from "@/components/forum/CommentInput";
 import Comment from "@/components/forum/Comment";
 import EmptyCommentsState from "@/components/forum/EmptyCommentsState";
@@ -181,11 +181,24 @@ export default function PostClient({ params, initialPost = null }) {
   };
 
   // Handle adding replies
-  const handleReplyToComment = (parentId, content, isAnonymous = false) => {
+  const handleReplyToComment = async (
+    parentId,
+    content,
+    isAnonymous = false
+  ) => {
+    if (!currentUser) {
+      message.error("Bạn cần đăng nhập để trả lời bình luận");
+      router.push(
+        "/login?continue=" + encodeURIComponent(window.location.href)
+      );
+      return;
+    }
+
     // Optimistically add reply to UI
     const newReply = {
       id: Date.now().toString(),
-      content: content,
+      comment: content,
+      topic_id: extractNumericId(params.postId),
       is_anonymous: isAnonymous,
       author: isAnonymous
         ? {
@@ -282,21 +295,68 @@ export default function PostClient({ params, initialPost = null }) {
 
     const updatedComments = addReplyToComment(comments);
     setComments(updatedComments);
-    message.success("Đã trả lời bình luận thành công");
 
-    // TODO: Implement comment reply API call
-    // For now, just show success message
-    setTimeout(() => {
-      // Simulate API call
+    // API
+    try {
+      const response = await commentPost(extractNumericId(params.postId), {
+        comment: content,
+        replying_to: parentId,
+        topic_id: extractNumericId(params.postId),
+        is_anonymous: isAnonymous,
+      });
+
+      // Update the comment with real data from API response
+      const realComment = {
+        ...newReply,
+        id: response.data.id,
+        created_at: response.data.created_at,
+        isPending: false,
+        content: response.data?.content ?? "",
+      };
+
+      setComments((prevComments) => {
+        // Tìm và thay thế comment bằng cách tìm comment có cùng temp ID và isPending
+        const updateCommentInTree = (comments) => {
+          return comments.map((comment) => {
+            if (comment.id === newReply.id && comment.isPending) {
+              return realComment;
+            }
+            if (comment.replies) {
+              return {
+                ...comment,
+                replies: updateCommentInTree(comment.replies),
+              };
+            }
+            return comment;
+          });
+        };
+
+        return updateCommentInTree(prevComments);
+      });
       message.success("Đã trả lời bình luận thành công");
-    }, 500);
+    } catch (error) {
+      // Rollback on error
+      setComments(originalComments);
+      message.error("Có lỗi xảy ra khi trả lời bình luận. Vui lòng thử lại.");
+      console.error("Comment reply error:", error);
+    }
   };
 
-  const handleSubmitComment = (content, isAnonymous = false) => {
-    // Optimistically add comment to UI
-    const tempComment = {
-      id: Date.now().toString(),
+  const handleSubmitComment = async (content, isAnonymous = false) => {
+    if (!currentUser) {
+      message.error("Bạn cần đăng nhập để bình luận");
+      router.push(
+        "/login?continue=" + encodeURIComponent(window.location.href)
+      );
+      return;
+    }
+
+    // Tạo comment placeholder ngay lập tức
+    const placeholderId = Date.now().toString();
+    const placeholderComment = {
+      id: placeholderId,
       content: content,
+      topic_id: extractNumericId(params.postId),
       is_anonymous: isAnonymous,
       author: isAnonymous
         ? {
@@ -313,15 +373,53 @@ export default function PostClient({ params, initialPost = null }) {
       isPending: true,
     };
 
-    setComments([tempComment, ...comments]);
-    message.success("Bình luận đã được đăng thành công");
+    // Thêm placeholder vào đầu danh sách comments
+    setComments((prev) => [placeholderComment, ...prev]);
 
-    // TODO: Implement comment submit API call
-    // For now, just show success message
-    setTimeout(() => {
-      // Simulate API call
+    try {
+      const response = await commentPost(extractNumericId(params.postId), {
+        comment: content,
+        topic_id: extractNumericId(params.postId),
+        is_anonymous: isAnonymous,
+      });
+
+      const realComment = {
+        id: response.data?.id ?? Date.now(),
+        content: response.data?.content ?? "",
+        topic_id: extractNumericId(params.postId),
+        is_anonymous: response.data?.is_anonymous ?? false,
+        author: response.data?.author ?? {
+          username: isAnonymous ? "Người dùng ẩn danh" : currentUser?.username,
+          profile_name: isAnonymous
+            ? "Người dùng ẩn danh"
+            : currentUser?.profile_name || currentUser?.username,
+        },
+        created_at: response.data?.created_at ?? "vài giây trước",
+        votes: response.data?.votes ?? [],
+        replies: [],
+        isPending: false,
+      };
+
+      setComments((prev) => {
+        const updated = prev.map((comment) =>
+          comment.id === placeholderId && comment.isPending
+            ? realComment
+            : comment
+        );
+        return updated;
+      });
+
       message.success("Bình luận đã được đăng thành công");
-    }, 500);
+    } catch (error) {
+      // Xóa placeholder khi có lỗi
+      setComments((prev) =>
+        prev.filter(
+          (comment) => !(comment.id === placeholderId && comment.isPending)
+        )
+      );
+      message.error("Có lỗi xảy ra khi đăng bình luận. Vui lòng thử lại.");
+      console.error("Comment submission error:", error);
+    }
   };
 
   const handleDeleteComment = (commentId) => {

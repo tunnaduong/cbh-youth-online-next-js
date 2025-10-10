@@ -125,7 +125,7 @@ export function CommentInput({
       `}
       >
         <div className={`flex gap-3 p-4 pb-0 ${!isFocused ? "pb-3" : ""}`}>
-          <div className="relative">
+          <div className="relative flex-none self-start">
             {isAnonymous ? (
               <div className="w-8 h-8 rounded-full bg-[#e9f1e9] dark:bg-[#1d281b] flex items-center justify-center flex-shrink-0">
                 <span className="text-xs text-white font-medium">?</span>
@@ -144,7 +144,7 @@ export function CommentInput({
             >
               <Button
                 size="small"
-                className="absolute bottom-1 -right-1 w-4 h-4 p-0 rounded-full !bg-white border border-gray-300 hover:bg-gray-50 flex items-center justify-center"
+                className="absolute -bottom-1 -right-1 w-4 h-4 p-0 rounded-full !bg-white border border-gray-300 hover:bg-gray-50 flex items-center justify-center"
               >
                 <LuChevronDown className="w-3 h-3 text-gray-600" />
               </Button>
