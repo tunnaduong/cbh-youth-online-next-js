@@ -3,6 +3,7 @@
 import React from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import remarkBreaks from "remark-breaks";
 
 const MarkdownRenderer = ({ content, className = "" }) => {
   if (!content || content.trim() === "") {
@@ -13,10 +14,39 @@ const MarkdownRenderer = ({ content, className = "" }) => {
     );
   }
 
+  // Process content to handle iframes with whitelist (like backend)
+  const processContent = (markdown) => {
+    let processedContent = markdown;
+
+    // Extract iframes and validate them
+    const iframeRegex = /<iframe[^>]+src="([^"]+)"[^>]*>.*?<\/iframe>/gis;
+    const iframes = [];
+    let match;
+
+    while ((match = iframeRegex.exec(markdown)) !== null) {
+      const src = match[1];
+      // Whitelist: YouTube, Vimeo
+      if (
+        /^(https?:)?\/\/(www\.)?(youtube\.com|youtube-nocookie\.com|player\.vimeo\.com)\//.test(
+          src
+        )
+      ) {
+        iframes.push(match[0]);
+      }
+    }
+
+    // Remove iframes from markdown content (they'll be added back as HTML)
+    processedContent = markdown.replace(iframeRegex, "");
+
+    return { processedContent, iframes };
+  };
+
+  const { processedContent, iframes } = processContent(content);
+
   return (
     <div className={`markdown-preview prose dark:prose-invert ${className}`}>
       <ReactMarkdown
-        remarkPlugins={[remarkGfm]}
+        remarkPlugins={[remarkGfm, remarkBreaks]}
         components={{
           a: ({ node, ...props }) => (
             <a {...props} target="_blank" rel="noopener noreferrer" />
@@ -68,8 +98,21 @@ const MarkdownRenderer = ({ content, className = "" }) => {
           ),
         }}
       >
-        {content}
+        {processedContent}
       </ReactMarkdown>
+
+      {/* Render whitelisted iframes */}
+      {iframes.length > 0 && (
+        <div className="mt-4">
+          {iframes.map((iframe, index) => (
+            <div
+              key={index}
+              className="my-4 responsive-iframe-container"
+              dangerouslySetInnerHTML={{ __html: iframe }}
+            />
+          ))}
+        </div>
+      )}
     </div>
   );
 };

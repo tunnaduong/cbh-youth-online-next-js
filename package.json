@@ -48,6 +48,7 @@
     "react-markdown": "^10.1.0",
     "react-photo-collage": "https://github.com/SiddharthDongre/react-photo-collage-new.git",
     "react-popper": "^2.3.0",
+    "remark-breaks": "^4.0.0",
     "remark-gfm": "^4.0.1",
     "styled-components": "^6.1.19",
     "swiper": "^12.0.2",

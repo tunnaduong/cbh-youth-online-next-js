@@ -137,19 +137,49 @@ export default function PostItem({ post, single = false, onVote }) {
     return tempDiv.innerHTML;
   };
 
+  // Helper function to wrap iframes in responsive containers
+  const wrapIframes = (html) => {
+    if (!html) return html;
+
+    // Regex to match iframe tags
+    const iframeRegex = /<iframe[^>]+src="([^"]+)"[^>]*>.*?<\/iframe>/gis;
+
+    return html.replace(iframeRegex, (match) => {
+      // Check if iframe is from whitelisted sources (YouTube, Vimeo)
+      const srcMatch = match.match(/src="([^"]+)"/);
+      if (srcMatch) {
+        const src = srcMatch[1];
+        const isWhitelisted =
+          /^(https?:)?\/\/(www\.)?(youtube\.com|youtube-nocookie\.com|player\.vimeo\.com)\//.test(
+            src
+          );
+
+        if (isWhitelisted) {
+          // Wrap in responsive container
+          return `<div class="iframe-wrapper">${match}</div>`;
+        }
+      }
+
+      return match; // Return original if not whitelisted
+    });
+  };
+
   const getContentWithReadMore = () => {
     const textContent = post.content?.replace(/<[^>]*>/g, ""); // Remove HTML tags để đếm text
     const needsTruncation = textContent?.length > maxLength;
-
-    if (!needsTruncation) {
-      return post.content;
-    }
 
     let content;
     if (showFullContent) {
       content = post.content;
     } else {
       content = truncateHtml(post.content, maxLength);
+    }
+
+    // Wrap iframes in responsive containers
+    content = wrapIframes(content);
+
+    if (!needsTruncation) {
+      return content;
     }
 
     const readMoreLink = showFullContent
@@ -288,7 +318,7 @@ export default function PostItem({ post, single = false, onVote }) {
                 !post.content || post.content.trim() === ""
                   ? '<span style="color: #9ca3af;">(Chưa có nội dung)</span>'
                   : single
-                  ? post.content
+                  ? wrapIframes(post.content)
                   : getContentWithReadMore(),
             }}
             onClick={(e) => {
