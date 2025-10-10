@@ -196,6 +196,7 @@ const CreateStoryModal = ({ open, onClose, onStoryCreated }) => {
       footer={null}
       width={600}
       style={{ top: 40 }}
+      className="custom-modal"
     >
       <div className="flex flex-row justify-center items-center pb-[34px] relative">
         <h1 className="text-lg font-bold text-center absolute -top-1.5">
