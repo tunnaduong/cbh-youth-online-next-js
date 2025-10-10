@@ -20,6 +20,7 @@ import { IoArrowUpSharp, IoArrowDownSharp } from "react-icons/io5";
 import { CommentInput } from "./CommentInput";
 import { useRouter } from "@bprogress/next/app";
 import Badges from "../ui/Badges";
+import { updateComment } from "@/app/Api";
 
 export default function Comment({
   comment,
@@ -34,23 +35,43 @@ export default function Comment({
 }) {
   const { currentUser } = useAuthContext();
   const [isEditing, setIsEditing] = useState(false);
-  const [editContent, setEditContent] = useState(comment.content);
+  const [editContent, setEditContent] = useState(() => {
+    // Convert HTML to plain text for editing
+    const tempDiv = document.createElement("div");
+    tempDiv.innerHTML = comment.content;
+    return tempDiv.textContent || tempDiv.innerText || "";
+  });
   const [isReplying, setIsReplying] = useState(false);
   const [isConnectorHovered, setIsConnectorHovered] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [localVotes, setLocalVotes] = useState(comment.votes || []);
   const router = useRouter();
 
-  const handleSaveEdit = () => {
+  const handleSaveEdit = async () => {
     if (comment.isPending) return;
-    if (onEdit) {
-      onEdit(comment.id, editContent);
+
+    try {
+      // Call the API to update the comment with plain text/markdown
+      await updateComment(comment.id, { comment: editContent });
+
+      // Update local state and call parent callback
+      if (onEdit) {
+        onEdit(comment.id, editContent);
+      }
+
+      setIsEditing(false);
+      message.success("Bình luận đã được cập nhật thành công");
+    } catch (error) {
+      console.error("Error updating comment:", error);
+      message.error("Có lỗi xảy ra khi cập nhật bình luận. Vui lòng thử lại.");
     }
-    setIsEditing(false);
   };
 
   const handleCancelEdit = () => {
-    setEditContent(comment.content);
+    // Convert HTML to plain text for editing
+    const tempDiv = document.createElement("div");
+    tempDiv.innerHTML = comment.content;
+    setEditContent(tempDiv.textContent || tempDiv.innerText || "");
     setIsEditing(false);
   };
 
@@ -304,7 +325,7 @@ export default function Comment({
               !isCollapsed && (
                 <div
                   className="text-gray-700 dark:text-gray-300 text-sm mb-1 prose custom-prose dark:prose-invert flex flex-col"
-                  dangerouslySetInnerHTML={{ __html: comment.content }}
+                  dangerouslySetInnerHTML={{ __html: comment.comment }}
                 />
               )
             )}
@@ -399,7 +420,15 @@ export default function Comment({
                   <Button
                     size="small"
                     className="h-8 px-2 text-xs text-gray-500 dark:!text-gray-400 hover:text-gray-700 border-0 rounded-full"
-                    onClick={() => setIsEditing(!isEditing)}
+                    onClick={() => {
+                      // Convert HTML to plain text for editing
+                      const tempDiv = document.createElement("div");
+                      tempDiv.innerHTML = comment.content;
+                      setEditContent(
+                        tempDiv.textContent || tempDiv.innerText || ""
+                      );
+                      setIsEditing(!isEditing);
+                    }}
                   >
                     <Edit className="w-4 h-4" />
                   </Button>
