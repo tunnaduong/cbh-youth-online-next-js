@@ -421,7 +421,7 @@ export default function PostClient({ params, initialPost = null }) {
 
       const realComment = {
         id: response.data?.id ?? Date.now(),
-        content: response.data?.content ?? "",
+        comment: response.data?.content ?? "",
         topic_id: extractNumericId(params.postId),
         is_anonymous: response.data?.is_anonymous ?? false,
         author: response.data?.author ?? {

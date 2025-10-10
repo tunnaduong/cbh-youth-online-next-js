@@ -16,7 +16,6 @@ export function CommentInput({
   onSubmit,
   onCancel,
   focus = false,
-  showMarkdownToolbar = true,
 }) {
   const [comment, setComment] = useState("");
   const [isFocused, setIsFocused] = useState(false);
@@ -35,6 +34,7 @@ export function CommentInput({
       onSubmit?.(comment.trim(), isAnonymous);
       setComment("");
       setIsAnonymous(false);
+      setIsPreviewMode(false);
     }
   };
 
@@ -112,6 +112,9 @@ export function CommentInput({
 
   useEffect(() => {
     function handleClickOutside(event) {
+      // If preview mode is on, ignore all clicks outside and keep focus
+      if (isPreviewMode) return;
+
       if (
         wrapperRef.current &&
         !wrapperRef.current.contains(event.target) &&
@@ -122,7 +125,7 @@ export function CommentInput({
     }
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
+  }, [isPreviewMode]);
 
   // Auto-focus textarea when focus prop is true
   useEffect(() => {
@@ -259,18 +262,16 @@ export function CommentInput({
             >
               <RiAttachment2 className="h-4 w-4 text-muted-foreground" />
             </Button>
-            {showMarkdownToolbar && (
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-8 w-8 p-0 rounded-full hover:bg-muted"
-                onClick={() =>
-                  setShowMarkdownToolbarState(!showMarkdownToolbarState)
-                }
-              >
-                <LuType className="h-4 w-4 text-muted-foreground" />
-              </Button>
-            )}
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-8 w-8 p-0 rounded-full hover:bg-muted"
+              onClick={() =>
+                setShowMarkdownToolbarState(!showMarkdownToolbarState)
+              }
+            >
+              <LuType className="h-4 w-4 text-muted-foreground" />
+            </Button>
           </div>
 
           {/* Right side actions */}
@@ -287,7 +288,7 @@ export function CommentInput({
         </div>
 
         {/* Markdown Toolbar */}
-        {showMarkdownToolbar && (
+        {isFocused && (
           <div
             className={`ml-11 ${
               showMarkdownToolbarState ? "fade-in-bottom" : "hidden"
