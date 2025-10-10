@@ -10,6 +10,7 @@ import {
   FaQuoteLeft,
   FaListUl,
   FaListOl,
+  FaEye,
 } from "react-icons/fa";
 import { TbH1, TbH2, TbH3, TbH4 } from "react-icons/tb";
 
@@ -17,6 +18,7 @@ const MarkdownToolbar = ({
   textareaRef,
   onTextChange,
   isPreviewMode = false,
+  onTogglePreview,
 }) => {
   const insertMarkdown = (syntax, cursorPosition, wrapFunction) => {
     if (!textareaRef?.current) return;
@@ -114,10 +116,6 @@ const MarkdownToolbar = ({
       },
     },
   };
-
-  if (isPreviewMode) {
-    return null;
-  }
 
   return (
     <div className="flex items-center gap-1 px-3 py-2 text-gray-500 dark:text-neutral-400 flex-wrap">
@@ -235,6 +233,26 @@ const MarkdownToolbar = ({
             <FaListOl className="text-sm" />
           </button>
         </Tooltip>
+
+        {onTogglePreview && (
+          <>
+            <div className="w-px h-6 bg-gray-300 dark:bg-neutral-500 mx-1" />
+
+            <Tooltip title="Xem trước" placement="bottom">
+              <button
+                type="button"
+                onClick={onTogglePreview}
+                className={`p-1.5 rounded transition-colors ${
+                  isPreviewMode
+                    ? "bg-primary-100 dark:bg-primary-900 text-primary-600 dark:text-primary-300"
+                    : "hover:bg-gray-200 dark:hover:bg-neutral-500"
+                }`}
+              >
+                <FaEye className="text-sm" />
+              </button>
+            </Tooltip>
+          </>
+        )}
       </ConfigProvider>
     </div>
   );

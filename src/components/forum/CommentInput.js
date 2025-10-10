@@ -9,18 +9,22 @@ import data from "@emoji-mart/data";
 import Picker from "@emoji-mart/react";
 import { useTheme } from "@/contexts/themeContext";
 import MarkdownToolbar from "@/components/ui/MarkdownToolbar";
+import MarkdownRenderer from "@/components/ui/MarkdownRenderer";
 
 export function CommentInput({
   placeholder = "Nhập bình luận của bạn...",
   onSubmit,
   onCancel,
   focus = false,
+  showMarkdownToolbar = true,
 }) {
   const [comment, setComment] = useState("");
   const [isFocused, setIsFocused] = useState(false);
   const [showEmoji, setShowEmoji] = useState(false);
   const [isAnonymous, setIsAnonymous] = useState(false);
-  const [showMarkdownToolbar, setShowMarkdownToolbar] = useState(false);
+  const [showMarkdownToolbarState, setShowMarkdownToolbarState] =
+    useState(false);
+  const [isPreviewMode, setIsPreviewMode] = useState(false);
   const wrapperRef = useRef(null);
   const textareaRef = useRef(null);
   const { currentUser } = useAuthContext();
@@ -38,7 +42,12 @@ export function CommentInput({
     setComment("");
     setIsFocused(false);
     setIsAnonymous(false);
+    setIsPreviewMode(false);
     onCancel?.();
+  };
+
+  const handleTogglePreview = () => {
+    setIsPreviewMode(!isPreviewMode);
   };
 
   const identityMenuItems = [
@@ -123,6 +132,15 @@ export function CommentInput({
     }
   }, [focus]);
 
+  // Adjust textarea height when switching from preview mode
+  useEffect(() => {
+    if (!isPreviewMode && textareaRef.current) {
+      const target = textareaRef.current;
+      target.style.height = "auto";
+      target.style.height = target.scrollHeight + "px";
+    }
+  }, [isPreviewMode]);
+
   return (
     <div className="w-full max-w-4xl mx-auto" ref={wrapperRef}>
       <div
@@ -160,38 +178,44 @@ export function CommentInput({
             </Dropdown>
           </div>
           <div className="flex-1">
-            <textarea
-              value={comment}
-              onChange={(e) => setComment(e.target.value)}
-              onFocus={() => setIsFocused(true)}
-              onKeyDown={handleKeyDown}
-              ref={textareaRef}
-              placeholder={placeholder}
-              rows={1}
-              className="
-                w-full bg-transparent border-none outline-none resize-none
-                text-foreground placeholder:text-muted-foreground
-                text-sm min-h-[24px] leading-6 ring-transparent focus:ring-transparent focus:border-transparent
-                pl-0 pt-0 mt-1
-              "
-              style={{
-                height: "auto",
-                minHeight: "24px",
-                maxHeight: "120px",
-                overflowY: comment.split("\n").length > 4 ? "auto" : "hidden",
-              }}
-              onInput={(e) => {
-                const target = e.target;
-                target.style.height = "auto";
-                target.style.height = Math.min(target.scrollHeight, 120) + "px";
-              }}
-            />
+            {isPreviewMode ? (
+              <div className="min-h-[24px] p-2 text-sm bg-gray-50 dark:bg-gray-800 rounded border mb-3">
+                <MarkdownRenderer content={comment} />
+              </div>
+            ) : (
+              <textarea
+                value={comment}
+                onChange={(e) => setComment(e.target.value)}
+                onFocus={() => setIsFocused(true)}
+                onKeyDown={handleKeyDown}
+                ref={textareaRef}
+                placeholder={placeholder}
+                rows={1}
+                className="
+                  w-full bg-transparent border-none outline-none resize-none
+                  text-foreground placeholder:text-muted-foreground
+                  text-sm min-h-[24px] leading-6 ring-transparent focus:ring-transparent focus:border-transparent
+                  pl-0 pt-0 mt-1
+                "
+                style={{
+                  height: "auto",
+                  minHeight: "24px",
+                  maxHeight: "120px",
+                  overflowY: "auto",
+                }}
+                onInput={(e) => {
+                  const target = e.target;
+                  target.style.height = "auto";
+                  target.style.height = target.scrollHeight + "px";
+                }}
+              />
+            )}
           </div>
         </div>
 
         <div
           className={`flex items-center justify-between px-4 ${
-            !showMarkdownToolbar && "pb-4"
+            !showMarkdownToolbarState && "pb-4"
           } ml-11 ${isFocused ? "fade-in-bottom" : "hidden"}`}
         >
           {/* Left side controls */}
@@ -235,14 +259,18 @@ export function CommentInput({
             >
               <RiAttachment2 className="h-4 w-4 text-muted-foreground" />
             </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-8 w-8 p-0 rounded-full hover:bg-muted"
-              onClick={() => setShowMarkdownToolbar(!showMarkdownToolbar)}
-            >
-              <LuType className="h-4 w-4 text-muted-foreground" />
-            </Button>
+            {showMarkdownToolbar && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-8 w-8 p-0 rounded-full hover:bg-muted"
+                onClick={() =>
+                  setShowMarkdownToolbarState(!showMarkdownToolbarState)
+                }
+              >
+                <LuType className="h-4 w-4 text-muted-foreground" />
+              </Button>
+            )}
           </div>
 
           {/* Right side actions */}
@@ -259,16 +287,20 @@ export function CommentInput({
         </div>
 
         {/* Markdown Toolbar */}
-        <div
-          className={`ml-11 ${
-            showMarkdownToolbar ? "fade-in-bottom" : "hidden"
-          }`}
-        >
-          <MarkdownToolbar
-            textareaRef={textareaRef}
-            onTextChange={setComment}
-          />
-        </div>
+        {showMarkdownToolbar && (
+          <div
+            className={`ml-11 ${
+              showMarkdownToolbarState ? "fade-in-bottom" : "hidden"
+            }`}
+          >
+            <MarkdownToolbar
+              textareaRef={textareaRef}
+              onTextChange={setComment}
+              onTogglePreview={handleTogglePreview}
+              isPreviewMode={isPreviewMode}
+            />
+          </div>
+        )}
       </div>
     </div>
   );

@@ -16,10 +16,12 @@ import {
   ChevronDown,
   ChevronRight,
 } from "lucide-react";
+import { FaEdit, FaEye } from "react-icons/fa";
 import { IoArrowUpSharp, IoArrowDownSharp } from "react-icons/io5";
 import { CommentInput } from "./CommentInput";
 import { useRouter } from "@bprogress/next/app";
 import Badges from "../ui/Badges";
+import MarkdownRenderer from "../ui/MarkdownRenderer";
 
 export default function Comment({
   comment,
@@ -38,6 +40,7 @@ export default function Comment({
     // Use raw markdown/text for editing, not HTML
     return comment.content || "";
   });
+  const [isPreviewMode, setIsPreviewMode] = useState(false);
   const [isReplying, setIsReplying] = useState(false);
   const [isConnectorHovered, setIsConnectorHovered] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
@@ -64,6 +67,11 @@ export default function Comment({
     // Use raw markdown/text for editing, not HTML
     setEditContent(comment.content || "");
     setIsEditing(false);
+    setIsPreviewMode(false);
+  };
+
+  const handleTogglePreview = () => {
+    setIsPreviewMode(!isPreviewMode);
   };
 
   const handleSubmitReply = (content, isAnonymous = false) => {
@@ -284,12 +292,18 @@ export default function Comment({
             {/* Comment text or edit form */}
             {isEditing ? (
               <div className="space-y-2 mb-3">
-                <Input.TextArea
-                  value={editContent}
-                  onChange={(e) => setEditContent(e.target.value)}
-                  className="w-full min-h-[60px] p-2 text-sm"
-                  placeholder="Sửa bình luận của bạn..."
-                />
+                {isPreviewMode ? (
+                  <div className="min-h-[60px] p-2 text-sm bg-gray-50 dark:bg-gray-800 rounded border">
+                    <MarkdownRenderer content={editContent} />
+                  </div>
+                ) : (
+                  <Input.TextArea
+                    value={editContent}
+                    onChange={(e) => setEditContent(e.target.value)}
+                    className="w-full min-h-[60px] p-2 text-sm"
+                    placeholder="Sửa bình luận của bạn..."
+                  />
+                )}
                 <div className="flex gap-2">
                   <Button
                     size="small"
@@ -307,6 +321,23 @@ export default function Comment({
                   >
                     <X className="w-3 h-3" />
                     Hủy
+                  </Button>
+                  <Button
+                    size="small"
+                    onClick={handleTogglePreview}
+                    className={`flex items-center gap-1 ${
+                      isPreviewMode
+                        ? "bg-primary-100 dark:bg-primary-900 text-primary-600 dark:text-primary-300"
+                        : ""
+                    }`}
+                  >
+                    {isPreviewMode ? (
+                      <FaEdit className="w-3 h-3" />
+                    ) : (
+                      <FaEye className="w-3 h-3" />
+                    )}
+
+                    {isPreviewMode ? "Chỉnh sửa" : "Xem trước"}
                   </Button>
                 </div>
               </div>
