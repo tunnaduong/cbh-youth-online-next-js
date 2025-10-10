@@ -9,6 +9,7 @@ import { generatePostSlug } from "@/utils/slugify";
 import { notFound } from "next/navigation";
 import SkeletonLoader from "./skeletonLoader";
 import SEOContent from "@/components/marketing/SEOContent";
+import { Breadcrumb } from "antd";
 
 export default function SubforumClient({
   params,
@@ -172,36 +173,41 @@ export default function SubforumClient({
       <div className="px-2.5 py-6 flex justify-center">
         <div className="max-w-[775px] w-full">
           {/* Breadcrumb */}
-          <nav aria-label="breadcrumb">
-            <ol className="flex items-center space-x-2 text-sm px-1.5">
-              <li className="flex items-center">
-                <Link
-                  href="/"
-                  className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 text-base"
-                >
-                  Diễn đàn
-                </Link>
-              </li>
-              <li className="flex items-center">
-                <span className="mr-2 text-gray-400">/</span>
-                <Link
-                  href={route("forum.category", { category: category.slug })}
-                  className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 text-base"
-                >
-                  {category.name}
-                </Link>
-              </li>
-              <li className="flex items-center">
-                <span className="mr-2 text-gray-400">/</span>
-                <span
-                  className="text-gray-900 dark:text-gray-100 text-base"
-                  aria-current="page"
-                >
-                  {subforum.name}
-                </span>
-              </li>
-            </ol>
-          </nav>
+          <Breadcrumb
+            items={[
+              {
+                title: (
+                  <Link
+                    href="/"
+                    className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 text-base"
+                  >
+                    Diễn đàn
+                  </Link>
+                ),
+              },
+              {
+                title: (
+                  <Link
+                    href={route("forum.category", { category: category.slug })}
+                    className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 text-base"
+                  >
+                    {category.name}
+                  </Link>
+                ),
+              },
+              {
+                title: (
+                  <span
+                    className="text-gray-900 dark:text-gray-100 text-base"
+                    aria-current="page"
+                  >
+                    {subforum.name}
+                  </span>
+                ),
+              },
+            ]}
+            className="px-1.5"
+          />
           {/* Forum Header */}
           <div className="w-full mb-6">
             <div className="bg-white dark:!bg-[var(--main-white)] long-shadow rounded-lg mt-2 p-4 relative z-10 overflow-hidden">
