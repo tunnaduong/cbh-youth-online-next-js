@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useAuthContext } from "@/contexts/Support";
 // // import { usePage, router } from "@inertiajs/react"; // TODO: Replace with Next.js equivalent // TODO: Replace with Next.js equivalent
 import { Button, ConfigProvider, Input, message, Dropdown, Modal } from "antd";
+import { voteOnComment, destroyCommentVote } from "@/app/Api";
 import {
   MessageCircle,
   Edit,
@@ -98,12 +99,22 @@ export default function Comment({
 
     setLocalVotes(newVotes);
 
-    // TODO: Implement comment vote API call
-    // For now, just show success message
-    setTimeout(() => {
-      // Simulate API call
-      message.success("Đã vote bình luận thành công");
-    }, 500);
+    try {
+      if (existingVote && existingVote.vote_value === voteValue) {
+        // User is undoing their vote - remove the vote
+        await destroyCommentVote(comment.id);
+        message.success("Đã bỏ vote bình luận");
+      } else {
+        // User is voting or changing their vote
+        await voteOnComment(comment.id, { vote_value: voteValue });
+        message.success("Đã vote bình luận thành công");
+      }
+    } catch (error) {
+      // Revert the optimistic update on error
+      setLocalVotes(localVotes);
+      message.error("Có lỗi xảy ra khi vote bình luận. Vui lòng thử lại.");
+      console.error("Error voting on comment:", error);
+    }
   };
 
   const voteCount = localVotes
@@ -244,7 +255,9 @@ export default function Comment({
                     <span className="line-clamp-1 inline dark:text-white">
                       {comment.author.profile_name}
                     </span>
-                    {comment.author.verified && <Badges className="ml-1" />}
+                    {comment.author.verified && (
+                      <Badges className="ml-1 mb-[1.9px]" />
+                    )}
                   </span>
                 </Link>
               )}

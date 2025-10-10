@@ -3,7 +3,13 @@
 import { useState, useEffect } from "react";
 import { useAuthContext } from "@/contexts/Support";
 import { useForumData } from "@/contexts/ForumDataContext";
-import { getPostDetail, votePost, commentPost } from "@/app/Api";
+import {
+  getPostDetail,
+  votePost,
+  commentPost,
+  updateComment,
+  destroyComment,
+} from "@/app/Api";
 import { CommentInput } from "@/components/forum/CommentInput";
 import Comment from "@/components/forum/Comment";
 import EmptyCommentsState from "@/components/forum/EmptyCommentsState";
@@ -146,7 +152,7 @@ export default function PostClient({ params, initialPost = null }) {
   };
 
   // Handle comment editing
-  const handleEditComment = (commentId, newContent) => {
+  const handleEditComment = async (commentId, newContent) => {
     // Store original content for rollback
     const originalComments = [...comments];
 
@@ -170,14 +176,16 @@ export default function PostClient({ params, initialPost = null }) {
     };
 
     setComments(updateCommentInTree(comments));
-    message.success("Bình luận đã được cập nhật thành công");
 
-    // TODO: Implement comment update API call
-    // For now, just show success message
-    setTimeout(() => {
-      // Simulate API call
+    try {
+      await updateComment(commentId, { comment: newContent });
       message.success("Bình luận đã được cập nhật thành công");
-    }, 500);
+    } catch (error) {
+      // Revert the optimistic update on error
+      setComments(originalComments);
+      message.error("Có lỗi xảy ra khi cập nhật bình luận. Vui lòng thử lại.");
+      console.error("Comment update error:", error);
+    }
   };
 
   // Handle adding replies
@@ -422,7 +430,7 @@ export default function PostClient({ params, initialPost = null }) {
     }
   };
 
-  const handleDeleteComment = (commentId) => {
+  const handleDeleteComment = async (commentId) => {
     // Store original comments for rollback
     const originalComments = [...comments];
 
@@ -442,14 +450,16 @@ export default function PostClient({ params, initialPost = null }) {
     };
 
     setComments(removeCommentFromTree(comments));
-    message.success("Bình luận đã được xóa thành công");
 
-    // TODO: Implement comment delete API call
-    // For now, just show success message
-    setTimeout(() => {
-      // Simulate API call
+    try {
+      await destroyComment(commentId);
       message.success("Bình luận đã được xóa thành công");
-    }, 500);
+    } catch (error) {
+      // Revert the optimistic update on error
+      setComments(originalComments);
+      message.error("Có lỗi xảy ra khi xóa bình luận. Vui lòng thử lại.");
+      console.error("Comment delete error:", error);
+    }
   };
 
   const handleVote = async (postId, value) => {

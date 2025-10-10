@@ -89,8 +89,8 @@ export default function PostItem({ post, single = false, onVote }) {
 
     try {
       if (newSavedStatus) {
-        await savePost(post.id);
         message.success("Đã lưu bài viết");
+        await savePost(post.id);
       } else {
         await unsavePost(post.id);
       }
