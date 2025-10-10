@@ -16,7 +16,6 @@ async function fetchServer(path, options = {}) {
   const url = `${BASE_URL}${path}`;
   const headers = {
     "Content-Type": "application/json",
-    "X-From-Frontend": "true",
     Accept: "application/json",
     ...(options.headers || {}),
   };

@@ -102,6 +102,11 @@ export const getCreatedPosts = () => {
   return Api.getRequest("/v1.0/activities/posts");
 };
 
+// Online Users
+export const trackOnlineUser = () => {
+  return Api.postRequest("/v1.0/online-users/track");
+};
+
 // Chat
 export const getConversations = () => {
   return Api.getRequest("/v1.0/chat/conversations");

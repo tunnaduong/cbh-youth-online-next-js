@@ -4,6 +4,9 @@ import { getTokenFromAnywhere } from "@/utils/cookies";
 // Hàm tạo một instance của axios với cấu hình tùy chỉnh
 const axiosInstance = axios.create({
   baseURL: `${process.env.NEXT_PUBLIC_API_URL}`,
+  headers: {
+    "X-From-Frontend": "true",
+  },
 });
 
 axiosInstance.interceptors.request.use((config) => {
