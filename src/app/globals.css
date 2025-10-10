@@ -970,6 +970,7 @@ body {
   @apply !mt-0;
 }
 
-.custom-prose p:first-child {
+.custom-prose p:first-child,
+.custom-prose p:last-child {
   @apply !m-0;
 }
