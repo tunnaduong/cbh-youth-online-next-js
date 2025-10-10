@@ -120,7 +120,7 @@ const MarkdownToolbar = ({
   }
 
   return (
-    <div className="flex items-center gap-1 px-3 py-2 text-gray-500 dark:text-neutral-400">
+    <div className="flex items-center gap-1 px-3 py-2 text-gray-500 dark:text-neutral-400 flex-wrap">
       <ConfigProvider {...configProviderProps}>
         <Tooltip title="Tiêu đề cấp 1" placement="bottom">
           <button
