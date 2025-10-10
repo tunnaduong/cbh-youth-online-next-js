@@ -280,7 +280,7 @@ export default function Comment({
                 </Link>
               )}
               <span className="text-gray-400">•</span>
-              <span className="text-gray-500 dark:!text-gray-400 text-sm">
+              <span className="text-gray-500 dark:!text-gray-400 text-sm shrink-0">
                 {comment.created_at}
                 {comment.updated_at &&
                   comment.updated_at !== comment.created_at && (
