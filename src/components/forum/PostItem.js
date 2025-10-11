@@ -277,7 +277,7 @@ export default function PostItem({ post, single = false, onVote }) {
                 className="ml-2 mr-1"
               />
               <span className="flex flex-row-reverse items-center">
-                <span>{post.reply_count}</span>
+                <span>{post.reply_count || post.comments}</span>
                 <ChatboxOutline
                   height="20px"
                   width="20px"
@@ -446,7 +446,7 @@ export default function PostItem({ post, single = false, onVote }) {
             )}
             <span className="mb-2 ml-0.5 text-sm text-gray-500">.</span>
             <span className="ml-0.5 text-gray-500 shrink-0">
-              {post.created_at_human || post.created_at}
+              {post.created_at_human || post.created_at || post.time}
             </span>
             <div className="flex-1 flex-row-reverse items-center text-gray-500 hidden md:flex">
               <span>{(post.view_count || post.views_count) ?? 0}</span>
@@ -466,7 +466,7 @@ export default function PostItem({ post, single = false, onVote }) {
                   }
                   className="flex flex-row-reverse items-center"
                 >
-                  <span>{post.reply_count || post.comments_count}</span>
+                  <span>{post.reply_count || post.comments}</span>
                   <ChatboxOutline
                     height="20px"
                     width="20px"
@@ -476,7 +476,7 @@ export default function PostItem({ post, single = false, onVote }) {
                 </Link>
               ) : (
                 <span className="flex flex-row-reverse items-center">
-                  <span>{post.reply_count || post.comments_count}</span>
+                  <span>{post.reply_count || post.comments}</span>
                   <ChatboxOutline
                     height="20px"
                     width="20px"

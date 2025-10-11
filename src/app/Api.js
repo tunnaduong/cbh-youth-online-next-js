@@ -13,8 +13,8 @@ export const signupRequest = (params) => {
   return Api.postRequest("/v1.0/register", params);
 };
 
-export const getHomePosts = () => {
-  return Api.getRequest("/v1.0/topics");
+export const getFeedPosts = (page = 1) => {
+  return Api.getRequest("/v1.0/topics?page=" + page);
 };
 
 export const incrementPostView = (id) => {
