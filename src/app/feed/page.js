@@ -10,6 +10,7 @@ import { useAuthContext } from "@/contexts/Support";
 import { getFeedPosts, votePost } from "@/app/Api";
 import { useRouter } from "next/navigation";
 import SkeletonPost from "@/components/home/skeletonPost";
+import { useViewTracking } from "@/hooks/useViewTracking";
 
 export default function Feed() {
   const { currentUser, loggedIn } = useAuthContext();
@@ -215,14 +216,23 @@ export default function Feed() {
         </h1>
 
         {/* Posts */}
-        {posts.map((post) => (
-          <PostItem
-            key={post.id}
-            post={post}
-            single={false}
-            onVote={handleVote}
-          />
-        ))}
+        {posts.map((post) => {
+          const PostWithViewTracking = () => {
+            const { ref: viewTrackingRef } = useViewTracking(post.id, {
+              threshold: 0.3, // 30% của bài viết phải visible
+              delay: 0, // Không delay
+              cooldown: 0, // Không cooldown
+            });
+
+            return (
+              <div ref={viewTrackingRef}>
+                <PostItem post={post} single={false} onVote={handleVote} />
+              </div>
+            );
+          };
+
+          return <PostWithViewTracking key={post.id} />;
+        })}
 
         {/* Invisible sentinel for intersection observer */}
         {pagination.has_more_pages && (

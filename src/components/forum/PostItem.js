@@ -16,7 +16,6 @@ import VerifiedBadge from "@/components/ui/Badges";
 import getCollageSetting from "@/utils/getCollageSetting";
 import { useState, useEffect } from "react";
 import { Button, ConfigProvider, message, Tooltip } from "antd";
-import { useViewTracking } from "@/hooks/useViewTracking";
 import { useRouter } from "@bprogress/next/app";
 import {
   savePost as savePostApi,
@@ -34,17 +33,6 @@ export default function PostItem({ post, single = false, onVote }) {
   const votesCount =
     post?.votes?.reduce((sum, v) => sum + v.vote_value, 0) || 0;
   const router = useRouter();
-
-  // Sử dụng hook để theo dõi lượt xem
-  const {
-    ref: viewTrackingRef,
-    isViewed,
-    viewCount,
-  } = useViewTracking(post.id, {
-    threshold: 0.3, // 30% của bài viết phải visible
-    delay: 0, // Không delay
-    cooldown: 0, // Không cooldown
-  });
 
   useEffect(() => {
     setIsSaved(!!post.is_saved);
@@ -200,10 +188,7 @@ export default function PostItem({ post, single = false, onVote }) {
       className="px-1.5 md:px-0 md:max-w-[775px] mx-auto w-full"
       key={post.id}
     >
-      <div
-        ref={viewTrackingRef}
-        className="post-container-post post-container mb-4 shadow-lg rounded-xl !p-6 bg-white flex flex-col-reverse md:flex-row"
-      >
+      <div className="post-container-post post-container mb-4 shadow-lg rounded-xl !p-6 bg-white flex flex-col-reverse md:flex-row">
         <div className="min-w-[72px]">
           <div className="sticky-reaction-bar items-center md:!mt-1 mt-3 gap-x-3 flex md:!flex-col flex-row md:ml-[-20px] text-[13px] font-semibold text-gray-400">
             <Button

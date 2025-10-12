@@ -1,5 +1,5 @@
 import { useRef, useEffect, useCallback, useState } from "react";
-import { useRouter } from "@bprogress/next/app";
+import { registerView } from "../app/Api";
 
 /**
  * Hook để theo dõi lượt xem bài viết bằng Intersection Observer
@@ -27,21 +27,9 @@ export const useViewTracking = (postId, options = {}) => {
 
     try {
       // Gọi API để đăng ký lượt xem
-      router.post(
-        route("topics.view", postId),
-        {},
-        {
-          preserveScroll: true,
-          preserveState: true,
-          onSuccess: () => {
-            setIsViewed(true);
-            setViewCount((prev) => prev + 1);
-          },
-          onError: (errors) => {
-            console.warn("Failed to track view:", errors);
-          },
-        }
-      );
+      await registerView(postId);
+      setIsViewed(true);
+      setViewCount((prev) => prev + 1);
     } catch (error) {
       console.warn("Error tracking view:", error);
     }

@@ -21,6 +21,7 @@ import refreshAnimation from "@/assets/refresh.json";
 import { notFound } from "next/navigation";
 import { useRouter } from "@bprogress/next/app";
 import { generatePostSlug } from "@/utils/slugify";
+import { registerView } from "@/app/Api";
 
 // Helper function to extract numeric ID from postId (e.g., "399873567-giveaway" -> "399873567")
 const extractNumericId = (postId) => {
@@ -35,6 +36,21 @@ export default function PostClient({ params, initialPost = null }) {
   const [loading, setLoading] = useState(!initialPost);
   const [error, setError] = useState(null);
   const router = useRouter();
+
+  // Track view immediately when post detail page loads (only once)
+  const trackView = async () => {
+    try {
+      const postId = post?.post?.id || extractNumericId(params.postId);
+      const response = await registerView(postId);
+      console.log(response.data);
+    } catch (error) {
+      console.warn("Error tracking view:", error);
+    }
+  };
+
+  useEffect(() => {
+    trackView();
+  }, []); // Empty dependency array - only run once on mount
 
   // Use context data for caching
   const {
