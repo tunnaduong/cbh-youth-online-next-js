@@ -235,11 +235,8 @@ export default function Feed() {
             <Lottie
               animationData={refresh}
               loop={true}
-              style={{ width: 40, height: 40 }}
+              style={{ width: 50, height: 50 }}
             />
-            <span className="ml-2 text-gray-500 dark:text-gray-400 text-sm">
-              Đang tải...
-            </span>
           </div>
         )}
 
