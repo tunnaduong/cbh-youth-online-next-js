@@ -36,10 +36,7 @@ export default function Comment({
 }) {
   const { currentUser } = useAuthContext();
   const [isEditing, setIsEditing] = useState(false);
-  const [editContent, setEditContent] = useState(() => {
-    // Use raw markdown/text for editing, not HTML
-    return comment.content || "";
-  });
+  const [editContent, setEditContent] = useState(comment.content || "");
   const [isPreviewMode, setIsPreviewMode] = useState(false);
   const [isReplying, setIsReplying] = useState(false);
   const [isConnectorHovered, setIsConnectorHovered] = useState(false);
