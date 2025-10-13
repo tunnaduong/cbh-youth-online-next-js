@@ -79,8 +79,8 @@ export default function HelpClient({ auth }) {
           {searchQuery && (
             <div className="mt-6">
               <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
-                Kết quả tìm kiếm cho "{searchQuery}" ({searchResults.length} kết
-                quả)
+                Kết quả tìm kiếm cho &quot;{searchQuery}&quot; (
+                {searchResults.length} kết quả)
               </h2>
               {searchResults.length > 0 ? (
                 <div className="space-y-4">
@@ -117,8 +117,8 @@ export default function HelpClient({ auth }) {
               ) : (
                 <div className="text-center py-8">
                   <p className="text-gray-500 dark:text-gray-400">
-                    Không tìm thấy bài viết nào phù hợp với từ khóa "
-                    {searchQuery}"
+                    Không tìm thấy bài viết nào phù hợp với từ khóa &quot;
+                    {searchQuery}&quot;
                   </p>
                 </div>
               )}

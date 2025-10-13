@@ -44,9 +44,9 @@ export default function ContactPage() {
             <p>
               Cách tốt nhất để gửi phản hồi về tính năng, báo cáo lỗi hoặc yêu
               cầu hỗ trợ kỹ thuật là thông qua hệ thống của chúng tôi. Vui lòng
-              truy cập hồ sơ của bạn và sử dụng tính năng "Báo cáo sự cố" để đội
-              ngũ kỹ thuật có thể theo dõi và xử lý yêu cầu của bạn một cách
-              hiệu quả nhất.
+              truy cập hồ sơ của bạn và sử dụng tính năng &quot;Báo cáo sự
+              cố&quot; để đội ngũ kỹ thuật có thể theo dõi và xử lý yêu cầu của
+              bạn một cách hiệu quả nhất.
             </p>
             <p>
               Đối với các vấn đề khác, vui lòng gửi email đến địa chỉ hỗ trợ
