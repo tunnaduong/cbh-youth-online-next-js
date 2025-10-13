@@ -12,6 +12,7 @@ import {
   HelpCircle,
   Chatbubbles,
 } from "react-ionicons";
+import { useAuthContext } from "@/contexts/Support";
 
 export default function LeftSidebar({
   activeBar = "forum",
@@ -65,14 +66,13 @@ export default function LeftSidebar({
   ],
 }) {
   const router = useRouter();
-  // Mock auth data - replace with actual auth context
-  const auth = { user: null }; // TODO: Replace with actual auth state
+  const { loggedIn } = useAuthContext();
   const iconColor = "#CACACA";
   const activeIconColor = "#319527";
   const iconSize = "18px";
 
   const handleSavedClick = (e) => {
-    if (!auth?.user) {
+    if (!loggedIn) {
       e.preventDefault();
       message.error("Vui lòng đăng nhập để xem các bài viết đã lưu của bạn.");
       router.push(

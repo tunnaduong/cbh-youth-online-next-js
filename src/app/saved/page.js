@@ -1,16 +1,33 @@
-import Navbar from "@/components/include/navbar";
-import LeftSidebar from "@/components/include/leftSidebar";
-import RightSidebar from "@/components/include/rightSidebar";
+import HomeLayout from "@/layouts/HomeLayout";
+import SavedClient from "./SavedClient";
+import { getServer } from "@/utils/serverFetch";
 
-export default function Saved() {
+async function getSavedTopics() {
+  try {
+    const data = await getServer("/v1.0/user/saved-topics");
+
+    // Try different possible data structures
+    if (Array.isArray(data)) {
+      return data;
+    } else if (data.data && Array.isArray(data.data)) {
+      return data.data;
+    } else if (data.savedTopics && Array.isArray(data.savedTopics)) {
+      return data.savedTopics;
+    } else {
+      return [];
+    }
+  } catch (error) {
+    console.error("Error fetching saved topics:", error);
+    return [];
+  }
+}
+
+export default async function Saved() {
+  const savedTopics = await getSavedTopics();
+
   return (
-    <div className="mt-[66px]">
-      <Navbar selected={0} />
-      <div className="flex flex-row">
-        <LeftSidebar selected="saved" />
-        <div className="flex-1"></div>
-        <RightSidebar />
-      </div>
-    </div>
+    <HomeLayout activeNav="home" activeBar="saved">
+      <SavedClient savedTopics={savedTopics} />
+    </HomeLayout>
   );
 }

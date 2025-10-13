@@ -97,32 +97,47 @@ export default function Feed() {
   // Intersection Observer for precise infinite scroll detection
   useEffect(() => {
     const sentinel = sentinelRef.current;
-    if (!sentinel) return;
+    if (!sentinel || loading || !pagination.has_more_pages) return;
 
     // Add debounce to prevent rapid successive loads
     let debounceTimer = null;
+    let hasTriggered = false; // Flag to prevent multiple triggers
 
     const observer = new IntersectionObserver(
       (entries) => {
         const entry = entries[0];
-        if (entry.isIntersecting && !loading && pagination.has_more_pages) {
+        if (
+          entry.isIntersecting &&
+          !loading &&
+          pagination.has_more_pages &&
+          !hasTriggered
+        ) {
           // Clear existing timer
           if (debounceTimer) {
             clearTimeout(debounceTimer);
           }
 
-          // Set a small delay to debounce rapid intersections
+          // Set flag to prevent multiple triggers
+          hasTriggered = true;
+
+          // Set a delay to debounce rapid intersections
           debounceTimer = setTimeout(() => {
             // Double-check conditions before loading
             if (!loading && pagination.has_more_pages) {
-              loadMorePosts();
+              loadMorePosts().finally(() => {
+                // Reset flag after loading completes
+                hasTriggered = false;
+              });
+            } else {
+              // Reset flag if conditions changed
+              hasTriggered = false;
             }
-          }, 100);
+          }, 200);
         }
       },
       {
         root: null,
-        rootMargin: "50px", // Start loading 50px before the sentinel is visible
+        rootMargin: "500px", // Start loading 100px before the sentinel is visible
         threshold: 0.1,
       }
     );
@@ -136,6 +151,7 @@ export default function Feed() {
       if (debounceTimer) {
         clearTimeout(debounceTimer);
       }
+      hasTriggered = false; // Reset flag on cleanup
     };
   }, [loadMorePosts, loading, pagination.has_more_pages]);
 
@@ -216,7 +232,7 @@ export default function Feed() {
         </h1>
 
         {/* Posts */}
-        {posts.map((post) => {
+        {posts.map((post, index) => {
           const PostWithViewTracking = () => {
             const { ref: viewTrackingRef } = useViewTracking(post.id, {
               threshold: 0.3, // 30% của bài viết phải visible
@@ -231,13 +247,16 @@ export default function Feed() {
             );
           };
 
-          return <PostWithViewTracking key={post.id} />;
+          return (
+            <div key={post.id}>
+              <PostWithViewTracking />
+              {/* Place sentinel after the last post of current page */}
+              {index === posts.length - 1 && pagination.has_more_pages && (
+                <div ref={sentinelRef} className="h-1 w-full" />
+              )}
+            </div>
+          );
         })}
-
-        {/* Invisible sentinel for intersection observer */}
-        {pagination.has_more_pages && (
-          <div ref={sentinelRef} className="h-1 w-full" />
-        )}
 
         {/* Loading indicator - subtle like Facebook */}
         {loading && (

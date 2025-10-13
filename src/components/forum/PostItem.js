@@ -25,7 +25,7 @@ import {
 export default function PostItem({ post, single = false, onVote }) {
   const { currentUser } = useAuthContext();
   const [showFullContent, setShowFullContent] = useState(false);
-  const [isSaved, setIsSaved] = useState(!!post.is_saved);
+  const [isSaved, setIsSaved] = useState(!!(post.is_saved || post.saved));
   const maxLength = 300; // Số ký tự tối đa trước khi truncate
   const myVote =
     post.votes?.find((v) => v.username === currentUser?.username)?.vote_value ||
@@ -35,8 +35,8 @@ export default function PostItem({ post, single = false, onVote }) {
   const router = useRouter();
 
   useEffect(() => {
-    setIsSaved(!!post.is_saved);
-  }, [post.is_saved]);
+    setIsSaved(!!(post.is_saved || post.saved));
+  }, [post.is_saved, post.saved]);
 
   const toggleShowFullContent = (e) => {
     e.preventDefault();
