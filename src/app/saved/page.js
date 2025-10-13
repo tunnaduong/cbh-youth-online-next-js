@@ -2,6 +2,20 @@ import HomeLayout from "@/layouts/HomeLayout";
 import SavedClient from "./SavedClient";
 import { getServer } from "@/utils/serverFetch";
 
+export const metadata = {
+  title: "Đã lưu - Diễn đàn học sinh Chuyên Biên Hòa",
+  description:
+    "Xem các bài viết đã lưu của bạn trên diễn đàn học sinh Chuyên Biên Hòa.",
+  keywords: "đã lưu, diễn đàn, học sinh, chuyên biên hòa, cbh",
+  openGraph: {
+    title: "Đã lưu - Diễn đàn học sinh Chuyên Biên Hòa",
+    description:
+      "Xem các bài viết đã lưu của bạn trên diễn đàn học sinh Chuyên Biên Hòa.",
+    images: ["/images/cyo_thumbnail.png"],
+    type: "website",
+  },
+};
+
 async function getSavedTopics() {
   try {
     const data = await getServer("/v1.0/user/saved-topics");

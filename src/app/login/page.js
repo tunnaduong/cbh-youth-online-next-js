@@ -5,6 +5,13 @@ export const metadata = {
   description:
     "Đăng nhập vào diễn đàn học sinh Chuyên Biên Hòa để tham gia thảo luận và kết nối với cộng đồng.",
   keywords: "đăng nhập, diễn đàn, học sinh, chuyên biên hòa, cbh",
+  openGraph: {
+    title: "Đăng nhập - Diễn đàn học sinh Chuyên Biên Hòa",
+    description:
+      "Đăng nhập vào diễn đàn học sinh Chuyên Biên Hòa để tham gia thảo luận và kết nối với cộng đồng.",
+    images: ["/images/cyo_thumbnail.png"],
+    type: "website",
+  },
 };
 
 export default function Login() {
