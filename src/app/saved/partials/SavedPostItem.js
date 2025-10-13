@@ -44,9 +44,8 @@ export default function SavedPostItem({ post, onUnsave }) {
         ) : (
           <img
             src={
-              topic.image_urls?.[0]?.file_path
-                ? "https://api.chuyenbienhoa.com/storage/" +
-                  topic.image_urls[0].file_path
+              topic.image_urls?.[0]
+                ? topic.image_urls[0]
                 : "https://api.chuyenbienhoa.com/v1.0/users/" +
                   author.username +
                   "/avatar"

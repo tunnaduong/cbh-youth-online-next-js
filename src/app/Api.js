@@ -85,6 +85,10 @@ export const getTopUsers = (limit = 8) => {
   return Api.getRequest(`/v1.0/users/ranking?limit=${limit}`);
 };
 
+export const getYouthNews = (page = 1) => {
+  return Api.getRequest(`/v1.0/youth-news?page=${page}`);
+};
+
 // Activities
 export const getActivities = () => {
   return Api.getRequest("/v1.0/activities");
