@@ -9,10 +9,9 @@ export const metadata = {
   },
 };
 
-// get recordings from api in server side in serverFetch
-const recordings = await getServer("/v1.0/recordings");
-console.log(recordings);
+export default async function Recordings() {
+  // get recordings from api in server side in serverFetch
+  const recordings = await getServer("/v1.0/recordings");
 
-export default function Recordings() {
   return <RecordingsClient recordings={recordings} />;
 }

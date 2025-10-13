@@ -1,3 +1,5 @@
+"use client";
+
 import HomeLayout from "@/layouts/HomeLayout";
 import RecordingItem from "./partials/RecordingItem";
 
@@ -10,7 +12,7 @@ export default function RecordingsClient({ recordings }) {
         </h1>
 
         {recordings.recordings.map((recording) => (
-          <RecordingItem recording={recording} />
+          <RecordingItem key={recording.id} recording={recording} />
         ))}
       </div>
     </HomeLayout>
