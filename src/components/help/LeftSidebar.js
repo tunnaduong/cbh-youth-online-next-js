@@ -1,6 +1,8 @@
+"use client";
+
 import React from "react";
 import Link from "next/link";
-import { useRouter } from "next/router";
+import { useRouter } from "@bprogress/next/app";
 import { helpArticles } from "@/data/helpArticles";
 import {
   HiBookOpen,
@@ -26,7 +28,7 @@ const iconMap = {
 
 export default function LeftSidebar() {
   const router = useRouter();
-  const { categorySlug } = router.query;
+  const { categorySlug } = router.query || {};
 
   const mainTopics = helpArticles.map((topic) => ({
     name: topic.category,
@@ -77,7 +79,7 @@ export default function LeftSidebar() {
               key={page.name}
               href={page.href}
               className={`flex items-center px-3 py-2 text-sm font-medium rounded-md ${
-                router.asPath.startsWith(page.href)
+                router.asPath?.startsWith(page.href)
                   ? "bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-neutral-300"
                   : "text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
               }`}

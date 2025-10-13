@@ -1,11 +1,20 @@
+"use client";
+
 import React from "react";
 import Link from "next/link";
-// import { usePage } from "@inertiajs/react"; // TODO: Replace with Next.js equivalent
+import { useRouter } from "@bprogress/next/app";
 import { helpArticles } from "@/data/helpArticles";
 
-export default function TopicList() {
-  const { categorySlug, articleSlug } = usePage().props;
-  const currentCategory = helpArticles.find((cat) => cat.slug === categorySlug);
+export default function TopicList({ categorySlug, articleSlug }) {
+  const router = useRouter();
+
+  // Get categorySlug and articleSlug from props or router
+  const currentCategorySlug = categorySlug || router.query.categorySlug || {};
+  const currentArticleSlug = articleSlug || router.query.articleSlug || {};
+
+  const currentCategory = helpArticles.find(
+    (cat) => cat.slug === currentCategorySlug
+  );
 
   if (!currentCategory) {
     return null; // Or some fallback UI
@@ -23,7 +32,7 @@ export default function TopicList() {
               key={article.slug}
               href={`/help/${currentCategory.slug}/${article.slug}`}
               className={`block px-3 py-2 text-sm font-medium rounded-md ${
-                article.slug === articleSlug
+                article.slug === currentArticleSlug
                   ? "bg-gray-100 dark:bg-gray-600 text-gray-900 dark:text-neutral-300"
                   : "text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600"
               }`}

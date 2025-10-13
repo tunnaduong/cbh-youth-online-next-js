@@ -1,10 +1,10 @@
 import React from "react";
 import Head from "next/head";
-import AuthenticatedLayout from "@/layouts/AuthenticatedLayout";
+import DefaultLayout from "@/layouts/DefaultLayout";
 
 export default function HelpCenterLayout({ children, title, auth }) {
   return (
-    <AuthenticatedLayout user={auth.user}>
+    <DefaultLayout>
       <Head>
         <title>{title}</title>
       </Head>
@@ -34,6 +34,6 @@ export default function HelpCenterLayout({ children, title, auth }) {
           </div>
         </div>
       </div>
-    </AuthenticatedLayout>
+    </DefaultLayout>
   );
 }

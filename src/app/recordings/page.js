@@ -10,8 +10,19 @@ export const metadata = {
 };
 
 export default async function Recordings() {
-  // get recordings from api in server side in serverFetch
-  const recordings = await getServer("/v1.0/recordings");
+  let recordings = null;
+  let error = null;
 
-  return <RecordingsClient recordings={recordings} />;
+  try {
+    // get recordings from api in server side in serverFetch
+    recordings = await getServer("/v1.0/recordings");
+  } catch (err) {
+    console.error("Failed to fetch recordings:", err);
+    error = {
+      message: "Không thể tải dữ liệu từ server. Vui lòng thử lại sau.",
+      status: err.message || "Unknown error",
+    };
+  }
+
+  return <RecordingsClient recordings={recordings} error={error} />;
 }

@@ -230,17 +230,15 @@ export default function RightSidebar({ onHandleCreatePost }) {
                 </Link>
               </div>
             </div>
-            <p className="text-[12px] text-center text-[#BCBCBC] dark:text-neutral-400">
-              <a
-                href="https://fatties.vercel.app"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="hover:text-gray-700 dark:hover:text-white"
-              >
-                Fatties Software
-              </a>{" "}
-              © 2025
-            </p>
+            <div className="flex justify-center items-center">
+              <a href="https://fatties.vercel.app" target="_blank">
+                <img
+                  src="/images/from_fatties.png"
+                  alt="Fatties Logo"
+                  className="h-6 w-auto"
+                />
+              </a>
+            </div>
           </div>
         </div>
       </div>
