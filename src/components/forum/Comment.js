@@ -154,7 +154,11 @@ export default function Comment({
   const DownvoteIcon = () => <IoArrowDownSharp size={16} />;
 
   const canDelete =
-    !!currentUser && currentUser.id === comment.author.id && !comment.isPending;
+    !!currentUser &&
+    (comment.is_owner === true ||
+      (comment.is_owner === undefined &&
+        currentUser.id === comment.author.id)) &&
+    !comment.isPending;
 
   const confirmDelete = () => {
     if (!currentUser) {
@@ -441,19 +445,22 @@ export default function Comment({
                   <MessageCircle className="w-4 h-4" />
                   <span className="hidden sm:inline">Trả lời</span>
                 </Button>
-                {currentUser && currentUser.id === comment.author.id && (
-                  <Button
-                    size="small"
-                    className="h-8 px-2 text-xs text-gray-500 dark:!text-gray-400 hover:text-gray-700 border-0 rounded-full"
-                    onClick={() => {
-                      // Use raw markdown/text for editing, not HTML
-                      setEditContent(comment.content || "");
-                      setIsEditing(!isEditing);
-                    }}
-                  >
-                    <Edit className="w-4 h-4" />
-                  </Button>
-                )}
+                {currentUser &&
+                  (comment.is_owner === true ||
+                    (comment.is_owner === undefined &&
+                      currentUser.id === comment.author.id)) && (
+                    <Button
+                      size="small"
+                      className="h-8 px-2 text-xs text-gray-500 dark:!text-gray-400 hover:text-gray-700 border-0 rounded-full"
+                      onClick={() => {
+                        // Use raw markdown/text for editing, not HTML
+                        setEditContent(comment.content || "");
+                        setIsEditing(!isEditing);
+                      }}
+                    >
+                      <Edit className="w-4 h-4" />
+                    </Button>
+                  )}
                 {canDelete && (
                   <Dropdown
                     menu={{ items: menuItems }}

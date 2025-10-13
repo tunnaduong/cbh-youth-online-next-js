@@ -434,7 +434,9 @@ export default function PostItem({ post, single = false, onVote }) {
               {post.created_at_human || post.created_at || post.time}
             </span>
             <div className="flex-1 flex-row-reverse items-center text-gray-500 hidden md:flex">
-              <span>{(post.view_count || post.views_count) ?? 0}</span>
+              <span>
+                {(post.view_count || post.views_count || post.views) ?? 0}
+              </span>
               <EyeOutline
                 height="20px"
                 width="20px"

@@ -11,11 +11,12 @@ export const useViewTracking = (postId, options = {}) => {
   const elementRef = useRef(null);
   const [isViewed, setIsViewed] = useState(false);
   const [viewCount, setViewCount] = useState(0);
+  const hasTrackedRef = useRef(false); // Ref để track xem đã track view chưa
 
   const defaultOptions = {
     threshold: 0.5, // 50% của element phải visible
     rootMargin: "0px",
-    triggerOnce: false, // Cho phép trigger nhiều lần
+    triggerOnce: true, // Chỉ trigger một lần
     delay: 0, // Không delay
     cooldown: 0, // Không cooldown
   };
@@ -23,11 +24,12 @@ export const useViewTracking = (postId, options = {}) => {
   const observerOptions = { ...defaultOptions, ...options };
 
   const trackView = useCallback(async () => {
-    if (!postId) return;
+    if (!postId || hasTrackedRef.current) return; // Ngăn track nhiều lần
 
     try {
       // Gọi API để đăng ký lượt xem
       await registerView(postId);
+      hasTrackedRef.current = true; // Đánh dấu đã track
       setIsViewed(true);
       setViewCount((prev) => prev + 1);
     } catch (error) {
@@ -43,8 +45,8 @@ export const useViewTracking = (postId, options = {}) => {
       (entries) => {
         const entry = entries[0];
 
-        if (entry.isIntersecting) {
-          // Đếm ngay lập tức khi visible
+        if (entry.isIntersecting && !hasTrackedRef.current) {
+          // Chỉ track khi chưa track và đang visible
           trackView();
         }
       },

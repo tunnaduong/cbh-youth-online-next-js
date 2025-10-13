@@ -206,8 +206,8 @@ export default function PostClient({ params, initialPost = null }) {
             if (comment.id === commentId) {
               return {
                 ...comment,
-                comment: response.data.content, // Server's processed HTML
-                content: response.data.content, // Server's processed HTML
+                comment: response.data.comment, // Server's processed HTML for display
+                content: response.data.content, // Server's raw markdown for editing
                 updated_at: response.data.created_at,
                 isOptimistic: false, // Remove optimistic flag
               };
@@ -361,9 +361,12 @@ export default function PostClient({ params, initialPost = null }) {
       const realComment = {
         ...newReply,
         id: response.data.id,
+        comment: response.data?.comment ?? "", // HTML for display
+        content: response.data?.content ?? "", // Raw markdown for editing
         created_at: response.data.created_at,
         isPending: false,
-        content: response.data?.content ?? "",
+        is_owner: response.data?.is_owner ?? true, // New reply is always owned by creator
+        author: response.data?.author ?? newReply.author, // Use server response for author data
       };
 
       setComments((prevComments) => {
@@ -437,14 +440,17 @@ export default function PostClient({ params, initialPost = null }) {
 
       const realComment = {
         id: response.data?.id ?? Date.now(),
-        comment: response.data?.content ?? "",
+        comment: response.data?.comment ?? "", // HTML for display
+        content: response.data?.content ?? "", // Raw markdown for editing
         topic_id: extractNumericId(params.postId),
         is_anonymous: response.data?.is_anonymous ?? false,
+        is_owner: response.data?.is_owner ?? true, // New comment is always owned by creator
         author: response.data?.author ?? {
           username: isAnonymous ? "Người dùng ẩn danh" : currentUser?.username,
           profile_name: isAnonymous
             ? "Người dùng ẩn danh"
             : currentUser?.profile_name || currentUser?.username,
+          verified: currentUser?.verified ?? false, // Add verified status
         },
         created_at: response.data?.created_at ?? "vài giây trước",
         votes: response.data?.votes ?? [],
