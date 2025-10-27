@@ -37,7 +37,7 @@ export default function HelpArticlePage({ params }) {
       <HelpCenterLayout title="Không tìm thấy bài viết">
         <LeftSidebar />
         <main className="w-full md:w-3/4 px-4">
-          <div className="py-6 bg-white dark:bg-gray-700 shadow-sm sm:rounded-lg">
+          <div className="py-6">
             <h1 className="text-2xl font-bold">Không tìm thấy bài viết</h1>
             <p className="mt-4">
               Bài viết bạn đang tìm kiếm không tồn tại. Vui lòng quay lại{" "}
@@ -56,7 +56,7 @@ export default function HelpArticlePage({ params }) {
     <HelpCenterLayout title={article.title}>
       <LeftSidebar />
       <main className="w-full md:w-2/4 px-4">
-        <div className="py-6 bg-white dark:bg-gray-700 shadow-sm sm:rounded-lg">
+        <div className="py-6">
           {/* Breadcrumb */}
           <nav className="flex items-center text-sm font-medium text-gray-500 dark:text-gray-400 mb-4">
             <Link

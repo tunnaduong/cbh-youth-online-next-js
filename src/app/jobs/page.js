@@ -14,7 +14,7 @@ export default function JobsPage() {
     <HelpCenterLayout title="Việc làm">
       <LeftSidebar />
       <main className="w-full md:w-3/4 px-4">
-        <div className="py-6 bg-white dark:bg-gray-700 shadow-sm sm:rounded-lg">
+        <div className="py-6">
           <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-6">
             Cơ hội việc làm & Cộng tác
           </h1>

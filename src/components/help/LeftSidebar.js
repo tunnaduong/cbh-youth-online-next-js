@@ -44,6 +44,8 @@ export default function LeftSidebar() {
     { name: "Việc làm", href: "/jobs", slug: "jobs" },
     { name: "Quảng cáo", href: "/ads", slug: "ads" },
     { name: "Liên hệ", href: "/contact", slug: "contact" },
+    { name: "Điều khoản sử dụng", href: "/policy/terms", slug: "terms" },
+    { name: "Chính sách bảo mật", href: "/policy/privacy", slug: "privacy" },
   ];
 
   return (
