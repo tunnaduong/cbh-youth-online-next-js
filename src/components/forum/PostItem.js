@@ -253,8 +253,11 @@ export default function PostItem({ post, single = false, onVote }) {
               />
             </Button>
             <div className="flex-1"></div>
+            {/* Mobile view */}
             <div className="flex-1 flex md:hidden flex-row-reverse items-center text-gray-500">
-              <span>{post.view_count}</span>
+              <span>
+                {(post.view_count || post.views_count || post.views) ?? 0}
+              </span>
               <EyeOutline
                 height="20px"
                 width="20px"
@@ -433,6 +436,7 @@ export default function PostItem({ post, single = false, onVote }) {
             <span className="ml-0.5 text-gray-500 shrink-0">
               {post.created_at_human || post.created_at || post.time}
             </span>
+            {/* Desktop view */}
             <div className="flex-1 flex-row-reverse items-center text-gray-500 hidden md:flex">
               <span>
                 {(post.view_count || post.views_count || post.views) ?? 0}

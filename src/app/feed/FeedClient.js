@@ -216,9 +216,11 @@ export default function FeedClient() {
             Bảng tin
           </h1>
           {/* 5 skeleton posts */}
-          {Array.from({ length: 5 }).map((_, index) => (
-            <SkeletonPost key={index} />
-          ))}
+          <div className="px-1.5 md:px-0">
+            {Array.from({ length: 5 }).map((_, index) => (
+              <SkeletonPost key={index} />
+            ))}
+          </div>
         </div>
       </HomeLayout>
     );

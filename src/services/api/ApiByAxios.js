@@ -2,7 +2,7 @@ import axiosInstance from "./AxiosCustom";
 
 // Get data
 export const getRequest = (endpoint, params = {}) => {
-  return axiosInstance.get(endpoint, params);
+  return axiosInstance.get(endpoint, { params });
 };
 
 // Post Data with optional data

@@ -202,6 +202,10 @@ export const getSubforumPosts = (subforum) => {
   return Api.getRequest(`/v1.0/forum/subforums/${subforum}/topics`);
 };
 
+export const getPostUrl = (params) => {
+  return Api.getRequest("/v1.0/post-url", params);
+};
+
 // Search
 export const search = (params) => {
   return Api.getRequest("/v1.0/search", params);
