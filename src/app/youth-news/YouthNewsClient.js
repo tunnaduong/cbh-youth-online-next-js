@@ -213,7 +213,7 @@ export default function YouthNewsClient() {
       <HomeLayout activeNav="home" activeBar={"news"}>
         <div className="px-1 xl:min-h-screen pt-4 md:max-w-[775px] mx-auto">
           <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-6 px-1">
-            Bảng tin
+            Tin tức Đoàn
           </h1>
           {/* 5 skeleton posts */}
           {Array.from({ length: 5 }).map((_, index) => (
@@ -228,7 +228,7 @@ export default function YouthNewsClient() {
     <HomeLayout activeNav="home" activeBar={"news"}>
       <div className="px-1 xl:min-h-screen pt-4 md:max-w-[775px] mx-auto">
         <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-6 px-1">
-          Bảng tin
+          Tin tức Đoàn
         </h1>
 
         {/* Posts */}
