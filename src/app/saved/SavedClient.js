@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { message, Modal } from "antd";
 import SavedPostItem from "./partials/SavedPostItem";
 import { unsavePost } from "@/app/Api";
+import Image from "next/image";
 
 export default function SavedClient({ savedTopics }) {
   const [topics, setTopics] = useState(savedTopics);
@@ -42,6 +43,13 @@ export default function SavedClient({ savedTopics }) {
 
       {topics.length === 0 ? (
         <div className="text-center py-12">
+          <Image
+            src="/images/sad_frog.png"
+            alt="Empty state"
+            width={136}
+            height={136}
+            className="mx-auto"
+          />
           <p className="text-gray-500 dark:text-gray-400">
             Chưa có bài viết nào được lưu
           </p>
