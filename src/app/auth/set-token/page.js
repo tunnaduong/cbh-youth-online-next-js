@@ -2,6 +2,9 @@
 
 import { Suspense, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { useAuthContext } from "@/contexts/Support";
+import { setAuthCookie } from "@/utils/cookies";
+import { getRequest } from "@/services/api/ApiByAxios";
 
 function getCookie(name) {
   if (typeof document === "undefined") return "";
@@ -12,18 +15,55 @@ function getCookie(name) {
 function SetTokenInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { setCurrentUser, setUserToken } = useAuthContext();
 
   useEffect(() => {
     const access = searchParams.get("access") || getCookie("auth_token");
     const refresh = searchParams.get("refresh") || getCookie("refresh_token");
     const returnUrl = searchParams.get("return") || "/";
+    const userB64 = getCookie("oauth_user");
+    let userObj = null;
+    if (userB64) {
+      try {
+        const json = atob(userB64.replace(/-/g, "+").replace(/_/g, "/"));
+        userObj = JSON.parse(json);
+      } catch {}
+      // clear cookie after reading
+      document.cookie =
+        "oauth_user=; Max-Age=0; path=/; SameSite=Lax;" +
+        (location.protocol === "https:" ? " Secure;" : "");
+    }
 
-    try {
-      if (access) localStorage.setItem("auth_token", access);
-      if (refresh) localStorage.setItem("refresh_token", refresh);
-    } catch {}
+    (async () => {
+      try {
+        if (access) {
+          // sync to context, cookies and localStorage
+          setUserToken(access);
+          setAuthCookie(access);
+          localStorage.setItem("TOKEN", access);
+          localStorage.setItem("auth_token", access);
+        }
+        if (refresh) localStorage.setItem("refresh_token", refresh);
 
-    router.replace(returnUrl);
+        // Prefer fetching the canonical user payload from API
+        let finalUser = userObj;
+        try {
+          if (access) {
+            const res = await getRequest("/v1.0/user");
+            if (res?.data) {
+              finalUser = res.data;
+            }
+          }
+        } catch {}
+
+        if (finalUser) {
+          setCurrentUser(finalUser);
+          localStorage.setItem("CURRENT_USER", JSON.stringify(finalUser));
+        }
+      } catch {}
+
+      router.replace(returnUrl);
+    })();
   }, [router, searchParams]);
 
   return null;
@@ -36,5 +76,3 @@ export default function SetTokenPage() {
     </Suspense>
   );
 }
-
-

@@ -220,6 +220,7 @@ export async function GET(request) {
 
     const appAccessToken = apiResponse?.accessToken || apiResponse?.token || "";
     const appRefreshToken = apiResponse?.refreshToken || "";
+    const appUser = apiResponse?.user || null;
 
     // Set non-HttpOnly cookie for SSR reads; localStorage will be set in client step
     const redirect = NextResponse.redirect(new URL(returnUrl, url.origin));
@@ -247,6 +248,20 @@ export async function GET(request) {
     if (appRefreshToken)
       setTokenUrl.searchParams.set("refresh", appRefreshToken);
     setTokenUrl.searchParams.set("return", returnUrl);
+
+    if (appUser) {
+      redirect.cookies.set(
+        "oauth_user",
+        Buffer.from(JSON.stringify(appUser)).toString("base64url"),
+        {
+          path: "/",
+          httpOnly: false,
+          sameSite: "lax",
+          secure: true,
+          maxAge: 60,
+        }
+      );
+    }
 
     return NextResponse.redirect(setTokenUrl);
   } catch (e) {
