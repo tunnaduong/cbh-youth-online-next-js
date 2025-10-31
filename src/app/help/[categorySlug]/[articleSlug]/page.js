@@ -1,6 +1,4 @@
-import { Metadata } from "next";
 import Link from "next/link";
-import Head from "next/head";
 import HelpCenterLayout from "@/layouts/HelpCenterLayout";
 import LeftSidebar from "@/components/help/LeftSidebar";
 import TopicList from "@/components/help/TopicList";

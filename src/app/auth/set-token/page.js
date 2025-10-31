@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { Suspense, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
 function getCookie(name) {
@@ -9,7 +9,7 @@ function getCookie(name) {
   return match ? decodeURIComponent(match[1]) : "";
 }
 
-export default function SetTokenPage() {
+function SetTokenInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -27,6 +27,14 @@ export default function SetTokenPage() {
   }, [router, searchParams]);
 
   return null;
+}
+
+export default function SetTokenPage() {
+  return (
+    <Suspense fallback={null}>
+      <SetTokenInner />
+    </Suspense>
+  );
 }
 
 
