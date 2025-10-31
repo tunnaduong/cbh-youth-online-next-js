@@ -31,6 +31,19 @@ export async function GET(request) {
       secure: true,
       maxAge: 60,
     });
+    redirect.cookies.set(
+      "oauth_debug",
+      Buffer.from(
+        JSON.stringify({ provider: "google", step: "no_code", details: {} })
+      ).toString("base64url"),
+      {
+        path: "/",
+        httpOnly: false,
+        sameSite: "lax",
+        secure: true,
+        maxAge: 60,
+      }
+    );
     return redirect;
   }
 
@@ -43,6 +56,24 @@ export async function GET(request) {
       secure: true,
       maxAge: 60,
     });
+    const missing = {
+      NEXT_PUBLIC_GOOGLE_CLIENT_ID: !!clientId,
+      GOOGLE_CLIENT_SECRET: !!clientSecret,
+      NEXT_PUBLIC_GOOGLE_REDIRECT_URI: !!redirectUri,
+    };
+    redirect.cookies.set(
+      "oauth_debug",
+      Buffer.from(
+        JSON.stringify({ provider: "google", step: "config_missing", details: missing })
+      ).toString("base64url"),
+      {
+        path: "/",
+        httpOnly: false,
+        sameSite: "lax",
+        secure: true,
+        maxAge: 60,
+      }
+    );
     return redirect;
   }
 
@@ -67,6 +98,23 @@ export async function GET(request) {
       redirect.cookies.set(
         "oauth_error",
         "Không lấy được access token Google",
+        {
+          path: "/",
+          httpOnly: false,
+          sameSite: "lax",
+          secure: true,
+          maxAge: 60,
+        }
+      );
+      redirect.cookies.set(
+        "oauth_debug",
+        Buffer.from(
+          JSON.stringify({
+            provider: "google",
+            step: "exchange_code",
+            details: { status: tokenRes.status, body: msg?.slice(0, 500) },
+          })
+        ).toString("base64url"),
         {
           path: "/",
           httpOnly: false,
@@ -103,6 +151,23 @@ export async function GET(request) {
           maxAge: 60,
         }
       );
+      redirect.cookies.set(
+        "oauth_debug",
+        Buffer.from(
+          JSON.stringify({
+            provider: "google",
+            step: "fetch_profile",
+            details: { status: profileRes.status, body: msg?.slice(0, 500) },
+          })
+        ).toString("base64url"),
+        {
+          path: "/",
+          httpOnly: false,
+          sameSite: "lax",
+          secure: true,
+          maxAge: 60,
+        }
+      );
       return redirect;
     }
 
@@ -126,6 +191,23 @@ export async function GET(request) {
         secure: true,
         maxAge: 60,
       });
+      redirect.cookies.set(
+        "oauth_debug",
+        Buffer.from(
+          JSON.stringify({
+            provider: "google",
+            step: "call_api",
+            details: { message: err?.message },
+          })
+        ).toString("base64url"),
+        {
+          path: "/",
+          httpOnly: false,
+          sameSite: "lax",
+          secure: true,
+          maxAge: 60,
+        }
+      );
       return redirect;
     }
 
@@ -165,6 +247,19 @@ export async function GET(request) {
     redirect.cookies.set(
       "oauth_error",
       "Đăng nhập Google gặp lỗi không xác định",
+      {
+        path: "/",
+        httpOnly: false,
+        sameSite: "lax",
+        secure: true,
+        maxAge: 60,
+      }
+    );
+    redirect.cookies.set(
+      "oauth_debug",
+      Buffer.from(
+        JSON.stringify({ provider: "google", step: "unknown", details: { message: e?.message } })
+      ).toString("base64url"),
       {
         path: "/",
         httpOnly: false,

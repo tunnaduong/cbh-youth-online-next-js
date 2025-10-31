@@ -51,6 +51,26 @@ export default function LoginClient() {
           "oauth_error=; Max-Age=0; path=/; SameSite=Lax;" +
           (location.protocol === "https:" ? " Secure;" : "");
       }
+
+      const dbgMatch = document.cookie.match(/(?:^|; )oauth_debug=([^;]*)/);
+      const dbgRaw = dbgMatch ? decodeURIComponent(dbgMatch[1]) : "";
+      if (dbgRaw) {
+        try {
+          // decode base64url -> base64
+          const b64 = dbgRaw.replace(/-/g, "+").replace(/_/g, "/");
+          const json = atob(b64);
+          const parsed = JSON.parse(json);
+          // eslint-disable-next-line no-console
+          console.error("OAuth debug:", parsed);
+        } catch (e) {
+          // eslint-disable-next-line no-console
+          console.error("OAuth debug (raw):", dbgRaw);
+        }
+        // clear cookie
+        document.cookie =
+          "oauth_debug=; Max-Age=0; path=/; SameSite=Lax;" +
+          (location.protocol === "https:" ? " Secure;" : "");
+      }
     } catch {}
   }, []);
 

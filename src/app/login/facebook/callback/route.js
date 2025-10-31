@@ -31,6 +31,19 @@ export async function GET(request) {
       secure: true,
       maxAge: 60,
     });
+    redirect.cookies.set(
+      "oauth_debug",
+      Buffer.from(
+        JSON.stringify({ provider: "facebook", step: "no_code", details: {} })
+      ).toString("base64url"),
+      {
+        path: "/",
+        httpOnly: false,
+        sameSite: "lax",
+        secure: true,
+        maxAge: 60,
+      }
+    );
     return redirect;
   }
 
@@ -43,6 +56,28 @@ export async function GET(request) {
       secure: true,
       maxAge: 60,
     });
+    const missing = {
+      NEXT_PUBLIC_FACEBOOK_CLIENT_ID: !!clientId,
+      NEXT_PUBLIC_FACEBOOK_CLIENT_SECRET: !!clientSecret,
+      NEXT_PUBLIC_FACEBOOK_REDIRECT_URI: !!redirectUri,
+    };
+    redirect.cookies.set(
+      "oauth_debug",
+      Buffer.from(
+        JSON.stringify({
+          provider: "facebook",
+          step: "config_missing",
+          details: missing,
+        })
+      ).toString("base64url"),
+      {
+        path: "/",
+        httpOnly: false,
+        sameSite: "lax",
+        secure: true,
+        maxAge: 60,
+      }
+    );
     return redirect;
   }
 
@@ -66,6 +101,23 @@ export async function GET(request) {
       redirect.cookies.set(
         "oauth_error",
         "Không lấy được access token Facebook",
+        {
+          path: "/",
+          httpOnly: false,
+          sameSite: "lax",
+          secure: true,
+          maxAge: 60,
+        }
+      );
+      redirect.cookies.set(
+        "oauth_debug",
+        Buffer.from(
+          JSON.stringify({
+            provider: "facebook",
+            step: "exchange_code",
+            details: { status: tokenRes.status, body: msg?.slice(0, 500) },
+          })
+        ).toString("base64url"),
         {
           path: "/",
           httpOnly: false,
@@ -101,6 +153,23 @@ export async function GET(request) {
           maxAge: 60,
         }
       );
+      redirect.cookies.set(
+        "oauth_debug",
+        Buffer.from(
+          JSON.stringify({
+            provider: "facebook",
+            step: "fetch_profile",
+            details: { status: profileRes.status, body: msg?.slice(0, 500) },
+          })
+        ).toString("base64url"),
+        {
+          path: "/",
+          httpOnly: false,
+          sameSite: "lax",
+          secure: true,
+          maxAge: 60,
+        }
+      );
       return redirect;
     }
 
@@ -123,6 +192,23 @@ export async function GET(request) {
         secure: true,
         maxAge: 60,
       });
+      redirect.cookies.set(
+        "oauth_debug",
+        Buffer.from(
+          JSON.stringify({
+            provider: "facebook",
+            step: "call_api",
+            details: { message: err?.message },
+          })
+        ).toString("base64url"),
+        {
+          path: "/",
+          httpOnly: false,
+          sameSite: "lax",
+          secure: true,
+          maxAge: 60,
+        }
+      );
       return redirect;
     }
 
@@ -164,6 +250,23 @@ export async function GET(request) {
     redirect.cookies.set(
       "oauth_error",
       "Đăng nhập Facebook gặp lỗi không xác định",
+      {
+        path: "/",
+        httpOnly: false,
+        sameSite: "lax",
+        secure: true,
+        maxAge: 60,
+      }
+    );
+    redirect.cookies.set(
+      "oauth_debug",
+      Buffer.from(
+        JSON.stringify({
+          provider: "facebook",
+          step: "unknown",
+          details: { message: e?.message },
+        })
+      ).toString("base64url"),
       {
         path: "/",
         httpOnly: false,
