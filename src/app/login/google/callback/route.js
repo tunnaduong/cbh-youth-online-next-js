@@ -19,7 +19,7 @@ export async function GET(request) {
   const { returnUrl = "/" } = fromBase64Url(stateParam);
 
   const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
-  const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
+  const clientSecret = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_SECRET;
   const redirectUri = process.env.NEXT_PUBLIC_GOOGLE_REDIRECT_URI;
 
   if (!code) {
@@ -64,7 +64,11 @@ export async function GET(request) {
     redirect.cookies.set(
       "oauth_debug",
       Buffer.from(
-        JSON.stringify({ provider: "google", step: "config_missing", details: missing })
+        JSON.stringify({
+          provider: "google",
+          step: "config_missing",
+          details: missing,
+        })
       ).toString("base64url"),
       {
         path: "/",
@@ -130,12 +134,15 @@ export async function GET(request) {
     const accessToken = tokenJson.access_token;
     const idToken = tokenJson.id_token;
 
-    const profileRes = await fetch("https://openidconnect.googleapis.com/v1/userinfo", {
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-      },
-      cache: "no-store",
-    });
+    const profileRes = await fetch(
+      "https://openidconnect.googleapis.com/v1/userinfo",
+      {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+        cache: "no-store",
+      }
+    );
     if (!profileRes.ok) {
       const msg = await profileRes.text();
       console.error("Google profile error:", msg);
@@ -237,7 +244,8 @@ export async function GET(request) {
 
     const setTokenUrl = new URL("/auth/set-token", url.origin);
     if (appAccessToken) setTokenUrl.searchParams.set("access", appAccessToken);
-    if (appRefreshToken) setTokenUrl.searchParams.set("refresh", appRefreshToken);
+    if (appRefreshToken)
+      setTokenUrl.searchParams.set("refresh", appRefreshToken);
     setTokenUrl.searchParams.set("return", returnUrl);
 
     return NextResponse.redirect(setTokenUrl);
@@ -258,7 +266,11 @@ export async function GET(request) {
     redirect.cookies.set(
       "oauth_debug",
       Buffer.from(
-        JSON.stringify({ provider: "google", step: "unknown", details: { message: e?.message } })
+        JSON.stringify({
+          provider: "google",
+          step: "unknown",
+          details: { message: e?.message },
+        })
       ).toString("base64url"),
       {
         path: "/",
@@ -271,5 +283,3 @@ export async function GET(request) {
     return redirect;
   }
 }
-
-
