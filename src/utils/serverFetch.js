@@ -38,7 +38,10 @@ async function fetchServer(path, options = {}) {
     if (!response.ok) {
       const errorText = await response.text();
       console.error(`Server fetch error: ${response.status}`, errorText);
-      throw new Error(`HTTP error! status: ${response.status}`);
+      const snippet = (errorText || "").slice(0, 800);
+      throw new Error(
+        `HTTP ${response.status}: ${snippet}`
+      );
     }
 
     return await response.json();
