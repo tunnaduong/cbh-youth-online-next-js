@@ -39,6 +39,21 @@ export default function LoginClient() {
     };
   }, []);
 
+  // Read OAuth provider error from cookie (set by callback), then clear it
+  useEffect(() => {
+    try {
+      const match = document.cookie.match(/(?:^|; )oauth_error=([^;]*)/);
+      const msg = match ? decodeURIComponent(match[1]) : "";
+      if (msg) {
+        setError(msg);
+        // clear cookie
+        document.cookie =
+          "oauth_error=; Max-Age=0; path=/; SameSite=Lax;" +
+          (location.protocol === "https:" ? " Secure;" : "");
+      }
+    } catch {}
+  }, []);
+
   const submit = async (e) => {
     e.preventDefault();
     setProcessing(true);

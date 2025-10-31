@@ -49,7 +49,7 @@ export default function Footer() {
                 <IoLogoFacebook color={"white"} />
               </a>
               <a
-                href="https://github.com/tunnaduong/cbh-youth-online-api"
+                href="https://github.com/tunnaduong/cbh-youth-online-next-js"
                 target="_blank"
                 className="rounded-full h-[35px] w-[35px] flex justify-center items-center bg-black text-white"
               >
