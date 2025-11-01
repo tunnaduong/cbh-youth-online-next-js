@@ -16,6 +16,8 @@ import {
   resendVerificationEmail,
   getCurrentUser,
   getUserProfile,
+  getNotificationSettings,
+  updateNotificationSettings,
 } from "@/app/Api";
 import axiosInstance from "@/services/api/AxiosCustom";
 
@@ -86,7 +88,7 @@ export default function SettingsClient({ initialUser, hasAuthError }) {
     email_contact: true,
     email_marketing: true,
     email_social: true,
-    email_security: true,
+    email_security: true, // Always true, cannot be changed
     // Delete account
     password: "",
     confirm_text: "",
@@ -194,6 +196,35 @@ export default function SettingsClient({ initialUser, hasAuthError }) {
 
     loadUserData();
   }, []); // Only run once on mount
+
+  // Load notification settings from API
+  useEffect(() => {
+    const loadNotificationSettings = async () => {
+      try {
+        const response = await getNotificationSettings();
+        const settings = response?.data || response;
+
+        if (settings) {
+          setData((prev) => ({
+            ...prev,
+            notification_level: settings.notification_level || "all",
+            email_contact: settings.email_contact ?? true,
+            email_marketing: settings.email_marketing ?? true,
+            email_social: settings.email_social ?? true,
+            email_security: true, // Always true, cannot be changed
+          }));
+        }
+      } catch (error) {
+        console.error("Error loading notification settings:", error);
+        // Keep default values if API call fails
+      }
+    };
+
+    // Only load if user is logged in
+    if (currentUser || loggedIn) {
+      loadNotificationSettings();
+    }
+  }, [currentUser, loggedIn]);
 
   const updateData = (key, value) => {
     setData((prev) => ({ ...prev, [key]: value }));
@@ -593,18 +624,33 @@ export default function SettingsClient({ initialUser, hasAuthError }) {
     setErrors({});
 
     try {
-      // Note: Notification settings might need a separate API endpoint
-      // For now, we'll use updateProfile if it supports these fields
       const payload = {
         notification_level: data.notification_level,
         email_contact: data.email_contact,
         email_marketing: data.email_marketing,
         email_social: data.email_social,
-        email_security: data.email_security,
+        // email_security is always true and not sent to API
       };
 
-      await updateProfile(currentUser.username, payload);
-      message.success("Cập nhật thông báo thành công!");
+      const response = await updateNotificationSettings(payload);
+      const responseData = response?.data || response;
+
+      message.success(
+        responseData?.message || "Cập nhật thông báo thành công!"
+      );
+
+      // Update form data with response data
+      if (responseData) {
+        setData((prev) => ({
+          ...prev,
+          notification_level:
+            responseData.notification_level || prev.notification_level,
+          email_contact: responseData.email_contact ?? prev.email_contact,
+          email_marketing: responseData.email_marketing ?? prev.email_marketing,
+          email_social: responseData.email_social ?? prev.email_social,
+          email_security: true, // Always true, cannot be changed
+        }));
+      }
     } catch (error) {
       console.error("Update notifications error:", error);
       if (error.response?.data?.errors) {
@@ -1243,15 +1289,12 @@ export default function SettingsClient({ initialUser, hasAuthError }) {
                       </h4>
                       <p className="text-sm text-gray-600 dark:text-gray-400">
                         Nhận email về hoạt động và bảo mật tài khoản của bạn.
+                        <span className="block mt-1 text-xs text-gray-500 dark:text-gray-500">
+                          (Luôn bật để đảm bảo an toàn tài khoản)
+                        </span>
                       </p>
                     </div>
-                    <Switch
-                      checked={data.email_security}
-                      onChange={(checked) =>
-                        updateData("email_security", checked)
-                      }
-                      className="ml-4"
-                    />
+                    <Switch checked={true} disabled={true} className="ml-4" />
                   </div>
                 </div>
               </div>

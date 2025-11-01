@@ -403,7 +403,7 @@ export default function Navbar({ activeNav = null }) {
                   </Dropdown.Link>
                   <Dropdown.Link
                     className="flex items-center gap-2 py-2"
-                    href="https://facebook.com/cbhyouthonline"
+                    href="/help"
                   >
                     <BsQuestionCircle /> Trợ giúp
                   </Dropdown.Link>

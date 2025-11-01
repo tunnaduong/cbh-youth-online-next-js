@@ -321,3 +321,12 @@ export const unfollowUser = (username) => {
 export const deleteAccount = (params) => {
   return Api.postRequest("/v1.0/user/delete-account", params);
 };
+
+// Notification Settings
+export const getNotificationSettings = () => {
+  return Api.getRequest("/v1.0/notification-settings");
+};
+
+export const updateNotificationSettings = (params) => {
+  return Api.putRequest("/v1.0/notification-settings", params);
+};
