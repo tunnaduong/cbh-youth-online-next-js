@@ -2,6 +2,7 @@
 
 import HomeLayout from "@/layouts/HomeLayout";
 import React from "react";
+import Image from "next/image";
 import {
   HomeOutline,
   Home,
@@ -108,10 +109,39 @@ export default function ExploreClient() {
       sidebarWidth="306px"
     >
       <div className="px-2.5">
-        <main className="px-1 xl:min-h-screen pt-4 md:max-w-[936px] mx-auto">
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-6">
+        <main className="px-1 xl:min-h-screen py-4 md:max-w-[936px] mx-auto">
+          {/* <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-6">
             Khám phá
-          </h1>
+          </h1> */}
+
+          {/* Welcome Section */}
+          <div className="relative">
+            <div className="relative flex flex-col md:flex-row items-center justify-between">
+              {/* Left side - Welcome message */}
+              <div className="flex-1 mb-6 md:mb-0 md:mr-8 px-8">
+                <h2 className="text-xl md:text-2xl lg:text-3xl font-bold text-gray-900 dark:text-gray-100 leading-tight">
+                  Chào bạn, hôm nay bạn muốn <br />
+                  <span className="text-orange-500 dark:text-orange-400">
+                    làm gì...?
+                  </span>
+                </h2>
+              </div>
+
+              {/* Right side - Student image */}
+              <div className="relative flex-shrink-0 w-full md:w-auto md:mr-8">
+                <div className="relative w-64 h-64 mx-auto my-4 md:mx-0">
+                  <Image
+                    src="/images/student_girl.png"
+                    alt="Học sinh"
+                    fill
+                    className="object-contain"
+                    priority
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
             {features
               .filter((feature) => feature.key !== "home")
