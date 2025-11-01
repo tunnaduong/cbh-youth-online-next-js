@@ -1097,7 +1097,8 @@ export default function SettingsClient({ initialUser, hasAuthError }) {
                       required
                     />
                     <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                      Gõ chính xác "XÓA TÀI KHOẢN" (viết hoa) để xác nhận
+                      Gõ chính xác &quot;XÓA TÀI KHOẢN&quot; (viết hoa) để xác
+                      nhận
                     </p>
                     {errors.confirm_text && (
                       <p className="mt-1 text-xs text-red-500">

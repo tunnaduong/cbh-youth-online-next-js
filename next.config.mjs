@@ -17,6 +17,10 @@ const nextConfig = {
     ],
   },
   reactStrictMode: false,
+  eslint: {
+    ignoreDuringBuilds: false,
+    dirs: ['src', 'pages', 'components', 'lib', 'app'],
+  },
 };
 
 export default nextConfig;
