@@ -180,6 +180,19 @@ export const searchUserForChat = (params) => {
   return Api.getRequest("/v1.0/chat/search/users", params);
 };
 
+// Public Chat (accessible to everyone, no auth required)
+export const getPublicChatMessages = (page = 1) => {
+  return Api.getRequest(`/v1.0/chat/public/messages?page=${page}`);
+};
+
+export const sendPublicMessage = (params) => {
+  return Api.postRequest("/v1.0/chat/public/messages", params);
+};
+
+export const getPublicChatParticipants = () => {
+  return Api.getRequest("/v1.0/chat/public/participants");
+};
+
 // Comments
 export const getReplies = (commentId) => {
   return Api.getRequest(`/v1.0/comments/${commentId}/replies`);

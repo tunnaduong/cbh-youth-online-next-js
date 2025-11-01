@@ -7,6 +7,7 @@ import TopPosts from "@/components/forum/TopPosts";
 import SEOContent from "@/components/marketing/SEOContent";
 import StoriesSection from "@/components/stories/StoriesSection";
 import MobileButton from "@/components/home/MobileButton";
+import PublicChat from "@/components/chat/PublicChat";
 import { useCreatePost } from "@/contexts/CreatePostContext";
 
 export default function HomeClient({
@@ -34,6 +35,7 @@ export default function HomeClient({
         >
           <TopPosts initialLatestPosts={initialLatestPosts} />
         </Suspense>
+        <PublicChat />
         <ForumSection initialMainCategories={initialMainCategories} />
         <ForumStats initialStats={initialStats} />
         <SEOContent />

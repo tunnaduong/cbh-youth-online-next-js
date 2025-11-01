@@ -13,8 +13,11 @@ axiosInstance.interceptors.request.use((config) => {
   try {
     // Check if we're running on the client side
     if (typeof window !== "undefined") {
-      const token = getTokenFromAnywhere() || "";
-      config.headers.Authorization = `Bearer ${token}`;
+      const token = getTokenFromAnywhere();
+      // Only add Authorization header if token exists and is not empty
+      if (token && token.trim() !== "") {
+        config.headers.Authorization = `Bearer ${token}`;
+      }
     }
     return config;
   } catch (error) {
