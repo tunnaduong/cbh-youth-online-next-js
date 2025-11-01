@@ -20,8 +20,20 @@ export default function PublicChat() {
   const [currentPage, setCurrentPage] = useState(1);
   const [hasMorePages, setHasMorePages] = useState(false);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
-  const [showParticipants, setShowParticipants] = useState(true); // Default: show on desktop
+  const [showParticipants, setShowParticipants] = useState(false); // Default: hide on mobile, can toggle on desktop
   const messagesContainerRef = useRef(null);
+
+  // Initialize showParticipants based on screen size (desktop: true, mobile: false)
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      // Set initial state based on screen size
+      if (window.innerWidth >= 1024) {
+        setShowParticipants(true); // Desktop: show by default
+      } else {
+        setShowParticipants(false); // Mobile: hide by default
+      }
+    }
+  }, []);
 
   // Disable browser scroll restoration
   useEffect(() => {
@@ -480,6 +492,7 @@ export default function PublicChat() {
         </div>
 
         {/* Participants Sidebar - toggle on both desktop and mobile */}
+        {/* Mobile: show when showParticipants is true, Desktop: show when showParticipants is true */}
         {showParticipants && (
           <div
             className="flex w-full lg:w-64 border-l dark:!border-[#585857] bg-gray-50 dark:!bg-[var(--main-white)] flex-col"
