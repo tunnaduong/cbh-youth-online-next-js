@@ -347,6 +347,14 @@ export default function PublicChat() {
       "Thứ bảy",
     ];
 
+    // If message is older than 1 week (7 days), show date format: dd/mm/yyyy
+    if (diffDays >= 7) {
+      const day = date.getDate().toString().padStart(2, "0");
+      const month = (date.getMonth() + 1).toString().padStart(2, "0");
+      const year = date.getFullYear();
+      return `${day}/${month}/${year}`;
+    }
+
     if (diffMins < 1) return "Vừa xong";
     if (diffMins < 60) return `${diffMins} phút trước`;
     if (diffHours < 24) return `${diffHours} giờ trước`;
