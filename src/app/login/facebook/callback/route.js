@@ -133,7 +133,7 @@ export async function GET(request) {
     const accessToken = tokenJson.access_token;
 
     const profileRes = await fetch(
-      `https://graph.facebook.com/me?fields=id,name,email,picture&access_token=${encodeURIComponent(
+      `https://graph.facebook.com/me?fields=id,name,email,picture.type(large)&access_token=${encodeURIComponent(
         accessToken
       )}`,
       { cache: "no-store" }
