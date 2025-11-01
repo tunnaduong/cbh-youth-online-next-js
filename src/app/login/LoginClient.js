@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "@bprogress/next/app";
@@ -14,6 +14,7 @@ import { loginRequest } from "../Api";
 export default function LoginClient() {
   const { setCurrentUser, setUserToken, loggedIn } = useAuthContext();
   const router = useRouter();
+  const manualRedirectRef = useRef(false);
 
   // Replace useForm with React state
   const [data, setData] = useState({
@@ -26,11 +27,19 @@ export default function LoginClient() {
   const [error, setError] = useState(null);
 
   // Check if user is already logged in
+  // Skip redirect if we're processing or if we manually handled redirect
   useEffect(() => {
-    if (loggedIn) {
-      router.push("/");
+    if (loggedIn && !processing && !manualRedirectRef.current) {
+      // Check for continue parameter and redirect to it, otherwise go home
+      const urlParams = new URLSearchParams(window.location.search);
+      const returnUrl = urlParams.get("continue");
+      const redirectUrl =
+        returnUrl && returnUrl.trim() !== ""
+          ? decodeURIComponent(returnUrl)
+          : "/";
+      router.push(redirectUrl);
     }
-  }, [loggedIn, router]);
+  }, [loggedIn, router, processing]);
 
   // Reset password on unmount
   useEffect(() => {
@@ -78,6 +87,7 @@ export default function LoginClient() {
     e.preventDefault();
     setProcessing(true);
     setErrors({});
+    manualRedirectRef.current = false; // Reset ref for new login attempt
 
     try {
       // Get continue from current URL parameters
@@ -93,11 +103,20 @@ export default function LoginClient() {
       if (response.data && response.data.user && response.data.token) {
         setCurrentUser(response.data.user);
         setUserToken(response.data.token);
-        setProcessing(false);
 
         // Redirect to return URL or home
-        const redirectUrl = returnUrl ? decodeURIComponent(returnUrl) : "/";
-        router.push(redirectUrl);
+        // Check if returnUrl exists and is not empty string
+        const redirectUrl =
+          returnUrl && returnUrl.trim() !== ""
+            ? decodeURIComponent(returnUrl)
+            : "/";
+
+        // Mark that we're handling redirect manually to prevent useEffect from running
+        manualRedirectRef.current = true;
+        setProcessing(false);
+
+        // Use replace to override any automatic redirects
+        router.replace(redirectUrl);
       } else {
         setProcessing(false);
         throw new Error("Phản hồi không hợp lệ!");
@@ -206,9 +225,14 @@ export default function LoginClient() {
                 <a
                   href={`/login/facebook?continue=${encodeURIComponent(
                     typeof window !== "undefined"
-                      ? new URLSearchParams(window.location.search).get(
-                          "continue"
-                        ) || "/"
+                      ? (() => {
+                          const continueParam = new URLSearchParams(
+                            window.location.search
+                          ).get("continue");
+                          return continueParam && continueParam.trim() !== ""
+                            ? continueParam
+                            : "/";
+                        })()
                       : "/"
                   )}`}
                   className="inline-flex dark:!border-neutral-500 dark:bg-[#2c2c2c] items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 border border-input shadow-sm hover:bg-[#eeeeee] hover:text-accent-foreground w-10 h-10"
@@ -233,9 +257,14 @@ export default function LoginClient() {
                 <a
                   href={`/login/google?continue=${encodeURIComponent(
                     typeof window !== "undefined"
-                      ? new URLSearchParams(window.location.search).get(
-                          "continue"
-                        ) || "/"
+                      ? (() => {
+                          const continueParam = new URLSearchParams(
+                            window.location.search
+                          ).get("continue");
+                          return continueParam && continueParam.trim() !== ""
+                            ? continueParam
+                            : "/";
+                        })()
                       : "/"
                   )}`}
                   className="inline-flex dark:!border-neutral-500 dark:bg-[#2c2c2c] items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 border border-input shadow-sm hover:bg-[#eeeeee] hover:text-accent-foreground w-10 h-10"

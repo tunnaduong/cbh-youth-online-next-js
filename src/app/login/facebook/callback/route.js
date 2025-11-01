@@ -16,7 +16,9 @@ export async function GET(request) {
   const url = new URL(request.url);
   const code = url.searchParams.get("code");
   const stateParam = url.searchParams.get("state");
-  const { returnUrl = "/" } = fromBase64Url(stateParam);
+  const state = fromBase64Url(stateParam);
+  // Ensure returnUrl is valid - use "/" if missing or empty
+  const returnUrl = state?.returnUrl && state.returnUrl.trim() !== "" ? state.returnUrl : "/";
 
   const clientId = process.env.NEXT_PUBLIC_FACEBOOK_CLIENT_ID;
   const clientSecret = process.env.NEXT_PUBLIC_FACEBOOK_CLIENT_SECRET;

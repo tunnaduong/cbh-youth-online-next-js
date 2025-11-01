@@ -20,7 +20,10 @@ function SetTokenInner() {
   useEffect(() => {
     const access = searchParams.get("access") || getCookie("auth_token");
     const refresh = searchParams.get("refresh") || getCookie("refresh_token");
-    const returnUrl = searchParams.get("return") || "/";
+    // Get return URL and ensure it's valid (not null/empty), default to "/"
+    const returnParam = searchParams.get("return");
+    const returnUrl =
+      returnParam && returnParam.trim() !== "" ? returnParam : "/";
     const userB64 = getCookie("oauth_user");
     let userObj = null;
     if (userB64) {
