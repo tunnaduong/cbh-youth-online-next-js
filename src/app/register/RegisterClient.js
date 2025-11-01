@@ -1,9 +1,9 @@
 "use client";
 
-import React from "react";
+import React, { useRef, Suspense } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { useRouter } from "@bprogress/next/app";
+import { useRouter, useSearchParams } from "next/navigation";
 import CustomColorButton from "@/components/ui/CustomColorButton";
 import InputError from "@/components/ui/InputError";
 import { Input } from "antd";
@@ -11,9 +11,11 @@ import { UserOutlined, LockOutlined, MailOutlined } from "@ant-design/icons";
 import { signupRequest } from "../Api";
 import { useAuthContext } from "@/contexts/Support";
 
-export default function RegisterClient() {
+function RegisterClientInner() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { setCurrentUser, setUserToken, loggedIn } = useAuthContext();
+  const manualRedirectRef = useRef(false);
 
   // Replace individual state with data object like login page
   const [data, setData] = React.useState({
@@ -27,16 +29,25 @@ export default function RegisterClient() {
   const [processing, setProcessing] = React.useState(false);
   const [error, setError] = React.useState(null);
 
+  // Check if user is already logged in
+  // Skip redirect if we're processing or if we manually handled redirect
   React.useEffect(() => {
-    if (loggedIn) {
-      router.push("/");
+    if (loggedIn && !processing && !manualRedirectRef.current) {
+      // Check for continue parameter and redirect to it, otherwise go home
+      const returnUrl = searchParams.get("continue");
+      const redirectUrl =
+        returnUrl && returnUrl.trim() !== ""
+          ? decodeURIComponent(returnUrl)
+          : "/";
+      router.push(redirectUrl);
     }
-  }, [loggedIn, router]);
+  }, [loggedIn, router, processing, searchParams]);
 
   const submit = async (e) => {
     e.preventDefault();
     setProcessing(true);
     setErrors({});
+    manualRedirectRef.current = false; // Reset ref for new register attempt
 
     if (data.password !== data.password_confirmation) {
       setErrors({ password_confirmation: "Mật khẩu xác nhận không khớp!" });
@@ -45,6 +56,9 @@ export default function RegisterClient() {
     }
 
     try {
+      // Get continue from current URL parameters
+      const returnUrl = searchParams.get("continue");
+
       const response = await signupRequest({
         name: data.name,
         email: data.email,
@@ -55,8 +69,20 @@ export default function RegisterClient() {
       if (response.data && response.data.user && response.data.token) {
         setCurrentUser(response.data.user);
         setUserToken(response.data.token);
+
+        // Redirect to return URL or home
+        // Check if returnUrl exists and is not empty string
+        const redirectUrl =
+          returnUrl && returnUrl.trim() !== ""
+            ? decodeURIComponent(returnUrl)
+            : "/";
+
+        // Mark that we're handling redirect manually to prevent useEffect from running
+        manualRedirectRef.current = true;
         setProcessing(false);
-        router.push("/");
+
+        // Use replace to override any automatic redirects
+        router.replace(redirectUrl);
       } else {
         setProcessing(false);
         throw new Error("Phản hồi không hợp lệ!");
@@ -194,7 +220,13 @@ export default function RegisterClient() {
                 </Link>
                 <Link
                   className="text-primary-500 hover:text-primary-500 hover:underline"
-                  href="/login"
+                  href={(() => {
+                    const continueParam = searchParams.get("continue");
+                    const queryString = continueParam
+                      ? `?continue=${encodeURIComponent(continueParam)}`
+                      : "";
+                    return `/login${queryString}`;
+                  })()}
                 >
                   Đã có tài khoản?
                 </Link>
@@ -212,11 +244,12 @@ export default function RegisterClient() {
               <div className="flex justify-center space-x-4">
                 <a
                   href={`/login/facebook?continue=${encodeURIComponent(
-                    typeof window !== "undefined"
-                      ? new URLSearchParams(window.location.search).get(
-                          "continue"
-                        ) || "/"
-                      : "/"
+                    (() => {
+                      const continueParam = searchParams.get("continue");
+                      return continueParam && continueParam.trim() !== ""
+                        ? continueParam
+                        : "/";
+                    })()
                   )}`}
                   className="inline-flex dark:!border-neutral-500 dark:bg-[#2c2c2c] items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 border border-input shadow-sm hover:bg-[#eeeeee] hover:text-accent-foreground w-10 h-10"
                 >
@@ -239,11 +272,12 @@ export default function RegisterClient() {
                 </a>
                 <a
                   href={`/login/google?continue=${encodeURIComponent(
-                    typeof window !== "undefined"
-                      ? new URLSearchParams(window.location.search).get(
-                          "continue"
-                        ) || "/"
-                      : "/"
+                    (() => {
+                      const continueParam = searchParams.get("continue");
+                      return continueParam && continueParam.trim() !== ""
+                        ? continueParam
+                        : "/";
+                    })()
                   )}`}
                   className="inline-flex dark:!border-neutral-500 dark:bg-[#2c2c2c] items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 border border-input shadow-sm hover:bg-[#eeeeee] hover:text-accent-foreground w-10 h-10"
                 >
@@ -277,5 +311,13 @@ export default function RegisterClient() {
         </div>
       </div>
     </>
+  );
+}
+
+export default function RegisterClient() {
+  return (
+    <Suspense fallback={null}>
+      <RegisterClientInner />
+    </Suspense>
   );
 }

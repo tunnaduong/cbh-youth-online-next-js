@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, Suspense } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { useRouter } from "@bprogress/next/app";
+import { useRouter, useSearchParams } from "next/navigation";
 import CustomColorButton from "@/components/ui/CustomColorButton";
 import InputError from "@/components/ui/InputError";
 import { Input } from "antd";
@@ -11,9 +11,10 @@ import { LockOutlined, UserOutlined } from "@ant-design/icons";
 import { useAuthContext } from "@/contexts/Support";
 import { loginRequest } from "../Api";
 
-export default function LoginClient() {
+function LoginClientInner() {
   const { setCurrentUser, setUserToken, loggedIn } = useAuthContext();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const manualRedirectRef = useRef(false);
 
   // Replace useForm with React state
@@ -31,15 +32,14 @@ export default function LoginClient() {
   useEffect(() => {
     if (loggedIn && !processing && !manualRedirectRef.current) {
       // Check for continue parameter and redirect to it, otherwise go home
-      const urlParams = new URLSearchParams(window.location.search);
-      const returnUrl = urlParams.get("continue");
+      const returnUrl = searchParams.get("continue");
       const redirectUrl =
         returnUrl && returnUrl.trim() !== ""
           ? decodeURIComponent(returnUrl)
           : "/";
       router.push(redirectUrl);
     }
-  }, [loggedIn, router, processing]);
+  }, [loggedIn, router, processing, searchParams]);
 
   // Reset password on unmount
   useEffect(() => {
@@ -91,8 +91,7 @@ export default function LoginClient() {
 
     try {
       // Get continue from current URL parameters
-      const urlParams = new URLSearchParams(window.location.search);
-      const returnUrl = urlParams.get("continue");
+      const returnUrl = searchParams.get("continue");
 
       // Make login request
       const response = await loginRequest({
@@ -206,7 +205,13 @@ export default function LoginClient() {
                 </Link>
                 <Link
                   className="text-primary-500 hover:text-primary-500 hover:underline"
-                  href="/register"
+                  href={(() => {
+                    const continueParam = searchParams.get("continue");
+                    const queryString = continueParam 
+                      ? `?continue=${encodeURIComponent(continueParam)}` 
+                      : "";
+                    return `/register${queryString}`;
+                  })()}
                 >
                   Tạo tài khoản
                 </Link>
@@ -224,16 +229,10 @@ export default function LoginClient() {
               <div className="flex justify-center space-x-4">
                 <a
                   href={`/login/facebook?continue=${encodeURIComponent(
-                    typeof window !== "undefined"
-                      ? (() => {
-                          const continueParam = new URLSearchParams(
-                            window.location.search
-                          ).get("continue");
-                          return continueParam && continueParam.trim() !== ""
-                            ? continueParam
-                            : "/";
-                        })()
-                      : "/"
+                    (() => {
+                      const continueParam = searchParams.get("continue");
+                      return continueParam && continueParam.trim() !== "" ? continueParam : "/";
+                    })()
                   )}`}
                   className="inline-flex dark:!border-neutral-500 dark:bg-[#2c2c2c] items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 border border-input shadow-sm hover:bg-[#eeeeee] hover:text-accent-foreground w-10 h-10"
                 >
@@ -256,16 +255,10 @@ export default function LoginClient() {
                 </a>
                 <a
                   href={`/login/google?continue=${encodeURIComponent(
-                    typeof window !== "undefined"
-                      ? (() => {
-                          const continueParam = new URLSearchParams(
-                            window.location.search
-                          ).get("continue");
-                          return continueParam && continueParam.trim() !== ""
-                            ? continueParam
-                            : "/";
-                        })()
-                      : "/"
+                    (() => {
+                      const continueParam = searchParams.get("continue");
+                      return continueParam && continueParam.trim() !== "" ? continueParam : "/";
+                    })()
                   )}`}
                   className="inline-flex dark:!border-neutral-500 dark:bg-[#2c2c2c] items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 border border-input shadow-sm hover:bg-[#eeeeee] hover:text-accent-foreground w-10 h-10"
                 >
@@ -299,5 +292,13 @@ export default function LoginClient() {
         </div>
       </div>
     </>
+  );
+}
+
+export default function LoginClient() {
+  return (
+    <Suspense fallback={null}>
+      <LoginClientInner />
+    </Suspense>
   );
 }
