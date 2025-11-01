@@ -45,7 +45,15 @@ function HomeLayoutContent({
             type={sidebarType}
             width={sidebarWidth}
           />
-          <div className="flex-1 mt-[4.3rem]">{children}</div>
+          <div
+            className={`flex-1 ${
+              loggedIn && !currentUser?.email_verified_at
+                ? "mt-[calc(4.3rem+56px)] md:mt-[calc(4.3rem+30px)]"
+                : "mt-[4.3rem]"
+            }`}
+          >
+            {children}
+          </div>
           {showRightSidebar && (
             <RightSidebar onHandleCreatePost={handleRightSidebarCallback} />
           )}

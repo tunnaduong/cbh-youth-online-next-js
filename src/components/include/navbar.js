@@ -464,7 +464,7 @@ export default function Navbar({ activeNav = null }) {
       {loggedIn && !currentUser?.email_verified_at && (
         <Alert
           showIcon={false}
-          message="Vui lòng xác minh email của bạn để sử dụng đầy đủ các tính năng của diễn đàn"
+          message="Vui lòng xác minh email của bạn để sử dụng đầy đủ các tính năng"
           banner
           type="warning"
           className="fixed w-full left-0 z-40"
