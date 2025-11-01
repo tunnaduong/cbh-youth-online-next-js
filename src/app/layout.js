@@ -1,6 +1,7 @@
 import "./globals.css";
 import ClientProviders from "./ClientProviders";
 import GlobalConsoleMessage from "../components/GlobalConsoleMessage";
+import { Analytics } from "@vercel/analytics/next";
 
 export const metadata = {
   title: {
@@ -41,6 +42,7 @@ export default function RootLayout({ children }) {
       <body className="bg-[#F8F8F8] dark:bg-neutral-800">
         <GlobalConsoleMessage />
         <ClientProviders>{children}</ClientProviders>
+        <Analytics />
       </body>
     </html>
   );
