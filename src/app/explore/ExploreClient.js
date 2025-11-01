@@ -120,7 +120,7 @@ export default function ExploreClient() {
               {/* Left side - Welcome message */}
               <div className="flex-1 mb-6 md:mb-0 md:mr-8 px-8">
                 <h2 className="text-xl md:text-2xl lg:text-3xl font-bold text-gray-900 dark:text-gray-100 leading-tight">
-                  Chào bạn, hôm nay bạn muốn <br />
+                  Chào bạn, <br /> hôm nay bạn muốn{" "}
                   <span className="text-orange-500 dark:text-orange-400">
                     làm gì...?
                   </span>

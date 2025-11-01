@@ -20,7 +20,7 @@ export default function RightSidebar({ onHandleCreatePost }) {
   // Get current URL to determine if we're on recordings page
   const isRecordingsPage = pathname.startsWith("/recordings");
 
-  const { loggedIn } = useAuthContext();
+  const { loggedIn, currentUser } = useAuthContext();
   const { topUsers, loading, error, fetchTopUsers } = useTopUsersContext();
 
   // No need to fetch data here anymore - it's handled by the context
@@ -31,11 +31,14 @@ export default function RightSidebar({ onHandleCreatePost }) {
       router.push(
         "/login?continue=" + encodeURIComponent(window.location.href)
       );
+    } else if (!currentUser?.email_verified_at) {
+      message.error("Bạn cần xác minh email để tạo cuộc thảo luận");
+      return;
     } else {
       isRecordingsPage && message.loading("Cái này ad đang làm nha ^^");
       setOpen(true);
     }
-  }, [loggedIn, isRecordingsPage, router]);
+  }, [loggedIn, currentUser, isRecordingsPage, router]);
 
   // Pass the handleCreatePost function to parent
   useEffect(() => {
