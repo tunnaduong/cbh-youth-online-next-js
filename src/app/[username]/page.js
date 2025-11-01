@@ -34,9 +34,7 @@ export async function generateMetadata({ params }) {
     const user = userData.user || userData;
     const profileName = user.profile?.profile_name || user.username;
     const title = `${profileName} - Diễn đàn học sinh Chuyên Biên Hòa`;
-    const description =
-      user.profile?.bio ||
-      `Hồ sơ của ${profileName} trên diễn đàn học sinh Chuyên Biên Hòa`;
+    const description = `Hồ sơ của ${profileName} trên diễn đàn học sinh Chuyên Biên Hòa`;
 
     return {
       title,

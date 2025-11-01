@@ -45,6 +45,18 @@ export const verifyEmail = (token) => {
   return Api.getRequest("/v1.0/email/verify/" + token);
 };
 
+export const resendVerificationEmail = () => {
+  return Api.postRequest("/v1.0/email/resend-verification");
+};
+
+export const getCurrentUser = () => {
+  return Api.getRequest("/v1.0/user");
+};
+
+export const getUserProfile = (username) => {
+  return Api.getRequest(`/v1.0/users/${username}/profile`);
+};
+
 export const forgotPassword = (params) => {
   return Api.postRequest("/v1.0/password/reset", params);
 };
@@ -287,7 +299,7 @@ export const getAvatar = (username) => {
 };
 
 export const updateAvatar = (username, params) => {
-  return Api.postRequest(`/v1.0/users/${username}/avatar`, params);
+  return Api.postFormDataRequest(`/v1.0/users/${username}/avatar`, params);
 };
 
 export const followUser = (username) => {
@@ -304,4 +316,8 @@ export const updateProfile = (username, params) => {
 
 export const unfollowUser = (username) => {
   return Api.deleteRequest(`/v1.0/users/${username}/unfollow`);
+};
+
+export const deleteAccount = (params) => {
+  return Api.postRequest("/v1.0/user/delete-account", params);
 };
