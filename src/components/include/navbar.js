@@ -32,8 +32,8 @@ import {
   BsPersonCircle,
   BsQuestionCircle,
 } from "react-icons/bs";
-import { Drawer } from "antd";
-import { useState } from "react";
+import { Drawer, Alert } from "antd";
+import { useState, useEffect } from "react";
 import { useRouter } from "@bprogress/next/app";
 
 export default function Navbar({ activeNav = null }) {
@@ -43,6 +43,18 @@ export default function Navbar({ activeNav = null }) {
 
   const { theme } = useTheme();
   const [drawerOpen, setDrawerOpen] = useState(false);
+
+  // Add class to body when email verification alert is shown
+  useEffect(() => {
+    if (loggedIn && !currentUser?.email_verified_at) {
+      document.body.classList.add("has-email-verification-alert");
+    } else {
+      document.body.classList.remove("has-email-verification-alert");
+    }
+    return () => {
+      document.body.classList.remove("has-email-verification-alert");
+    };
+  }, [loggedIn, currentUser?.email_verified_at]);
 
   const handleSavedClick = (e) => {
     if (!loggedIn) {
@@ -183,7 +195,7 @@ export default function Navbar({ activeNav = null }) {
 
   return (
     <>
-      <nav className="fixed w-[100%] top-0 bg-white dark:bg-neutral-700 shadow-md leading-[0] flex justify-between glass-card">
+      <nav className="fixed w-[100%] top-0 bg-white dark:bg-neutral-700 shadow-md leading-[0] flex justify-between glass-card z-50">
         <div className="flex flex-row px-6 py-3.5">
           <button
             className="inline-flex dark:!border-neutral-500 dark:text-white items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 border border-input shadow-sm h-9 w-9 xl:hidden mr-3 min-w-[36px]"
@@ -449,6 +461,24 @@ export default function Navbar({ activeNav = null }) {
           </Drawer>
         </div>
       </nav>
+      {loggedIn && !currentUser?.email_verified_at && (
+        <Alert
+          showIcon={false}
+          message="Vui lòng xác minh email của bạn để sử dụng đầy đủ các tính năng của diễn đàn"
+          banner
+          type="warning"
+          className="fixed w-full left-0 z-40"
+          style={{ top: "69px" }}
+          action={
+            <Link
+              href="/settings"
+              className="text-[#319527] hover:underline font-medium"
+            >
+              Xác minh ngay
+            </Link>
+          }
+        />
+      )}
     </>
   );
 }

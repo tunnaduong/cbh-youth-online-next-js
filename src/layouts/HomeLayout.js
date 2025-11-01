@@ -9,6 +9,7 @@ import Footer from "@/components/layout/Footer";
 import LeftSidebar from "@/components/layout/LeftSidebar";
 import RightSidebar from "@/components/layout/RightSidebar";
 import BottomCTA from "@/components/marketing/BottomCTA";
+import { useAuthContext } from "@/contexts/Support";
 
 function HomeLayoutContent({
   children,
@@ -21,6 +22,7 @@ function HomeLayoutContent({
   sidebarWidth = "260px",
 }) {
   const { setHandleCreatePost } = useCreatePost();
+  const { loggedIn, currentUser } = useAuthContext();
 
   const handleRightSidebarCallback = (fn) => {
     setHandleCreatePost(() => fn);
@@ -31,7 +33,11 @@ function HomeLayoutContent({
   return (
     <div>
       <Navbar activeNav={activeNav} />
-      <div>
+      <div
+      // className={`${
+      //   loggedIn && !currentUser?.email_verified_at ? "mt-[69px]" : ""
+      // }`}
+      >
         <div className="flex flex-col xl:flex-row flex-1">
           <LeftSidebar
             activeBar={activeBar}

@@ -25,6 +25,12 @@ export default function RightSidebar({ onHandleCreatePost }) {
 
   // No need to fetch data here anymore - it's handled by the context
 
+  // Calculate sticky top position based on alert visibility
+  const stickyTop =
+    loggedIn && !currentUser?.email_verified_at
+      ? "calc(69px + 24px + 30px)"
+      : "calc(69px + 24px)";
+
   const handleCreatePost = useCallback(() => {
     if (!loggedIn) {
       message.error("Bạn cần đăng nhập để tạo cuộc thảo luận");
@@ -60,7 +66,7 @@ export default function RightSidebar({ onHandleCreatePost }) {
         className="w-full max-w-[775px] xl:w-[340px] mx-auto !pb-6 xl:p-6"
         id="right-sidebar"
       >
-        <div className="sticky top-[calc(69px+24px)]">
+        <div className="sticky" style={{ top: stickyTop }}>
           <CustomColorButton
             bgColor={"#319527"}
             block

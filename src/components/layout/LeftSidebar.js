@@ -67,7 +67,7 @@ export default function LeftSidebar({
   ],
 }) {
   const router = useRouter();
-  const { loggedIn } = useAuthContext();
+  const { loggedIn, currentUser } = useAuthContext();
   const iconColor = "#CACACA";
   const activeIconColor = "#319527";
   const iconSize = "18px";
@@ -95,12 +95,17 @@ export default function LeftSidebar({
   const inactiveIconWrapper =
     "text-lg rounded-lg w-[30px] h-[30px] mr-3 menu-border flex items-center justify-center border-[#ECECEC] dark:!border-neutral-500";
 
+  // Calculate sticky top position based on alert visibility
+  const stickyTop =
+    loggedIn && !currentUser?.email_verified_at ? "calc(69px + 30px)" : "69px";
+
   return (
     <>
       {/* Left side bar */}
       <div
-        className={`w-[${width}] hidden xl:flex flex-col !p-6 sticky top-[69px] h-min`}
+        className={`w-[${width}] hidden xl:flex flex-col !p-6 sticky h-min`}
         id="left-sidebar"
+        style={{ top: stickyTop }}
       >
         <p className="text-sm font-semibold text-[#6b6b6b] dark:text-neutral-400 pb-3 ml-2.5">
           MENU

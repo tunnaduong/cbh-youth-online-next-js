@@ -974,3 +974,9 @@ body {
 .custom-prose p:last-child {
   @apply !m-0;
 }
+
+/* Email verification alert spacing */
+body.has-email-verification-alert [class*="mt-[4.3rem]"],
+body.has-email-verification-alert [class*="mt-\\[4\\.3rem\\]"] {
+  margin-top: calc(4.3rem + 40px) !important;
+}
