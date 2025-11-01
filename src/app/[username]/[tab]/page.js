@@ -1,7 +1,7 @@
 import React from "react";
 import { getServer } from "@/utils/serverFetch";
 import { notFound } from "next/navigation";
-import ProfileClient from "./ProfileClient";
+import ProfileClient from "../ProfileClient";
 
 // Server-side data fetching for user profile
 async function getUserProfileServer(username) {
@@ -20,7 +20,7 @@ async function getUserProfileServer(username) {
 // Generate metadata for SEO
 export async function generateMetadata({ params }) {
   try {
-    const { username } = params;
+    const { username, tab } = params;
     const userData = await getUserProfileServer(username);
 
     if (!userData) {
@@ -33,7 +33,8 @@ export async function generateMetadata({ params }) {
     // API response may be direct user object or wrapped in 'user' key
     const user = userData.user || userData;
     const profileName = user.profile?.profile_name || user.username;
-    const title = `${profileName} - Diễn đàn học sinh Chuyên Biên Hòa`;
+    const tabName = tab === "followers" ? "Người theo dõi" : tab === "following" ? "Đang theo dõi" : "";
+    const title = `${profileName}${tabName ? ` - ${tabName}` : ""} - Diễn đàn học sinh Chuyên Biên Hòa`;
     const description =
       user.profile?.bio ||
       `Hồ sơ của ${profileName} trên diễn đàn học sinh Chuyên Biên Hòa`;
@@ -68,8 +69,15 @@ export async function generateMetadata({ params }) {
   }
 }
 
-export default async function UserProfile({ params }) {
-  const { username } = params;
+export default async function UserProfileTab({ params }) {
+  const { username, tab } = params;
+
+  // Validate tab
+  const validTabs = ["followers", "following"];
+  if (!validTabs.includes(tab)) {
+    notFound();
+  }
+
   let userData = null;
 
   try {
@@ -79,8 +87,6 @@ export default async function UserProfile({ params }) {
     notFound();
   }
 
-  // API response may be direct user object or wrapped in 'user' key
-  // Ensure we have the correct structure for ProfileClient
   if (!userData) {
     notFound();
   }
@@ -88,14 +94,12 @@ export default async function UserProfile({ params }) {
   // Wrap in 'user' key if needed for transformProfileData
   const profileData = userData.user ? userData : { user: userData };
 
-  // Determine active tab from pathname - for posts tab (default)
-  const activeTab = "posts";
-
   return (
     <ProfileClient
       initialProfile={profileData}
-      activeTab={activeTab}
+      activeTab={tab}
       username={username}
     />
   );
 }
+

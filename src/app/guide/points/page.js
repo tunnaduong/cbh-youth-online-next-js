@@ -4,17 +4,17 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { getPostUrl } from "@/app/Api";
 
-export default function ForumRulesClient() {
+export default function PointsGuideClient() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const router = useRouter();
 
   useEffect(() => {
-    async function fetchForumRulesUrl() {
+    async function fetchPointsGuideUrl() {
       try {
         setLoading(true);
         const response = await getPostUrl({
-          title: "Quy định và hướng dẫn sử dụng diễn đàn CBH Youth Online",
+          title: "Cách Tính Điểm Xếp Hạng Thành Viên Trên CBH Youth Online",
           user_id: 45,
           subforum_id: 10,
         });
@@ -27,16 +27,16 @@ export default function ForumRulesClient() {
           // Redirect to the forum rules post
           router.push(relativeUrl);
         } else {
-          throw new Error("Failed to get forum rules URL");
+          throw new Error("Failed to get points guide URL");
         }
       } catch (error) {
-        console.error("Error fetching forum rules URL:", error);
-        setError("Không thể tải nội quy diễn đàn. Vui lòng thử lại sau.");
+        console.error("Error fetching points guide URL:", error);
+        setError("Không thể tải hướng dẫn điểm số. Vui lòng thử lại sau.");
         setLoading(false);
       }
     }
 
-    fetchForumRulesUrl();
+    fetchPointsGuideUrl();
   }, [router]);
 
   if (error) {
@@ -60,7 +60,7 @@ export default function ForumRulesClient() {
       <div className="text-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#319527] mx-auto mb-4"></div>
         <p className="text-gray-600 dark:text-gray-400">
-          Đang tải nội quy diễn đàn...
+          Đang tải hướng dẫn điểm số...
         </p>
       </div>
     </div>

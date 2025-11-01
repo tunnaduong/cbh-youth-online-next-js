@@ -196,7 +196,7 @@ export default function PostItem({ post, single = false, onVote }) {
               className={`w-8 px-2 rounded-full border-0 ${
                 myVote === 1 ? "text-primary-500" : "text-gray-400"
               }`}
-              onClick={() => onVote(post.id, myVote === 1 ? 0 : 1)}
+              onClick={() => onVote && onVote(post.id, myVote === 1 ? 0 : 1)}
             >
               <ArrowUpOutline height="26px" width="26px" color="currentColor" />
             </Button>
@@ -227,7 +227,7 @@ export default function PostItem({ post, single = false, onVote }) {
                 downvote-button ${
                   myVote === -1 ? "text-red-600" : "text-gray-400"
                 }`}
-                onClick={() => onVote(post.id, myVote === -1 ? 0 : -1)}
+                onClick={() => onVote && onVote(post.id, myVote === -1 ? 0 : -1)}
               >
                 <ArrowDownOutline
                   height="26px"
