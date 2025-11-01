@@ -15,6 +15,10 @@ function HomeLayoutContent({
   activeNav,
   activeBar,
   onHandleCreatePost,
+  sidebarItems,
+  sidebarType,
+  showRightSidebar = true,
+  sidebarWidth = "260px",
 }) {
   const { setHandleCreatePost } = useCreatePost();
 
@@ -29,9 +33,16 @@ function HomeLayoutContent({
       <Navbar activeNav={activeNav} />
       <div>
         <div className="flex flex-col xl:flex-row flex-1">
-          <LeftSidebar activeBar={activeBar} />
+          <LeftSidebar
+            activeBar={activeBar}
+            items={sidebarItems}
+            type={sidebarType}
+            width={sidebarWidth}
+          />
           <div className="flex-1 mt-[4.3rem]">{children}</div>
-          <RightSidebar onHandleCreatePost={handleRightSidebarCallback} />
+          {showRightSidebar && (
+            <RightSidebar onHandleCreatePost={handleRightSidebarCallback} />
+          )}
         </div>
         <Footer />
       </div>

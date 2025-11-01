@@ -1,5 +1,4 @@
 import ExploreClient from "./ExploreClient";
-import DefaultLayout from "@/layouts/DefaultLayout";
 
 export const metadata = {
   title: "Khám phá - Diễn đàn học sinh Chuyên Biên Hòa",
@@ -16,9 +15,5 @@ export const metadata = {
 };
 
 export default function Explore() {
-  return (
-    <DefaultLayout activeNav="explore">
-      <ExploreClient />
-    </DefaultLayout>
-  );
+  return <ExploreClient />;
 }

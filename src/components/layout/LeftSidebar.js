@@ -17,6 +17,7 @@ import { useAuthContext } from "@/contexts/Support";
 export default function LeftSidebar({
   activeBar = "forum",
   type = "default",
+  width = "260px",
   items = [
     {
       key: "forum",
@@ -98,7 +99,7 @@ export default function LeftSidebar({
     <>
       {/* Left side bar */}
       <div
-        className="w-[260px] hidden xl:flex flex-col !p-6 sticky top-[69px] h-min"
+        className={`w-[${width}] hidden xl:flex flex-col !p-6 sticky top-[69px] h-min`}
         id="left-sidebar"
       >
         <p className="text-sm font-semibold text-[#6b6b6b] dark:text-neutral-400 pb-3 ml-2.5">
