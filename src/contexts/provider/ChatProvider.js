@@ -11,6 +11,16 @@ import {
   createPrivateConversation,
 } from "@/app/Api";
 import { useAuthContext } from "../Support";
+import {
+  unsubscribeFromPushNotifications,
+  formatSubscriptionForServer,
+  subscribeToPushNotifications as subscribePush,
+  getPushSubscription,
+} from "@/utils/pushNotifications";
+import {
+  subscribeToPushNotifications as subscribePushApi,
+  unsubscribeFromPushNotifications as unsubscribePushApi,
+} from "@/app/Api";
 
 const ChatProvider = ({ children }) => {
   const { loggedIn } = useAuthContext();
@@ -26,6 +36,8 @@ const ChatProvider = ({ children }) => {
   const messagesPollIntervalRef = useRef(null);
   const previousConversationsRef = useRef([]); // Track previous conversations to detect new messages
   const notificationPermissionRequestedRef = useRef(false);
+  const pushSubscriptionRef = useRef(null); // Track push subscription
+  const subscriptionSentToServerRef = useRef(false); // Track if subscription has been sent to server
 
   // Check for new messages and show notifications
   const checkForNewMessages = useCallback(
@@ -454,6 +466,103 @@ const ChatProvider = ({ children }) => {
     }
   }, []);
 
+  // Subscribe to push notifications for chat when logged in
+  const subscribeToChatPush = useCallback(async () => {
+    try {
+      console.log(
+        "[ChatProvider] Attempting to subscribe to chat push notifications"
+      );
+
+      // Check notification permission first
+      if (!("Notification" in window)) {
+        console.warn("[ChatProvider] Browser doesn't support notifications");
+        return;
+      }
+
+      if (Notification.permission !== "granted") {
+        console.log(
+          "[ChatProvider] Notification permission not granted, requesting..."
+        );
+        const permission = await Notification.requestPermission();
+        if (permission !== "granted") {
+          console.warn(
+            "[ChatProvider] Notification permission denied:",
+            permission
+          );
+          return;
+        }
+      }
+
+      console.log(
+        "[ChatProvider] Notification permission granted, subscribing to push..."
+      );
+
+      let subscription;
+      try {
+        console.log("[ChatProvider] Calling subscribePush()...");
+        subscription = await subscribePush();
+        console.log(
+          "[ChatProvider] subscribePush() completed, subscription:",
+          subscription ? "Yes" : "No"
+        );
+      } catch (error) {
+        console.error("[ChatProvider] Error in subscribePush():", error);
+        throw error; // Re-throw to be caught by outer try-catch
+      }
+
+      if (subscription) {
+        console.log(
+          "[ChatProvider] Push subscription created:",
+          subscription.endpoint
+        );
+        pushSubscriptionRef.current = subscription;
+
+        // Only send to server if not already sent
+        if (!subscriptionSentToServerRef.current) {
+          const formattedSubscription =
+            formatSubscriptionForServer(subscription);
+
+          if (formattedSubscription) {
+            console.log(
+              "[ChatProvider] Sending subscription to server...",
+              formattedSubscription
+            );
+
+            const response = await subscribePushApi({
+              ...formattedSubscription,
+              type: "chat", // Mark as chat subscription (though server might ignore this)
+            });
+
+            console.log(
+              "[ChatProvider] Successfully subscribed to chat push notifications",
+              response
+            );
+
+            // Mark as sent to prevent duplicate sends
+            subscriptionSentToServerRef.current = true;
+          } else {
+            console.error(
+              "[ChatProvider] Failed to format subscription for server"
+            );
+          }
+        } else {
+          console.log(
+            "[ChatProvider] Subscription already sent to server, skipping..."
+          );
+        }
+      } else {
+        console.error("[ChatProvider] Failed to create push subscription");
+      }
+    } catch (error) {
+      console.error("[ChatProvider] Error subscribing to chat push:", error);
+      console.error("[ChatProvider] Error details:", {
+        message: error.message,
+        stack: error.stack,
+      });
+      // Continue even if push subscription fails
+    }
+  }, []);
+
   // Chat controls
   const openChat = useCallback(async () => {
     setIsOpen(true);
@@ -464,10 +573,30 @@ const ChatProvider = ({ children }) => {
       await requestNotificationPermission();
     }
 
+    // Subscribe to push notifications when opening chat (if not already subscribed)
+    if (loggedIn && !pushSubscriptionRef.current) {
+      console.log(
+        "[ChatProvider] Opening chat, attempting to subscribe to push..."
+      );
+      try {
+        await subscribeToChatPush();
+      } catch (error) {
+        console.error(
+          "[ChatProvider] Error subscribing when opening chat:",
+          error
+        );
+      }
+    }
+
     if (loggedIn) {
       await loadConversations();
     }
-  }, [loggedIn, loadConversations, requestNotificationPermission]);
+  }, [
+    loggedIn,
+    loadConversations,
+    requestNotificationPermission,
+    // subscribeToChatPush is stable (useCallback with empty deps), no need in array
+  ]);
 
   const closeChat = useCallback(() => {
     setIsOpen(false);
@@ -529,9 +658,61 @@ const ChatProvider = ({ children }) => {
     }
   }, [selectedConversationId, loggedIn, loadMessages, markAsRead]);
 
-  // Initialize: Start polling conversations when user is logged in (even if chat is closed)
+  // Unsubscribe from push notifications when logged out
+  const unsubscribeFromChatPush = useCallback(async () => {
+    try {
+      const subscription = await getPushSubscription();
+      if (subscription) {
+        // Try to unsubscribe from server if user is still authenticated
+        // If user already logged out, this will fail silently
+        try {
+          await unsubscribePushApi(subscription.endpoint);
+          console.log("[ChatProvider] Unsubscribed from server");
+        } catch (serverError) {
+          // If user already logged out, server will return 401/500
+          // Just log and continue with local unsubscribe
+          console.log(
+            "[ChatProvider] Could not unsubscribe from server (user may have logged out):",
+            serverError.message
+          );
+        }
+
+        // Always unsubscribe locally (from browser push manager)
+        await unsubscribeFromPushNotifications();
+        pushSubscriptionRef.current = null;
+        subscriptionSentToServerRef.current = false; // Reset flag when unsubscribing
+        console.log(
+          "[ChatProvider] Successfully unsubscribed from chat push notifications (local)"
+        );
+      }
+    } catch (error) {
+      console.error(
+        "[ChatProvider] Error unsubscribing from chat push:",
+        error
+      );
+    }
+  }, []);
+
+  // Initialize: Start polling conversations and subscribe to push when user is logged in
   useEffect(() => {
+    console.log("[ChatProvider] useEffect triggered, loggedIn:", loggedIn);
+
     if (loggedIn) {
+      console.log(
+        "[ChatProvider] User is logged in, initializing chat push subscription..."
+      );
+
+      // Subscribe to push notifications for chat
+      // Use setTimeout to ensure service worker is ready
+      const subscribeTimer = setTimeout(() => {
+        console.log(
+          "[ChatProvider] Timer expired, calling subscribeToChatPush..."
+        );
+        subscribeToChatPush().catch((error) => {
+          console.error("[ChatProvider] Error in subscribeToChatPush:", error);
+        });
+      }, 2000); // Increase timeout to 2 seconds
+
       // Initial load - but don't check for notifications on first load
       // Just populate previousConversationsRef for future comparisons
       loadConversations().then(() => {
@@ -543,14 +724,32 @@ const ChatProvider = ({ children }) => {
       conversationsPollIntervalRef.current = setInterval(() => {
         loadConversations();
       }, 10000);
-    }
 
-    return () => {
-      if (conversationsPollIntervalRef.current) {
-        clearInterval(conversationsPollIntervalRef.current);
-      }
-    };
-  }, [loggedIn, loadConversations]);
+      return () => {
+        clearTimeout(subscribeTimer);
+        if (conversationsPollIntervalRef.current) {
+          clearInterval(conversationsPollIntervalRef.current);
+        }
+      };
+    } else {
+      console.log(
+        "[ChatProvider] User is not logged in, unsubscribing from chat push..."
+      );
+      // Unsubscribe when logged out
+      unsubscribeFromChatPush();
+
+      return () => {
+        if (conversationsPollIntervalRef.current) {
+          clearInterval(conversationsPollIntervalRef.current);
+        }
+      };
+    }
+  }, [
+    loggedIn,
+    loadConversations,
+    // Note: subscribeToChatPush and unsubscribeFromChatPush are useCallback,
+    // so they're stable and don't need to be in dependencies
+  ]);
 
   const value = {
     // State

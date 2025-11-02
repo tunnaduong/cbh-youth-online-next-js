@@ -1,6 +1,6 @@
 "use client";
 
-import { AuthProvider, ChatProvider } from "../contexts";
+import { AuthProvider, ChatProvider, NotificationProvider } from "../contexts";
 import { HomePostProvider } from "@/contexts/HomePostContext";
 import { ThemeProvider } from "@/contexts/themeContext";
 import { TopUsersProvider } from "@/contexts";
@@ -14,9 +14,27 @@ import { trackOnlineUser } from "@/app/Api";
 import { useEffect } from "react";
 import { usePathname } from "next/navigation";
 import ChatWidget from "@/components/chat/ChatWidget";
+import UpdateNotification from "@/components/UpdateNotification";
 
 export default function ClientProviders({ children }) {
   const pathname = usePathname();
+
+  // Register Service Worker early - this is crucial for push notifications to work
+  // Service Worker must be registered before we can subscribe to push notifications
+  useEffect(() => {
+    if (typeof window !== "undefined" && "serviceWorker" in navigator) {
+      // Service Worker registration is handled by useServiceWorker hook in UpdateNotification
+      // But we ensure it's initialized early by registering here as a fallback
+      navigator.serviceWorker
+        .register("/sw.js")
+        .then((registration) => {
+          console.log("[ClientProviders] Service Worker registered:", registration.scope);
+        })
+        .catch((error) => {
+          console.error("[ClientProviders] Service Worker registration failed:", error);
+        });
+    }
+  }, []); // Only run once on mount
 
   // Track online user on initial load and every route change
   useEffect(() => {
@@ -36,6 +54,7 @@ export default function ClientProviders({ children }) {
           <AntdProvider>
             <AuthProvider>
               <ChatProvider>
+              <NotificationProvider>
               <TopUsersProvider>
                 <HomePostProvider>
                   <PostRefreshProvider>
@@ -47,12 +66,14 @@ export default function ClientProviders({ children }) {
                         shallowRouting
                       >
                         {children}
-                          <ChatWidget />
+                        <ChatWidget />
+                        <UpdateNotification />
                       </ProgressProvider>
                     </ForumDataProvider>
                   </PostRefreshProvider>
                 </HomePostProvider>
               </TopUsersProvider>
+              </NotificationProvider>
               </ChatProvider>
             </AuthProvider>
           </AntdProvider>

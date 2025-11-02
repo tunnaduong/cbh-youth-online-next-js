@@ -345,3 +345,43 @@ export const getNotificationSettings = () => {
 export const updateNotificationSettings = (params) => {
   return Api.putRequest("/v1.0/notification-settings", params);
 };
+
+// Notifications
+export const getNotifications = (params = {}) => {
+  return Api.getRequest("/v1.0/notifications", params);
+};
+
+export const getUnreadNotificationCount = () => {
+  return Api.getRequest("/v1.0/notifications/unread-count");
+};
+
+export const markNotificationAsRead = (id) => {
+  return Api.postRequest(`/v1.0/notifications/${id}/read`);
+};
+
+export const markAllNotificationsAsRead = () => {
+  return Api.postRequest("/v1.0/notifications/read-all");
+};
+
+export const deleteNotification = (id) => {
+  return Api.deleteRequest(`/v1.0/notifications/${id}`);
+};
+
+// Push Notification Subscriptions
+export const subscribeToPushNotifications = (subscription) => {
+  return Api.postRequest("/v1.0/notifications/subscribe", subscription);
+};
+
+export const unsubscribeFromPushNotifications = (endpoint = null) => {
+  return Api.deleteRequest("/v1.0/notifications/unsubscribe", {
+    endpoint: endpoint,
+  });
+};
+
+export const getNotificationSubscriptions = () => {
+  return Api.getRequest("/v1.0/notifications/subscriptions");
+};
+
+export const getVapidPublicKey = () => {
+  return Api.getRequest("/v1.0/notifications/vapid-public-key");
+};

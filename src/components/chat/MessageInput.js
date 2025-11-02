@@ -122,7 +122,7 @@ export default function MessageInput({ onSend, sending, loggedIn }) {
                 // Don't auto-focus to avoid scrolling
               }
             }}
-            className="w-full bg-white dark:!bg-neutral-600"
+            className="w-full max-w-[50%] bg-white dark:!bg-neutral-600"
           />
           <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
             Tên này sẽ được hiển thị khi bạn gửi tin nhắn
