@@ -889,7 +889,7 @@ export default function SettingsClient({ initialUser, hasAuthError }) {
                 <div className="flex items-center space-x-4">
                   <div className="relative">
                     <img
-                      src={`https://api.chuyenbienhoa.com/v1.0/users/${
+                      src={`${process.env.NEXT_PUBLIC_API_URL}/v1.0/users/${
                         currentUser?.username || userData?.username
                       }/avatar?t=${Date.now()}`}
                       alt="Avatar"

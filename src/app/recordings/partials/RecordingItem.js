@@ -73,11 +73,11 @@ export default function RecordingItem({ recording, single = false }) {
         <div className="flex-1 overflow-hidden break-words">
           {recording.cdn_audio_id && (
             <AudioPlayer
-              src={`https://api.chuyenbienhoa.com/storage/${recording.cdn_audio.file_path}`}
+              src={`${process.env.NEXT_PUBLIC_API_URL}/storage/${recording.cdn_audio.file_path}`}
               title={recording.title}
               thumbnail={
                 recording.cdn_preview
-                  ? `https://api.chuyenbienhoa.com/storage/${
+                  ? `${process.env.NEXT_PUBLIC_API_URL}/storage/${
                       recording.cdn_preview.file_path
                     }?v=${new Date().getTime()}`
                   : false
@@ -95,7 +95,7 @@ export default function RecordingItem({ recording, single = false }) {
                   <img
                     className="border rounded-full aspect-square h-full w-full"
                     alt={recording.author.username + " avatar"}
-                    src={`https://api.chuyenbienhoa.com/v1.0/users/${recording.author.username}/avatar`}
+                    src={`${process.env.NEXT_PUBLIC_API_URL}/v1.0/users/${recording.author.username}/avatar`}
                   />
                 </span>
               </Link>

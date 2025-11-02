@@ -626,7 +626,7 @@ export default function PostClient({ params, initialPost = null }) {
                       onEdit={handleEditComment}
                       onReply={handleReplyToComment}
                       onDelete={handleDeleteComment}
-                      userAvatar={`https://api.chuyenbienhoa.com/v1.0/users/${currentUser?.username}/avatar`}
+                      userAvatar={`${process.env.NEXT_PUBLIC_API_URL}/v1.0/users/${currentUser?.username}/avatar`}
                       getTimeDisplay={getTimeDisplay}
                       parentConnectorHovered={false}
                     />

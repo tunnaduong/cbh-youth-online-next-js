@@ -132,8 +132,10 @@ export const createPrivateConversation = (params) => {
   return Api.postRequest("/v1.0/chat/conversations", params);
 };
 
-export const getMessages = (conversationId) => {
-  return Api.getRequest(`/v1.0/chat/conversations/${conversationId}/messages`);
+export const getMessages = (conversationId, page = 1) => {
+  return Api.getRequest(`/v1.0/chat/conversations/${conversationId}/messages`, {
+    page,
+  });
 };
 
 export const sendMessage = (conversationId, params) => {

@@ -56,7 +56,7 @@ export function CommentInput({
       label: (
         <div className="flex items-center gap-2">
           <img
-            src={`https://api.chuyenbienhoa.com/v1.0/users/${currentUser?.username}/avatar`}
+            src={`${process.env.NEXT_PUBLIC_API_URL}/v1.0/users/${currentUser?.username}/avatar`}
             alt="Avatar của bạn"
             className="w-6 h-6 rounded-full"
           />
@@ -162,7 +162,7 @@ export function CommentInput({
               </div>
             ) : (
               <img
-                src={`https://api.chuyenbienhoa.com/v1.0/users/${currentUser?.username}/avatar`}
+                src={`${process.env.NEXT_PUBLIC_API_URL}/v1.0/users/${currentUser?.username}/avatar`}
                 alt="Avatar của bạn"
                 className="w-8 h-8 rounded-full flex-shrink-0"
               />

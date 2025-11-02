@@ -84,7 +84,7 @@ const UserHeader = ({
     <div className="absolute top-10 left-4 right-4 z-50 flex items-center justify-between">
       <div className="flex items-center gap-3">
         <img
-          src={`https://api.chuyenbienhoa.com/v1.0/users/${user.username}/avatar`}
+          src={`${process.env.NEXT_PUBLIC_API_URL}/v1.0/users/${user.username}/avatar`}
           alt={user.name}
           className="w-10 h-10 rounded-full border-2 border-white object-cover"
         />

@@ -46,7 +46,7 @@ export default function SavedPostItem({ post, onUnsave }) {
             src={
               topic.image_urls?.[0]
                 ? topic.image_urls[0]
-                : "https://api.chuyenbienhoa.com/v1.0/users/" +
+                : `${process.env.NEXT_PUBLIC_API_URL}/v1.0/users/` +
                   author.username +
                   "/avatar"
             }
@@ -86,7 +86,7 @@ export default function SavedPostItem({ post, onUnsave }) {
           ) : (
             <div className="flex items-center gap-2">
               <img
-                src={`https://api.chuyenbienhoa.com/v1.0/users/${author.username}/avatar`}
+                src={`${process.env.NEXT_PUBLIC_API_URL}/v1.0/users/${author.username}/avatar`}
                 alt={author.username}
                 className="w-7 h-7 rounded-full"
               />

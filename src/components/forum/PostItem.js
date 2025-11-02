@@ -227,7 +227,9 @@ export default function PostItem({ post, single = false, onVote }) {
                 downvote-button ${
                   myVote === -1 ? "text-red-600" : "text-gray-400"
                 }`}
-                onClick={() => onVote && onVote(post.id, myVote === -1 ? 0 : -1)}
+                onClick={() =>
+                  onVote && onVote(post.id, myVote === -1 ? 0 : -1)
+                }
               >
                 <ArrowDownOutline
                   height="26px"
@@ -264,15 +266,37 @@ export default function PostItem({ post, single = false, onVote }) {
                 color={"#9ca3af"}
                 className="ml-2 mr-1"
               />
-              <span className="flex flex-row-reverse items-center">
-                <span>{post.reply_count || post.comments}</span>
-                <ChatboxOutline
-                  height="20px"
-                  width="20px"
-                  color={"#9ca3af"}
-                  className="mr-1"
-                />
-              </span>
+              {!single ? (
+                <Link
+                  href={
+                    "/" +
+                    (post.anonymous ? "anonymous" : post.author.username) +
+                    "/posts/" +
+                    generatePostSlug(post.id, post.title)
+                  }
+                  className="flex flex-row-reverse items-center"
+                >
+                  <span className="flex flex-row-reverse items-center">
+                    <span>{post.reply_count || post.comments}</span>
+                    <ChatboxOutline
+                      height="20px"
+                      width="20px"
+                      color={"#9ca3af"}
+                      className="mr-1"
+                    />
+                  </span>
+                </Link>
+              ) : (
+                <span className="flex flex-row-reverse items-center">
+                  <span>{post.reply_count || post.comments}</span>
+                  <ChatboxOutline
+                    height="20px"
+                    width="20px"
+                    color={"#9ca3af"}
+                    className="mr-1"
+                  />
+                </span>
+              )}
             </div>
           </div>
         </div>
@@ -409,7 +433,7 @@ export default function PostItem({ post, single = false, onVote }) {
                     <img
                       className="border rounded-full aspect-square h-full w-full"
                       alt={post.author.username + " avatar"}
-                      src={`https://api.chuyenbienhoa.com/v1.0/users/${post.author.username}/avatar`}
+                      src={`${process.env.NEXT_PUBLIC_API_URL}/v1.0/users/${post.author.username}/avatar`}
                     />
                   </span>
                 </Link>
@@ -451,7 +475,7 @@ export default function PostItem({ post, single = false, onVote }) {
                 <Link
                   href={
                     "/" +
-                    post.author.username +
+                    (post.anonymous ? "anonymous" : post.author.username) +
                     "/posts/" +
                     generatePostSlug(post.id, post.title)
                   }

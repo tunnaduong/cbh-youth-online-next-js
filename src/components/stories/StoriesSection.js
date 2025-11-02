@@ -124,7 +124,7 @@ function StoriesSection() {
       <img
         src={
           currentUser
-            ? `https://api.chuyenbienhoa.com/v1.0/users/${currentUser.username}/avatar`
+            ? `${process.env.NEXT_PUBLIC_API_URL}/v1.0/users/${currentUser.username}/avatar`
             : "/images/story_user.jpg"
         }
         className="object-cover w-full flex-1 h-[145px]"
@@ -247,7 +247,7 @@ function StoriesSection() {
                 } rounded-full p-0.5`}
               >
                 <img
-                  src={`https://api.chuyenbienhoa.com/v1.0/users/${userStories.username}/avatar`}
+                  src={`${process.env.NEXT_PUBLIC_API_URL}/v1.0/users/${userStories.username}/avatar`}
                   className="rounded-full w-[25px] h-[25px]"
                   alt={userStories.name}
                 />

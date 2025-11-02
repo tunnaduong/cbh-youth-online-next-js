@@ -252,7 +252,7 @@ export default function Comment({
             ) : (
               <Link href={`/${comment.author.username}`}>
                 <img
-                  src={`https://api.chuyenbienhoa.com/v1.0/users/${comment.author.username}/avatar`}
+                  src={`${process.env.NEXT_PUBLIC_API_URL}/v1.0/users/${comment.author.username}/avatar`}
                   alt={`${comment.author.profile_name}'s avatar`}
                   className="w-10 h-10 rounded-full object-cover border border-gray-200"
                 />

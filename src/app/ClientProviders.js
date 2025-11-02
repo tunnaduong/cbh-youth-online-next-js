@@ -1,6 +1,6 @@
 "use client";
 
-import { AuthProvider } from "../contexts";
+import { AuthProvider, ChatProvider } from "../contexts";
 import { HomePostProvider } from "@/contexts/HomePostContext";
 import { ThemeProvider } from "@/contexts/themeContext";
 import { TopUsersProvider } from "@/contexts";
@@ -13,6 +13,7 @@ import { App } from "antd";
 import { trackOnlineUser } from "@/app/Api";
 import { useEffect } from "react";
 import { usePathname } from "next/navigation";
+import ChatWidget from "@/components/chat/ChatWidget";
 
 export default function ClientProviders({ children }) {
   const pathname = usePathname();
@@ -34,6 +35,7 @@ export default function ClientProviders({ children }) {
         <App>
           <AntdProvider>
             <AuthProvider>
+              <ChatProvider>
               <TopUsersProvider>
                 <HomePostProvider>
                   <PostRefreshProvider>
@@ -45,11 +47,13 @@ export default function ClientProviders({ children }) {
                         shallowRouting
                       >
                         {children}
+                          <ChatWidget />
                       </ProgressProvider>
                     </ForumDataProvider>
                   </PostRefreshProvider>
                 </HomePostProvider>
               </TopUsersProvider>
+              </ChatProvider>
             </AuthProvider>
           </AntdProvider>
         </App>

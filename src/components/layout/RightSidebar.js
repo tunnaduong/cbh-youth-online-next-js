@@ -156,7 +156,7 @@ export default function RightSidebar({ onHandleCreatePost }) {
                     <img
                       src={
                         user.oauth_profile_picture ||
-                        `https://api.chuyenbienhoa.com/v1.0/users/${user.username}/avatar`
+                        `${process.env.NEXT_PUBLIC_API_URL}/v1.0/users/${user.username}/avatar`
                       }
                       className="w-8 h-8 bg-gray-300 rounded-full border object-cover"
                       alt={`${user.profile_name || user.username} avatar`}

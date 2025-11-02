@@ -413,7 +413,7 @@ const CreatePostModal = ({ open, onClose }) => {
               </div>
             ) : (
               <img
-                src={`https://api.chuyenbienhoa.com/v1.0/users/${currentUser?.username}/avatar`}
+                src={`${process.env.NEXT_PUBLIC_API_URL}/v1.0/users/${currentUser?.username}/avatar`}
                 alt={currentUser?.username}
                 className="border w-11 h-11 rounded-full"
               />

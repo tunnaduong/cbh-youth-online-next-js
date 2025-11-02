@@ -52,7 +52,7 @@ export default function ProfileClient({ initialProfile, activeTab, username }) {
         : "0",
       avatar_url:
         user.profile?.profile_picture ||
-        `https://api.chuyenbienhoa.com/v1.0/users/${user.username}/avatar`,
+        `${process.env.NEXT_PUBLIC_API_URL}/v1.0/users/${user.username}/avatar`,
       stats: {
         posts: user.stats?.posts_count || user.stats?.posts || 0,
         followers: user.stats?.followers || 0,
@@ -373,7 +373,7 @@ export default function ProfileClient({ initialProfile, activeTab, username }) {
                   >
                     <img
                       className="w-16 h-16 rounded-full border"
-                      src={`https://api.chuyenbienhoa.com/v1.0/users/${follower.follower.username}/avatar`}
+                      src={`${process.env.NEXT_PUBLIC_API_URL}/v1.0/users/${follower.follower.username}/avatar`}
                       alt="avatar"
                     />
                     <div>
@@ -439,7 +439,7 @@ export default function ProfileClient({ initialProfile, activeTab, username }) {
                   >
                     <img
                       className="w-16 h-16 rounded-full border"
-                      src={`https://api.chuyenbienhoa.com/v1.0/users/${following.followed.username}/avatar`}
+                      src={`${process.env.NEXT_PUBLIC_API_URL}/v1.0/users/${following.followed.username}/avatar`}
                       alt="avatar"
                     />
                     <div>
@@ -515,18 +515,18 @@ export default function ProfileClient({ initialProfile, activeTab, username }) {
           <div className="relative h-min lg:h-56 overflow-hidden px-2.5 py-8">
             <div
               style={{
-                backgroundImage: `url(https://api.chuyenbienhoa.com/v1.0/users/${profile.username}/avatar)`,
+                backgroundImage: `url(${process.env.NEXT_PUBLIC_API_URL}/v1.0/users/${profile.username}/avatar)`,
               }}
               className="bg-gray-300 w-full h-[450px] lg:h-56 blur-effect"
             />
             <div className="lg:hidden flex flex-col items-center gap-y-2 relative z-10">
               <a
-                href={`https://api.chuyenbienhoa.com/v1.0/users/${profile.username}/avatar`}
+                href={`${process.env.NEXT_PUBLIC_API_URL}/v1.0/users/${profile.username}/avatar`}
               >
                 <img
                   className="w-32 h-32 rounded-full bg-white"
                   style={{ border: "4px solid #eeeeee" }}
-                  src={`https://api.chuyenbienhoa.com/v1.0/users/${profile.username}/avatar`}
+                  src={`${process.env.NEXT_PUBLIC_API_URL}/v1.0/users/${profile.username}/avatar`}
                   alt="avatar"
                 />
               </a>
@@ -640,7 +640,7 @@ export default function ProfileClient({ initialProfile, activeTab, username }) {
           <div className="lg:bg-white dark:!bg-neutral-700 h-16 lg:shadow-md">
             <div className="mx-auto max-w-[959px] h-full lg:flex hidden">
               <a
-                href={`https://api.chuyenbienhoa.com/v1.0/users/${profile.username}/avatar`}
+                href={`${process.env.NEXT_PUBLIC_API_URL}/v1.0/users/${profile.username}/avatar`}
               >
                 <img
                   className="w-[170px] h-[170px] rounded-full absolute bg-white"
@@ -648,7 +648,7 @@ export default function ProfileClient({ initialProfile, activeTab, username }) {
                     border: "4px solid #eeeeee",
                     transform: "translateY(-45%)",
                   }}
-                  src={`https://api.chuyenbienhoa.com/v1.0/users/${profile.username}/avatar`}
+                  src={`${process.env.NEXT_PUBLIC_API_URL}/v1.0/users/${profile.username}/avatar`}
                   alt="avatar"
                 />
               </a>

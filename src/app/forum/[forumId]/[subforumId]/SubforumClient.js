@@ -306,7 +306,7 @@ export default function SubforumClient({
                                 >
                                   <img
                                     className="h-6 w-6 rounded-full border"
-                                    src={`https://api.chuyenbienhoa.com/v1.0/users/${topic.author.username}/avatar`}
+                                    src={`${process.env.NEXT_PUBLIC_API_URL}/v1.0/users/${topic.author.username}/avatar`}
                                     alt="Avatar"
                                   />
                                   {topic.author.profile_name}

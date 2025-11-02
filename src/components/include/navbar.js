@@ -4,7 +4,7 @@ import React from "react";
 import Link from "next/link";
 import { User } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { useAuthContext } from "@/contexts/Support";
+import { useAuthContext, useChatContext } from "@/contexts/Support";
 import { logoutRequest } from "@/app/Api";
 import Dropdown from "../ui/Dropdown";
 import { message } from "antd";
@@ -39,6 +39,7 @@ import { useRouter } from "@bprogress/next/app";
 export default function Navbar({ activeNav = null }) {
   const { loggedIn, currentUser, setCurrentUser, setUserToken } =
     useAuthContext();
+  const { toggleChat } = useChatContext();
   const router = useRouter();
 
   const { theme } = useTheme();
@@ -347,7 +348,8 @@ export default function Navbar({ activeNav = null }) {
                   />
                 </svg>
               </Link>
-              <div className="cursor-pointer">
+              {/* Chats */}
+              <div className="cursor-pointer" onClick={toggleChat}>
                 <svg
                   stroke="currentColor"
                   fill="currentColor"
@@ -379,6 +381,7 @@ export default function Navbar({ activeNav = null }) {
                   <path d="M194.82 496a18.36 18.36 0 0 1-18.1-21.53v-.11L204.83 320H96a16 16 0 0 1-12.44-26.06L302.73 23a18.45 18.45 0 0 1 32.8 13.71c0 .3-.08.59-.13.89L307.19 192H416a16 16 0 0 1 12.44 26.06L209.24 489a18.45 18.45 0 0 1-14.42 7z"></path>
                 </svg>
               </div>
+              {/* Notifications */}
               <div className="cursor-pointer">
                 <svg
                   stroke="currentColor"
@@ -399,6 +402,7 @@ export default function Navbar({ activeNav = null }) {
                   ></path>
                 </svg>
               </div>
+              {/* User dropdown */}
               <Dropdown>
                 <Dropdown.Trigger>
                   <span className="relative flex h-10 w-10 shrink-0 overflow-hidden rounded-full cursor-pointer">
