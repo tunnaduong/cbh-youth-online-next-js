@@ -39,7 +39,13 @@ import { useRouter } from "@bprogress/next/app";
 export default function Navbar({ activeNav = null }) {
   const { loggedIn, currentUser, setCurrentUser, setUserToken } =
     useAuthContext();
-  const { toggleChat } = useChatContext();
+  const { toggleChat, conversations } = useChatContext();
+
+  // Calculate total unread messages
+  const totalUnreadCount = conversations.reduce(
+    (total, conversation) => total + (conversation.unread_count || 0),
+    0
+  );
   const router = useRouter();
 
   const { theme } = useTheme();
@@ -349,7 +355,7 @@ export default function Navbar({ activeNav = null }) {
                 </svg>
               </Link>
               {/* Chats */}
-              <div className="cursor-pointer" onClick={toggleChat}>
+              <div className="cursor-pointer relative" onClick={toggleChat}>
                 <svg
                   stroke="currentColor"
                   fill="currentColor"
@@ -380,6 +386,12 @@ export default function Navbar({ activeNav = null }) {
                 >
                   <path d="M194.82 496a18.36 18.36 0 0 1-18.1-21.53v-.11L204.83 320H96a16 16 0 0 1-12.44-26.06L302.73 23a18.45 18.45 0 0 1 32.8 13.71c0 .3-.08.59-.13.89L307.19 192H416a16 16 0 0 1 12.44 26.06L209.24 489a18.45 18.45 0 0 1-14.42 7z"></path>
                 </svg>
+                {/* Unread badge */}
+                {loggedIn && totalUnreadCount > 0 && (
+                  <span className="absolute -top-1 -right-1 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-red-500 text-[9px] font-semibold text-white">
+                    {totalUnreadCount > 99 ? "99+" : totalUnreadCount}
+                  </span>
+                )}
               </div>
               {/* Notifications */}
               <div className="cursor-pointer">

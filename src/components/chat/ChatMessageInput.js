@@ -33,7 +33,7 @@ export default function ChatMessageInput({ onSend, sending }) {
     <div className="flex items-center gap-2 px-4 py-3 border-t dark:border-neutral-600 bg-white dark:bg-neutral-700 rounded-b-lg overflow-hidden">
       <button
         className="p-2 hover:bg-gray-100 dark:hover:bg-neutral-600 rounded transition-colors flex-shrink-0"
-        title="Attach file"
+        title="Đính kèm file"
         disabled={sending}
       >
         <Paperclip className="w-4 h-4 text-gray-600 dark:text-gray-300" />
@@ -43,7 +43,7 @@ export default function ChatMessageInput({ onSend, sending }) {
         value={message}
         onChange={(e) => setMessage(e.target.value)}
         onKeyDown={handleKeyDown}
-        placeholder="Message"
+        placeholder="Gửi tin nhắn..."
         disabled={sending}
         className="flex-1"
       />
