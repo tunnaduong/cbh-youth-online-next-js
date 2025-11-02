@@ -104,7 +104,7 @@ export default function RecordingItem({ recording, single = false }) {
               </span>
               <Link
                 className="flex flex-row items-center ml-2 md:ml-1 text-[#319527] hover:text-[#319527] font-bold hover:underline inline-verified truncate"
-                href={`/users/${recording.author.username}`}
+                href={`/${recording.author.username}`}
               >
                 <span className="inline-verified__text truncate">
                   {recording.author.profile_name ||

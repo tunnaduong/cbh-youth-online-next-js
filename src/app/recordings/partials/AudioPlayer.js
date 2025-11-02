@@ -144,7 +144,30 @@ export default function AudioPlayer({
   };
 
   return (
-    <div className={className}>
+    <div className={`audio-player-wrapper ${className || ""}`}>
+      <style>{`
+        .range-input-green::-webkit-slider-thumb {
+          -webkit-appearance: none !important;
+          appearance: none !important;
+          width: 16px !important;
+          height: 16px !important;
+          border-radius: 50% !important;
+          background: #319527 !important;
+          cursor: pointer !important;
+          border: none !important;
+          box-shadow: none !important;
+        }
+
+        .range-input-green::-moz-range-thumb {
+          width: 16px !important;
+          height: 16px !important;
+          border-radius: 50% !important;
+          background: #319527 !important;
+          cursor: pointer !important;
+          border: none !important;
+          box-shadow: none !important;
+        }
+      `}</style>
       <audio
         ref={audioRef}
         src={src}
@@ -220,7 +243,7 @@ export default function AudioPlayer({
                   max={duration || 100}
                   step={1}
                   onChange={(e) => handleSeek([parseFloat(e.target.value)])}
-                  className="w-full h-1 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                  className="w-full h-1 bg-gray-200 rounded-lg appearance-none cursor-pointer range-input-green"
                 />
               </div>
 
@@ -246,7 +269,7 @@ export default function AudioPlayer({
                     onChange={(e) =>
                       handleVolumeChange([parseFloat(e.target.value)])
                     }
-                    className="w-full h-1 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                    className="w-full h-1 bg-gray-200 rounded-lg appearance-none cursor-pointer range-input-green"
                   />
                 </div>
               </div>
