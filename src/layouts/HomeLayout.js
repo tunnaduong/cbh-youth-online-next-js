@@ -20,6 +20,7 @@ function HomeLayoutContent({
   sidebarType,
   showRightSidebar = true,
   sidebarWidth = "260px",
+  showLeftSidebar = true,
 }) {
   const { setHandleCreatePost } = useCreatePost();
   const { loggedIn, currentUser } = useAuthContext();
@@ -33,18 +34,16 @@ function HomeLayoutContent({
   return (
     <div>
       <Navbar activeNav={activeNav} />
-      <div
-      // className={`${
-      //   loggedIn && !currentUser?.email_verified_at ? "mt-[69px]" : ""
-      // }`}
-      >
+      <div>
         <div className="flex flex-col xl:flex-row flex-1">
-          <LeftSidebar
-            activeBar={activeBar}
-            items={sidebarItems}
-            type={sidebarType}
-            width={sidebarWidth}
-          />
+          {showLeftSidebar && (
+            <LeftSidebar
+              activeBar={activeBar}
+              items={sidebarItems}
+              type={sidebarType}
+              width={sidebarWidth}
+            />
+          )}
           <div
             className={`flex-1 ${
               loggedIn && !currentUser?.email_verified_at

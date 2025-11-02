@@ -150,7 +150,7 @@ export default function ExploreClient() {
                 return (
                   <div
                     key={index}
-                    className="feature-card bg-white dark:bg-gray-800 rounded-xl shadow-sm hover:shadow-md p-6 flex flex-col items-center cursor-pointer hover:scale-105 transition-all duration-200"
+                    className="feature-card bg-white dark:bg-neutral-800 rounded-xl shadow-sm hover:shadow-md p-6 flex flex-col items-center cursor-pointer hover:scale-105 transition-all duration-200"
                   >
                     <div className="icon-circle bg-green-50 dark:bg-green-900/20 rounded-full w-16 h-16 flex items-center justify-center mb-4">
                       <IconComponent

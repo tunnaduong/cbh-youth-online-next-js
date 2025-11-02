@@ -334,7 +334,7 @@ export default function ProfileClient({ initialProfile, activeTab, username }) {
         );
 
         return {
-              ...post,
+          ...post,
           votes: newVotes,
           votes_sum_vote_value: votesSum,
         };
@@ -385,7 +385,7 @@ export default function ProfileClient({ initialProfile, activeTab, username }) {
                       alt="avatar"
                     />
                     <div>
-                      <h2 className="font-bold">
+                      <h2 className="font-bold dark:text-neutral-300">
                         {follower.follower.profile.profile_name}
                         {follower.follower.profile.verified == "1" && (
                           <span>
@@ -417,18 +417,18 @@ export default function ProfileClient({ initialProfile, activeTab, username }) {
                   </Link>
                   {currentUser &&
                   follower.follower.username !== currentUser.username ? (
-                  <div>
-                    <FollowButton
-                      isFollowing={follower.follower.isFollowing}
-                      loading={loading}
-                      handleFollow={() =>
-                        handleFollowUser(
-                          follower.follower.username,
-                          follower.follower.isFollowing
-                        )
-                      }
-                    />
-                  </div>
+                    <div>
+                      <FollowButton
+                        isFollowing={follower.follower.isFollowing}
+                        loading={loading}
+                        handleFollow={() =>
+                          handleFollowUser(
+                            follower.follower.username,
+                            follower.follower.isFollowing
+                          )
+                        }
+                      />
+                    </div>
                   ) : null}
                 </div>
               </div>
@@ -451,7 +451,7 @@ export default function ProfileClient({ initialProfile, activeTab, username }) {
                       alt="avatar"
                     />
                     <div>
-                      <h2 className="font-bold">
+                      <h2 className="font-bold dark:text-neutral-300">
                         {following.followed.profile.profile_name}
                         {following.followed.profile.verified == "1" && (
                           <span>
@@ -483,18 +483,18 @@ export default function ProfileClient({ initialProfile, activeTab, username }) {
                   </Link>
                   {currentUser &&
                   following.followed.username !== currentUser.username ? (
-                  <div>
-                    <FollowButton
-                      isFollowing={following.followed.isFollowing}
-                      loading={loading}
-                      handleFollow={() =>
-                        handleFollowUser(
-                          following.followed.username,
-                          following.followed.isFollowing
-                        )
-                      }
-                    />
-                  </div>
+                    <div>
+                      <FollowButton
+                        isFollowing={following.followed.isFollowing}
+                        loading={loading}
+                        handleFollow={() =>
+                          handleFollowUser(
+                            following.followed.username,
+                            following.followed.isFollowing
+                          )
+                        }
+                      />
+                    </div>
                   ) : null}
                 </div>
               </div>
@@ -540,7 +540,7 @@ export default function ProfileClient({ initialProfile, activeTab, username }) {
               </a>
               <div className="flex flex-col items-center">
                 <h1 className="font-bold text-xl mt-2 text-center">
-                  <span>
+                  <span className="dark:text-neutral-300">
                     {profile.profile_name}
                     {profile.verified == "1" && (
                       <span>
@@ -574,11 +574,15 @@ export default function ProfileClient({ initialProfile, activeTab, username }) {
                 <div className="flex flex-wrap justify-center gap-y-1 px-3">
                   <Link href={`/${profile.username}`} className="px-3">
                     <span className="text-gray-500">Bài đã đăng: </span>
-                    <span className="font-bold">{profile.stats.posts}</span>
+                    <span className="font-bold dark:text-neutral-300">
+                      {profile.stats.posts}
+                    </span>
                   </Link>
                   <div className="px-3">
                     <span className="text-gray-500">Điểm: </span>
-                    <span className="font-bold">{profile.stats.points}</span>
+                    <span className="font-bold dark:text-neutral-300">
+                      {profile.stats.points}
+                    </span>
                   </div>
                 </div>
                 <div className="flex flex-wrap justify-center gap-y-1">
@@ -587,34 +591,40 @@ export default function ProfileClient({ initialProfile, activeTab, username }) {
                     className="px-3"
                   >
                     <span className="text-gray-500">Đang theo dõi: </span>
-                    <span className="font-bold">{profile.stats.following}</span>
+                    <span className="font-bold dark:text-neutral-300">
+                      {profile.stats.following}
+                    </span>
                   </Link>
                   <Link
                     href={`/${profile.username}/followers`}
                     className="px-3"
                   >
                     <span className="text-gray-500">Người theo dõi: </span>
-                    <span className="font-bold">{profile.stats.followers}</span>
+                    <span className="font-bold dark:text-neutral-300">
+                      {profile.stats.followers}
+                    </span>
                   </Link>
                   <div className="px-3">
                     <span className="text-gray-500">Lượt like: </span>
-                    <span className="font-bold">{profile.stats.likes}</span>
+                    <span className="font-bold dark:text-neutral-300">
+                      {profile.stats.likes}
+                    </span>
                   </div>
                 </div>
               </div>
-              <p className="text-center">{profile.bio}</p>
+              <p className="text-center dark:text-neutral-300">{profile.bio}</p>
               <div className="flex flex-col gap-y-2">
                 {profile.location && (
-                <div className="flex items-center -ml-0.5 gap-x-1 text-gray-500">
+                  <div className="flex items-center -ml-0.5 gap-x-1 text-gray-500">
                     <IoLocationOutline className="text-lg" />
-                  <span className="text-sm">{profile.location}</span>
-                </div>
+                    <span className="text-sm">{profile.location}</span>
+                  </div>
                 )}
                 {profile.joined_at && (
-                <div className="flex items-center -ml-0.5 gap-x-1 text-gray-500">
+                  <div className="flex items-center -ml-0.5 gap-x-1 text-gray-500">
                     <IoCalendarOutline className="text-lg" />
-                  <span className="text-sm">{profile.joined_at}</span>
-                </div>
+                    <span className="text-sm">{profile.joined_at}</span>
+                  </div>
                 )}
               </div>
               <div className="flex-1 flex justify-end items-center mt-3">
@@ -749,7 +759,9 @@ export default function ProfileClient({ initialProfile, activeTab, username }) {
                 <div>
                   <h1 className="font-bold text-xl">
                     <span>
-                      <span className="mr-1">{profile.profile_name}</span>
+                      <span className="mr-1 dark:text-neutral-300">
+                        {profile.profile_name}
+                      </span>
                       {profile.verified == "1" && (
                         <span>
                           <svg
@@ -778,7 +790,7 @@ export default function ProfileClient({ initialProfile, activeTab, username }) {
                     {profile.username}
                   </p>
                 </div>
-                <p>{profile.bio}</p>
+                <p className="dark:text-neutral-300">{profile.bio}</p>
                 <div className="flex flex-col gap-y-2">
                   {profile.location && (
                     <div className="flex items-center -ml-0.5 gap-x-1 text-gray-500">

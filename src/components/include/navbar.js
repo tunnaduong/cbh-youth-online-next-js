@@ -43,6 +43,7 @@ export default function Navbar({ activeNav = null }) {
 
   const { theme } = useTheme();
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
 
   // Add class to body when email verification alert is shown
   useEffect(() => {
@@ -67,6 +68,11 @@ export default function Navbar({ activeNav = null }) {
         }
       );
     }
+  };
+
+  const handleSearch = (e) => {
+    e.preventDefault();
+    router.push(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
   };
 
   const ioniconDefaultColor = theme === "dark" ? "#FFF" : "#000";
@@ -246,13 +252,21 @@ export default function Navbar({ activeNav = null }) {
               </Tooltip>
             </div>
           </Link>
-          <div className="border dark:!border-neutral-500 max-w-52 xl:flex flex-row items-center bg-[#F7F7F7] dark:!bg-neutral-600 rounded-lg pr-1 ml-7 pl-1 hidden">
+          <form
+            onSubmit={handleSearch}
+            className="border dark:!border-neutral-500 max-w-52 xl:flex flex-row items-center bg-[#F7F7F7] dark:!bg-neutral-600 rounded-lg pr-1 ml-7 pl-1 hidden"
+          >
             <input
               type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Tìm kiếm"
               className="border-0 w-full bg-[#F7F7F7] dark:!bg-neutral-600 text-[13px] p-2 rounded-lg pr-1 focus:ring-0"
             />
-            <div className="bg-white dark:!bg-neutral-700 rounded-lg min-w-[30px] h-[30px] flex items-center justify-center cursor-pointer search-btn dark:!border-neutral-500">
+            <button
+              type="submit"
+              className="bg-white dark:!bg-neutral-700 rounded-lg min-w-[30px] h-[30px] flex items-center justify-center cursor-pointer search-btn dark:!border-neutral-500"
+            >
               <svg
                 stroke="currentColor"
                 fill="currentColor"
@@ -265,8 +279,8 @@ export default function Navbar({ activeNav = null }) {
               >
                 <path d="M456.69 421.39 362.6 327.3a173.81 173.81 0 0 0 34.84-104.58C397.44 126.38 319.06 48 222.72 48S48 126.38 48 222.72s78.38 174.72 174.72 174.72A173.81 173.81 0 0 0 327.3 362.6l94.09 94.09a25 25 0 0 0 35.3-35.3zM97.92 222.72a124.8 124.8 0 1 1 124.8 124.8 124.95 124.95 0 0 1-124.8-124.8z"></path>
               </svg>
-            </div>
-          </div>
+            </button>
+          </form>
         </div>
         <div className="flex items-center">
           <div className="h-full items-center flex flex-row gap-x-3 relative nav-item">
@@ -307,30 +321,32 @@ export default function Navbar({ activeNav = null }) {
             </div>
           ) : (
             <div className="flex flex-row items-center gap-x-5 mr-4">
-              <svg
-                stroke="currentColor"
-                fill="currentColor"
-                strokeWidth={0}
-                viewBox="0 0 512 512"
-                className="xl:hidden cursor-pointer text-[23px] text-[#6B6B6B] dark:text-neutral-300"
-                height="1em"
-                width="1em"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path
-                  fill="none"
-                  strokeMiterlimit={10}
-                  strokeWidth={32}
-                  d="M221.09 64a157.09 157.09 0 1 0 157.09 157.09A157.1 157.1 0 0 0 221.09 64z"
-                />
-                <path
-                  fill="none"
-                  strokeLinecap="round"
-                  strokeMiterlimit={10}
-                  strokeWidth={32}
-                  d="M338.29 338.29 448 448"
-                />
-              </svg>
+              <Link href="/search" className="xl:hidden cursor-pointer">
+                <svg
+                  stroke="currentColor"
+                  fill="currentColor"
+                  strokeWidth={0}
+                  viewBox="0 0 512 512"
+                  className="text-[23px] text-[#6B6B6B] dark:text-neutral-300"
+                  height="1em"
+                  width="1em"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    fill="none"
+                    strokeMiterlimit={10}
+                    strokeWidth={32}
+                    d="M221.09 64a157.09 157.09 0 1 0 157.09 157.09A157.1 157.1 0 0 0 221.09 64z"
+                  />
+                  <path
+                    fill="none"
+                    strokeLinecap="round"
+                    strokeMiterlimit={10}
+                    strokeWidth={32}
+                    d="M338.29 338.29 448 448"
+                  />
+                </svg>
+              </Link>
               <div className="cursor-pointer">
                 <svg
                   stroke="currentColor"
