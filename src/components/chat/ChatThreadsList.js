@@ -2,6 +2,7 @@
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useChatContext } from "@/contexts/Support";
+import Image from "next/image";
 import moment from "moment";
 import "moment/locale/vi";
 
@@ -62,8 +63,15 @@ export default function ChatThreadsList({ onSelectConversation }) {
 
   if (filteredConversations.length === 0) {
     return (
-      <div className="flex items-center justify-center h-full p-4">
-        <p className="text-gray-500 dark:text-gray-400 text-sm">
+      <div className="flex flex-col items-center justify-center h-full p-4">
+        <Image
+          src="/images/sad_frog.png"
+          alt="Empty chat"
+          width={136}
+          height={136}
+          className="mb-4"
+        />
+        <p className="text-gray-500 dark:text-gray-400 text-sm mb-4">
           Chưa có cuộc trò chuyện nào
         </p>
       </div>
