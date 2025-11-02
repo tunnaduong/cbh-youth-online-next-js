@@ -274,14 +274,6 @@ export default function ProfileClient({ initialProfile, activeTab, username }) {
     }
   };
 
-  const switchTab = (tab) => {
-    if (tab === "posts") {
-      router.push(`/${profile.username}`);
-    } else {
-      router.push(`/${profile.username}/${tab}`);
-    }
-  };
-
   const handleVote = async (postId, value) => {
     if (!currentUser) {
       router.push(
@@ -662,8 +654,8 @@ export default function ProfileClient({ initialProfile, activeTab, username }) {
               </a>
               <div className="flex-1 min-w-[280px]" />
               <div className="flex flex-row">
-                <button
-                  onClick={() => switchTab("posts")}
+                <Link
+                  href={`/${profile.username}`}
                   className="select-none cursor-pointer h-full flex flex-col items-center justify-center px-3 box-border min-w-max"
                   style={{
                     borderBottom:
@@ -678,9 +670,9 @@ export default function ProfileClient({ initialProfile, activeTab, username }) {
                   <p className="font-bold text-xl text-primary-500">
                     {profile.stats.posts}
                   </p>
-                </button>
-                <button
-                  onClick={() => switchTab("followers")}
+                </Link>
+                <Link
+                  href={`/${profile.username}/followers`}
                   className="select-none cursor-pointer h-full flex flex-col items-center justify-center px-3 box-border min-w-max"
                   style={{
                     borderBottom:
@@ -695,9 +687,9 @@ export default function ProfileClient({ initialProfile, activeTab, username }) {
                   <p className="font-bold text-xl text-primary-500 follower_count">
                     {profile.stats.followers}
                   </p>
-                </button>
-                <button
-                  onClick={() => switchTab("following")}
+                </Link>
+                <Link
+                  href={`/${profile.username}/following`}
                   className="select-none cursor-pointer h-full flex flex-col items-center justify-center px-3 box-border min-w-max"
                   style={{
                     borderBottom:
@@ -712,7 +704,7 @@ export default function ProfileClient({ initialProfile, activeTab, username }) {
                   <p className="font-bold text-xl text-primary-500">
                     {profile.stats.following}
                   </p>
-                </button>
+                </Link>
 
                 <div
                   className="select-none h-full flex flex-col items-center justify-center px-3 box-border min-w-max"
