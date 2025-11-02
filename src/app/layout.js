@@ -2,6 +2,7 @@ import "./globals.css";
 import ClientProviders from "./ClientProviders";
 import GlobalConsoleMessage from "../components/GlobalConsoleMessage";
 import { Analytics } from "@vercel/analytics/next";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 
 export const metadata = {
   title: {
@@ -43,6 +44,7 @@ export default function RootLayout({ children }) {
         <GlobalConsoleMessage />
         <ClientProviders>{children}</ClientProviders>
         <Analytics />
+        <SpeedInsights />
       </body>
     </html>
   );
