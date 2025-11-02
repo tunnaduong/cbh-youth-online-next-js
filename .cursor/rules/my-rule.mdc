@@ -14,3 +14,4 @@ alwaysApply: true
 - Never run `php artisan serve`
 - If you want to test the API endpoints, just do a `curl` terminal command
 - For server side rendering, if you want to access APIs, a specific file is made for you at: src/utils/serverFetch.js. DO NOT try to rewrite manual fetch
+- If I attach a whole error log from Vercel builds, dont try to fix the warnings, just fix the errors
