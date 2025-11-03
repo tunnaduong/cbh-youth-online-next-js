@@ -5,11 +5,12 @@ import { usePathname } from "next/navigation";
 import { AddOutline, HelpCircleOutline, Mic } from "react-ionicons";
 import { Skeleton, message } from "antd";
 import CustomColorButton from "../ui/CustomColorButton";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import CreatePostModal from "../modals/CreatePostModal";
 import UploadRecordingModal from "../modals/UploadRecordingModal";
 import { useAuthContext, useTopUsersContext } from "@/contexts/Support";
 import { useRouter } from "@bprogress/next/app";
+import { getCurrentUser } from "@/app/Api";
 
 export default function RightSidebar({ onHandleCreatePost }) {
   const iconSize = "20px";
@@ -20,10 +21,36 @@ export default function RightSidebar({ onHandleCreatePost }) {
   // Get current URL to determine if we're on recordings page
   const isRecordingsPage = pathname.startsWith("/recordings");
 
-  const { loggedIn, currentUser } = useAuthContext();
+  const { loggedIn, currentUser, setCurrentUser } = useAuthContext();
   const { topUsers, loading, error, fetchTopUsers } = useTopUsersContext();
+  const hasFetchedUserData = useRef(false);
 
   // No need to fetch data here anymore - it's handled by the context
+
+  // Refresh currentUser data if missing total_points or rank (only once)
+  useEffect(() => {
+    const refreshUserData = async () => {
+      if (
+        loggedIn &&
+        currentUser &&
+        (!currentUser.total_points || !currentUser.rank) &&
+        !hasFetchedUserData.current
+      ) {
+        hasFetchedUserData.current = true;
+        try {
+          const response = await getCurrentUser();
+          const userData = response?.data || response;
+          if (userData) {
+            setCurrentUser(userData);
+          }
+        } catch (error) {
+          console.error("Failed to refresh user data:", error);
+        }
+      }
+    };
+
+    refreshUserData();
+  }, [loggedIn, currentUser, setCurrentUser]);
 
   // Calculate sticky top position based on alert visibility
   const stickyTop =
@@ -180,6 +207,40 @@ export default function RightSidebar({ onHandleCreatePost }) {
                   Không có dữ liệu xếp hạng
                 </div>
               </div>
+            )}
+
+            {/* Show current user if logged in and they're not already in top users */}
+            {loggedIn && currentUser && !loading && (
+              <>
+                {(!Array.isArray(topUsers) || topUsers.length > 0) && (
+                  <hr className="my-2 dark:border-gray-600" />
+                )}
+                <div className="flex flex-row items-center mt-2">
+                  <Link href={`/${currentUser.username}`}>
+                    <img
+                      src={`${process.env.NEXT_PUBLIC_API_URL}/v1.0/users/${currentUser.username}/avatar`}
+                      className="w-8 h-8 bg-gray-300 rounded-full border object-cover"
+                      alt={`${
+                        currentUser.profile_name || currentUser.username
+                      } avatar`}
+                    />
+                  </Link>
+                  <Link
+                    href={`/${currentUser.username}`}
+                    className="ml-1.5 font-semibold flex-1 truncate text-left dark:text-neutral-300"
+                  >
+                    Bạn
+                  </Link>
+                  <span className="mr-1.5 text-[#C1C1C1]">
+                    {currentUser.total_points || 0} điểm
+                  </span>
+                  {currentUser.rank && (
+                    <span className="text-green-500 font-bold">
+                      #{currentUser.rank}
+                    </span>
+                  )}
+                </div>
+              </>
             )}
           </div>
           <div className="hidden xl:block">

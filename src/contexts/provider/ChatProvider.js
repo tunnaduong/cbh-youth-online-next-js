@@ -517,8 +517,13 @@ const ChatProvider = ({ children }) => {
         );
         pushSubscriptionRef.current = subscription;
 
-        // Only send to server if not already sent
-        if (!subscriptionSentToServerRef.current) {
+        // Check if this endpoint was already sent to server (using localStorage)
+        // This persists across page refreshes
+        const storedEndpoint = localStorage.getItem('push_subscription_endpoint');
+        const currentEndpoint = subscription.endpoint;
+        
+        // Only send to server if endpoint changed or not yet stored
+        if (!subscriptionSentToServerRef.current && storedEndpoint !== currentEndpoint) {
           const formattedSubscription =
             formatSubscriptionForServer(subscription);
 
@@ -528,27 +533,44 @@ const ChatProvider = ({ children }) => {
               formattedSubscription
             );
 
-            const response = await subscribePushApi({
-              ...formattedSubscription,
-              type: "chat", // Mark as chat subscription (though server might ignore this)
-            });
+            try {
+              const response = await subscribePushApi({
+                ...formattedSubscription,
+                type: "chat", // Mark as chat subscription (though server might ignore this)
+              });
 
-            console.log(
-              "[ChatProvider] Successfully subscribed to chat push notifications",
-              response
-            );
+              console.log(
+                "[ChatProvider] Successfully subscribed to chat push notifications",
+                response
+              );
 
-            // Mark as sent to prevent duplicate sends
-            subscriptionSentToServerRef.current = true;
+              // Mark as sent and store endpoint in localStorage
+              subscriptionSentToServerRef.current = true;
+              localStorage.setItem('push_subscription_endpoint', currentEndpoint);
+            } catch (error) {
+              console.error(
+                "[ChatProvider] Failed to subscribe to push notifications on server:",
+                error
+              );
+              // Don't store endpoint if server call failed
+            }
           } else {
             console.error(
               "[ChatProvider] Failed to format subscription for server"
             );
           }
         } else {
-          console.log(
-            "[ChatProvider] Subscription already sent to server, skipping..."
-          );
+          if (storedEndpoint === currentEndpoint) {
+            console.log(
+              "[ChatProvider] Subscription with this endpoint already sent to server, skipping..."
+            );
+          } else {
+            console.log(
+              "[ChatProvider] Subscription already sent to server (ref), skipping..."
+            );
+          }
+          // Mark as sent to prevent duplicate sends in same session
+          subscriptionSentToServerRef.current = true;
         }
       } else {
         console.error("[ChatProvider] Failed to create push subscription");
@@ -677,13 +699,17 @@ const ChatProvider = ({ children }) => {
           );
         }
 
-        // Always unsubscribe locally (from browser push manager)
-        await unsubscribeFromPushNotifications();
-        pushSubscriptionRef.current = null;
-        subscriptionSentToServerRef.current = false; // Reset flag when unsubscribing
-        console.log(
-          "[ChatProvider] Successfully unsubscribed from chat push notifications (local)"
-        );
+             // Always unsubscribe locally (from browser push manager)
+             await unsubscribeFromPushNotifications();
+             pushSubscriptionRef.current = null;
+             subscriptionSentToServerRef.current = false; // Reset flag when unsubscribing
+             
+             // Clear stored endpoint from localStorage
+             localStorage.removeItem('push_subscription_endpoint');
+             
+             console.log(
+               "[ChatProvider] Successfully unsubscribed from chat push notifications (local)"
+             );
       }
     } catch (error) {
       console.error(
@@ -738,11 +764,11 @@ const ChatProvider = ({ children }) => {
       // Unsubscribe when logged out
       unsubscribeFromChatPush();
 
-      return () => {
-        if (conversationsPollIntervalRef.current) {
-          clearInterval(conversationsPollIntervalRef.current);
-        }
-      };
+    return () => {
+      if (conversationsPollIntervalRef.current) {
+        clearInterval(conversationsPollIntervalRef.current);
+      }
+    };
     }
   }, [
     loggedIn,

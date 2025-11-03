@@ -484,22 +484,100 @@ export default function PostClient({ params, initialPost = null }) {
     // Store original comments for rollback
     const originalComments = [...comments];
 
-    // Optimistically remove comment from UI
-    const removeCommentFromTree = (comments) => {
-      return comments
-        .filter((comment) => comment.id !== commentId)
-        .map((comment) => {
-          if (comment.replies) {
-            return {
-              ...comment,
-              replies: removeCommentFromTree(comment.replies),
-            };
+    // Find the comment to delete and its parent
+    let commentToDelete = null;
+    let parentCommentId = null;
+
+    const findCommentAndParent = (comments, parentId = null) => {
+      for (const comment of comments) {
+        if (comment.id === commentId) {
+          commentToDelete = comment;
+          parentCommentId = parentId;
+          return true;
+        }
+        if (comment.replies && comment.replies.length > 0) {
+          if (findCommentAndParent(comment.replies, comment.id)) {
+            return true;
           }
-          return comment;
-        });
+        }
+      }
+      return false;
     };
 
-    setComments(removeCommentFromTree(comments));
+    findCommentAndParent(comments);
+
+    if (!commentToDelete) {
+      message.error("Không tìm thấy bình luận cần xóa");
+      return;
+    }
+
+    // Get only direct children (not all descendants)
+    // We only promote direct children by 1 level, keeping nested structure intact
+    const directChildren = (commentToDelete.replies || []).map((child) => ({
+      ...child,
+      deleted_parent_username: commentToDelete.is_anonymous
+        ? "Người dùng ẩn danh"
+        : commentToDelete.author.profile_name ||
+          commentToDelete.author.username,
+    }));
+
+    // Get username of the deleted comment for notification
+    const deletedCommentUsername = commentToDelete.is_anonymous
+      ? "Người dùng ẩn danh"
+      : commentToDelete.author.profile_name || commentToDelete.author.username;
+
+    // Optimistically remove comment from UI and promote direct children by 1 level
+    const removeCommentAndPromoteChildren = (comments) => {
+      return comments
+        .map((comment) => {
+          // If this is the comment to delete, remove it
+          if (comment.id === commentId) {
+            return null; // Mark for removal
+          }
+
+          // Process replies if any
+          let updatedReplies = [];
+          if (comment.replies && comment.replies.length > 0) {
+            updatedReplies = removeCommentAndPromoteChildren(comment.replies);
+            updatedReplies = updatedReplies.filter((reply) => reply !== null);
+          }
+
+          // If this is the parent of the deleted comment, attach its direct children
+          // Make sure not to add duplicates - only add if not already present
+          if (comment.id === parentCommentId && directChildren.length > 0) {
+            // Get existing reply IDs to avoid duplicates
+            const existingReplyIds = new Set(
+              updatedReplies.map((reply) => reply.id)
+            );
+            // Only add direct children that are not already in the replies
+            const newChildren = directChildren.filter(
+              (child) => !existingReplyIds.has(child.id)
+            );
+            updatedReplies = updatedReplies.concat(newChildren);
+          }
+
+          return {
+            ...comment,
+            replies: updatedReplies,
+          };
+        })
+        .filter((comment) => comment !== null);
+    };
+
+    let updatedComments = removeCommentAndPromoteChildren(comments);
+
+    // If deleting a level 1 comment (no parent), promote its direct children to level 1
+    if (parentCommentId === null && directChildren.length > 0) {
+      // Remove the deleted comment from top level
+      updatedComments = updatedComments.filter(
+        (comment) => comment && comment.id !== commentId
+      );
+      // Add direct children as top-level comments (promoted by 1 level)
+      // Keep their nested structure intact
+      updatedComments = updatedComments.concat(directChildren);
+    }
+
+    setComments(updatedComments);
 
     try {
       await destroyComment(commentId);

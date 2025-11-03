@@ -105,7 +105,7 @@ export default function LeftSidebar({
       <div
         className={`w-[${width}] hidden xl:flex flex-col !p-6 sticky h-min`}
         id="left-sidebar"
-        style={{ top: stickyTop }}
+        style={{ top: stickyTop, width: width }}
       >
         <p className="text-sm font-semibold text-[#6b6b6b] dark:text-neutral-400 pb-3 ml-2.5">
           MENU

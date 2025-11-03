@@ -345,6 +345,19 @@ export default function Comment({
             ) : (
               !isCollapsed && (
                 <div className="relative">
+                  {/* Show notification if parent comment was deleted - at the top of comment */}
+                  {comment.deleted_parent_username && !isCollapsed && (
+                    <div className="mb-2 px-3 py-2 bg-gray-100 dark:bg-gray-800 rounded-md border border-gray-200 dark:border-gray-700">
+                      <span className="text-sm text-gray-600 dark:text-gray-400">
+                        Bình luận mà{" "}
+                        <span className="font-medium">
+                          {comment.author.profile_name ||
+                            comment.author.username}
+                        </span>{" "}
+                        đang phản hồi đã bị xóa
+                      </span>
+                    </div>
+                  )}
                   <div
                     className="text-gray-700 dark:text-gray-300 text-sm mb-1 prose custom-prose markdown-preview dark:prose-invert flex flex-col"
                     dangerouslySetInnerHTML={{ __html: comment.comment }}
