@@ -578,15 +578,20 @@ const CreatePostModal = ({ open, onClose }) => {
               style={{ width: "100%" }}
               loading={loading}
               options={
-                forumData?.main_categories?.map((category) => ({
-                  label: <span>{category.name}</span>,
-                  title: category.name,
-                  options:
-                    category.sub_forums?.map((subforum) => ({
-                      label: <span>{subforum.name}</span>,
-                      value: subforum.id,
-                    })) || [],
-                })) || []
+                forumData?.main_categories
+                  ?.filter(
+                    (category) =>
+                      category.subforums && category.subforums.length > 0
+                  )
+                  ?.map((category) => ({
+                    label: <span>{category.name}</span>,
+                    title: category.name,
+                    options:
+                      category.subforums?.map((subforum) => ({
+                        label: <span>{subforum.name}</span>,
+                        value: subforum.id,
+                      })) || [],
+                  })) || []
               }
               placeholder={loading ? "Đang tải..." : "Chọn chuyên mục phù hợp"}
               className="shadow-sm"
