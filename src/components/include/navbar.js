@@ -43,10 +43,19 @@ export default function Navbar({ activeNav = null }) {
   const { toggleChat, conversations } = useChatContext();
 
   // Calculate total unread messages
-  const totalUnreadCount = conversations.reduce(
-    (total, conversation) => total + (conversation.unread_count || 0),
-    0
-  );
+  // Filter out the public chat group "Tán gẫu linh tinh" from unread count
+  const totalUnreadCount = conversations
+    .filter(
+      (conversation) =>
+        !(
+          conversation.type === "group" &&
+          conversation.name === "Tán gẫu linh tinh"
+        )
+    )
+    .reduce(
+      (total, conversation) => total + (conversation.unread_count || 0),
+      0
+    );
   const router = useRouter();
 
   const { theme } = useTheme();
