@@ -28,7 +28,9 @@ export default function ChatConversation({
   const [hasMorePages, setHasMorePages] = useState(true); // Start as true to allow loading
   const [isInitialLoad, setIsInitialLoad] = useState(true);
   const messagesContainerRef = useRef(null);
-  const conversationMessages = conversationId ? (messages[conversationId] || []) : [];
+  const conversationMessages = conversationId
+    ? messages[conversationId] || []
+    : [];
 
   // Reset initial load flag when conversation changes
   useEffect(() => {
@@ -41,13 +43,14 @@ export default function ChatConversation({
   useEffect(() => {
     if (messagesContainerRef.current && conversationMessages.length > 0) {
       const container = messagesContainerRef.current;
-      
+
       // On initial load, always scroll to bottom
       if (isInitialLoad) {
         // Use setTimeout to ensure DOM is updated
         setTimeout(() => {
           if (messagesContainerRef.current) {
-            messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight;
+            messagesContainerRef.current.scrollTop =
+              messagesContainerRef.current.scrollHeight;
             setIsInitialLoad(false);
           }
         }, 100);
@@ -74,18 +77,19 @@ export default function ChatConversation({
       try {
         const nextPage = currentPage + 1;
         const result = await loadMessages(conversationId, nextPage, true);
-        
+
         // Check if there are more pages
         if (result && result.pagination && result.pagination.has_more_pages) {
           setCurrentPage(nextPage);
           setHasMorePages(result.pagination.has_more_pages);
-          
+
           // Preserve scroll position when prepending older messages
           if (result.messages && result.messages.length > 0) {
             const currentScrollHeight = container.scrollHeight;
             setTimeout(() => {
               if (container) {
-                container.scrollTop = container.scrollHeight - currentScrollHeight;
+                container.scrollTop =
+                  container.scrollHeight - currentScrollHeight;
               }
             }, 0);
           }
@@ -198,7 +202,7 @@ export default function ChatConversation({
             </p>
           </div>
         )}
-        
+
         {conversationMessages.map((message) => (
           <div
             key={message.id}
@@ -223,8 +227,8 @@ export default function ChatConversation({
               }`}
             >
               <div className="flex items-center gap-2 mb-1 min-w-0">
-                {!message.is_myself && (
-                  message.sender?.username ? (
+                {!message.is_myself &&
+                  (message.sender?.username ? (
                     <Link
                       href={`/${message.sender.username}`}
                       className="text-xs font-medium dark:text-white truncate hover:underline"
@@ -235,14 +239,14 @@ export default function ChatConversation({
                     <span className="text-xs font-medium dark:text-white truncate">
                       {message.sender?.profile_name || message.sender?.username}
                     </span>
-                  )
-                )}
+                  ))}
                 <span className="text-xs text-gray-500 dark:text-gray-400 flex-shrink-0">
-                  {message.created_at_human || formatTimestamp(message.created_at)}
+                  {message.created_at_human ||
+                    formatTimestamp(message.created_at)}
                 </span>
               </div>
               <div
-                className={`rounded-lg px-3 py-2 text-sm ${
+                className={`rounded-lg px-3 py-2 text-sm break-words whitespace-pre-wrap break-all ${
                   message.is_myself
                     ? "bg-[#319527] text-white"
                     : "bg-gray-200 dark:bg-neutral-600 dark:text-white"
@@ -260,4 +264,3 @@ export default function ChatConversation({
     </div>
   );
 }
-

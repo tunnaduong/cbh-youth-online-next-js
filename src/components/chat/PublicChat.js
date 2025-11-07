@@ -480,7 +480,7 @@ export default function PublicChat() {
                           {formatTime(message.created_at)}
                         </span>
                       </div>
-                      <div className="text-gray-700 dark:text-gray-300 text-sm whitespace-pre-wrap break-words">
+                      <div className="text-gray-700 dark:text-gray-300 text-sm whitespace-pre-wrap break-words break-all">
                         {message.content}
                       </div>
                     </div>
