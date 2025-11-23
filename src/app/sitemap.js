@@ -29,65 +29,30 @@ async function getForumCategories() {
   }
 }
 
-// Fetch recent posts (for sitemap) with pagination
+// Fetch all posts for sitemap (using dedicated sitemap endpoint)
 async function getRecentPosts() {
-  let allPosts = [];
-  let currentPage = 1;
-  let hasMore = true;
-  const postsPerPage = 100; // API default is 10, but we'll try to get more
-  const maxPages = 50; // Limit to 50 pages to get up to 5000 posts
+  try {
+    const response = await fetch(`${baseURL}/v1.0/topics/sitemap`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+      cache: "no-store",
+    });
 
-  while (hasMore && currentPage <= maxPages) {
-    try {
-      const response = await fetch(
-        `${baseURL}/v1.0/topics?page=${currentPage}&per_page=${postsPerPage}`,
-        {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-            Accept: "application/json",
-          },
-          cache: "no-store",
-        }
-      );
-
-      if (!response.ok) {
-        console.error(
-          `Error fetching posts page ${currentPage}:`,
-          response.status
-        );
-        break;
-      }
-
-      const data = await response.json();
-      // Handle paginated response from Laravel
-      let posts = [];
-      if (Array.isArray(data)) {
-        posts = data;
-      } else if (data.data && Array.isArray(data.data)) {
-        posts = data.data;
-        // Check if there are more pages
-        hasMore = data.current_page < data.last_page;
-      } else if (data.topics && Array.isArray(data.topics)) {
-        posts = data.topics;
-      }
-
-      allPosts = allPosts.concat(posts);
-
-      // If we got fewer posts than requested, we've reached the end
-      if (posts.length < postsPerPage) {
-        hasMore = false;
-      }
-
-      currentPage++;
-    } catch (error) {
-      console.error(`Error fetching posts page ${currentPage}:`, error);
-      break;
+    if (!response.ok) {
+      console.error(`Error fetching sitemap posts:`, response.status);
+      return [];
     }
-  }
 
-  // Limit to 5000 most recent posts for sitemap
-  return allPosts.slice(0, 5000);
+    const posts = await response.json();
+    console.log(`Fetched ${posts.length} posts for sitemap`);
+    return Array.isArray(posts) ? posts : [];
+  } catch (error) {
+    console.error("Error fetching posts for sitemap:", error);
+    return [];
+  }
 }
 
 export default async function sitemap() {
@@ -170,12 +135,10 @@ export default async function sitemap() {
     }
   }
 
-  // Fetch recent posts
+  // Fetch all posts for sitemap
   const posts = await getRecentPosts();
   const postRoutes = posts.map((post) => {
-    const username = post.anonymous
-      ? "anonymous"
-      : post.author?.username || "anonymous";
+    const username = post.username || "anonymous";
     const postId = post.id;
     const title = post.title || "";
 
