@@ -1,3 +1,5 @@
+import { generatePostSlug } from "@/utils/slugify";
+
 const baseURL =
   process.env.NEXT_PUBLIC_API_URL || "https://api.chuyenbienhoa.com";
 const siteURL =
@@ -27,43 +29,65 @@ async function getForumCategories() {
   }
 }
 
-// Fetch recent posts (for sitemap)
+// Fetch recent posts (for sitemap) with pagination
 async function getRecentPosts() {
-  try {
-    // Try to fetch with a large per_page, but API might paginate
-    const response = await fetch(
-      `${baseURL}/v1.0/topics?per_page=1000&page=1`,
-      {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "application/json",
-        },
-        cache: "no-store",
+  let allPosts = [];
+  let currentPage = 1;
+  let hasMore = true;
+  const postsPerPage = 100; // API default is 10, but we'll try to get more
+  const maxPages = 50; // Limit to 50 pages to get up to 5000 posts
+
+  while (hasMore && currentPage <= maxPages) {
+    try {
+      const response = await fetch(
+        `${baseURL}/v1.0/topics?page=${currentPage}&per_page=${postsPerPage}`,
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Accept: "application/json",
+          },
+          cache: "no-store",
+        }
+      );
+
+      if (!response.ok) {
+        console.error(
+          `Error fetching posts page ${currentPage}:`,
+          response.status
+        );
+        break;
       }
-    );
 
-    if (!response.ok) {
-      return [];
+      const data = await response.json();
+      // Handle paginated response from Laravel
+      let posts = [];
+      if (Array.isArray(data)) {
+        posts = data;
+      } else if (data.data && Array.isArray(data.data)) {
+        posts = data.data;
+        // Check if there are more pages
+        hasMore = data.current_page < data.last_page;
+      } else if (data.topics && Array.isArray(data.topics)) {
+        posts = data.topics;
+      }
+
+      allPosts = allPosts.concat(posts);
+
+      // If we got fewer posts than requested, we've reached the end
+      if (posts.length < postsPerPage) {
+        hasMore = false;
+      }
+
+      currentPage++;
+    } catch (error) {
+      console.error(`Error fetching posts page ${currentPage}:`, error);
+      break;
     }
-
-    const data = await response.json();
-    // Handle both paginated and non-paginated responses
-    let posts = [];
-    if (Array.isArray(data)) {
-      posts = data;
-    } else if (data.data && Array.isArray(data.data)) {
-      posts = data.data;
-    } else if (data.topics && Array.isArray(data.topics)) {
-      posts = data.topics;
-    }
-
-    // Limit to 5000 most recent posts for sitemap
-    return posts.slice(0, 5000);
-  } catch (error) {
-    console.error("Error fetching posts:", error);
-    return [];
   }
+
+  // Limit to 5000 most recent posts for sitemap
+  return allPosts.slice(0, 5000);
 }
 
 export default async function sitemap() {
@@ -154,14 +178,9 @@ export default async function sitemap() {
       : post.author?.username || "anonymous";
     const postId = post.id;
     const title = post.title || "";
-    // Generate slug from title if needed
-    const slug = title
-      .toLowerCase()
-      .replace(/[^a-z0-9\s-]+/g, "") // Remove special characters
-      .replace(/\s+/g, "-") // Replace spaces with hyphens
-      .replace(/-+/g, "-") // Replace multiple hyphens with single
-      .replace(/(^-|-$)/g, ""); // Remove leading/trailing hyphens
-    const postSlug = slug ? `${postId}-${slug}` : `${postId}`;
+
+    // Use generatePostSlug from slugify.js for consistent URL generation
+    const postSlug = generatePostSlug(postId, title);
 
     // Handle different date formats
     let lastModified = new Date();
@@ -171,6 +190,7 @@ export default async function sitemap() {
       lastModified = new Date(post.created_at);
     }
 
+    // Ensure full URL with siteURL
     return {
       url: `${siteURL}/${username}/posts/${postSlug}`,
       lastModified: lastModified,
