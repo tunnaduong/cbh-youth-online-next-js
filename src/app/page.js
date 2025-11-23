@@ -1,6 +1,7 @@
 import { getServer } from "@/utils/serverFetch";
 import HomeLayout from "@/layouts/HomeLayout";
 import HomeClient from "@/components/home/HomeClient";
+import { enhanceMetadataWithURLs } from "@/utils/seo";
 
 // Force dynamic rendering to avoid SSG issues with window/browser APIs
 export const dynamic = "force-dynamic";
@@ -22,12 +23,28 @@ async function getHomeDataServer(sort = "latest") {
 
 // Generate metadata for SEO
 export async function generateMetadata() {
-  return {
+  const baseMetadata = {
     title: "Diễn đàn học sinh Chuyên Biên Hòa",
     description:
       "Diễn đàn học sinh Chuyên Biên Hòa thuộc Trường THPT Chuyên Hà Nam",
     keywords: "diễn đàn, học sinh, chuyên biên hòa, cbh, thpt chuyên hà nam",
+    openGraph: {
+      title: "Diễn đàn học sinh Chuyên Biên Hòa",
+      description:
+        "Diễn đàn học sinh Chuyên Biên Hòa thuộc Trường THPT Chuyên Hà Nam",
+      images: ["/images/cyo_thumbnail.png"],
+      type: "website",
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: "Diễn đàn học sinh Chuyên Biên Hòa",
+      description:
+        "Diễn đàn học sinh Chuyên Biên Hòa thuộc Trường THPT Chuyên Hà Nam",
+      images: ["/images/cyo_thumbnail.png"],
+    },
   };
+
+  return enhanceMetadataWithURLs(baseMetadata, "/");
 }
 
 export default async function Home() {

@@ -1,0 +1,23 @@
+User-agent: *
+Allow: /
+
+# Sitemap
+Sitemap: https://www.chuyenbienhoa.com/sitemap.xml
+
+# Disallow private/user-specific pages
+Disallow: /auth/
+Disallow: /password/reset
+Disallow: /email/verify
+
+# Allow public pages
+Allow: /feed
+Allow: /explore
+Allow: /search
+Allow: /forum/
+Allow: /*/posts/
+Allow: /youth-news
+Allow: /about
+Allow: /contact
+Allow: /help
+Allow: /policy/
+

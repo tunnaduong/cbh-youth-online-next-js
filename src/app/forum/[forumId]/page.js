@@ -1,6 +1,7 @@
 import { getForumCategoriesServer } from "../serverData";
 import { notFound } from "next/navigation";
 import ForumCategoryClient from "./ForumCategoryClient";
+import { enhanceMetadataWithURLs } from "@/utils/seo";
 
 // Generate metadata for SEO and social sharing
 import { metadata as layoutMetadata } from "@/app/layout";
@@ -14,17 +15,20 @@ export async function generateMetadata({ params }) {
 
     if (!category) {
       // Fallback to layout metadata if category not found
-      return {
-        title:
-          layoutMetadata.title?.default ||
-          layoutMetadata.title ||
-          "Diễn đàn học sinh Chuyên Biên Hòa",
-        description:
-          layoutMetadata.description ||
-          "Diễn đàn học sinh Chuyên Biên Hòa thuộc Trường THPT Chuyên Hà Nam",
-        openGraph: layoutMetadata.openGraph,
-        twitter: layoutMetadata.twitter,
-      };
+      return enhanceMetadataWithURLs(
+        {
+          title:
+            layoutMetadata.title?.default ||
+            layoutMetadata.title ||
+            "Diễn đàn học sinh Chuyên Biên Hòa",
+          description:
+            layoutMetadata.description ||
+            "Diễn đàn học sinh Chuyên Biên Hòa thuộc Trường THPT Chuyên Hà Nam",
+          openGraph: layoutMetadata.openGraph,
+          twitter: layoutMetadata.twitter,
+        },
+        `/forum/${forumId}`
+      );
     }
 
     // NOTE: Next.js 13/14 expects the metadata object to be flat for title/description.
@@ -38,34 +42,40 @@ export async function generateMetadata({ params }) {
       category.description ||
       "Diễn đàn học sinh Chuyên Biên Hòa thuộc Trường THPT Chuyên Hà Nam";
 
-    return {
-      title: dynamicTitle,
-      description: dynamicDescription,
-      openGraph: {
-        ...layoutMetadata.openGraph,
+    return enhanceMetadataWithURLs(
+      {
         title: dynamicTitle,
         description: dynamicDescription,
+        openGraph: {
+          ...layoutMetadata.openGraph,
+          title: dynamicTitle,
+          description: dynamicDescription,
+        },
+        twitter: {
+          ...layoutMetadata.twitter,
+          title: dynamicTitle,
+          description: dynamicDescription,
+        },
       },
-      twitter: {
-        ...layoutMetadata.twitter,
-        title: dynamicTitle,
-        description: dynamicDescription,
-      },
-    };
+      `/forum/${forumId}`
+    );
   } catch (error) {
     console.error("Error generating metadata:", error);
     // Fallback to layout metadata, but flatten title/description for Next.js
-    return {
-      title:
-        layoutMetadata.title?.default ||
-        layoutMetadata.title ||
-        "Diễn đàn học sinh Chuyên Biên Hòa",
-      description:
-        layoutMetadata.description ||
-        "Diễn đàn học sinh Chuyên Biên Hòa thuộc Trường THPT Chuyên Hà Nam",
-      openGraph: layoutMetadata.openGraph,
-      twitter: layoutMetadata.twitter,
-    };
+    return enhanceMetadataWithURLs(
+      {
+        title:
+          layoutMetadata.title?.default ||
+          layoutMetadata.title ||
+          "Diễn đàn học sinh Chuyên Biên Hòa",
+        description:
+          layoutMetadata.description ||
+          "Diễn đàn học sinh Chuyên Biên Hòa thuộc Trường THPT Chuyên Hà Nam",
+        openGraph: layoutMetadata.openGraph,
+        twitter: layoutMetadata.twitter,
+      },
+      `/forum/${params.forumId}`
+    );
   }
 }
 

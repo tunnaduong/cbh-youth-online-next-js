@@ -1,18 +1,30 @@
 import { Suspense } from "react";
 import SearchClient from "./SearchClient";
+import { enhanceMetadataWithURLs } from "@/utils/seo";
 
-export const metadata = {
-  title: "Tìm kiếm - Diễn đàn học sinh Chuyên Biên Hòa",
-  description:
-    "Tìm kiếm bài viết và trang cá nhân của người dùng trên diễn đàn học sinh Chuyên Biên Hòa.",
-  keywords: "tìm kiếm, diễn đàn, học sinh, chuyên biên hòa, cbh",
-  openGraph: {
+export const metadata = enhanceMetadataWithURLs(
+  {
     title: "Tìm kiếm - Diễn đàn học sinh Chuyên Biên Hòa",
     description:
       "Tìm kiếm bài viết và trang cá nhân của người dùng trên diễn đàn học sinh Chuyên Biên Hòa.",
-    images: "/images/cyo_thumbnail.png",
+    keywords: "tìm kiếm, diễn đàn, học sinh, chuyên biên hòa, cbh",
+    openGraph: {
+      title: "Tìm kiếm - Diễn đàn học sinh Chuyên Biên Hòa",
+      description:
+        "Tìm kiếm bài viết và trang cá nhân của người dùng trên diễn đàn học sinh Chuyên Biên Hòa.",
+      images: ["/images/cyo_thumbnail.png"],
+      type: "website",
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: "Tìm kiếm - Diễn đàn học sinh Chuyên Biên Hòa",
+      description:
+        "Tìm kiếm bài viết và trang cá nhân của người dùng trên diễn đàn học sinh Chuyên Biên Hòa.",
+      images: ["/images/cyo_thumbnail.png"],
+    },
   },
-};
+  "/search"
+);
 
 export default function SearchPage() {
   return (
