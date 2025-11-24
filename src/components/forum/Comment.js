@@ -191,8 +191,10 @@ export default function Comment({
     },
   ];
 
+  const commentDomId = comment?.id ? `comment-${comment.id}` : undefined;
+
   return (
-    <div className="relative">
+    <div className="relative" id={commentDomId}>
       {/* Reddit-style curved connector lines for nested comments */}
       {comment.replies?.length > 0 && !isCollapsed && (
         <div
