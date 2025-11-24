@@ -1,6 +1,6 @@
 # CBH Youth Online – Frontend Next.js
 
-Giao diện web của cộng đồng CBH Youth Online được xây dựng bằng Next.js 14 (App Router). Ứng dụng cung cấp bảng tin, diễn đàn, chat riêng tư/công khai, stories, thư viện ghi âm, trung tâm trợ giúp và hệ thống thông báo đẩy dành cho giới trẻ tại Biên Hòa.
+Giao diện web của cộng đồng CBH Youth Online được xây dựng bằng Next.js 14 (App Router). Ứng dụng cung cấp bảng tin, diễn đàn, chat riêng tư/công khai, stories, thư viện ghi âm, trung tâm trợ giúp và hệ thống thông báo đẩy dành cho học sinh tại THPT Chuyên Biên Hòa.
 
 ## Nội dung chính
 - [Tính năng nổi bật](#tính-năng-nổi-bật)
