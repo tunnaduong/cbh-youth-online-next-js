@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useAuthContext } from "@/contexts/Support";
 import { useForumData } from "@/contexts/ForumDataContext";
 import {
@@ -36,6 +36,7 @@ export default function PostClient({ params, initialPost = null }) {
   const [loading, setLoading] = useState(!initialPost);
   const [error, setError] = useState(null);
   const router = useRouter();
+  const hasScrolledToHashRef = useRef(false);
 
   // Track view immediately when post detail page loads (only once)
   const trackView = async () => {
@@ -150,6 +151,56 @@ export default function PostClient({ params, initialPost = null }) {
 
     console.log(post);
   }, [params.postId, postDetails, postComments, fetchPostDetail, initialPost]);
+
+  useEffect(() => {
+    if (hasScrolledToHashRef.current) {
+      return;
+    }
+
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    const hash = window.location.hash;
+    if (!hash || !hash.startsWith("#comment-")) {
+      return;
+    }
+
+    const scrollToHashTarget = () => {
+      const targetElement = document.querySelector(hash);
+      if (!targetElement) {
+        return false;
+      }
+
+      hasScrolledToHashRef.current = true;
+
+      const NAVBAR_OFFSET = 90;
+      const targetPosition =
+        targetElement.getBoundingClientRect().top + window.scrollY - NAVBAR_OFFSET;
+
+      window.scrollTo({
+        top: targetPosition > 0 ? targetPosition : 0,
+        behavior: "smooth",
+      });
+
+      return true;
+    };
+
+    if (scrollToHashTarget()) {
+      return;
+    }
+
+    let attempts = 0;
+    const maxAttempts = 10;
+    const intervalId = setInterval(() => {
+      attempts += 1;
+      if (scrollToHashTarget() || attempts >= maxAttempts) {
+        clearInterval(intervalId);
+      }
+    }, 200);
+
+    return () => clearInterval(intervalId);
+  }, [comments]);
 
   // Helper function to get time display
   const getTimeDisplay = (comment) => {

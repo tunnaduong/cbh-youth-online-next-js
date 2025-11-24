@@ -2,8 +2,9 @@
 
 import React from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { useNotificationContext } from "@/contexts/Support";
+import { useAuthContext, useNotificationContext } from "@/contexts/Support";
 import { useRouter } from "@bprogress/next/app";
+import { generatePostSlug } from "@/utils/slugify";
 
 const getNotificationMessage = (notification) => {
   const { type, actor, data } = notification;
@@ -47,8 +48,101 @@ const getNotificationMessage = (notification) => {
   }
 };
 
+const parseLegacyUrlMetadata = (url) => {
+  if (!url || typeof url !== "string") {
+    return {};
+  }
+
+  const topicMatch = url.match(/topics\/(\d+)/i);
+  const commentMatch = url.match(/comment-(\d+)/i);
+
+  return {
+    topicId: topicMatch?.[1],
+    commentId: commentMatch?.[1],
+  };
+};
+
+const convertToRelativeUrl = (url) => {
+  if (!url || typeof url !== "string") {
+    return "/";
+  }
+
+  // Strip domain if present so router.push works with an internal path
+  const relative = url.replace(/^https?:\/\/[^/]+/i, "");
+  return relative.startsWith("/") ? relative : `/${relative}`;
+};
+
+const buildNotificationTargetUrl = (notification, viewerUsername) => {
+  const data = notification?.data || {};
+  const legacyMetadata = parseLegacyUrlMetadata(data.url);
+
+  const topicId =
+    data.topic_id ??
+    data.post_id ??
+    data.topicId ??
+    data.topic?.id ??
+    data.post?.id ??
+    legacyMetadata.topicId;
+
+  if (!topicId) {
+    return convertToRelativeUrl(data.url);
+  }
+
+  const commentId =
+    data.comment_id ??
+    data.commentId ??
+    data.reply_id ??
+    data.replyId ??
+    data.comment?.id ??
+    legacyMetadata.commentId;
+
+  const postTitle =
+    data.topic_title ??
+    data.post_title ??
+    data.title ??
+    notification?.subject ??
+    "";
+
+  const slug =
+    postTitle && typeof postTitle === "string" && postTitle.trim() !== ""
+      ? generatePostSlug(topicId, postTitle)
+      : String(topicId);
+
+  const isAnonymous =
+    data.topic_is_anonymous ??
+    data.post_is_anonymous ??
+    data.is_anonymous ??
+    false;
+
+  const candidateUsernames = [
+    data.topic_author_username,
+    data.post_author_username,
+    data.post_username,
+    data.topic_username,
+    data.username,
+    data.author_username,
+    data.author?.username,
+    data.topic?.author?.username,
+    data.post?.author?.username,
+  ].filter((value) => typeof value === "string" && value.trim() !== "");
+
+  let username = candidateUsernames[0];
+
+  if (!username) {
+    username = isAnonymous ? "anonymous" : viewerUsername;
+  }
+
+  if (!username || typeof username !== "string") {
+    username = "anonymous";
+  }
+
+  const basePath = `/${username}/posts/${slug}`;
+  return commentId ? `${basePath}#comment-${commentId}` : basePath;
+};
+
 export default function NotificationItem({ notification }) {
   const { markAsRead, deleteNotification } = useNotificationContext();
+  const { currentUser } = useAuthContext();
   const router = useRouter();
 
   const handleClick = async () => {
@@ -56,9 +150,13 @@ export default function NotificationItem({ notification }) {
       await markAsRead(notification.id);
     }
 
-    // Navigate to the notification URL if available
-    if (notification.data?.url) {
-      router.push(notification.data.url);
+    const targetUrl = buildNotificationTargetUrl(
+      notification,
+      currentUser?.username
+    );
+
+    if (targetUrl) {
+      router.push(targetUrl);
     }
   };
 
