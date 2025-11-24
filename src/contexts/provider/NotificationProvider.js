@@ -34,6 +34,7 @@ const NotificationProvider = ({ children }) => {
   const pollIntervalRef = useRef(null);
   const isPollingRef = useRef(false);
   const subscriptionRequestedRef = useRef(false);
+  const isFetchingRef = useRef(false);
 
   // Fetch notifications
   const fetchNotifications = useCallback(
@@ -43,6 +44,13 @@ const NotificationProvider = ({ children }) => {
         return;
       }
 
+      // Prevent concurrent requests
+      if (isFetchingRef.current && !append) {
+        console.log("[NotificationProvider] Already fetching, skipping...");
+        return;
+      }
+
+      isFetchingRef.current = true;
       setLoading(true);
       setError(null);
 
@@ -52,22 +60,76 @@ const NotificationProvider = ({ children }) => {
           per_page: 20,
         });
 
-        if (response?.notifications) {
-          if (append) {
-            setNotifications((prev) => [...prev, ...response.notifications]);
+        // Handle both response.data (axios) and direct response formats
+        // Axios returns { data: {...}, status, headers, ... }
+        // So response.data contains the actual API response body
+        const responseData = response?.data || response;
+
+        // Handle nested data structure (in case API wraps response in another data layer)
+        const actualData = responseData?.data || responseData;
+
+        const notificationsData =
+          actualData?.notifications || responseData?.notifications || [];
+        const paginationData =
+          actualData?.pagination || responseData?.pagination;
+
+        console.log("[NotificationProvider] Fetch response:", {
+          hasResponse: !!response,
+          hasResponseData: !!response?.data,
+          responseData,
+          actualData,
+          notificationsCount: Array.isArray(notificationsData)
+            ? notificationsData.length
+            : "not array",
+          notificationsType: typeof notificationsData,
+          paginationData,
+        });
+
+        // Always set notifications if we have valid array data
+        if (Array.isArray(notificationsData)) {
+          if (append && notificationsData.length > 0) {
+            setNotifications((prev) => [...prev, ...notificationsData]);
           } else {
-            setNotifications(response.notifications);
+            // Always set notifications, even if empty array
+            setNotifications(notificationsData);
           }
-          setHasMore(
-            response.pagination?.current_page < response.pagination?.last_page
+
+          // Set pagination info
+          if (paginationData) {
+            setHasMore(paginationData.current_page < paginationData.last_page);
+            setCurrentPage(paginationData.current_page || page);
+          } else {
+            // If no pagination data, assume no more pages if we got less than per_page
+            setHasMore(notificationsData.length >= 20);
+            setCurrentPage(page);
+          }
+        } else {
+          console.warn(
+            "[NotificationProvider] notificationsData is not an array:",
+            {
+              notificationsData,
+              type: typeof notificationsData,
+              responseData,
+              actualData,
+            }
           );
-          setCurrentPage(response.pagination?.current_page || page);
+          // Set empty array if invalid data
+          if (!append) {
+            setNotifications([]);
+          }
+          setHasMore(false);
+          setCurrentPage(page);
         }
       } catch (err) {
         console.error("Error fetching notifications:", err);
         setError(err.message || "Failed to fetch notifications");
+        // On error, clear notifications if not appending
+        if (!append) {
+          setNotifications([]);
+        }
       } finally {
         setLoading(false);
+        isFetchingRef.current = false;
       }
     },
     [loggedIn]
@@ -82,8 +144,10 @@ const NotificationProvider = ({ children }) => {
 
     try {
       const response = await getUnreadNotificationCount();
-      if (response?.unread_count !== undefined) {
-        setUnreadCount(response.unread_count);
+      // Handle both response.data (axios) and direct response formats
+      const responseData = response?.data || response;
+      if (responseData?.unread_count !== undefined) {
+        setUnreadCount(responseData.unread_count);
       }
     } catch (err) {
       console.error("Error fetching unread count:", err);

@@ -48,7 +48,9 @@ export async function generateMetadata({ params }) {
       "Diễn đàn học sinh Chuyên Biên Hòa";
 
     // Generate canonical URL
-    const username = post.anonymous ? "anonymous" : post.author?.username || "anonymous";
+    const username = post.anonymous
+      ? "anonymous"
+      : post.author?.username || "anonymous";
     const canonicalSlug = generateCanonicalUrl(params.postId, post.title);
     const canonicalPath = `/${username}/posts/${canonicalSlug}`;
 

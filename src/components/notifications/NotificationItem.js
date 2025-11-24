@@ -23,7 +23,9 @@ const getNotificationMessage = (notification) => {
     case "topic_pinned":
       return "Bài viết của bạn đã được ghim";
     case "topic_moved":
-      return `Bài viết của bạn đã được chuyển đến ${data?.new_subforum || "subforum khác"}`;
+      return `Bài viết của bạn đã được chuyển đến ${
+        data?.new_subforum || "subforum khác"
+      }`;
     case "topic_closed":
       return "Bài viết của bạn đã bị đóng";
     case "rank_up":
@@ -69,6 +71,30 @@ export default function NotificationItem({ notification }) {
     }
   };
 
+  // Determine avatar URL
+  const getAvatarUrl = () => {
+    // System notification (no actor)
+    if (!notification.actor) {
+      return `${process.env.NEXT_PUBLIC_API_URL}/v1.0/users/Admin/avatar`;
+    }
+
+    // User notification - use avatar_url if available, otherwise construct from username
+    if (notification.actor.avatar_url) {
+      return notification.actor.avatar_url;
+    }
+
+    // Fallback: construct avatar URL from username
+    const username = notification.actor.username;
+    if (username) {
+      return `${process.env.NEXT_PUBLIC_API_URL}/v1.0/users/${username}/avatar`;
+    }
+
+    return null;
+  };
+
+  const avatarUrl = getAvatarUrl();
+  const avatarAlt = notification.actor?.username || "Hệ thống";
+
   return (
     <div
       className={`group flex items-start gap-3 p-3 hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer transition-colors ${
@@ -79,11 +105,8 @@ export default function NotificationItem({ notification }) {
       onClick={handleClick}
     >
       <Avatar className="h-10 w-10 flex-shrink-0">
-        {notification.actor ? (
-          <AvatarImage src={notification.actor.avatar_url} alt={notification.actor.username} />
-        ) : (
-          <AvatarFallback>Hệ thống</AvatarFallback>
-        )}
+        <AvatarImage src={avatarUrl} alt={avatarAlt} />
+        <AvatarFallback></AvatarFallback>
       </Avatar>
       <div className="flex-1 min-w-0">
         <p className="text-sm text-gray-900 dark:text-gray-100">
@@ -115,4 +138,3 @@ export default function NotificationItem({ notification }) {
     </div>
   );
 }
-

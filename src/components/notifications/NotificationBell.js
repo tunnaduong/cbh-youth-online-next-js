@@ -10,6 +10,7 @@ export default function NotificationBell() {
 
   const handleToggle = (e) => {
     e.stopPropagation(); // Prevent event bubbling to avoid conflicts with click-outside handler
+    e.preventDefault(); // Prevent default behavior
     if (isOpen) {
       // If dropdown is open, close it
       setIsOpen(false);
@@ -19,11 +20,20 @@ export default function NotificationBell() {
     }
   };
 
+  const handleMouseDown = (e) => {
+    e.preventDefault(); // Prevent text selection on rapid clicks
+  };
+
   const bellButtonRef = useRef(null);
 
   return (
-    <div className="relative">
-      <div ref={bellButtonRef} className="cursor-pointer relative" onClick={handleToggle}>
+    <div className="relative select-none">
+      <div 
+        ref={bellButtonRef} 
+        className="cursor-pointer relative select-none" 
+        onClick={handleToggle}
+        onMouseDown={handleMouseDown}
+      >
         <svg
           stroke="currentColor"
           fill="currentColor"
@@ -43,7 +53,7 @@ export default function NotificationBell() {
           ></path>
         </svg>
         {unreadCount > 0 && (
-          <span className="absolute top-0 right-0 h-4 w-4 bg-red-500 rounded-full flex items-center justify-center text-xs text-white font-bold">
+          <span className="absolute top-0 right-0 h-4 w-4 bg-red-500 rounded-full flex items-center justify-center text-xs text-white font-bold select-none pointer-events-none">
             {unreadCount > 9 ? "9+" : unreadCount}
           </span>
         )}

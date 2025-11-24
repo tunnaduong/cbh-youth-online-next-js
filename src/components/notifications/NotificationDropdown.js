@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useNotificationContext } from "@/contexts/Support";
 import NotificationItem from "./NotificationItem";
 import { Button } from "@/components/ui/button";
@@ -21,9 +21,27 @@ export default function NotificationDropdown({
     refresh,
   } = useNotificationContext();
   const dropdownRef = useRef(null);
+  const [rightOffset, setRightOffset] = useState("0");
 
   // Track if dropdown was just opened to avoid infinite refresh
   const wasOpenRef = useRef(false);
+
+  // Handle responsive positioning for mobile screens
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth < 500) {
+        setRightOffset("-5rem");
+      } else {
+        setRightOffset("0");
+      }
+    };
+
+    // Set initial value
+    handleResize();
+
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   // Close dropdown when clicking outside (but not on the bell button)
   useEffect(() => {
@@ -59,6 +77,7 @@ export default function NotificationDropdown({
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, onClose, refresh]);
 
   const handleMarkAllAsRead = async () => {
@@ -72,15 +91,20 @@ export default function NotificationDropdown({
   return (
     <div
       ref={dropdownRef}
-      className={`absolute right-0 top-full mt-2 w-96 bg-white dark:bg-gray-900 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 z-50 ${
+      className={`absolute top-full mt-2 bg-white dark:bg-neutral-700 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 z-[60] ${
         isOpen ? "block" : "hidden"
       }`}
+      style={{
+        right: rightOffset,
+        width: "min(calc(100vw - 2rem), 384px)",
+        maxWidth: "384px",
+      }}
     >
       <div className="p-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
         <h3 className="font-semibold text-gray-900 dark:text-gray-100">
           Thông báo
           {unreadCount > 0 && (
-            <span className="ml-2 text-sm font-normal text-blue-500">
+            <span className="ml-2 text-sm font-normal text-primary-500">
               ({unreadCount} mới)
             </span>
           )}
@@ -88,7 +112,7 @@ export default function NotificationDropdown({
         {unreadCount > 0 && (
           <button
             onClick={handleMarkAllAsRead}
-            className="text-sm text-blue-500 hover:text-blue-600"
+            className="text-sm text-primary-500 hover:text-primary-600"
           >
             Đánh dấu tất cả đã đọc
           </button>
