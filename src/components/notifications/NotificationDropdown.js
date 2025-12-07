@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef } from "react";
 import { useNotificationContext } from "@/contexts/Support";
 import NotificationItem from "./NotificationItem";
 import { Button } from "@/components/ui/button";
@@ -21,27 +21,9 @@ export default function NotificationDropdown({
     refresh,
   } = useNotificationContext();
   const dropdownRef = useRef(null);
-  const [rightOffset, setRightOffset] = useState("0");
 
   // Track if dropdown was just opened to avoid infinite refresh
   const wasOpenRef = useRef(false);
-
-  // Handle responsive positioning for mobile screens
-  useEffect(() => {
-    const handleResize = () => {
-      if (window.innerWidth < 500) {
-        setRightOffset("-5rem");
-      } else {
-        setRightOffset("0");
-      }
-    };
-
-    // Set initial value
-    handleResize();
-
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
-  }, []);
 
   // Close dropdown when clicking outside (but not on the bell button)
   useEffect(() => {
@@ -95,7 +77,7 @@ export default function NotificationDropdown({
         isOpen ? "block" : "hidden"
       }`}
       style={{
-        right: rightOffset,
+        right: "0",
         width: "min(calc(100vw - 2rem), 384px)",
         maxWidth: "384px",
       }}

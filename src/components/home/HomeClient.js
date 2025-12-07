@@ -1,6 +1,7 @@
 "use client";
 
 import { Suspense } from "react";
+import Image from "next/image";
 import ForumSection from "@/components/forum/ForumSection";
 import ForumStats from "@/components/forum/ForumStats";
 import TopPosts from "@/components/forum/TopPosts";
@@ -20,6 +21,18 @@ export default function HomeClient({
   return (
     <div className="px-2.5">
       <div className="px-1 xl:min-h-screen pt-4 md:max-w-[775px] mx-auto space-y-6 mb-4">
+        <a href="https://chuyenbienhoa.download?utm_source=cyo_home">
+          <div className="mb-6 w-full shadow rounded-lg overflow-hidden">
+            <Image
+              src="/images/mobile-app-download-banner.jpg"
+              alt="Tải ứng dụng Chuyên Biên Hòa Online"
+              width={1200}
+              height={400}
+              className="w-full h-auto"
+              priority
+            />
+          </div>
+        </a>
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">
             Diễn đàn

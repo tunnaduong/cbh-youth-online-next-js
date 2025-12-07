@@ -385,3 +385,99 @@ export const getNotificationSubscriptions = () => {
 export const getVapidPublicKey = () => {
   return Api.getRequest("/v1.0/notifications/vapid-public-key");
 };
+
+// Study Materials
+export const getStudyMaterials = (params = "") => {
+  return Api.getRequest(`/v1.0/study-materials${params ? `?${params}` : ""}`);
+};
+
+export const getStudyMaterial = (id) => {
+  return Api.getRequest(`/v1.0/study-materials/${id}`);
+};
+
+export const createStudyMaterial = (params) => {
+  return Api.postRequest("/v1.0/study-materials", params);
+};
+
+export const updateStudyMaterial = (id, params) => {
+  return Api.putRequest(`/v1.0/study-materials/${id}`, params);
+};
+
+export const deleteStudyMaterial = (id) => {
+  return Api.deleteRequest(`/v1.0/study-materials/${id}`);
+};
+
+export const purchaseMaterial = (id) => {
+  return Api.postRequest(`/v1.0/study-materials/${id}/purchase`);
+};
+
+export const downloadMaterial = (id) => {
+  return Api.getRequest(`/v1.0/study-materials/${id}/download`);
+};
+
+export const viewMaterial = (id) => {
+  return Api.postRequest(`/v1.0/study-materials/${id}/view`);
+};
+
+export const getMaterialPreview = (id) => {
+  return Api.getRequest(`/v1.0/study-materials/${id}/preview`);
+};
+
+export const getUserStudyMaterials = (username) => {
+  return Api.getRequest(`/v1.0/users/${username}/study-materials`);
+};
+
+// Study Material Ratings
+export const rateMaterial = (materialId, params) => {
+  return Api.postRequest(`/v1.0/study-materials/${materialId}/ratings`, params);
+};
+
+export const updateRating = (id, params) => {
+  return Api.putRequest(`/v1.0/ratings/${id}`, params);
+};
+
+export const deleteRating = (id) => {
+  return Api.deleteRequest(`/v1.0/ratings/${id}`);
+};
+
+export const getMaterialRatings = (materialId, params = "") => {
+  return Api.getRequest(
+    `/v1.0/study-materials/${materialId}/ratings${params ? `?${params}` : ""}`
+  );
+};
+
+// Wallet
+export const getWalletBalance = () => {
+  return Api.getRequest("/v1.0/wallet/balance");
+};
+
+export const getWalletTransactions = (params = "") => {
+  return Api.getRequest(
+    `/v1.0/wallet/transactions${params ? `?${params}` : ""}`
+  );
+};
+
+export const requestWithdrawal = (params) => {
+  return Api.postRequest("/v1.0/wallet/withdrawal-request", params);
+};
+
+export const getWithdrawalRequests = () => {
+  return Api.getRequest("/v1.0/wallet/withdrawal-requests");
+};
+
+export const getWithdrawalHistory = () => {
+  return Api.getRequest("/v1.0/wallet/withdrawal-history");
+};
+
+export const createDepositRequest = (params) => {
+  return Api.postRequest("/v1.0/wallet/deposit-request", params);
+};
+
+// Study Material Categories
+export const getStudyMaterialCategories = () => {
+  return Api.getRequest("/v1.0/study-material-categories");
+};
+
+export const getStudyMaterialCategory = (id) => {
+  return Api.getRequest(`/v1.0/study-material-categories/${id}`);
+};

@@ -37,7 +37,7 @@ export default function ExploreClient() {
       sidebarIcon: Book,
       title: "Tài liệu ôn thi",
       key: "study",
-      href: "#",
+      href: "/explore/study-materials",
     },
     {
       icon: SearchOutline,
@@ -148,8 +148,9 @@ export default function ExploreClient() {
               .map((feature, index) => {
                 const IconComponent = feature.icon;
                 return (
-                  <div
+                  <a
                     key={index}
+                    href={feature.href}
                     className="feature-card bg-white dark:bg-neutral-800 rounded-xl shadow-sm hover:shadow-md p-6 flex flex-col items-center cursor-pointer hover:scale-105 transition-all duration-200"
                   >
                     <div className="icon-circle bg-green-50 dark:bg-green-900/20 rounded-full w-16 h-16 flex items-center justify-center mb-4">
@@ -162,7 +163,7 @@ export default function ExploreClient() {
                     <h3 className="mt-4 text-center text-gray-900 dark:text-gray-100 font-medium">
                       {feature.title}
                     </h3>
-                  </div>
+                  </a>
                 );
               })}
           </div>

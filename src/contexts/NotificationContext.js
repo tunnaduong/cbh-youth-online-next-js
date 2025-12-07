@@ -7,7 +7,6 @@ const NotificationContext = createContext({
   unreadCount: 0,
   loading: false,
   error: null,
-  hasMore: false,
   pushSubscribed: false,
   pushSupported: false,
   fetchNotifications: () => {},
@@ -15,8 +14,6 @@ const NotificationContext = createContext({
   markAsRead: () => {},
   markAllAsRead: () => {},
   deleteNotification: () => {},
-  loadMore: () => {},
-  refresh: () => {},
   subscribePush: () => {},
   unsubscribePushNotifications: () => {},
 });
