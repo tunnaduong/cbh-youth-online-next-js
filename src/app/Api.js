@@ -41,6 +41,10 @@ export const createPost = (params) => {
   return Api.postRequest("/v1.0/topics", params);
 };
 
+export const deletePost = (id) => {
+  return Api.deleteRequest("/v1.0/topics/" + id);
+};
+
 export const verifyEmail = (token) => {
   return Api.getRequest("/v1.0/email/verify/" + token);
 };

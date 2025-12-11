@@ -15,12 +15,21 @@ import { ReactPhotoCollage } from "react-photo-collage";
 import VerifiedBadge from "@/components/ui/Badges";
 import getCollageSetting from "@/utils/getCollageSetting";
 import { useState, useEffect } from "react";
-import { Button, ConfigProvider, message, Tooltip } from "antd";
+import { Button, ConfigProvider, message, Tooltip, Dropdown, Modal } from "antd";
 import { useRouter } from "@bprogress/next/app";
 import {
   savePost as savePostApi,
   unsavePost as unsavePostApi,
+  deletePost,
 } from "@/app/Api";
+import {
+  MoreHorizontal,
+  Share,
+  Edit,
+  Trash,
+  Flag,
+} from "lucide-react";
+import { usePostRefresh } from "@/contexts/PostRefreshContext";
 
 export default function PostItem({ post, single = false, onVote }) {
   const { currentUser } = useAuthContext();
@@ -33,6 +42,7 @@ export default function PostItem({ post, single = false, onVote }) {
   const votesCount =
     post?.votes?.reduce((sum, v) => sum + v.vote_value, 0) || 0;
   const router = useRouter();
+  const { triggerRefresh } = usePostRefresh();
 
   useEffect(() => {
     setIsSaved(!!(post.is_saved || post.saved));
@@ -183,6 +193,83 @@ export default function PostItem({ post, single = false, onVote }) {
     showNumOfRemainingPhotos: true,
   };
 
+  const handleShare = () => {
+    const url =
+      window.location.origin +
+      "/" +
+      post.author.username +
+      "/posts/" +
+      generatePostSlug(post.id, post.title) + "?utm_source=desktop_share";
+    navigator.clipboard.writeText(url);
+    message.success("Đã sao chép liên kết vào bộ nhớ tạm");
+  };
+
+  const handleEdit = () => {
+    message.info("Tính năng đang phát triển");
+  };
+
+  const handleDelete = () => {
+    Modal.confirm({
+      title: "Xác nhận xóa bài viết",
+      content:
+        "Bạn có chắc chắn muốn xóa bài viết này không? Hành động này không thể hoàn tác.",
+      okText: "Xóa",
+      cancelText: "Hủy",
+      okType: "danger",
+      onOk: async () => {
+        try {
+          await deletePost(post.id);
+          message.success("Đã xóa bài viết");
+
+          triggerRefresh();
+          router.push("/");
+          router.refresh();
+        } catch (error) {
+          message.error("Có lỗi xảy ra khi xóa bài viết");
+        }
+      },
+    });
+  };
+
+  const handleReport = () => {
+    message.info("Tính năng đang phát triển");
+  };
+
+  const menuItems = [
+    {
+      key: "share",
+      label: "Chia sẻ",
+      icon: <Share size={16} />,
+      onClick: handleShare,
+    },
+    {
+      key: "report",
+      label: "Báo cáo bài viết",
+      icon: <Flag size={16} />,
+      onClick: handleReport,
+    },
+  ];
+
+  if (
+    currentUser &&
+    (currentUser.username === post.author.username ||
+      currentUser.role === "admin")
+  ) {
+    menuItems.push({
+      key: "edit",
+      label: "Chỉnh sửa",
+      icon: <Edit size={16} />,
+      onClick: handleEdit,
+    });
+    menuItems.push({
+      key: "delete",
+      label: "Xóa",
+      icon: <Trash size={16} />,
+      danger: true,
+      onClick: handleDelete,
+    });
+  }
+
   return (
     <div
       className="px-1.5 md:px-0 md:max-w-[775px] mx-auto w-full"
@@ -193,21 +280,19 @@ export default function PostItem({ post, single = false, onVote }) {
           <div className="sticky-reaction-bar items-center md:!mt-1 mt-3 gap-x-3 flex md:!flex-col flex-row md:ml-[-20px] text-[13px] font-semibold text-gray-400">
             <Button
               size="small"
-              className={`w-8 px-2 rounded-full border-0 ${
-                myVote === 1 ? "text-primary-500" : "text-gray-400"
-              }`}
+              className={`w-8 px-2 rounded-full border-0 ${myVote === 1 ? "text-primary-500" : "text-gray-400"
+                }`}
               onClick={() => onVote && onVote(post.id, myVote === 1 ? 0 : 1)}
             >
               <ArrowUpOutline height="26px" width="26px" color="currentColor" />
             </Button>
             <span
-              className={`select-none text-lg vote-count ${
-                myVote === 1
+              className={`select-none text-lg vote-count ${myVote === 1
                   ? "text-primary-500"
                   : myVote === -1
-                  ? "text-red-600"
-                  : "text-gray-400"
-              }`}
+                    ? "text-red-600"
+                    : "text-gray-400"
+                }`}
             >
               {votesCount}
             </span>
@@ -224,9 +309,8 @@ export default function PostItem({ post, single = false, onVote }) {
               <Button
                 size="small"
                 className={`w-8 px-2 hover:!text-red-500 hover:!bg-red-50 dark:hover:!bg-[rgba(69,10,10,0.2)] rounded-full border-0
-                downvote-button ${
-                  myVote === -1 ? "text-red-600" : "text-gray-400"
-                }`}
+                downvote-button ${myVote === -1 ? "text-red-600" : "text-gray-400"
+                  }`}
                 onClick={() =>
                   onVote && onVote(post.id, myVote === -1 ? 0 : -1)
                 }
@@ -242,11 +326,10 @@ export default function PostItem({ post, single = false, onVote }) {
               size="small"
               onClick={handleSavePost}
               aria-label={isSaved ? "Bỏ lưu bài viết" : "Lưu bài viết"}
-              className={`border-0 rounded-lg w-[33.6px] h-[33.6px] md:mt-3 flex items-center justify-center dark:bg-neutral-500 dark:hover:!bg-neutral-600 ${
-                isSaved
+              className={`border-0 rounded-lg w-[33.6px] h-[33.6px] md:mt-3 flex items-center justify-center dark:bg-neutral-500 dark:hover:!bg-neutral-600 ${isSaved
                   ? "bg-green-100 hover:!bg-green-200"
                   : "bg-[#EAEAEA] hover:!bg-[#e1e2e4]"
-              }`}
+                }`}
             >
               <Bookmark
                 height="20px"
@@ -301,28 +384,43 @@ export default function PostItem({ post, single = false, onVote }) {
           </div>
         </div>
         <div className="flex-1 overflow-hidden break-words">
-          {single ? (
-            <h1 className="text-xl font-semibold mb-1 dark:text-neutral-300">
-              {post.title || (
-                <span className="text-gray-500">(Chưa có tiêu đề)</span>
+          <div className="flex justify-between items-start gap-2">
+            <div className="flex-1 min-w-0">
+              {single ? (
+                <h1 className="text-xl font-semibold mb-1 dark:text-neutral-300">
+                  {post.title || (
+                    <span className="text-gray-500">(Chưa có tiêu đề)</span>
+                  )}
+                </h1>
+              ) : (
+                <Link
+                  href={
+                    "/" +
+                    post.author.username +
+                    "/posts/" +
+                    generatePostSlug(post.id, post.title)
+                  }
+                >
+                  <h1 className="text-xl font-semibold mb-1 dark:text-neutral-300">
+                    {post.title || (
+                      <span className="text-gray-500">Chưa có tiêu đề</span>
+                    )}
+                  </h1>
+                </Link>
               )}
-            </h1>
-          ) : (
-            <Link
-              href={
-                "/" +
-                post.author.username +
-                "/posts/" +
-                generatePostSlug(post.id, post.title)
-              }
-            >
-              <h1 className="text-xl font-semibold mb-1 dark:text-neutral-300">
-                {post.title || (
-                  <span className="text-gray-500">Chưa có tiêu đề</span>
-                )}
-              </h1>
-            </Link>
-          )}
+            </div>
+            <div className="pt-1">
+              <Dropdown
+                menu={{ items: menuItems }}
+                trigger={["click"]}
+                placement="bottomRight"
+              >
+                <button className="p-1 rounded-full hover:bg-gray-100 dark:hover:bg-neutral-700 text-gray-500 dark:text-neutral-400">
+                  <MoreHorizontal size={20} />
+                </button>
+              </Dropdown>
+            </div>
+          </div>
           <div
             className="text-base max-w-[600px] overflow-wrap prose mt-[0.75em]"
             dangerouslySetInnerHTML={{
@@ -330,8 +428,8 @@ export default function PostItem({ post, single = false, onVote }) {
                 !post.content || post.content.trim() === ""
                   ? '<span style="color: #9ca3af;">(Chưa có nội dung)</span>'
                   : single
-                  ? wrapIframes(post.content)
-                  : getContentWithReadMore(),
+                    ? wrapIframes(post.content)
+                    : getContentWithReadMore(),
             }}
             onClick={(e) => {
               if (!single && e.target.classList.contains("read-more-link")) {
@@ -353,14 +451,14 @@ export default function PostItem({ post, single = false, onVote }) {
                   fileExt === "pdf"
                     ? "text-red-500"
                     : fileExt === "doc" || fileExt === "docx"
-                    ? "text-blue-500"
-                    : "text-gray-500";
+                      ? "text-blue-500"
+                      : "text-gray-500";
 
                 // Get file size from post.document_sizes if available
                 const fileSize =
                   post.document_sizes && post.document_sizes[index]
                     ? (post.document_sizes[index] / (1024 * 1024)).toFixed(2) +
-                      " MB"
+                    " MB"
                     : fileExt.toUpperCase();
 
                 return (
@@ -451,8 +549,8 @@ export default function PostItem({ post, single = false, onVote }) {
                   {(post.author.verified ||
                     post.author?.profile?.verified === true ||
                     post.author?.profile?.verified === "1") && (
-                    <VerifiedBadge className="inline-verified__badge" />
-                  )}
+                      <VerifiedBadge className="inline-verified__badge" />
+                    )}
                 </Link>
               </>
             )}
