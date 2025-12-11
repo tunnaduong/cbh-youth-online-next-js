@@ -52,7 +52,7 @@ function HomeLayoutContent({
               }`}
           >
             <a href="https://chuyenbienhoa.download?utm_source=cyo_home">
-              <div className="mb-6 w-full shadow rounded-lg overflow-hidden">
+              <div className="mb-6 w-full shadow rounded-lg overflow-hidden md:max-w-[775px] px-3.5">
                 <Image
                   src="/images/mobile-app-download-banner.jpg"
                   alt="Tải ứng dụng Chuyên Biên Hòa Online"
