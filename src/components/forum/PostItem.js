@@ -446,7 +446,7 @@ export default function PostItem({ post, single = false, onVote }) {
                   <Link
                     href={
                       "/" +
-                      post.author.username +
+                      (post.anonymous ? "anonymous" : post.author.username) +
                       "/posts/" +
                       generatePostSlug(post.id, post.title)
                     }
