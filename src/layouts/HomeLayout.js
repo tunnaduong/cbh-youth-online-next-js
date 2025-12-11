@@ -45,12 +45,23 @@ function HomeLayoutContent({
             />
           )}
           <div
-            className={`flex-1 ${
-              loggedIn && !currentUser?.email_verified_at
+            className={`flex-1 ${loggedIn && !currentUser?.email_verified_at
                 ? "mt-[calc(4.3rem+56px)] md:mt-[calc(4.3rem+30px)]"
                 : "mt-[4.3rem]"
-            }`}
+              }`}
           >
+            <a href="https://chuyenbienhoa.download?utm_source=cyo_home">
+              <div className="mb-6 w-full shadow rounded-lg overflow-hidden">
+                <Image
+                  src="/images/mobile-app-download-banner.jpg"
+                  alt="Tải ứng dụng Chuyên Biên Hòa Online"
+                  width={1200}
+                  height={400}
+                  className="w-full h-auto"
+                  priority
+                />
+              </div>
+            </a>
             {children}
           </div>
           {showRightSidebar && (
