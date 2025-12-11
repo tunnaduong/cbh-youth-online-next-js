@@ -10,6 +10,7 @@ import LeftSidebar from "@/components/layout/LeftSidebar";
 import RightSidebar from "@/components/layout/RightSidebar";
 import BottomCTA from "@/components/marketing/BottomCTA";
 import { useAuthContext } from "@/contexts/Support";
+import Image from "next/image";
 
 function HomeLayoutContent({
   children,
@@ -46,8 +47,8 @@ function HomeLayoutContent({
           )}
           <div
             className={`flex-1 ${loggedIn && !currentUser?.email_verified_at
-                ? "mt-[calc(4.3rem+56px)] md:mt-[calc(4.3rem+30px)]"
-                : "mt-[4.3rem]"
+              ? "mt-[calc(4.3rem+56px)] md:mt-[calc(4.3rem+30px)]"
+              : "mt-[4.3rem]"
               }`}
           >
             <a href="https://chuyenbienhoa.download?utm_source=cyo_home">
