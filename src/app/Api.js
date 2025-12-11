@@ -46,7 +46,7 @@ export const deletePost = (id) => {
 };
 
 export const updatePost = (id, params) => {
-  return Api.putRequest("/v1.0/topics/" + id, params);
+  return Api.postFormDataRequest("/v1.0/topics/" + id, params);
 };
 
 export const verifyEmail = (token) => {

@@ -13,10 +13,10 @@ import { FaEye, FaMarkdown, FaEdit } from "react-icons/fa";
 import { FaFileLines } from "react-icons/fa6";
 import { useAuthContext } from "@/contexts/Support";
 import { usePostRefresh } from "@/contexts/PostRefreshContext";
-import { getForumData, createPost } from "@/app/Api";
+import { getForumData, createPost, updatePost, getPostDetail } from "@/app/Api";
 import { useForumData } from "@/contexts/ForumDataContext";
 
-const CreatePostModal = ({ open, onClose }) => {
+const CreatePostModal = ({ open, onClose, isEditMode = false, postData = null }) => {
   const { currentUser } = useAuthContext();
   const { triggerRefresh } = usePostRefresh();
   const { fetchHomeData } = useForumData();
@@ -47,7 +47,37 @@ const CreatePostModal = ({ open, onClose }) => {
           setLoading(false);
         });
     }
-  }, [open, currentUser]);
+
+    // Handle Edit Mode Data Pre-fill
+    if (open && isEditMode && postData) {
+      setLoading(true);
+      getPostDetail(postData.id)
+        .then((response) => {
+          const fetchedPost = response.data.post;
+          setData({
+            title: fetchedPost.title || "",
+            description: fetchedPost.description || fetchedPost.content || "", // Prioritize description (raw content)
+            subforum_id: fetchedPost.subforum_id || null,
+            image_files: [],
+            document_files: [],
+            visibility: fetchedPost.visibility || 0,
+            privacy: fetchedPost.privacy || "public",
+            anonymous: fetchedPost.anonymous || false,
+          });
+          setSelectedSubforum(fetchedPost.subforum_id || null);
+          setSelectedVisibility(fetchedPost.privacy || "public");
+          setLoading(false);
+        })
+        .catch((error) => {
+          console.error("Error fetching post details:", error);
+          message.error("Không thể tải chi tiết bài viết");
+          setLoading(false);
+          onClose();
+        });
+    } else if (open && !isEditMode) {
+      reset(); // Reset if opening fresh
+    }
+  }, [open, currentUser, isEditMode, postData]);
 
   // Replace useForm with regular state management
   const [data, setData] = useState({
@@ -181,6 +211,14 @@ const CreatePostModal = ({ open, onClose }) => {
       formData.append("privacy", data.privacy);
       formData.append("anonymous", data.anonymous ? "1" : "0");
 
+      if (isEditMode) {
+        // For updates, often we need to specify method if backend requires it for FormData
+        // However, if the server doesn't support PUT on the route, we might try POST without _method,
+        // OR we need to find the correct route. For now, we assume _method="PUT" is standard for Laravel update via POST.
+        // If 405 persists, the backend route configuration might need adjustment or is different.
+        formData.append("_method", "PUT");
+      }
+
       // Add image files
       imageFiles.forEach((file, index) => {
         formData.append(`image_files[${index}]`, file);
@@ -192,11 +230,16 @@ const CreatePostModal = ({ open, onClose }) => {
       });
 
       // Make API call
-      const response = await createPost(formData);
+      let response;
+      if (isEditMode && postData && postData.id) {
+        response = await updatePost(postData.id, formData);
+      } else {
+        response = await createPost(formData);
+      }
 
-      if (response.status === 201) {
-        console.log("Success: Post created", response.data);
-        message.success("Bài viết đã được tạo thành công!");
+      if (response.status === 201 || (isEditMode && response.status === 200)) {
+        console.log(`Success: Post ${isEditMode ? 'updated' : 'created'}`, response.data);
+        message.success(`Bài viết đã được ${isEditMode ? 'cập nhật' : 'tạo'} thành công!`);
         reset();
         setSelectedSubforum(null);
         setImageFiles([]);
@@ -211,7 +254,7 @@ const CreatePostModal = ({ open, onClose }) => {
         throw new Error("Unexpected response status");
       }
     } catch (error) {
-      console.error("Error creating post:", error);
+      console.error(`Error ${isEditMode ? 'updating' : 'creating'} post:`, error);
       setProcessing(false);
 
       if (error.response?.data?.message) {
@@ -222,7 +265,7 @@ const CreatePostModal = ({ open, onClose }) => {
         setErrors(errors);
         message.error("Vui lòng kiểm tra lại thông tin đã nhập");
       } else {
-        message.error("Có lỗi xảy ra khi tạo bài viết. Vui lòng thử lại sau.");
+        message.error(`Có lỗi xảy ra khi ${isEditMode ? 'cập nhật' : 'tạo'} bài viết. Vui lòng thử lại sau.`);
       }
     }
   };
@@ -402,7 +445,7 @@ const CreatePostModal = ({ open, onClose }) => {
         <div>
           <div className="flex flex-row justify-center items-center pb-[34px] relative">
             <h1 className="text-lg font-bold text-center absolute -top-1.5">
-              Tạo cuộc thảo luận
+              {isEditMode ? 'Chỉnh sửa bài viết' : 'Tạo cuộc thảo luận'}
             </h1>
           </div>
           <hr className="absolute right-0 left-0 w-full" />
@@ -480,8 +523,8 @@ const CreatePostModal = ({ open, onClose }) => {
                     {selectedVisibility === "public"
                       ? "Công khai"
                       : selectedVisibility === "followers"
-                      ? "Chỉ người theo dõi"
-                      : "Chỉ mình tôi"}
+                        ? "Chỉ người theo dõi"
+                        : "Chỉ mình tôi"}
                   </span>
                   <IoCaretDown className="text-[9px] mt-[1px]" />
                 </button>
@@ -795,7 +838,7 @@ const CreatePostModal = ({ open, onClose }) => {
               disabled={processing}
               onClick={handleSubmit}
             >
-              {processing ? "Đang đăng..." : "Đăng"}
+              {processing ? (isEditMode ? "Đang cập nhật..." : "Đang đăng...") : (isEditMode ? "Cập nhật" : "Đăng")}
             </CustomColorButton>
           </form>
         </div>

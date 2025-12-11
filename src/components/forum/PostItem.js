@@ -15,13 +15,12 @@ import { ReactPhotoCollage } from "react-photo-collage";
 import VerifiedBadge from "@/components/ui/Badges";
 import getCollageSetting from "@/utils/getCollageSetting";
 import { useState, useEffect } from "react";
-import { Button, ConfigProvider, message, Tooltip, Dropdown, Modal, Input } from "antd";
+import { Button, ConfigProvider, message, Tooltip, Dropdown, Modal } from "antd";
 import { useRouter } from "@bprogress/next/app";
 import {
   savePost as savePostApi,
   unsavePost as unsavePostApi,
   deletePost,
-  updatePost,
 } from "@/app/Api";
 import {
   MoreHorizontal,
@@ -31,6 +30,7 @@ import {
   Flag,
 } from "lucide-react";
 import { usePostRefresh } from "@/contexts/PostRefreshContext";
+import CreatePostModal from "../modals/CreatePostModal";
 
 export default function PostItem({ post, single = false, onVote }) {
   const { currentUser } = useAuthContext();
@@ -45,11 +45,7 @@ export default function PostItem({ post, single = false, onVote }) {
   const router = useRouter();
 
   const { triggerRefresh } = usePostRefresh();
-
-  const [isEditing, setIsEditing] = useState(false);
-  const [editTitle, setEditTitle] = useState("");
-  const [editContent, setEditContent] = useState("");
-  const [isUpdating, setIsUpdating] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
 
   useEffect(() => {
     setIsSaved(!!(post.is_saved || post.saved));
@@ -212,42 +208,7 @@ export default function PostItem({ post, single = false, onVote }) {
   };
 
   const handleEdit = () => {
-    setIsEditing(true);
-    setEditTitle(post.title || "");
-    setEditContent(post.description || post.content || "");
-  };
-
-  const handleCancelEdit = () => {
-    setIsEditing(false);
-    setEditTitle("");
-    setEditContent("");
-  };
-
-  const handleSaveEdit = async () => {
-    if (!editTitle.trim()) {
-      message.error("Tiêu đề không được để trống");
-      return;
-    }
-    if (!editContent.trim()) {
-      message.error("Nội dung không được để trống");
-      return;
-    }
-
-    setIsUpdating(true);
-    try {
-      await updatePost(post.id, {
-        title: editTitle,
-        description: editContent,
-      });
-      message.success("Cập nhật bài viết thành công");
-      setIsEditing(false);
-      triggerRefresh();
-      router.refresh();
-    } catch (error) {
-      message.error("Có lỗi xảy ra khi cập nhật bài viết");
-    } finally {
-      setIsUpdating(false);
-    }
+    setShowEditModal(true);
   };
 
   const handleDelete = () => {
@@ -427,91 +388,58 @@ export default function PostItem({ post, single = false, onVote }) {
         </div>
         <div className="flex-1 overflow-hidden break-words">
           <div className="flex justify-between items-start gap-2">
-            {isEditing ? (
-              <Input
-                value={editTitle}
-                onChange={(e) => setEditTitle(e.target.value)}
-                className="text-xl font-semibold mb-1 dark:bg-neutral-800 dark:text-neutral-300"
-                placeholder="Tiêu đề bài viết"
-              />
-            ) : (
-              <div className="flex-1 min-w-0">
-                {single ? (
+            <div className="flex-1 min-w-0">
+              {single ? (
+                <h1 className="text-xl font-semibold mb-1 dark:text-neutral-300">
+                  {post.title || (
+                    <span className="text-gray-500">(Chưa có tiêu đề)</span>
+                  )}
+                </h1>
+              ) : (
+                <Link
+                  href={
+                    "/" +
+                    (post.anonymous ? "anonymous" : post.author.username) +
+                    "/posts/" +
+                    generatePostSlug(post.id, post.title)
+                  }
+                >
                   <h1 className="text-xl font-semibold mb-1 dark:text-neutral-300">
                     {post.title || (
-                      <span className="text-gray-500">(Chưa có tiêu đề)</span>
+                      <span className="text-gray-500">Chưa có tiêu đề</span>
                     )}
                   </h1>
-                ) : (
-                  <Link
-                    href={
-                      "/" +
-                      (post.anonymous ? "anonymous" : post.author.username) +
-                      "/posts/" +
-                      generatePostSlug(post.id, post.title)
-                    }
-                  >
-                    <h1 className="text-xl font-semibold mb-1 dark:text-neutral-300">
-                      {post.title || (
-                        <span className="text-gray-500">Chưa có tiêu đề</span>
-                      )}
-                    </h1>
-                  </Link>
-                )}
-              </div>
-            )}
+                </Link>
+              )}
+            </div>
             <div className="pt-1">
               <Dropdown
-                menu={{ items: isEditing ? [] : menuItems }}
+                menu={{ items: menuItems }}
                 trigger={["click"]}
                 placement="bottomRight"
-                disabled={isEditing}
               >
-                <button className={`p-1 rounded-full hover:bg-gray-100 dark:hover:bg-neutral-700 text-gray-500 dark:text-neutral-400 ${isEditing ? 'opacity-50 cursor-not-allowed' : ''}`}>
+                <button className="p-1 rounded-full hover:bg-gray-100 dark:hover:bg-neutral-700 text-gray-500 dark:text-neutral-400">
                   <MoreHorizontal size={20} />
                 </button>
               </Dropdown>
             </div>
           </div>
-          {isEditing ? (
-            <div className="mt-[0.75em]">
-              <Input.TextArea
-                value={editContent}
-                onChange={(e) => setEditContent(e.target.value)}
-                rows={10}
-                className="mb-3 dark:bg-neutral-800 dark:text-neutral-300"
-                placeholder="Nội dung bài viết"
-              />
-              <div className="flex justify-end gap-2">
-                <Button onClick={handleCancelEdit}>Hủy</Button>
-                <Button
-                  type="primary"
-                  loading={isUpdating}
-                  onClick={handleSaveEdit}
-                  className="bg-[#318527] hover:!bg-[#266a1e]"
-                >
-                  Lưu
-                </Button>
-              </div>
-            </div>
-          ) : (
-            <div
-              className="text-base max-w-[600px] overflow-wrap prose mt-[0.75em]"
-              dangerouslySetInnerHTML={{
-                __html:
-                  !post.content || post.content.trim() === ""
-                    ? '<span style="color: #9ca3af;">(Chưa có nội dung)</span>'
-                    : single
-                      ? wrapIframes(post.content)
-                      : getContentWithReadMore(),
-              }}
-              onClick={(e) => {
-                if (!single && e.target.classList.contains("read-more-link")) {
-                  toggleShowFullContent(e);
-                }
-              }}
-            />
-          )}
+          <div
+            className="text-base max-w-[600px] overflow-wrap prose mt-[0.75em]"
+            dangerouslySetInnerHTML={{
+              __html:
+                !post.content || post.content.trim() === ""
+                  ? '<span style="color: #9ca3af;">(Chưa có nội dung)</span>'
+                  : single
+                    ? wrapIframes(post.content)
+                    : getContentWithReadMore(),
+            }}
+            onClick={(e) => {
+              if (!single && e.target.classList.contains("read-more-link")) {
+                toggleShowFullContent(e);
+              }
+            }}
+          />
 
           {post.document_urls && post.document_urls.length > 0 && (
             <div className="flex flex-wrap gap-2 mt-3">
@@ -677,6 +605,12 @@ export default function PostItem({ post, single = false, onVote }) {
           </div>
         </div>
       </div>
+      <CreatePostModal
+        open={showEditModal}
+        onClose={() => setShowEditModal(false)}
+        isEditMode={true}
+        postData={post}
+      />
     </div>
   );
 }
