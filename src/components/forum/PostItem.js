@@ -32,7 +32,7 @@ import {
 import { usePostRefresh } from "@/contexts/PostRefreshContext";
 import CreatePostModal from "../modals/CreatePostModal";
 
-export default function PostItem({ post, single = false, onVote }) {
+export default function PostItem({ post, single = false, onVote, onRefresh = null }) {
   const { currentUser } = useAuthContext();
   const [showFullContent, setShowFullContent] = useState(false);
   const [isSaved, setIsSaved] = useState(!!(post.is_saved || post.saved));
@@ -256,7 +256,8 @@ export default function PostItem({ post, single = false, onVote }) {
   if (
     currentUser &&
     (currentUser.username === post.author.username ||
-      currentUser.role === "admin")
+      currentUser.role === "admin" ||
+      post.is_owner)
   ) {
     menuItems.push({
       key: "edit",
@@ -610,6 +611,14 @@ export default function PostItem({ post, single = false, onVote }) {
         onClose={() => setShowEditModal(false)}
         isEditMode={true}
         postData={post}
+        onSuccess={() => {
+          if (onRefresh) {
+            onRefresh();
+          } else {
+            router.refresh();
+          }
+          triggerRefresh();
+        }}
       />
     </div>
   );

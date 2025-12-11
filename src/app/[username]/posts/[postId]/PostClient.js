@@ -305,13 +305,13 @@ export default function PostClient({ params, initialPost = null }) {
       is_anonymous: isAnonymous,
       author: isAnonymous
         ? {
-            username: "Người dùng ẩn danh",
-            profile_name: "Người dùng ẩn danh",
-          }
+          username: "Người dùng ẩn danh",
+          profile_name: "Người dùng ẩn danh",
+        }
         : {
-            username: currentUser?.username,
-            profile_name: currentUser?.profile_name || currentUser?.username,
-          },
+          username: currentUser?.username,
+          profile_name: currentUser?.profile_name || currentUser?.username,
+        },
       created_at: "vài giây trước",
       votes: [],
       replies: [],
@@ -466,13 +466,13 @@ export default function PostClient({ params, initialPost = null }) {
       is_anonymous: isAnonymous,
       author: isAnonymous
         ? {
-            username: "Người dùng ẩn danh",
-            profile_name: "Người dùng ẩn danh",
-          }
+          username: "Người dùng ẩn danh",
+          profile_name: "Người dùng ẩn danh",
+        }
         : {
-            username: currentUser?.username,
-            profile_name: currentUser?.profile_name || currentUser?.username,
-          },
+          username: currentUser?.username,
+          profile_name: currentUser?.profile_name || currentUser?.username,
+        },
       created_at: "vài giây trước",
       votes: [],
       replies: [],
@@ -569,7 +569,7 @@ export default function PostClient({ params, initialPost = null }) {
       deleted_parent_username: commentToDelete.is_anonymous
         ? "Người dùng ẩn danh"
         : commentToDelete.author.profile_name ||
-          commentToDelete.author.username,
+        commentToDelete.author.username,
     }));
 
     // Get username of the deleted comment for notification
@@ -636,8 +636,21 @@ export default function PostClient({ params, initialPost = null }) {
     } catch (error) {
       // Revert the optimistic update on error
       setComments(originalComments);
+      setComments(originalComments);
       message.error("Có lỗi xảy ra khi xóa bình luận. Vui lòng thử lại.");
       console.error("Comment delete error:", error);
+    }
+  };
+
+  const handleRefreshPost = async () => {
+    try {
+      const numericId = extractNumericId(params.postId);
+      const response = await getPostDetail(numericId);
+      const data = response.data;
+      setPost(data);
+      if (data.comments) setComments(data.comments);
+    } catch (err) {
+      console.error("Refresh failed", err);
     }
   };
 
@@ -718,7 +731,7 @@ export default function PostClient({ params, initialPost = null }) {
 
   return (
     <div className="px-1 xl:min-h-screen pt-6">
-      <PostItem post={post.post} single={true} onVote={handleVote} />
+      <PostItem post={post.post} single={true} onVote={handleVote} onRefresh={handleRefreshPost} />
       <div className="px-1.5 md:px-0 md:max-w-[775px] mx-auto w-full mb-4">
         <div className="shadow !mb-4 long-shadow h-min rounded-lg bg-white post-comment-container overflow-clip">
           <div className="flex flex-col space-y-1.5 p-6 text-xl -mb-4 dark:text-neutral-300 font-semibold max-w-sm overflow-hidden whitespace-nowrap overflow-ellipsis">

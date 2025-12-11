@@ -16,7 +16,7 @@ import { usePostRefresh } from "@/contexts/PostRefreshContext";
 import { getForumData, createPost, updatePost, getPostDetail } from "@/app/Api";
 import { useForumData } from "@/contexts/ForumDataContext";
 
-const CreatePostModal = ({ open, onClose, isEditMode = false, postData = null }) => {
+const CreatePostModal = ({ open, onClose, isEditMode = false, postData = null, onSuccess = null }) => {
   const { currentUser } = useAuthContext();
   const { triggerRefresh } = usePostRefresh();
   const { fetchHomeData } = useForumData();
@@ -57,6 +57,8 @@ const CreatePostModal = ({ open, onClose, isEditMode = false, postData = null })
           setData({
             title: fetchedPost.title || "",
             description: fetchedPost.description || fetchedPost.content || "", // Prioritize description (raw content)
+            title: fetchedPost.title || "",
+            description: fetchedPost.description || fetchedPost.content || "", // Prioritize description (raw content)
             subforum_id: fetchedPost.subforum_id || null,
             image_files: [],
             document_files: [],
@@ -64,6 +66,8 @@ const CreatePostModal = ({ open, onClose, isEditMode = false, postData = null })
             privacy: fetchedPost.privacy || "public",
             anonymous: fetchedPost.anonymous || false,
           });
+          setExistingImages(fetchedPost.images || []);
+          setExistingDocuments(fetchedPost.documents || []);
           setSelectedSubforum(fetchedPost.subforum_id || null);
           setSelectedVisibility(fetchedPost.privacy || "public");
           setLoading(false);
@@ -90,6 +94,8 @@ const CreatePostModal = ({ open, onClose, isEditMode = false, postData = null })
     privacy: "public", // public, followers, private
     anonymous: false, // false: normal post, true: anonymous post
   });
+  const [existingImages, setExistingImages] = useState([]);
+  const [existingDocuments, setExistingDocuments] = useState([]);
   const [processing, setProcessing] = useState(false);
   const [errors, setErrors] = useState({});
   const [isPreviewMode, setIsPreviewMode] = useState(false);
@@ -164,6 +170,8 @@ const CreatePostModal = ({ open, onClose, isEditMode = false, postData = null })
       privacy: "public",
       anonymous: false,
     });
+    setExistingImages([]);
+    setExistingDocuments([]);
     setErrors({});
     setImageFiles([]);
     setImagePreviews([]);
@@ -212,10 +220,11 @@ const CreatePostModal = ({ open, onClose, isEditMode = false, postData = null })
       formData.append("anonymous", data.anonymous ? "1" : "0");
 
       if (isEditMode) {
+        // Pass the list of IDs we want to KEEP
+        formData.append("kept_image_ids", existingImages.map(img => img.id).join(','));
+        formData.append("kept_document_ids", existingDocuments.map(doc => doc.id).join(','));
+
         // For updates, often we need to specify method if backend requires it for FormData
-        // However, if the server doesn't support PUT on the route, we might try POST without _method,
-        // OR we need to find the correct route. For now, we assume _method="PUT" is standard for Laravel update via POST.
-        // If 405 persists, the backend route configuration might need adjustment or is different.
         formData.append("_method", "PUT");
       }
 
@@ -248,7 +257,11 @@ const CreatePostModal = ({ open, onClose, isEditMode = false, postData = null })
         setProcessing(false);
 
         // Trigger refresh of posts after successful creation
-        triggerRefresh(); // This will trigger ForumDataProvider to refresh
+        if (onSuccess) {
+          onSuccess();
+        } else {
+          triggerRefresh(); // This will trigger ForumDataProvider to refresh
+        }
         onClose();
       } else {
         throw new Error("Unexpected response status");
@@ -664,8 +677,9 @@ const CreatePostModal = ({ open, onClose, isEditMode = false, postData = null })
               </div>
             </div>
 
-            {imagePreviews.length > 0 && (
-              <div className="grid grid-cols-4 gap-2">
+            {/* Images: New and Existing */}
+            {(imagePreviews.length > 0 || existingImages.length > 0) && (
+              <div className="grid grid-cols-4 gap-2 mb-4">
                 {imagePreviews.map((preview, index) => (
                   <div key={preview.id} className="relative">
                     <img
@@ -678,19 +692,26 @@ const CreatePostModal = ({ open, onClose, isEditMode = false, postData = null })
                       onClick={() => removeImage(index)}
                       className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center hover:bg-red-600 transition-colors"
                     >
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth={2}
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        className="w-4 h-4"
-                      >
-                        <path d="M3 6h18" />
-                        <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
-                        <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
+                        <path d="M18 6 6 18" /><path d="m6 6 12 12" />
+                      </svg>
+                    </button>
+                  </div>
+                ))}
+                {existingImages.map((img) => (
+                  <div key={`existing-${img.id}`} className="relative">
+                    <img
+                      src={img.url}
+                      alt="Existing"
+                      className="border rounded-md dark:!border-neutral-500 w-full h-24 object-cover"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setExistingImages(prev => prev.filter(item => item.id !== img.id))}
+                      className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center hover:bg-red-600 transition-colors"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
+                        <path d="M18 6 6 18" /><path d="m6 6 12 12" />
                       </svg>
                     </button>
                   </div>
@@ -698,53 +719,33 @@ const CreatePostModal = ({ open, onClose, isEditMode = false, postData = null })
               </div>
             )}
 
-            {documentFiles.length > 0 && (
-              <div className="flex flex-col gap-2 mt-2">
+            {/* Documents: New and Existing */}
+            {(documentFiles.length > 0 || existingDocuments.length > 0) && (
+              <div className="flex flex-col gap-2 mt-2 mb-4">
                 {documentFiles.map((file, index) => (
-                  <div
-                    key={index}
-                    className="flex items-center justify-between p-2 bg-gray-100 dark:bg-neutral-600 rounded-md"
-                  >
-                    <div className="flex items-center">
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth={2}
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        className="h-4 w-4 mr-2 text-blue-500"
-                      >
-                        <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z" />
-                        <polyline points="14 2 14 8 20 8" />
-                      </svg>
-                      <div className="flex flex-col">
-                        <span className="text-sm truncate max-w-[200px]">
-                          {file.name}
-                        </span>
-                        <span className="text-xs text-gray-500">
-                          {(file.size / (1024 * 1024)).toFixed(2)} MB
-                        </span>
-                      </div>
+                  <div key={`new-doc-${index}`} className="flex items-center justify-between p-2 bg-gray-100 dark:bg-neutral-600 rounded-md">
+                    <div className="flex items-center overflow-hidden">
+                      <FaFileLines size={16} className="text-blue-500 mr-2 flex-shrink-0" />
+                      <span className="text-sm truncate">{file.name}</span>
+                      <span className="text-xs text-gray-500 ml-2">({(file.size / 1024 / 1024).toFixed(2)} MB)</span>
                     </div>
-                    <button
-                      onClick={() => removeDocument(index)}
-                      className="text-red-500 hover:text-red-700"
-                    >
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth={2}
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        className="h-4 w-4"
-                      >
-                        <path d="M3 6h18" />
-                        <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
-                        <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
+                    <button type="button" onClick={() => removeDocument(index)} className="text-red-500 hover:text-red-700 ml-2">
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
+                        <path d="M18 6 6 18" /><path d="m6 6 12 12" />
+                      </svg>
+                    </button>
+                  </div>
+                ))}
+                {existingDocuments.map((doc) => (
+                  <div key={`existing-doc-${doc.id}`} className="flex items-center justify-between p-2 bg-gray-100 dark:bg-neutral-600 rounded-md">
+                    <div className="flex items-center overflow-hidden">
+                      <FaFileLines size={16} className="text-blue-500 mr-2 flex-shrink-0" />
+                      <span className="text-sm truncate">{doc.name || 'Tài liệu'}</span>
+                      <span className="text-xs text-gray-500 ml-2">({doc.size ? (doc.size / 1024 / 1024).toFixed(2) : 0} MB)</span>
+                    </div>
+                    <button type="button" onClick={() => setExistingDocuments(prev => prev.filter(item => item.id !== doc.id))} className="text-red-500 hover:text-red-700 ml-2">
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
+                        <path d="M18 6 6 18" /><path d="m6 6 12 12" />
                       </svg>
                     </button>
                   </div>
@@ -840,9 +841,9 @@ const CreatePostModal = ({ open, onClose, isEditMode = false, postData = null })
             >
               {processing ? (isEditMode ? "Đang cập nhật..." : "Đang đăng...") : (isEditMode ? "Cập nhật" : "Đăng")}
             </CustomColorButton>
-          </form>
-        </div>
-      </Modal>
+          </form >
+        </div >
+      </Modal >
     </>
   );
 };
