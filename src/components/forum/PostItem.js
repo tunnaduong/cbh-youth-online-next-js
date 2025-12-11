@@ -15,12 +15,13 @@ import { ReactPhotoCollage } from "react-photo-collage";
 import VerifiedBadge from "@/components/ui/Badges";
 import getCollageSetting from "@/utils/getCollageSetting";
 import { useState, useEffect } from "react";
-import { Button, ConfigProvider, message, Tooltip, Dropdown, Modal } from "antd";
+import { Button, ConfigProvider, message, Tooltip, Dropdown, Modal, Input } from "antd";
 import { useRouter } from "@bprogress/next/app";
 import {
   savePost as savePostApi,
   unsavePost as unsavePostApi,
   deletePost,
+  updatePost,
 } from "@/app/Api";
 import {
   MoreHorizontal,
@@ -42,7 +43,13 @@ export default function PostItem({ post, single = false, onVote }) {
   const votesCount =
     post?.votes?.reduce((sum, v) => sum + v.vote_value, 0) || 0;
   const router = useRouter();
+
   const { triggerRefresh } = usePostRefresh();
+
+  const [isEditing, setIsEditing] = useState(false);
+  const [editTitle, setEditTitle] = useState("");
+  const [editContent, setEditContent] = useState("");
+  const [isUpdating, setIsUpdating] = useState(false);
 
   useEffect(() => {
     setIsSaved(!!(post.is_saved || post.saved));
@@ -205,7 +212,42 @@ export default function PostItem({ post, single = false, onVote }) {
   };
 
   const handleEdit = () => {
-    message.info("Tính năng đang phát triển");
+    setIsEditing(true);
+    setEditTitle(post.title || "");
+    setEditContent(post.description || post.content || "");
+  };
+
+  const handleCancelEdit = () => {
+    setIsEditing(false);
+    setEditTitle("");
+    setEditContent("");
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editTitle.trim()) {
+      message.error("Tiêu đề không được để trống");
+      return;
+    }
+    if (!editContent.trim()) {
+      message.error("Nội dung không được để trống");
+      return;
+    }
+
+    setIsUpdating(true);
+    try {
+      await updatePost(post.id, {
+        title: editTitle,
+        description: editContent,
+      });
+      message.success("Cập nhật bài viết thành công");
+      setIsEditing(false);
+      triggerRefresh();
+      router.refresh();
+    } catch (error) {
+      message.error("Có lỗi xảy ra khi cập nhật bài viết");
+    } finally {
+      setIsUpdating(false);
+    }
   };
 
   const handleDelete = () => {
@@ -288,10 +330,10 @@ export default function PostItem({ post, single = false, onVote }) {
             </Button>
             <span
               className={`select-none text-lg vote-count ${myVote === 1
-                  ? "text-primary-500"
-                  : myVote === -1
-                    ? "text-red-600"
-                    : "text-gray-400"
+                ? "text-primary-500"
+                : myVote === -1
+                  ? "text-red-600"
+                  : "text-gray-400"
                 }`}
             >
               {votesCount}
@@ -327,8 +369,8 @@ export default function PostItem({ post, single = false, onVote }) {
               onClick={handleSavePost}
               aria-label={isSaved ? "Bỏ lưu bài viết" : "Lưu bài viết"}
               className={`border-0 rounded-lg w-[33.6px] h-[33.6px] md:mt-3 flex items-center justify-center dark:bg-neutral-500 dark:hover:!bg-neutral-600 ${isSaved
-                  ? "bg-green-100 hover:!bg-green-200"
-                  : "bg-[#EAEAEA] hover:!bg-[#e1e2e4]"
+                ? "bg-green-100 hover:!bg-green-200"
+                : "bg-[#EAEAEA] hover:!bg-[#e1e2e4]"
                 }`}
             >
               <Bookmark
@@ -385,58 +427,91 @@ export default function PostItem({ post, single = false, onVote }) {
         </div>
         <div className="flex-1 overflow-hidden break-words">
           <div className="flex justify-between items-start gap-2">
-            <div className="flex-1 min-w-0">
-              {single ? (
-                <h1 className="text-xl font-semibold mb-1 dark:text-neutral-300">
-                  {post.title || (
-                    <span className="text-gray-500">(Chưa có tiêu đề)</span>
-                  )}
-                </h1>
-              ) : (
-                <Link
-                  href={
-                    "/" +
-                    post.author.username +
-                    "/posts/" +
-                    generatePostSlug(post.id, post.title)
-                  }
-                >
+            {isEditing ? (
+              <Input
+                value={editTitle}
+                onChange={(e) => setEditTitle(e.target.value)}
+                className="text-xl font-semibold mb-1 dark:bg-neutral-800 dark:text-neutral-300"
+                placeholder="Tiêu đề bài viết"
+              />
+            ) : (
+              <div className="flex-1 min-w-0">
+                {single ? (
                   <h1 className="text-xl font-semibold mb-1 dark:text-neutral-300">
                     {post.title || (
-                      <span className="text-gray-500">Chưa có tiêu đề</span>
+                      <span className="text-gray-500">(Chưa có tiêu đề)</span>
                     )}
                   </h1>
-                </Link>
-              )}
-            </div>
+                ) : (
+                  <Link
+                    href={
+                      "/" +
+                      post.author.username +
+                      "/posts/" +
+                      generatePostSlug(post.id, post.title)
+                    }
+                  >
+                    <h1 className="text-xl font-semibold mb-1 dark:text-neutral-300">
+                      {post.title || (
+                        <span className="text-gray-500">Chưa có tiêu đề</span>
+                      )}
+                    </h1>
+                  </Link>
+                )}
+              </div>
+            )}
             <div className="pt-1">
               <Dropdown
-                menu={{ items: menuItems }}
+                menu={{ items: isEditing ? [] : menuItems }}
                 trigger={["click"]}
                 placement="bottomRight"
+                disabled={isEditing}
               >
-                <button className="p-1 rounded-full hover:bg-gray-100 dark:hover:bg-neutral-700 text-gray-500 dark:text-neutral-400">
+                <button className={`p-1 rounded-full hover:bg-gray-100 dark:hover:bg-neutral-700 text-gray-500 dark:text-neutral-400 ${isEditing ? 'opacity-50 cursor-not-allowed' : ''}`}>
                   <MoreHorizontal size={20} />
                 </button>
               </Dropdown>
             </div>
           </div>
-          <div
-            className="text-base max-w-[600px] overflow-wrap prose mt-[0.75em]"
-            dangerouslySetInnerHTML={{
-              __html:
-                !post.content || post.content.trim() === ""
-                  ? '<span style="color: #9ca3af;">(Chưa có nội dung)</span>'
-                  : single
-                    ? wrapIframes(post.content)
-                    : getContentWithReadMore(),
-            }}
-            onClick={(e) => {
-              if (!single && e.target.classList.contains("read-more-link")) {
-                toggleShowFullContent(e);
-              }
-            }}
-          />
+          {isEditing ? (
+            <div className="mt-[0.75em]">
+              <Input.TextArea
+                value={editContent}
+                onChange={(e) => setEditContent(e.target.value)}
+                rows={10}
+                className="mb-3 dark:bg-neutral-800 dark:text-neutral-300"
+                placeholder="Nội dung bài viết"
+              />
+              <div className="flex justify-end gap-2">
+                <Button onClick={handleCancelEdit}>Hủy</Button>
+                <Button
+                  type="primary"
+                  loading={isUpdating}
+                  onClick={handleSaveEdit}
+                  className="bg-[#318527] hover:!bg-[#266a1e]"
+                >
+                  Lưu
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <div
+              className="text-base max-w-[600px] overflow-wrap prose mt-[0.75em]"
+              dangerouslySetInnerHTML={{
+                __html:
+                  !post.content || post.content.trim() === ""
+                    ? '<span style="color: #9ca3af;">(Chưa có nội dung)</span>'
+                    : single
+                      ? wrapIframes(post.content)
+                      : getContentWithReadMore(),
+              }}
+              onClick={(e) => {
+                if (!single && e.target.classList.contains("read-more-link")) {
+                  toggleShowFullContent(e);
+                }
+              }}
+            />
+          )}
 
           {post.document_urls && post.document_urls.length > 0 && (
             <div className="flex flex-wrap gap-2 mt-3">
