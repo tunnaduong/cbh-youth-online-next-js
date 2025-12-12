@@ -257,7 +257,7 @@ export default function PostItem({ post, single = false, onVote, onRefresh = nul
     currentUser &&
     (currentUser.username === post.author.username ||
       currentUser.role === "admin" ||
-      post.is_owner)
+      (post.anonymous && post.is_owner))
   ) {
     menuItems.push({
       key: "edit",
