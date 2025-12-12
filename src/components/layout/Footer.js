@@ -96,7 +96,7 @@ export default function Footer() {
               </li>
               <li>
                 <Link
-                  href="/forum/hoc-tap/ebook-giao-trinh"
+                  href="/forum/hoc-tap/tai-lieu-hoc-tap"
                   className="hover:text-[#319527]"
                 >
                   Tài liệu ôn thi
