@@ -41,6 +41,8 @@ import {
   Trophy,
   People,
   ChatbubbleEllipsesOutline,
+  DocumentOutline,
+  DocumentTextOutline,
 } from "react-ionicons";
 import FileViewer from "react-file-viewer";
 import { useAuthContext, useTopUsersContext, useChatContext } from "@/contexts/Support";
