@@ -160,7 +160,7 @@ export default function ViewMaterialClient({ materialId }) {
 
   if (loading) {
     return (
-      <HomeLayout activeNav="study" activeBar="study" sidebarItems={sidebarItems} sidebarType="all">
+      <HomeLayout activeNav="study" activeBar="study" sidebarItems={sidebarItems} sidebarType="all" showRightSidebar={false}>
         <div className="flex justify-center items-center min-h-screen">
           <Spin size="large" tip="Đang tải tài liệu..." />
         </div>
@@ -170,7 +170,7 @@ export default function ViewMaterialClient({ materialId }) {
 
   if (isUnauthorized) {
     return (
-      <HomeLayout activeNav="study" activeBar="study" sidebarItems={sidebarItems} sidebarType="all">
+      <HomeLayout activeNav="study" activeBar="study" sidebarItems={sidebarItems} sidebarType="all" showRightSidebar={false}>
         <div className="flex flex-col justify-center items-center min-h-screen px-4">
           <Empty description="Bạn không có quyền xem tài liệu này. Vui lòng mua tài liệu trước." />
           <Button
@@ -187,7 +187,7 @@ export default function ViewMaterialClient({ materialId }) {
 
   if (!material) {
     return (
-      <HomeLayout activeNav="study" activeBar="study" sidebarItems={sidebarItems} sidebarType="all">
+      <HomeLayout activeNav="study" activeBar="study" sidebarItems={sidebarItems} sidebarType="all" showRightSidebar={false}>
         <div className="flex justify-center items-center min-h-screen">
           <Empty description="Tài liệu không tồn tại" />
         </div>
