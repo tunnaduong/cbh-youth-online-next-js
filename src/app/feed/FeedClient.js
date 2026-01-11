@@ -6,14 +6,15 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import Lottie from "lottie-react";
 import refresh from "@/assets/refresh.json";
 import { message } from "antd";
-import { useAuthContext } from "@/contexts/Support";
+import { useAuthContext, useTopUsersContext } from "@/contexts/Support";
 import { getFeedPosts, votePost } from "@/app/Api";
 import { useRouter } from "next/navigation";
 import SkeletonPost from "@/components/home/skeletonPost";
 import { useViewTracking } from "@/hooks/useViewTracking";
 
 export default function FeedClient() {
-  const { currentUser, loggedIn } = useAuthContext();
+  const { currentUser, loggedIn, refreshUser } = useAuthContext();
+  const { fetchTopUsers } = useTopUsersContext();
   const router = useRouter();
   const [posts, setPosts] = useState([]);
   const [pagination, setPagination] = useState({
@@ -200,11 +201,17 @@ export default function FeedClient() {
     );
 
     // Call API to vote
-    votePost(postId, { vote_value: value }).catch(() => {
-      message.error("Vote thất bại");
-      // Revert the optimistic update on error
-      loadInitialPosts();
-    });
+    votePost(postId, { vote_value: value })
+      .then(() => {
+        // Refresh points and ranking
+        refreshUser();
+        if (fetchTopUsers) fetchTopUsers(true);
+      })
+      .catch(() => {
+        message.error("Vote thất bại");
+        // Revert the optimistic update on error
+        loadInitialPosts();
+      });
   };
 
   //  if initial load then show loading

@@ -21,42 +21,40 @@ export default function RightSidebar({ onHandleCreatePost }) {
   // Get current URL to determine if we're on recordings page
   const isRecordingsPage = pathname.startsWith("/recordings");
 
-  const { loggedIn, currentUser, setCurrentUser } = useAuthContext();
+  const { loggedIn, currentUser, refreshUser } = useAuthContext();
   const { topUsers, loading, error, fetchTopUsers } = useTopUsersContext();
-  const hasFetchedUserData = useRef(false);
-
-  // No need to fetch data here anymore - it's handled by the context
-
-  // Refresh currentUser data if missing total_points or rank (only once)
-  useEffect(() => {
-    const refreshUserData = async () => {
-      if (
-        loggedIn &&
-        currentUser &&
-        (!currentUser.total_points || !currentUser.rank) &&
-        !hasFetchedUserData.current
-      ) {
-        hasFetchedUserData.current = true;
-        try {
-          const response = await getCurrentUser();
-          const userData = response?.data || response;
-          if (userData) {
-            setCurrentUser(userData);
-          }
-        } catch (error) {
-          console.error("Failed to refresh user data:", error);
-        }
-      }
-    };
-
-    refreshUserData();
-  }, [loggedIn, currentUser, setCurrentUser]);
+  const [userStatus, setUserStatus] = useState({ points: 0, rank: null, loading: false });
 
   // Calculate sticky top position based on alert visibility
   const stickyTop =
     loggedIn && !currentUser?.email_verified_at
       ? "calc(69px + 24px + 30px)"
       : "calc(69px + 24px)";
+
+  // Fetch current user status (points and rank) directly from DB on mount
+  useEffect(() => {
+    const fetchUserStatus = async () => {
+      if (loggedIn) {
+        try {
+          setUserStatus(prev => ({ ...prev, loading: true }));
+          const response = await getCurrentUser();
+          const userData = response?.data || response;
+          if (userData) {
+            setUserStatus({
+              points: userData.total_points || 0,
+              rank: userData.rank || null,
+              loading: false
+            });
+          }
+        } catch (err) {
+          console.error("Failed to fetch user status:", err);
+          setUserStatus(prev => ({ ...prev, loading: false }));
+        }
+      }
+    };
+
+    fetchUserStatus();
+  }, [loggedIn]);
 
   const handleCreatePost = useCallback(() => {
     if (!loggedIn) {
@@ -220,9 +218,8 @@ export default function RightSidebar({ onHandleCreatePost }) {
                     <img
                       src={`${process.env.NEXT_PUBLIC_API_URL}/v1.0/users/${currentUser.username}/avatar`}
                       className="w-8 h-8 bg-gray-300 rounded-full border object-cover"
-                      alt={`${
-                        currentUser.profile_name || currentUser.username
-                      } avatar`}
+                      alt={`${currentUser.profile_name || currentUser.username
+                        } avatar`}
                     />
                   </Link>
                   <Link
@@ -232,11 +229,15 @@ export default function RightSidebar({ onHandleCreatePost }) {
                     Bạn
                   </Link>
                   <span className="mr-1.5 text-[#C1C1C1]">
-                    {currentUser.total_points || 0} điểm
+                    {userStatus.loading ? (
+                      <Skeleton.Button active size="small" style={{ width: 40, height: 16 }} />
+                    ) : (
+                      <>{userStatus.points || 0} điểm</>
+                    )}
                   </span>
-                  {currentUser.rank && (
+                  {!userStatus.loading && userStatus.rank && (
                     <span className="text-green-500 font-bold">
-                      #{currentUser.rank}
+                      #{userStatus.rank}
                     </span>
                   )}
                 </div>

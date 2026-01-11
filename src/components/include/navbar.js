@@ -25,6 +25,7 @@ import {
   AppsOutline,
   FlagOutline,
   SearchOutline,
+  BookOutline,
 } from "react-ionicons";
 import { useTheme } from "@/contexts/themeContext";
 import {
@@ -124,21 +125,9 @@ export default function Navbar({ activeNav = null }) {
       ],
     },
     {
-      label: "Báo cáo",
-      icon: FlagOutline,
-      href: "/report",
-      subItems: [
-        {
-          icon: PeopleOutline,
-          href: "/report/class",
-          label: "Báo cáo tập thể lớp",
-        },
-        {
-          icon: PersonOutline,
-          href: "/report/student",
-          label: "Báo cáo học sinh",
-        },
-      ],
+      label: "Tài liệu ôn thi",
+      icon: BookOutline,
+      href: "/explore/study-materials",
     },
     {
       label: "Tra cứu",
@@ -162,7 +151,7 @@ export default function Navbar({ activeNav = null }) {
 
   const menuItems = [
     { name: "Cộng đồng", href: "/", activeNav: "home" },
-    { name: "Báo cáo", href: "/report", activeNav: "report" },
+    { name: "Tài liệu ôn thi", href: "/explore/study-materials", activeNav: "study" },
     { name: "Tra cứu", href: "/lookup", activeNav: "lookup" },
     { name: "Khám phá", href: "/explore", activeNav: "explore" },
   ];
@@ -304,9 +293,8 @@ export default function Navbar({ activeNav = null }) {
             {menuItems.map((item, index) => (
               <Link
                 key={index}
-                className={`xl:flex px-3 py-2 mr-5 dark:text-neutral-300 dark:hover:text-white hidden h-full items-center min-w-max text-center text-sm font-medium transition-colors duration-200 ${
-                  activeNav === item.activeNav ? "nav-active" : ""
-                }`}
+                className={`xl:flex px-3 py-2 mr-5 dark:text-neutral-300 dark:hover:text-white hidden h-full items-center min-w-max text-center text-sm font-medium transition-colors duration-200 ${activeNav === item.activeNav ? "nav-active" : ""
+                  }`}
                 href={item.href}
               >
                 {item.name}
@@ -319,11 +307,10 @@ export default function Navbar({ activeNav = null }) {
           {!loggedIn ? (
             <div className="min-w-max mr-4">
               <Link
-                href={`/login?continue=${
-                  typeof window !== "undefined"
-                    ? encodeURIComponent(window.location.href)
-                    : "/"
-                }`}
+                href={`/login?continue=${typeof window !== "undefined"
+                  ? encodeURIComponent(window.location.href)
+                  : "/"
+                  }`}
                 className="flex items-center gap-x-1 text-sm font-medium transition-colors duration-200 text-[#319527] hover:text-[#3dbb31]"
                 style={{ borderBottom: "3px solid transparent" }}
               >

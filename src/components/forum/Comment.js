@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { useAuthContext } from "@/contexts/Support";
+import { useAuthContext, useTopUsersContext } from "@/contexts/Support";
 // // import { usePage, router } from "@inertiajs/react"; // TODO: Replace with Next.js equivalent // TODO: Replace with Next.js equivalent
 import { Button, ConfigProvider, Input, message, Dropdown, Modal } from "antd";
 import { voteOnComment, destroyCommentVote } from "@/app/Api";
@@ -34,7 +34,8 @@ export default function Comment({
   isLast,
   parentConnectorHovered,
 }) {
-  const { currentUser } = useAuthContext();
+  const { currentUser, refreshUser } = useAuthContext();
+  const { fetchTopUsers } = useTopUsersContext();
   const [isEditing, setIsEditing] = useState(false);
   const [editContent, setEditContent] = useState(comment.content || "");
   const [isPreviewMode, setIsPreviewMode] = useState(false);
@@ -124,6 +125,10 @@ export default function Comment({
         // User is voting or changing their vote
         await voteOnComment(comment.id, { vote_value: voteValue });
       }
+
+      // Refresh points and ranking
+      refreshUser();
+      if (fetchTopUsers) fetchTopUsers(true);
     } catch (error) {
       // Revert the optimistic update on error
       setLocalVotes(localVotes);
@@ -198,11 +203,10 @@ export default function Comment({
       {/* Reddit-style curved connector lines for nested comments */}
       {comment.replies?.length > 0 && !isCollapsed && (
         <div
-          className={`absolute ${
-            isConnectorHovered
+          className={`absolute ${isConnectorHovered
               ? "bg-black dark:!bg-white"
               : "bg-gray-200 dark:!bg-gray-600"
-          }`}
+            }`}
           style={{
             left: "20px",
             top: "40px",
@@ -218,11 +222,10 @@ export default function Comment({
         <div className="absolute" style={{ left: "-12px", top: "7px" }}>
           {/* Curved connector like Reddit */}
           <div
-            className={`box-border h-md border-0 border-tone-4 border-solid border-b-[1px] cursor-pointer w-[12px] border-s-[1px] rounded-es-[12px] ${
-              parentConnectorHovered
+            className={`box-border h-md border-0 border-tone-4 border-solid border-b-[1px] cursor-pointer w-[12px] border-s-[1px] rounded-es-[12px] ${parentConnectorHovered
                 ? "border-black dark:!border-white"
                 : "border-gray-200 dark:!border-gray-600"
-            }`}
+              }`}
             style={{ height: "14px" }}
           />
         </div>
@@ -328,11 +331,10 @@ export default function Comment({
                   <Button
                     size="small"
                     onClick={handleTogglePreview}
-                    className={`flex items-center gap-1 ${
-                      isPreviewMode
+                    className={`flex items-center gap-1 ${isPreviewMode
                         ? "bg-primary-100 dark:bg-primary-900 text-primary-600 dark:text-primary-300"
                         : ""
-                    }`}
+                      }`}
                   >
                     {isPreviewMode ? (
                       <FaEdit className="w-3 h-3" />
@@ -395,23 +397,21 @@ export default function Comment({
                 {/* Vote buttons */}
                 <Button
                   size="small"
-                  className={`h-8 px-2 rounded-full border-0 ${
-                    userVoteValue === 1
+                  className={`h-8 px-2 rounded-full border-0 ${userVoteValue === 1
                       ? "text-primary-500"
                       : "text-gray-500 hover:!text-primary-500"
-                  }`}
+                    }`}
                   onClick={() => handleVote(1)}
                 >
                   <UpvoteIcon />
                 </Button>
                 <span
-                  className={`text-xs font-medium min-w-[1rem] text-center ${
-                    userVoteValue === 1
+                  className={`text-xs font-medium min-w-[1rem] text-center ${userVoteValue === 1
                       ? "text-primary-500"
                       : userVoteValue === -1
-                      ? "text-red-600"
-                      : "text-gray-500 dark:!text-gray-400"
-                  }`}
+                        ? "text-red-600"
+                        : "text-gray-500 dark:!text-gray-400"
+                    }`}
                 >
                   {voteCount}
                 </span>
@@ -428,11 +428,10 @@ export default function Comment({
                   <Button
                     size="small"
                     className={`h-8 px-2 text-gray-500 hover:!text-red-500 hover:!bg-red-50 dark:hover:!bg-[rgba(69,10,10,0.2)] rounded-full
-                    border-0 ${
-                      userVoteValue === -1
+                    border-0 ${userVoteValue === -1
                         ? "text-red-600"
                         : "text-gray-500 hover:!text-red-500"
-                    }`}
+                      }`}
                     onClick={() => handleVote(-1)}
                   >
                     <DownvoteIcon />
@@ -450,7 +449,7 @@ export default function Comment({
                       );
                       router.push(
                         "/login?continue=" +
-                          encodeURIComponent(window.location.href)
+                        encodeURIComponent(window.location.href)
                       );
                     } else {
                       setIsReplying(!isReplying);

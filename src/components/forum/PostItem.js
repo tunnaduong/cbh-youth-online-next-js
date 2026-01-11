@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useAuthContext } from "@/contexts/Support";
+import { useAuthContext, useTopUsersContext } from "@/contexts/Support";
 // import { router, usePage } from "@inertiajs/react"; // TODO: Replace with Next.js equivalent
 import {
   ArrowUpOutline,
@@ -33,7 +33,8 @@ import { usePostRefresh } from "@/contexts/PostRefreshContext";
 import CreatePostModal from "../modals/CreatePostModal";
 
 export default function PostItem({ post, single = false, onVote, onRefresh = null }) {
-  const { currentUser } = useAuthContext();
+  const { currentUser, refreshUser } = useAuthContext();
+  const { fetchTopUsers } = useTopUsersContext();
   const [showFullContent, setShowFullContent] = useState(false);
   const [isSaved, setIsSaved] = useState(!!(post.is_saved || post.saved));
   const maxLength = 300; // Số ký tự tối đa trước khi truncate
@@ -225,6 +226,11 @@ export default function PostItem({ post, single = false, onVote, onRefresh = nul
           message.success("Đã xóa bài viết");
 
           triggerRefresh();
+
+          // Refresh points and ranking
+          refreshUser();
+          if (fetchTopUsers) fetchTopUsers(true);
+
           router.push("/");
           router.refresh();
         } catch (error) {

@@ -30,7 +30,7 @@ export default function ExploreClient() {
       sidebarIcon: Home,
       title: "Trang chủ",
       key: "home",
-      href: "/",
+      href: "/explore",
     },
     {
       icon: BookOutline,

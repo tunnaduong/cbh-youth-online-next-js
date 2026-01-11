@@ -10,8 +10,9 @@ const AuthContext = createContext({
     message: null,
     show: false,
   },
-  setCurrentUser: () => {},
-  setUserToken: () => {},
+  setCurrentUser: () => { },
+  setUserToken: () => { },
+  refreshUser: () => { },
 });
 
 export default AuthContext;

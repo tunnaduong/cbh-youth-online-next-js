@@ -11,13 +11,14 @@ import MarkdownRenderer from "../ui/MarkdownRenderer";
 import { IoEarth, IoCaretDown } from "react-icons/io5";
 import { FaEye, FaMarkdown, FaEdit } from "react-icons/fa";
 import { FaFileLines } from "react-icons/fa6";
-import { useAuthContext } from "@/contexts/Support";
+import { useAuthContext, useTopUsersContext } from "@/contexts/Support";
 import { usePostRefresh } from "@/contexts/PostRefreshContext";
 import { getForumData, createPost, updatePost, getPostDetail } from "@/app/Api";
 import { useForumData } from "@/contexts/ForumDataContext";
 
 const CreatePostModal = ({ open, onClose, isEditMode = false, postData = null, onSuccess = null }) => {
-  const { currentUser } = useAuthContext();
+  const { currentUser, refreshUser } = useAuthContext();
+  const { fetchTopUsers } = useTopUsersContext();
   const { triggerRefresh } = usePostRefresh();
   const { fetchHomeData } = useForumData();
 
@@ -262,6 +263,11 @@ const CreatePostModal = ({ open, onClose, isEditMode = false, postData = null, o
         } else {
           triggerRefresh(); // This will trigger ForumDataProvider to refresh
         }
+
+        // Refresh points and ranking
+        refreshUser();
+        if (fetchTopUsers) fetchTopUsers(true);
+
         onClose();
       } else {
         throw new Error("Unexpected response status");

@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import PropTypes from "prop-types";
 import { AuthContext } from "..";
+import * as Api from "@/app/Api";
 import {
   setAuthCookie,
   getAuthCookie,
@@ -37,6 +38,20 @@ const AuthProvider = ({ children }) => {
     }, 5000);
   };
 
+  const refreshUser = async () => {
+    try {
+      const response = await Api.getCurrentUser();
+      const userData = response?.data || response;
+      if (userData) {
+        setCurrentUser(userData);
+      }
+      return userData;
+    } catch (error) {
+      console.error("Failed to refresh user data:", error);
+      return null;
+    }
+  };
+
   // Retrieve initial values from cookies/localStorage on mount
   useEffect(() => {
     // Migrate token from localStorage to cookies if needed
@@ -50,13 +65,26 @@ const AuthProvider = ({ children }) => {
     }
     if (storedToken) {
       _setUserToken(storedToken);
+      // Fetch fresh user data (including points/rank) from DB on initial load
+      Api.getCurrentUser()
+        .then((response) => {
+          const userData = response?.data || response;
+          if (userData) {
+            setCurrentUser(userData);
+          }
+        })
+        .catch((err) => {
+          console.error("Initial user refresh failed:", err);
+        });
     }
   }, []);
 
   // Update currentUser in localStorage whenever it changes
   useEffect(() => {
     if (currentUser && Object.keys(currentUser).length > 0) {
-      localStorage.setItem("CURRENT_USER", JSON.stringify(currentUser));
+      // Exclude points and rank from localStorage to ensure they are fetched fresh from DB
+      const { total_points, rank, ...persistentUser } = currentUser;
+      localStorage.setItem("CURRENT_USER", JSON.stringify(persistentUser));
     } else {
       // localStorage.removeItem("CURRENT_USER");
     }
@@ -77,6 +105,7 @@ const AuthProvider = ({ children }) => {
         showToast,
         setCurrentUser,
         setUserToken,
+        refreshUser,
       }}
     >
       {children}

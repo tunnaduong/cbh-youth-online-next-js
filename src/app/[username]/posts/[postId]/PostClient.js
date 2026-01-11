@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { useAuthContext } from "@/contexts/Support";
+import { useAuthContext, useTopUsersContext } from "@/contexts/Support";
 import { useForumData } from "@/contexts/ForumDataContext";
 import {
   getPostDetail,
@@ -30,7 +30,8 @@ const extractNumericId = (postId) => {
 };
 
 export default function PostClient({ params, initialPost = null }) {
-  const { currentUser, loggedIn } = useAuthContext();
+  const { currentUser, loggedIn, refreshUser } = useAuthContext();
+  const { fetchTopUsers } = useTopUsersContext();
   const [post, setPost] = useState(initialPost);
   const [comments, setComments] = useState(initialPost?.comments || []);
   const [loading, setLoading] = useState(!initialPost);
@@ -440,6 +441,10 @@ export default function PostClient({ params, initialPost = null }) {
         return updateCommentInTree(prevComments);
       });
       message.success("Đã trả lời bình luận thành công");
+
+      // Refresh points and ranking
+      refreshUser();
+      if (fetchTopUsers) fetchTopUsers(true);
     } catch (error) {
       // Rollback on error
       setComments(originalComments);
@@ -519,6 +524,10 @@ export default function PostClient({ params, initialPost = null }) {
       });
 
       message.success("Bình luận đã được đăng thành công");
+
+      // Refresh points and ranking
+      refreshUser();
+      if (fetchTopUsers) fetchTopUsers(true);
     } catch (error) {
       // Xóa placeholder khi có lỗi
       setComments((prev) =>
@@ -633,6 +642,10 @@ export default function PostClient({ params, initialPost = null }) {
     try {
       await destroyComment(commentId);
       message.success("Bình luận đã được xóa thành công");
+
+      // Refresh points and ranking
+      refreshUser();
+      if (fetchTopUsers) fetchTopUsers(true);
     } catch (error) {
       // Revert the optimistic update on error
       setComments(originalComments);
@@ -701,6 +714,10 @@ export default function PostClient({ params, initialPost = null }) {
     try {
       // Call the vote API
       await votePost(postId, { vote_value: value });
+
+      // Refresh points and ranking
+      refreshUser();
+      if (fetchTopUsers) fetchTopUsers(true);
     } catch (error) {
       // Rollback on error
       setPost(originalPost);

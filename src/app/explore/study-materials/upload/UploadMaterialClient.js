@@ -3,43 +3,110 @@
 import HomeLayout from "@/layouts/HomeLayout";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
+import {
+  Form,
+  Input,
+  Select,
+  Button,
+  Upload,
+  Checkbox,
+  InputNumber,
+  Card,
+  Typography,
+  Space,
+  message,
+  Breadcrumb, Row, Col
+} from "antd";
+import {
+  Book,
+  CloudUploadOutline,
+  Home,
+  Search,
+  Map,
+  Print,
+  HelpCircle,
+  GameController,
+  Trophy,
+  People,
+} from "react-ionicons";
 import { useAuthContext } from "@/contexts/Support";
 import { createStudyMaterial, uploadFile, getStudyMaterialCategories } from "@/app/Api";
-import { message } from "antd";
-import Link from "next/link";
-import { Book } from "react-ionicons";
+import CustomInput from "@/components/ui/input";
+
+const { Title, Text, Paragraph } = Typography;
+const { TextArea } = Input;
 
 export default function UploadMaterialClient() {
   const { loggedIn } = useAuthContext();
   const router = useRouter();
+  const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
-  const [formData, setFormData] = useState({
-    title: "",
-    description: "",
-    category_id: null,
-    price: 0,
-    is_free: true,
-    preview_content: "",
-    status: "published",
-  });
-  const [file, setFile] = useState(null);
   const [fileId, setFileId] = useState(null);
   const [categories, setCategories] = useState([]);
+  const [isFree, setIsFree] = useState(true);
 
   const sidebarItems = [
     {
+      Icon: Home,
+      label: "Trang chủ",
+      key: "home",
+      href: "/",
+    },
+    {
+      Icon: Book,
+      label: "Tài liệu ôn thi",
       key: "study",
       href: "/explore/study-materials",
-      label: "Tài liệu ôn thi",
-      Icon: Book,
-      isExternal: false,
+    },
+    {
+      Icon: Search,
+      label: "Tra cứu điểm thi",
+      key: "grades",
+      href: "#",
+    },
+    {
+      Icon: Map,
+      label: "Tìm trường ĐH-CĐ",
+      key: "universities",
+      href: "#",
+    },
+    {
+      Icon: Print,
+      label: "In ấn tài liệu",
+      key: "print",
+      href: "#",
+    },
+    {
+      Icon: HelpCircle,
+      label: "Đố vui",
+      key: "quiz",
+      href: "#",
+    },
+    {
+      Icon: GameController,
+      label: "Game",
+      key: "game",
+      href: "#",
+    },
+    {
+      Icon: Trophy,
+      label: "Xếp hạng thành viên",
+      key: "ranking",
+      href: "/users/ranking",
+    },
+    {
+      Icon: People,
+      label: "Xếp hạng lớp",
+      key: "class-ranking",
+      href: "#",
     },
   ];
 
   useEffect(() => {
     if (!loggedIn) {
-      router.push("/login");
+      router.push("/login?continue=" + encodeURIComponent(window.location.origin + "/explore/study-materials/upload"));
     } else {
       loadCategories();
     }
@@ -54,47 +121,38 @@ export default function UploadMaterialClient() {
     }
   };
 
-  const handleFileChange = async (e) => {
-    const selectedFile = e.target.files[0];
-    if (!selectedFile) return;
-
-    setFile(selectedFile);
-    setUploading(true);
-
+  const customUpload = async ({ file, onSuccess, onError }) => {
     try {
+      setUploading(true);
+      const currentUser = JSON.parse(localStorage.getItem("CURRENT_USER"));
       const formData = new FormData();
-      formData.append("file", selectedFile);
-      formData.append("uid", JSON.parse(localStorage.getItem("CURRENT_USER"))?.id);
+      formData.append("file", file);
+      formData.append("uid", currentUser?.id);
 
       const response = await uploadFile(formData);
       setFileId(response.data.id);
-      message.success("Upload file thành công!");
+      onSuccess(response.data);
+      message.success("Tải tệp lên thành công!");
     } catch (err) {
-      message.error("Upload file thất bại");
+      onError(err);
+      message.error("Tải tệp lên thất bại");
     } finally {
       setUploading(false);
     }
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-
+  const onFinish = async (values) => {
     if (!fileId) {
-      message.warning("Vui lòng upload file tài liệu");
-      return;
-    }
-
-    if (!formData.title.trim()) {
-      message.warning("Vui lòng nhập tiêu đề");
+      message.warning("Vui lòng tải tệp tài liệu lên");
       return;
     }
 
     try {
       setLoading(true);
       await createStudyMaterial({
-        ...formData,
+        ...values,
         file_id: fileId,
-        price: formData.is_free ? 0 : formData.price,
+        price: values.is_free ? 0 : values.price,
       });
       message.success("Đăng tài liệu thành công!");
       router.push("/explore/study-materials");
@@ -105,133 +163,156 @@ export default function UploadMaterialClient() {
     }
   };
 
-  if (!loggedIn) {
-    return null;
-  }
+  if (!loggedIn) return null;
 
   return (
-    <HomeLayout activeNav="explore" activeBar="study" sidebarItems={sidebarItems}>
-      <div className="px-2.5">
-        <main className="px-1 xl:min-h-screen py-4 md:max-w-[936px] mx-auto">
-          <Link
-            href="/explore/study-materials"
-            className="text-green-600 hover:text-green-700 mb-4 inline-block"
-          >
-            ← Quay lại danh sách
-          </Link>
+    <HomeLayout
+      activeNav="study"
+      activeBar="study"
+      sidebarItems={sidebarItems}
+      sidebarType="all"
+      showRightSidebar={false}
+    >
+      <div className="px-4 py-8">
+        <main className="max-w-[800px] mx-auto min-h-screen">
+          <Breadcrumb
+            className="mb-6"
+            items={[
+              {
+                title: "Tài liệu ôn thi",
+                href: "/explore/study-materials",
+              },
+              { title: "Đăng tài liệu" },
+            ]}
+          />
 
-          <div className="bg-white dark:bg-neutral-800 rounded-xl shadow-sm p-6">
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-6">
-              Đăng tài liệu mới
-            </h1>
+          <Card className="rounded-2xl border-none shadow-sm overflow-hidden">
+            <div className="mb-8">
+              <Title level={3} style={{ margin: 0 }}>
+                Đăng tài liệu mới
+              </Title>
+              <Text type="secondary">
+                Chia sẻ kiến thức của bạn với cộng đồng học sinh Chuyên Biên Hòa
+              </Text>
+            </div>
 
-            <form onSubmit={handleSubmit} className="space-y-6">
-              <div>
-                <label className="block mb-2 font-semibold">Tiêu đề *</label>
-                <input
-                  type="text"
-                  value={formData.title}
-                  onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                  className="w-full p-3 border border-gray-300 dark:border-neutral-600 rounded-lg bg-white dark:bg-neutral-700 text-gray-900 dark:text-gray-100"
-                  required
+            <Form
+              form={form}
+              layout="vertical"
+              onFinish={onFinish}
+              initialValues={{
+                is_free: true,
+                price: 0,
+                status: "published",
+              }}
+              size="large"
+            >
+              <Form.Item
+                label={<Text strong>Tiêu đề tài liệu</Text>}
+                name="title"
+                rules={[{ required: true, message: "Vui lòng nhập tiêu đề tài liệu" }]}
+              >
+                <CustomInput placeholder="Ví dụ: Tổng hợp công thức Toán 12" />
+              </Form.Item>
+
+              <Form.Item label={<Text strong>Mô tả tài liệu</Text>} name="description">
+                <TextArea
+                  rows={4}
+                  placeholder="Giới thiệu sơ lược về nội dung tài liệu..."
+                  className="rounded-xl"
                 />
-              </div>
+              </Form.Item>
 
-              <div>
-                <label className="block mb-2 font-semibold">Mô tả</label>
-                <textarea
-                  value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  className="w-full p-3 border border-gray-300 dark:border-neutral-600 rounded-lg bg-white dark:bg-neutral-700 text-gray-900 dark:text-gray-100"
-                  rows="4"
+              <Row gutter={16}>
+                <Col xs={24} md={12}>
+                  <Form.Item label={<Text strong>Danh mục</Text>} name="category_id">
+                    <Select placeholder="Chọn môn học" className="w-full" allowClear>
+                      {categories.map((cat) => (
+                        <Select.Option key={cat.id} value={cat.id}>
+                          {cat.name}
+                        </Select.Option>
+                      ))}
+                    </Select>
+                  </Form.Item>
+                </Col>
+                <Col xs={24} md={12}>
+                  <Form.Item
+                    label={<Text strong>Tải tệp lên (.pdf, .doc, .docx, .txt)</Text>}
+                    required
+                  >
+                    <Upload
+                      customRequest={customUpload}
+                      maxCount={1}
+                      accept=".pdf,.doc,.docx,.txt"
+                      className="w-full"
+                    >
+                      <Button
+                        icon={<CloudUploadOutline height="18px" width="18px" className="mr-2 flex items-center justify-center" />}
+                        className="w-full flex items-center justify-center rounded-xl border-dashed"
+                        loading={uploading}
+                      >
+                        {fileId ? "Thay đổi tệp" : "Chọn tệp từ máy tính"}
+                      </Button>
+                    </Upload>
+                  </Form.Item>
+                </Col>
+              </Row>
+
+              <Form.Item label={<Text strong>Nội dung xem trước (Tùy chọn)</Text>} name="preview_content">
+                <TextArea
+                  rows={6}
+                  placeholder="Nhập một đoạn nội dung tiêu biểu để người dùng đọc trước..."
+                  className="rounded-xl"
                 />
-              </div>
+              </Form.Item>
 
-              <div>
-                <label className="block mb-2 font-semibold">Danh mục</label>
-                <select
-                  value={formData.category_id || ""}
-                  onChange={(e) => setFormData({ ...formData, category_id: e.target.value || null })}
-                  className="w-full p-3 border border-gray-300 dark:border-neutral-600 rounded-lg bg-white dark:bg-neutral-700 text-gray-900 dark:text-gray-100"
-                >
-                  <option value="">Chọn danh mục (tùy chọn)</option>
-                  {categories.map((cat) => (
-                    <option key={cat.id} value={cat.id}>
-                      {cat.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
+              <div className="bg-gray-50 dark:bg-neutral-900 p-6 rounded-2xl mb-8">
+                <Form.Item name="is_free" valuePropName="checked" className="mb-0">
+                  <Checkbox onChange={(e) => setIsFree(e.target.checked)}>
+                    <Text strong>Tài liệu miễn phí</Text>
+                  </Checkbox>
+                </Form.Item>
 
-              <div>
-                <label className="block mb-2 font-semibold">File tài liệu *</label>
-                <input
-                  type="file"
-                  onChange={handleFileChange}
-                  className="w-full p-3 border border-gray-300 dark:border-neutral-600 rounded-lg bg-white dark:bg-neutral-700"
-                  accept=".pdf,.doc,.docx,.txt"
-                  required
-                />
-                {uploading && <p className="text-sm text-gray-500 mt-2">Đang upload...</p>}
-                {fileId && (
-                  <p className="text-sm text-green-600 mt-2">✓ Upload thành công</p>
+                {!isFree && (
+                  <div className="mt-4">
+                    <Text type="secondary" className="block mb-2">
+                      Nhập số điểm người dùng cần trả để tải tài liệu này
+                    </Text>
+                    <Form.Item
+                      name="price"
+                      rules={[{ required: !isFree, message: "Vui lòng nhập giá cho tài liệu" }]}
+                      className="mb-0"
+                    >
+                      <InputNumber
+                        min={1}
+                        className="w-full rounded-xl"
+                        addonAfter="điểm"
+                        placeholder="Ví dụ: 50"
+                      />
+                    </Form.Item>
+                  </div>
                 )}
               </div>
 
-              <div>
-                <label className="block mb-2 font-semibold">Nội dung xem trước</label>
-                <textarea
-                  value={formData.preview_content}
-                  onChange={(e) => setFormData({ ...formData, preview_content: e.target.value })}
-                  className="w-full p-3 border border-gray-300 dark:border-neutral-600 rounded-lg bg-white dark:bg-neutral-700 text-gray-900 dark:text-gray-100"
-                  rows="6"
-                  placeholder="Nhập một phần nội dung để người dùng xem trước..."
-                />
-              </div>
-
-              <div>
-                <label className="flex items-center gap-2 mb-4">
-                  <input
-                    type="checkbox"
-                    checked={formData.is_free}
-                    onChange={(e) => setFormData({ ...formData, is_free: e.target.checked })}
-                    className="w-4 h-4"
-                  />
-                  <span>Tài liệu miễn phí</span>
-                </label>
-              </div>
-
-              {!formData.is_free && (
-                <div>
-                  <label className="block mb-2 font-semibold">Giá (điểm) *</label>
-                  <input
-                    type="number"
-                    value={formData.price}
-                    onChange={(e) => setFormData({ ...formData, price: parseInt(e.target.value) || 0 })}
-                    className="w-full p-3 border border-gray-300 dark:border-neutral-600 rounded-lg bg-white dark:bg-neutral-700 text-gray-900 dark:text-gray-100"
-                    min="0"
-                    required={!formData.is_free}
-                  />
-                </div>
-              )}
-
-              <div className="flex gap-4">
-                <button
-                  type="submit"
-                  disabled={loading || uploading}
-                  className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50"
+              <Space size="middle">
+                <Button
+                  type="primary"
+                  htmlType="submit"
+                  loading={loading}
+                  disabled={uploading}
+                  className="bg-green-600 hover:bg-green-700 border-none rounded-xl px-12 h-[50px] font-medium"
                 >
-                  {loading ? "Đang đăng..." : "Đăng tài liệu"}
-                </button>
-                <Link
-                  href="/explore/study-materials"
-                  className="px-6 py-2 bg-gray-200 dark:bg-neutral-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-300 dark:hover:bg-neutral-600"
+                  Đăng tài liệu ngay
+                </Button>
+                <Button
+                  onClick={() => router.back()}
+                  className="rounded-xl px-8 h-[50px] border-gray-200"
                 >
-                  Hủy
-                </Link>
-              </div>
-            </form>
-          </div>
+                  Hủy bỏ
+                </Button>
+              </Space>
+            </Form>
+          </Card>
         </main>
       </div>
     </HomeLayout>
