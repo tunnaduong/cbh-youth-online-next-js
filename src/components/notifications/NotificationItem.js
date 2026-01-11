@@ -24,9 +24,8 @@ const getNotificationMessage = (notification) => {
     case "topic_pinned":
       return "Bài viết của bạn đã được ghim";
     case "topic_moved":
-      return `Bài viết của bạn đã được chuyển đến ${
-        data?.new_subforum || "subforum khác"
-      }`;
+      return `Bài viết của bạn đã được chuyển đến ${data?.new_subforum || "subforum khác"
+        }`;
     case "topic_closed":
       return "Bài viết của bạn đã bị đóng";
     case "rank_up":
@@ -35,6 +34,10 @@ const getNotificationMessage = (notification) => {
       return `Bạn đã nhận được huy hiệu: ${data?.badge_name || "Huy hiệu"}`;
     case "points_earned":
       return `Bạn đã nhận được ${data?.points || 0} điểm`;
+    case "study_material_purchased":
+      return `${actorName} đã mua tài liệu của bạn (+${data?.price} điểm)`;
+    case "study_material_rated":
+      return `${actorName} đã đánh giá ${data?.rating}/5 ⭐ cho tài liệu của bạn`;
     case "content_reported":
       return "Nội dung của bạn đã bị báo cáo";
     case "content_hidden":
@@ -83,6 +86,10 @@ const buildNotificationTargetUrl = (notification, viewerUsername) => {
     data.topic?.id ??
     data.post?.id ??
     legacyMetadata.topicId;
+
+  if (data.material_id) {
+    return `/explore/study-materials/${data.material_id}`;
+  }
 
   if (!topicId) {
     return convertToRelativeUrl(data.url);
@@ -195,11 +202,10 @@ export default function NotificationItem({ notification }) {
 
   return (
     <div
-      className={`group flex items-start gap-3 p-3 hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer transition-colors ${
-        !notification.is_read
-          ? "bg-blue-50 dark:bg-blue-900/20"
-          : "bg-white dark:bg-gray-900"
-      }`}
+      className={`group flex items-start gap-3 p-3 hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer transition-colors ${!notification.is_read
+        ? "bg-blue-50 dark:bg-blue-900/20"
+        : "bg-white dark:bg-gray-900"
+        }`}
       onClick={handleClick}
     >
       <Avatar className="h-10 w-10 flex-shrink-0">

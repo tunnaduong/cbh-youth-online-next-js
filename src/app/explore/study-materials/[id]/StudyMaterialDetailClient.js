@@ -40,8 +40,9 @@ import {
   GameController,
   Trophy,
   People,
+  ChatbubbleEllipsesOutline,
 } from "react-ionicons";
-import { useAuthContext, useTopUsersContext } from "@/contexts/Support";
+import { useAuthContext, useTopUsersContext, useChatContext } from "@/contexts/Support";
 import * as Api from "@/app/Api";
 import {
   getStudyMaterial,
@@ -57,6 +58,7 @@ const { Title, Text, Paragraph } = Typography;
 export default function StudyMaterialDetailClient({ materialId }) {
   const { loggedIn, currentUser, setCurrentUser, refreshUser } = useAuthContext();
   const { fetchTopUsers } = useTopUsersContext();
+  const { createConversation, openChat } = useChatContext();
   const router = useRouter();
   const [material, setMaterial] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -216,7 +218,7 @@ export default function StudyMaterialDetailClient({ materialId }) {
       ),
       okText: "Xác nhận mua",
       cancelText: "Hủy bỏ",
-      okButtonProps: { className: "bg-green-600 hover:bg-green-700 border-none" },
+      okButtonProps: { className: "border-none" },
       onOk: async () => {
         try {
           setPurchasing(true);
@@ -240,6 +242,32 @@ export default function StudyMaterialDetailClient({ materialId }) {
         }
       },
     });
+  };
+
+  const handleInbox = async () => {
+    if (!loggedIn) {
+      message.error("Bạn cần đăng nhập để nhắn tin cho người bán");
+      router.push(`/login?continue=${encodeURIComponent(window.location.href)}`);
+      return;
+    }
+
+    if (currentUser.id === material.author.id) {
+      message.warning("Bạn không thể nhắn tin cho chính mình");
+      return;
+    }
+
+    try {
+      message.loading({ content: "Đang kết nối...", key: "inbox" });
+
+      // Use ChatContext to create/open conversation in the widget
+      await createConversation(material.author.id);
+      openChat();
+
+      message.success({ content: "Đã mở hộp thoại tin nhắn", key: "inbox", duration: 2 });
+    } catch (error) {
+      console.error("Error starting conversation:", error);
+      message.error({ content: "Có lỗi xảy ra khi bắt đầu trò chuyện", key: "inbox" });
+    }
   };
 
   const handleDownload = async () => {
@@ -413,7 +441,7 @@ export default function StudyMaterialDetailClient({ materialId }) {
 
                     <div className="relative h-[600px] w-full overflow-hidden">
                       <iframe
-                        src={`https://docs.google.com/gview?url=${process.env.NEXT_PUBLIC_API_URL}/storage/${material.file.file_path}&embedded=true`}
+                        src={`https://view.officeapps.live.com/op/view.aspx?src=${encodeURIComponent(`${process.env.NEXT_PUBLIC_API_URL}/storage/${material.file.file_path}`)}`}
                         className="w-full h-[1000px] border-none"
                         style={{ marginTop: '-2px' }}
                       />
@@ -433,7 +461,7 @@ export default function StudyMaterialDetailClient({ materialId }) {
                             size="large"
                             onClick={handlePurchase}
                             loading={purchasing}
-                            className="bg-green-600 hover:bg-green-700 border-none rounded-xl h-[50px] px-8 font-semibold w-full"
+                            className="border-none rounded-xl h-[50px] px-8 font-semibold w-full"
                           >
                             Mua ngay ({material.price} điểm)
                           </Button>
@@ -450,7 +478,7 @@ export default function StudyMaterialDetailClient({ materialId }) {
                       size="large"
                       onClick={handlePurchase}
                       loading={purchasing}
-                      className="bg-green-600 hover:bg-green-700 border-none rounded-xl h-[50px] px-8 font-semibold flex items-center gap-2"
+                      className="border-none rounded-xl h-[50px] px-8 font-semibold flex items-center gap-2"
                     >
                       <WalletOutline height="20px" width="20px" color="#fff" />
                       Mua ngay ({material.price} điểm)
@@ -463,7 +491,7 @@ export default function StudyMaterialDetailClient({ materialId }) {
                         type="primary"
                         size="large"
                         onClick={() => router.push(`/explore/study-materials/${materialId}/view`)}
-                        className="bg-green-600 hover:bg-green-700 border-none rounded-xl h-[50px] px-8 font-semibold flex items-center gap-2"
+                        className="border-none rounded-xl h-[50px] px-8 font-semibold flex items-center gap-2"
                       >
                         <EyeOutline color="#fff" height="20px" width="20px" />
                         {material.is_free ? "Xem tài liệu miễn phí" : "Xem tài liệu đã mua"}
@@ -575,7 +603,17 @@ export default function StudyMaterialDetailClient({ materialId }) {
                   </Descriptions.Item>
                 </Descriptions>
 
-                <div className="mt-6 flex flex-col gap-3">
+                {(!currentUser || currentUser.id !== material.author.id) && (
+                  <Button
+                    icon={<ChatbubbleEllipsesOutline height="18px" width="18px" color="currentColor" />}
+                    className="w-full flex items-center justify-center rounded-xl h-[45px] font-medium mt-6 dark:bg-neutral-900 dark:text-neutral-300 dark:border-neutral-700"
+                    onClick={handleInbox}
+                  >
+                    Hỏi người bán
+                  </Button>
+                )}
+
+                <div className="mt-4 flex flex-col gap-3">
                   <div className="p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-xl border border-yellow-100 dark:border-yellow-800/30">
                     <Text type="warning" strong className="block mb-1">
                       Lưu ý bản quyền

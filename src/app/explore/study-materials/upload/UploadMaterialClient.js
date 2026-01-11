@@ -173,7 +173,7 @@ export default function UploadMaterialClient() {
       sidebarType="all"
       showRightSidebar={false}
     >
-      <div className="bg-gray-50/50 dark:bg-neutral-950 px-4 py-8">
+      <div className="px-4 py-8">
         <main className="max-w-[800px] mx-auto min-h-screen">
           <Breadcrumb
             className="mb-6"
@@ -224,7 +224,7 @@ export default function UploadMaterialClient() {
               </Form.Item>
 
               <Row gutter={16}>
-                <Col xs={24} md={12}>
+                <Col xs={12} md={12}>
                   <Form.Item label={<Text strong>Danh mục</Text>} name="category_id">
                     <Select placeholder="Chọn môn học" className="w-full" allowClear>
                       {categories.map((cat) => (
@@ -235,7 +235,7 @@ export default function UploadMaterialClient() {
                     </Select>
                   </Form.Item>
                 </Col>
-                <Col xs={24} md={12}>
+                <Col xs={12} md={12}>
                   <Form.Item
                     label={<Text strong>Tải tệp lên (.pdf, .doc, .docx, .txt)</Text>}
                     required
@@ -245,13 +245,16 @@ export default function UploadMaterialClient() {
                       maxCount={1}
                       accept=".pdf,.doc,.docx,.txt"
                       className="w-full"
+                      style={{ display: 'block' }}
                     >
                       <Button
-                        icon={<CloudUploadOutline height="18px" width="18px" className="mr-2 flex items-center justify-center" />}
-                        className="w-full flex items-center justify-center rounded-xl border-dashed"
+                        icon={<CloudUploadOutline height="18px" width="18px" color="currentColor" className="mr-2 flex items-center justify-center dark:text-white" />}
+                        className="w-full flex items-center justify-center rounded-xl border-dashed dark:bg-neutral-900 dark:text-neutral-300 dark:border-neutral-700 h-[50px]"
                         loading={uploading}
                       >
-                        {fileId ? "Thay đổi tệp" : "Chọn tệp từ máy tính"}
+                        <span className="text-sm font-medium">
+                          {fileId ? "Thay đổi tệp" : "Chọn tệp từ máy tính"}
+                        </span>
                       </Button>
                     </Upload>
                   </Form.Item>
@@ -300,7 +303,7 @@ export default function UploadMaterialClient() {
                   htmlType="submit"
                   loading={loading}
                   disabled={uploading}
-                  className="bg-green-600 hover:bg-green-700 border-none rounded-xl px-12 h-[50px] font-medium"
+                  className="border-none rounded-xl px-12 h-[50px] font-medium"
                 >
                   Đăng tài liệu ngay
                 </Button>

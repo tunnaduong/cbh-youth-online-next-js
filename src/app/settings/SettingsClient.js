@@ -130,20 +130,20 @@ export default function SettingsClient({ initialUser, hasAuthError }) {
               fullUser?.profile?.gender?.toLowerCase() === "male"
                 ? "male"
                 : fullUser?.profile?.gender?.toLowerCase() === "female"
-                ? "female"
-                : "male",
+                  ? "female"
+                  : "male",
             location: fullUser?.profile?.location || "",
             bio: fullUser?.profile?.bio || "",
             full_name: fullUser?.profile?.profile_name || "",
             date_of_birth:
               fullUser?.profile?.birthday_raw || fullUser?.profile?.birthday
                 ? (() => {
-                    const birthDate =
-                      fullUser.profile.birthday_raw ||
-                      fullUser.profile.birthday;
-                    const parsed = dayjs(birthDate);
-                    return parsed.isValid() ? parsed : null;
-                  })()
+                  const birthDate =
+                    fullUser.profile.birthday_raw ||
+                    fullUser.profile.birthday;
+                  const parsed = dayjs(birthDate);
+                  return parsed.isValid() ? parsed : null;
+                })()
                 : null,
             language: "vi",
             notification_level: "all",
@@ -167,19 +167,19 @@ export default function SettingsClient({ initialUser, hasAuthError }) {
               user?.profile?.gender?.toLowerCase() === "male"
                 ? "male"
                 : user?.profile?.gender?.toLowerCase() === "female"
-                ? "female"
-                : "male",
+                  ? "female"
+                  : "male",
             location: user?.profile?.location || "",
             bio: user?.profile?.bio || "",
             full_name: user?.profile?.profile_name || "",
             date_of_birth:
               user?.profile?.birthday_raw || user?.profile?.birthday
                 ? (() => {
-                    const birthDate =
-                      user.profile.birthday_raw || user.profile.birthday;
-                    const parsed = dayjs(birthDate);
-                    return parsed.isValid() ? parsed : null;
-                  })()
+                  const birthDate =
+                    user.profile.birthday_raw || user.profile.birthday;
+                  const parsed = dayjs(birthDate);
+                  return parsed.isValid() ? parsed : null;
+                })()
                 : null,
             language: "vi",
             notification_level: "all",
@@ -249,7 +249,7 @@ export default function SettingsClient({ initialUser, hasAuthError }) {
       console.error("Error resending verification email:", error);
       message.error(
         error.response?.data?.message ||
-          "Có lỗi xảy ra khi gửi lại email xác minh"
+        "Có lỗi xảy ra khi gửi lại email xác minh"
       );
     } finally {
       setResendingEmail(false);
@@ -345,8 +345,8 @@ export default function SettingsClient({ initialUser, hasAuthError }) {
           ? String(userData.profile.gender).toLowerCase() === "male"
             ? "Male"
             : String(userData.profile.gender).toLowerCase() === "female"
-            ? "Female"
-            : null
+              ? "Female"
+              : null
           : null;
 
         // Send if different from current value (or if current value is null)
@@ -460,7 +460,7 @@ export default function SettingsClient({ initialUser, hasAuthError }) {
       if (responseData?.email_verification_sent) {
         message.success(
           responseData.message ||
-            "Cập nhật hồ sơ thành công! Email xác minh đã được gửi đến địa chỉ email mới."
+          "Cập nhật hồ sơ thành công! Email xác minh đã được gửi đến địa chỉ email mới."
         );
       } else {
         message.success(responseData?.message || "Cập nhật hồ sơ thành công!");
@@ -544,20 +544,20 @@ export default function SettingsClient({ initialUser, hasAuthError }) {
             ? mergedUser.profile.gender.toLowerCase() === "male"
               ? "male"
               : mergedUser.profile.gender.toLowerCase() === "female"
-              ? "female"
-              : prev.gender
+                ? "female"
+                : prev.gender
             : prev.gender, // Keep optimistic value if server doesn't return gender
           location: mergedUser.profile?.location ?? prev.location,
           bio: mergedUser.profile?.bio ?? prev.bio,
           date_of_birth:
             mergedUser.profile?.birthday_raw || mergedUser.profile?.birthday
               ? (() => {
-                  const birthDate =
-                    mergedUser.profile.birthday_raw ||
-                    mergedUser.profile.birthday;
-                  const parsed = dayjs(birthDate);
-                  return parsed.isValid() ? parsed : prev.date_of_birth;
-                })()
+                const birthDate =
+                  mergedUser.profile.birthday_raw ||
+                  mergedUser.profile.birthday;
+                const parsed = dayjs(birthDate);
+                return parsed.isValid() ? parsed : prev.date_of_birth;
+              })()
               : prev.date_of_birth,
         }));
       }
@@ -610,7 +610,7 @@ export default function SettingsClient({ initialUser, hasAuthError }) {
       } else {
         message.error(
           error.response?.data?.message ||
-            "Có lỗi xảy ra khi cập nhật tài khoản"
+          "Có lỗi xảy ra khi cập nhật tài khoản"
         );
       }
     } finally {
@@ -658,7 +658,7 @@ export default function SettingsClient({ initialUser, hasAuthError }) {
       } else {
         message.error(
           error.response?.data?.message ||
-            "Có lỗi xảy ra khi cập nhật thông báo"
+          "Có lỗi xảy ra khi cập nhật thông báo"
         );
       }
     } finally {
@@ -705,7 +705,7 @@ export default function SettingsClient({ initialUser, hasAuthError }) {
       } else {
         message.error(
           error.response?.data?.message ||
-            "Có lỗi xảy ra khi xóa tài khoản. Vui lòng kiểm tra mật khẩu."
+          "Có lỗi xảy ra khi xóa tài khoản. Vui lòng kiểm tra mật khẩu."
         );
       }
     } finally {
@@ -748,12 +748,11 @@ export default function SettingsClient({ initialUser, hasAuthError }) {
                       typeof canChangeUsername === "object" &&
                       !canChangeUsername.canChange
                     }
-                    className={`w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent ${
-                      typeof canChangeUsername === "object" &&
-                      !canChangeUsername.canChange
+                    className={`w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent ${typeof canChangeUsername === "object" &&
+                        !canChangeUsername.canChange
                         ? "bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 cursor-not-allowed"
                         : "bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                    }`}
+                      }`}
                     placeholder="Nhập tên đăng nhập"
                   />
                   <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
@@ -889,9 +888,8 @@ export default function SettingsClient({ initialUser, hasAuthError }) {
                 <div className="flex items-center space-x-4">
                   <div className="relative">
                     <img
-                      src={`${process.env.NEXT_PUBLIC_API_URL}/v1.0/users/${
-                        currentUser?.username || userData?.username
-                      }/avatar?t=${Date.now()}`}
+                      src={`${process.env.NEXT_PUBLIC_API_URL}/v1.0/users/${currentUser?.username || userData?.username
+                        }/avatar?t=${Date.now()}`}
                       alt="Avatar"
                       className="border border-gray-300 dark:!border-[#737373] w-52 h-52 rounded-full object-cover"
                     />
@@ -1056,7 +1054,7 @@ export default function SettingsClient({ initialUser, hasAuthError }) {
                     e.preventDefault();
                     handleSubmitAccount(e);
                   }}
-                  className="bg-green-600 hover:bg-green-700 text-white border-0 px-6 py-2 rounded-md font-medium"
+                  className="text-white border-0 px-6 py-2 rounded-md font-medium"
                 >
                   Cập nhật tài khoản
                 </Button>
@@ -1309,7 +1307,7 @@ export default function SettingsClient({ initialUser, hasAuthError }) {
                     e.preventDefault();
                     handleSubmitNotifications(e);
                   }}
-                  className="bg-green-600 hover:bg-green-700 text-white border-0 px-6 py-2 rounded-md font-medium"
+                  className="text-white border-0 px-6 py-2 rounded-md font-medium"
                 >
                   Cập nhật thông báo
                 </Button>
@@ -1375,33 +1373,30 @@ export default function SettingsClient({ initialUser, hasAuthError }) {
               <nav className="space-y-1">
                 <button
                   onClick={() => setActiveTab("profile")}
-                  className={`w-full flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors ${
-                    activeTab === "profile"
+                  className={`w-full flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors ${activeTab === "profile"
                       ? "bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 border-r-2 border-green-600 dark:border-green-400"
                       : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-neutral-800"
-                  }`}
+                    }`}
                 >
                   <User className="w-5 h-5 mr-3" />
                   Trang cá nhân
                 </button>
                 <button
                   onClick={() => setActiveTab("account")}
-                  className={`w-full flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors ${
-                    activeTab === "account"
+                  className={`w-full flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors ${activeTab === "account"
                       ? "bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 border-r-2 border-green-600 dark:border-green-400"
                       : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-neutral-800"
-                  }`}
+                    }`}
                 >
                   <Shield className="w-5 h-5 mr-3" />
                   Tài khoản
                 </button>
                 <button
                   onClick={() => setActiveTab("notifications")}
-                  className={`w-full flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors ${
-                    activeTab === "notifications"
+                  className={`w-full flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors ${activeTab === "notifications"
                       ? "bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 border-r-2 border-green-600 dark:border-green-400"
                       : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-neutral-800"
-                  }`}
+                    }`}
                 >
                   <Bell className="w-5 h-5 mr-3" />
                   Thông báo
