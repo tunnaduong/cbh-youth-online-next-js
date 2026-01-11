@@ -997,7 +997,7 @@ body.has-email-verification-alert [class*="mt-\\[4\\.3rem\\]"] {
   display: none !important;
 }
 
-/* Disable scroll for React File Viewer */
-.pg-viewer-wrapper {
+/* Disable scroll for React File Viewer ONLY when restricted */
+.preview-restricted .pg-viewer-wrapper {
   overflow: hidden !important;
 }

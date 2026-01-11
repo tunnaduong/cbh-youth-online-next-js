@@ -431,17 +431,19 @@ export default function StudyMaterialDetailClient({ materialId }) {
                 )}
 
                 {/* Document File Preview (Restricted) */}
-                {!material.is_free && !material.is_purchased && material.file && material.file.file_path && (
+                {material.file && material.file.file_path && (
                   <div className="mb-8 overflow-hidden rounded-2xl border border-gray-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 relative select-none">
                     <div className="p-4 border-b border-gray-100 dark:border-neutral-800 flex justify-between items-center bg-gray-50/50 dark:bg-neutral-800/50">
                       <Title level={4} className="!m-0">
-                        Xem trước tài liệu
+                        {(!material.is_free && !material.is_purchased) ? "Xem trước tài liệu" : "Nội dung tài liệu"}
                       </Title>
-                      <Tag color="blue" className="rounded-full">Trang 1/???</Tag>
+                      <Tag color={(!material.is_free && !material.is_purchased) ? "orange" : "success"} className="rounded-full">
+                        {(!material.is_free && !material.is_purchased) ? "Bản xem trước giới hạn" : "Toàn bộ nội dung"}
+                      </Tag>
                     </div>
 
                     <div
-                      className="relative h-[800px] w-full overflow-hidden bg-gray-100 dark:bg-neutral-900 select-none"
+                      className={`relative w-full bg-gray-100 dark:bg-neutral-900 select-none h-[800px] ${(!material.is_free && !material.is_purchased) ? "overflow-hidden preview-restricted" : "overflow-auto"}`}
                       onContextMenu={(e) => e.preventDefault()}
                     >
                       <FileViewer
@@ -450,26 +452,28 @@ export default function StudyMaterialDetailClient({ materialId }) {
                         onError={(e) => console.error("Error in FileViewer:", e)}
                       />
                       {/* Overlay Mask */}
-                      <div className="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-white via-white/90 to-transparent dark:from-neutral-900 dark:via-neutral-900/90 flex flex-col items-center justify-end pb-12 px-6 text-center">
-                        <div className="bg-white dark:bg-neutral-800 p-8 rounded-3xl shadow-xl border border-gray-100 dark:border-neutral-700 max-w-md">
-                          <div className="bg-orange-100 dark:bg-orange-900/30 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-                            <WalletOutline height="32px" width="32px" color="#f97316" />
+                      {(!material.is_free && !material.is_purchased) && (
+                        <div className="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-white via-white/90 to-transparent dark:from-neutral-900 dark:via-neutral-900/90 flex flex-col items-center justify-end pb-12 px-6 text-center">
+                          <div className="bg-white dark:bg-neutral-800 p-8 rounded-3xl shadow-xl border border-gray-100 dark:border-neutral-700 max-w-md">
+                            <div className="bg-orange-100 dark:bg-orange-900/30 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                              <WalletOutline height="32px" width="32px" color="#f97316" />
+                            </div>
+                            <Title level={4} className="mb-2">Mở khóa để xem toàn bộ</Title>
+                            <Paragraph type="secondary" className="mb-6">
+                              Bạn đang xem bản xem trước giới hạn. Vui lòng mua tài liệu để tải xuống và xem toàn bộ nội dung chất lượng cao.
+                            </Paragraph>
+                            <Button
+                              type="primary"
+                              size="large"
+                              onClick={handlePurchase}
+                              loading={purchasing}
+                              className="border-none rounded-xl h-[50px] px-8 font-semibold w-full"
+                            >
+                              Mua ngay ({material.price} điểm)
+                            </Button>
                           </div>
-                          <Title level={4} className="mb-2">Mở khóa để xem toàn bộ</Title>
-                          <Paragraph type="secondary" className="mb-6">
-                            Bạn đang xem bản xem trước giới hạn. Vui lòng mua tài liệu để tải xuống và xem toàn bộ nội dung chất lượng cao.
-                          </Paragraph>
-                          <Button
-                            type="primary"
-                            size="large"
-                            onClick={handlePurchase}
-                            loading={purchasing}
-                            className="border-none rounded-xl h-[50px] px-8 font-semibold w-full"
-                          >
-                            Mua ngay ({material.price} điểm)
-                          </Button>
                         </div>
-                      </div>
+                      )}
                     </div>
                   </div>
                 )}
