@@ -132,8 +132,8 @@ export default function DepositClient() {
       // Tạo QR URL SePay
       const qrUrl = `https://qr.sepay.vn/img?acc=${accountNo}&bank=${bankName}&amount=${amount}&des=${content}&template=${template}`;
 
-      // Tính điểm dự kiến (1000 VND = 10 điểm) -> amount / 100
-      const expectedPoints = Math.floor(amount / 100);
+      // Tính điểm dự kiến (1000 VND = 10 điểm, trừ phí 10 điểm)
+      const expectedPoints = Math.floor(Math.max(0, amount - 1000) / 100);
 
       setDepositInfo({
         amount_vnd: amount,

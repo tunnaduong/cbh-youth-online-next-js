@@ -2,7 +2,8 @@
 
 import HomeLayout from "@/layouts/HomeLayout";
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter } from "@bprogress/next/app";
+import { BProgress } from "@bprogress/core";
 import Link from "next/link";
 import {
   Typography,
@@ -43,6 +44,7 @@ import {
   ChatbubbleEllipsesOutline,
   DocumentOutline,
   DocumentTextOutline,
+  ChevronBackOutline,
 } from "react-ionicons";
 import FileViewer from "react-file-viewer";
 import { useAuthContext, useTopUsersContext, useChatContext } from "@/contexts/Support";
@@ -280,6 +282,7 @@ export default function StudyMaterialDetailClient({ materialId }) {
     }
 
     try {
+      BProgress.start();
       const token = localStorage.getItem("TOKEN");
       const url = `${process.env.NEXT_PUBLIC_API_URL}/v1.0/study-materials/${materialId}/download`;
 
@@ -303,10 +306,13 @@ export default function StudyMaterialDetailClient({ materialId }) {
       link.remove();
       window.URL.revokeObjectURL(downloadUrl);
 
-      message.success("Đang bắt đầu tải xuống...");
+      message.success("Bắt đầu tải tài liệu...");
       loadMaterial();
-    } catch (err) {
-      message.error("Không thể tải tài liệu");
+    } catch (error) {
+      console.error("Download error:", error);
+      message.error("Có lỗi xảy ra khi tải tài liệu");
+    } finally {
+      BProgress.done();
     }
   };
 
@@ -370,16 +376,26 @@ export default function StudyMaterialDetailClient({ materialId }) {
     >
       <div className="px-4 py-8 min-h-screen">
         <main className="max-w-[1000px] mx-auto">
-          <Breadcrumb
-            className="mb-6"
-            items={[
-              {
-                title: "Tài liệu ôn thi",
-                href: "/explore/study-materials",
-              },
-              { title: material.title },
-            ]}
-          />
+          <div className="flex items-center gap-4 mb-6">
+            <Button
+              icon={<ChevronBackOutline height="20px" width="20px" color="currentColor" />}
+              onClick={() => {
+                BProgress.start();
+                router.back();
+              }}
+              className="flex items-center justify-center border-none shadow-sm dark:bg-neutral-800 dark:text-gray-300 rounded-xl h-10 w-10 p-0"
+            />
+            <Breadcrumb
+              className="m-0"
+              items={[
+                {
+                  title: "Chợ tài liệu",
+                  href: "/explore/study-materials",
+                },
+                { title: material.title },
+              ]}
+            />
+          </div>
 
           <Row gutter={[24, 24]}>
             <Col xs={24} lg={16}>
@@ -523,7 +539,10 @@ export default function StudyMaterialDetailClient({ materialId }) {
                       <Button
                         type="primary"
                         size="large"
-                        onClick={() => router.push(`/explore/study-materials/${materialId}/view`)}
+                        onClick={() => {
+                          BProgress.start();
+                          router.push(`/explore/study-materials/${materialId}/view`);
+                        }}
                         className="border-none rounded-xl h-[50px] px-8 font-semibold flex items-center gap-2"
                       >
                         <EyeOutline color="#fff" height="20px" width="20px" />
