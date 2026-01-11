@@ -182,11 +182,11 @@ export default function StudyMaterialsClient() {
   useEffect(() => {
     loadCategories();
     loadMaterials(1, true);
-  }, []);
+  }, [loadMaterials]);
 
   useEffect(() => {
     loadMaterials(1, true);
-  }, [search, categoryId, isFree, sort]);
+  }, [loadMaterials, search, categoryId, isFree, sort]);
 
   const sortOptions = [
     { key: "newest", label: "Mới nhất", sortBy: "created_at", sortOrder: "desc" },
@@ -436,7 +436,7 @@ export default function StudyMaterialsClient() {
         <section className="max-w-[1000px] mx-auto mt-20 mb-12 bg-white dark:bg-neutral-800 p-8 sm:p-12 rounded-3xl shadow-sm border border-gray-100 dark:border-neutral-700">
           <div className="prose prose-neutral dark:prose-invert max-w-none">
             <h1 className="text-3xl font-extrabold text-blue-600 dark:text-blue-400 mb-6">
-              Kho Tài Liệu Ôn Thi Toàn Diện: Nâng Bước Thành Công Cho Học Sinh & Sinh Viên
+              Kho Tài Liệu Ôn Thi Toàn Diện: Nâng Bước Thành Công Cho Học Sinh &amp; Sinh Viên
             </h1>
 
             <p className="text-gray-600 dark:text-neutral-300 leading-relaxed mb-6">
@@ -462,7 +462,7 @@ export default function StudyMaterialsClient() {
               <div className="p-6 bg-orange-50 dark:bg-neutral-900 rounded-2xl">
                 <h3 className="text-lg font-bold text-orange-700 dark:text-orange-300 mb-2">Cơ chế chia sẻ điểm số công bằng</h3>
                 <p className="text-sm text-gray-600 dark:text-neutral-400">
-                  Chúng tôi vận hành hệ thống dựa trên tinh thần "Cho đi là nhận lại". Bạn có thể nhận tài liệu miễn phí hoặc sử dụng điểm tích lũy từ các hoạt động trên diễn đàn để đổi lấy những tài liệu chuyên sâu.
+                  Chúng tôi vận hành hệ thống dựa trên tinh thần &quot;Cho đi là nhận lại&quot;. Bạn có thể nhận tài liệu miễn phí hoặc sử dụng điểm tích lũy từ các hoạt động trên diễn đàn để đổi lấy những tài liệu chuyên sâu.
                 </p>
               </div>
               <div className="p-6 bg-purple-50 dark:bg-neutral-900 rounded-2xl">
@@ -479,7 +479,7 @@ export default function StudyMaterialsClient() {
             <p className="mb-4">Chúng tôi phân loại tài liệu một cách khoa học để các sĩ tử dễ dàng định vị mục tiêu:</p>
             <ul className="list-disc pl-6 space-y-3 mb-8">
               <li><strong>Tài liệu ôn thi THPT Quốc gia:</strong> Tổng hợp đề thi thử từ 63 tỉnh thành, các bộ đề dự đoán bám sát cấu trúc đề minh họa của Bộ GD&ĐT. Giúp học sinh làm quen với áp lực phòng thi và quản lý thời gian hiệu quả.</li>
-              <li><strong>Ôn thi Đánh giá năng lực & Đánh giá tư duy:</strong> Tập trung vào các dạng bài logic, phân tích dữ liệu và tư duy phản biện - những phần "khó nhằn" trong kỳ thi của ĐHQG Hà Nội, ĐHQG TP.HCM và Bách Khoa.</li>
+              <li><strong>Ôn thi Đánh giá năng lực &amp; Đánh giá tư duy:</strong> Tập trung vào các dạng bài logic, phân tích dữ liệu và tư duy phản biện - những phần &quot;khó nhằn&quot; trong kỳ thi của ĐHQG Hà Nội, ĐHQG TP.HCM và Bách Khoa.</li>
               <li><strong>Hệ thống đề kiểm tra học kỳ:</strong> Đầy đủ các bộ đề giữa kỳ, cuối kỳ dành cho học sinh THCS và THPT. Đây là nguồn khảo cứu tuyệt vời để củng cố điểm số trên lớp.</li>
               <li><strong>Chuyên đề bồi dưỡng học sinh giỏi:</strong> Dành cho những bạn đam mê chinh phục các giải thưởng cấp tỉnh, cấp quốc gia với hệ thống bài tập nâng cao và lời giải chi tiết.</li>
               <li><strong>Tài liệu ngoại ngữ chuyên sâu:</strong> Không chỉ dừng lại ở chương trình giáo khoa, chúng tôi cung cấp nguồn học liệu IELTS (Reading, Writing task 2), TOEIC và các chứng chỉ tiếng Trung, tiếng Nhật.</li>
@@ -489,14 +489,14 @@ export default function StudyMaterialsClient() {
               Chiến thuật sử dụng tài liệu để đạt điểm 9, 10
             </h2>
             <p className="mb-6 leading-relaxed">
-              Việc sở hữu hàng ngàn file PDF sẽ không có ý nghĩa nếu bạn không có phương pháp học tập đúng đắn. Các chuyên gia đào tạo tại CBH Youth Online khuyên các bạn học sinh nên áp dụng mô hình <strong>"Học - Luyện - Chấm - Sửa"</strong>:
+              Việc sở hữu hàng ngàn file PDF sẽ không có ý nghĩa nếu bạn không có phương pháp học tập đúng đắn. Các chuyên gia đào tạo tại CBH Youth Online khuyên các bạn học sinh nên áp dụng mô hình <strong>&quot;Học - Luyện - Chấm - Sửa&quot;</strong>:
             </p>
             <div className="space-y-4 mb-8">
               <div className="flex gap-4 items-start">
                 <div className="bg-blue-100 dark:bg-blue-900 p-2 rounded-lg font-bold text-blue-600">01</div>
                 <div>
                   <h4 className="font-bold">Hệ thống hóa kiến thức nền tảng</h4>
-                  <p className="text-sm text-gray-500">Hãy bắt đầu bằng cách tải các file "Sơ đồ tư duy" hoặc "Tóm tắt công thức" để nắm được bức tranh tổng quan trước khi dấn thân vào các bài tập khó.</p>
+                  <p className="text-sm text-gray-500">Hãy bắt đầu bằng cách tải các file &quot;Sơ đồ tư duy&quot; hoặc &quot;Tóm tắt công thức&quot; để nắm được bức tranh tổng quan trước khi dấn thân vào các bài tập khó.</p>
                 </div>
               </div>
               <div className="flex gap-4 items-start">
@@ -510,7 +510,7 @@ export default function StudyMaterialsClient() {
                 <div className="bg-blue-100 dark:bg-blue-900 p-2 rounded-lg font-bold text-blue-600">03</div>
                 <div>
                   <h4 className="font-bold">Đối chiếu và phân tích lỗi sai</h4>
-                  <p className="text-sm text-gray-500">Đây là bước quan trọng nhất. Hãy tìm kiếm các tài liệu có "Lời giải chi tiết" thay vì chỉ có đáp án trắc nghiệm. Việc hiểu tại sao mình sai giúp bạn tránh lặp lại lỗi đó trong tương lai.</p>
+                  <p className="text-sm text-gray-500">Đây là bước quan trọng nhất. Hãy tìm kiếm các tài liệu có &quot;Lời giải chi tiết&quot; thay vì chỉ có đáp án trắc nghiệm. Việc hiểu tại sao mình sai giúp bạn tránh lặp lại lỗi đó trong tương lai.</p>
                 </div>
               </div>
             </div>
@@ -519,13 +519,13 @@ export default function StudyMaterialsClient() {
               Cộng đồng chia sẻ tri thức - Kiếm thêm thu nhập từ tài liệu sạch
             </h2>
             <p className="mb-6 leading-relaxed">
-              Bạn đang sở hữu những bản giáo án tâm huyết? Bạn vừa hoàn thành bộ đề thi khảo sát chất lượng của trường mình? Đừng giữ chúng trong ổ cứng! Hãy nhấn nút <strong>"Đăng tài liệu"</strong> để chia sẻ với hàng ngàn thành viên khác. Khi chia sẻ tài liệu, bạn sẽ nhận được điểm thưởng (point). Số điểm này không chỉ dùng để tải các tài liệu VIP khác mà còn giúp nâng cao uy tín của bạn trong cộng đồng, mở ra cơ hội trở thành các "Cộng tác viên học thuật" của CBH Youth Online.
+              Bạn đang sở hữu những bản giáo án tâm huyết? Bạn vừa hoàn thành bộ đề thi khảo sát chất lượng của trường mình? Đừng giữ chúng trong ổ cứng! Hãy nhấn nút <strong>&quot;Đăng tài liệu&quot;</strong> để chia sẻ với hàng ngàn thành viên khác. Khi chia sẻ tài liệu, bạn sẽ nhận được điểm thưởng (point). Số điểm này không chỉ dùng để tải các tài liệu VIP khác mà còn giúp nâng cao uy tín của bạn trong cộng đồng, mở ra cơ hội trở thành các &quot;Cộng tác viên học thuật&quot; của CBH Youth Online.
             </p>
 
             <div className="bg-gray-50 dark:bg-neutral-900 border-l-4 border-blue-500 p-6 my-10 rounded-r-xl">
               <h4 className="text-lg font-bold mb-2">Tầm nhìn sứ mệnh</h4>
               <p className="text-gray-600 dark:text-neutral-400 italic">
-                "Chúng tôi tin rằng kiến thức chỉ có giá trị thực sự khi được chia sẻ rộng rãi. CBH Youth Online phấn đấu xóa bỏ rào cản về khoảng cách địa lý và kinh tế, mang đến nguồn tài liệu ôn thi chất lượng nhất cho học sinh từ vùng sâu vùng xa đến thành thị, giúp mọi tài năng trẻ đều có cơ hội tỏa sáng."
+                &quot;Chúng tôi tin rằng kiến thức chỉ có giá trị thực sự khi được chia sẻ rộng rãi. CBH Youth Online phấn đấu xóa bỏ rào cản về khoảng cách địa lý và kinh tế, mang đến nguồn tài liệu ôn thi chất lượng nhất cho học sinh từ vùng sâu vùng xa đến thành thị, giúp mọi tài năng trẻ đều có cơ hội tỏa sáng.&quot;
               </p>
             </div>
 
