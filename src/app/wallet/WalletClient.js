@@ -195,7 +195,7 @@ export default function WalletClient() {
             bodyStyle={{ padding: 0 }}
           >
             <div className="p-0">
-              <div className="bg-gray-50 dark:bg-neutral-800/50 px-6 py-3 font-semibold text-gray-500 text-sm uppercase mt-4">
+              <div className="bg-gray-50 dark:bg-neutral-800/50 px-6 py-3 font-semibold text-gray-500 text-sm uppercase">
                 Lịch sử rút tiền
               </div>
               {withdrawalRequests.length === 0 ? (
