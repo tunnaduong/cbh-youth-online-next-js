@@ -42,6 +42,7 @@ import {
   People,
   ChatbubbleEllipsesOutline,
 } from "react-ionicons";
+import FileViewer from "react-file-viewer";
 import { useAuthContext, useTopUsersContext, useChatContext } from "@/contexts/Support";
 import * as Api from "@/app/Api";
 import {
@@ -439,13 +440,15 @@ export default function StudyMaterialDetailClient({ materialId }) {
                       <Tag color="blue" className="rounded-full">Trang 1/???</Tag>
                     </div>
 
-                    <div className="relative h-[600px] w-full overflow-hidden">
-                      <iframe
-                        src={`https://view.officeapps.live.com/op/view.aspx?src=${encodeURIComponent(`${process.env.NEXT_PUBLIC_API_URL}/v1.0/study-materials/documents/view?id=${material.id}&key=${material.preview_key || 'temp'}&ext=.${material.file?.file_name?.split('.').pop() || 'docx'}`)}`}
-                        className="w-full h-[1000px] border-none"
-                        style={{ marginTop: '-2px' }}
+                    <div
+                      className="relative h-[800px] w-full overflow-hidden bg-gray-100 dark:bg-neutral-900 select-none"
+                      onContextMenu={(e) => e.preventDefault()}
+                    >
+                      <FileViewer
+                        fileType={material.file?.file_name?.split('.').pop() || 'docx'}
+                        filePath={`${process.env.NEXT_PUBLIC_API_URL}/v1.0/study-materials/documents/view?id=${material.id}&key=${material.preview_key || 'temp'}`}
+                        onError={(e) => console.error("Error in FileViewer:", e)}
                       />
-
                       {/* Overlay Mask */}
                       <div className="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-white via-white/90 to-transparent dark:from-neutral-900 dark:via-neutral-900/90 flex flex-col items-center justify-end pb-12 px-6 text-center">
                         <div className="bg-white dark:bg-neutral-800 p-8 rounded-3xl shadow-xl border border-gray-100 dark:border-neutral-700 max-w-md">

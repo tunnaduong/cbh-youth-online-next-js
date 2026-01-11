@@ -980,3 +980,24 @@ body.has-email-verification-alert [class*="mt-[4.3rem]"],
 body.has-email-verification-alert [class*="mt-\\[4\\.3rem\\]"] {
   margin-top: calc(4.3rem + 40px) !important;
 }
+
+/* Hide React Doc Viewer PDF controls */
+#pdf-controls {
+  display: none !important;
+}
+
+/* Hide React Doc Viewer PDF controls */
+#pdf-controls {
+  display: none !important;
+}
+
+/* Fix react-pdf warnings and prevent text selection */
+.react-pdf__Page__textContent,
+.react-pdf__Page__annotations {
+  display: none !important;
+}
+
+/* Disable scroll for React File Viewer */
+.pg-viewer-wrapper {
+  overflow: hidden !important;
+}
