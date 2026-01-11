@@ -5,39 +5,49 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuthContext } from "@/contexts/Support";
 import { getWalletBalance, requestWithdrawal } from "@/app/Api";
-import { message } from "antd";
+import { message, Button, Card, Typography, Space, Form, Divider, Breadcrumb, Input, InputNumber } from "antd";
+// import { Input, InputNumber } from "@/components/ui/input";
 import Link from "next/link";
-import { Wallet } from "react-ionicons";
+import { WalletOutline, CashOutline, AddCircleOutline } from "react-ionicons";
+
+const { Title, Text, Paragraph } = Typography;
 
 export default function WithdrawClient() {
-  const { loggedIn } = useAuthContext();
+  const { loggedIn, authLoading } = useAuthContext();
   const router = useRouter();
   const [balance, setBalance] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [formData, setFormData] = useState({
-    amount: "",
-    bank_account: "",
-    bank_name: "",
-    account_holder: "",
-  });
+  const [form] = Form.useForm();
 
   const sidebarItems = [
     {
       key: "wallet",
       href: "/wallet",
       label: "Ví điểm",
-      Icon: Wallet,
-      isExternal: false,
+      Icon: WalletOutline,
+    },
+    {
+      key: "withdraw",
+      href: "/wallet/withdraw",
+      label: "Rút tiền",
+      Icon: CashOutline,
+    },
+    {
+      key: "deposit",
+      href: "/wallet/deposit",
+      label: "Nạp tiền",
+      Icon: AddCircleOutline,
     },
   ];
 
   useEffect(() => {
+    if (authLoading) return;
     if (!loggedIn) {
-      router.push("/login");
+      router.push("/login?continue=" + encodeURIComponent(window.location.href));
       return;
     }
     loadBalance();
-  }, [loggedIn, router]);
+  }, [loggedIn, authLoading, router]);
 
   const loadBalance = async () => {
     try {
@@ -48,22 +58,10 @@ export default function WithdrawClient() {
     }
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-
-    const amount = parseInt(formData.amount);
-    if (!amount || amount < 500) {
-      message.warning("Số điểm tối thiểu là 500 điểm");
-      return;
-    }
-
+  const onFinish = async (values) => {
+    const amount = parseInt(values.amount);
     if (amount > (balance?.points || 0)) {
       message.warning("Số điểm không đủ");
-      return;
-    }
-
-    if (!formData.bank_account || !formData.bank_name || !formData.account_holder) {
-      message.warning("Vui lòng điền đầy đủ thông tin ngân hàng");
       return;
     }
 
@@ -71,9 +69,9 @@ export default function WithdrawClient() {
       setLoading(true);
       await requestWithdrawal({
         amount: amount,
-        bank_account: formData.bank_account,
-        bank_name: formData.bank_name,
-        account_holder: formData.account_holder,
+        bank_account: values.bank_account,
+        bank_name: values.bank_name,
+        account_holder: values.account_holder,
       });
       message.success("Yêu cầu rút tiền đã được gửi. Vui lòng chờ admin duyệt.");
       router.push("/wallet");
@@ -89,110 +87,136 @@ export default function WithdrawClient() {
   }
 
   return (
-    <HomeLayout activeNav="explore" sidebarItems={sidebarItems}>
+    <HomeLayout activeNav="explore" sidebarItems={sidebarItems} showRightSidebar={false} activeBar="withdraw" sidebarType="wallet">
       <div className="px-2.5">
         <main className="px-1 xl:min-h-screen py-4 md:max-w-[936px] mx-auto">
-          <Link
-            href="/wallet"
-            className="text-green-600 hover:text-green-700 mb-4 inline-block"
-          >
-            ← Quay lại ví
-          </Link>
+          <Breadcrumb
+            className="mb-6"
+            items={[
+              {
+                title: <Link href="/wallet">Ví điểm của tôi</Link>,
+              },
+              {
+                title: "Rút tiền",
+              },
+            ]}
+          />
 
-          <div className="bg-white dark:bg-neutral-800 rounded-xl shadow-sm p-6">
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-6">
+          <Card
+            className="rounded-2xl shadow-sm border-none dark:bg-neutral-800"
+            bodyStyle={{ padding: '32px' }}
+          >
+            <Title level={3} className="mb-8 dark:text-gray-100">
               Yêu cầu rút tiền
-            </h1>
+            </Title>
 
             {balance && (
-              <div className="mb-6 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-                <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
-                  Số dư hiện tại: <span className="font-semibold">{balance.points.toLocaleString()} điểm</span>
-                </p>
-                <p className="text-sm text-gray-600 dark:text-gray-400">
-                  Mức tối thiểu: <span className="font-semibold">{balance.min_withdrawal_points} điểm</span> ({balance.min_withdrawal_vnd.toLocaleString()} VND)
-                </p>
-                <p className="text-sm text-orange-600 dark:text-orange-400 mt-2">
-                  Lưu ý: Phí rút tiền là 10 điểm (1.000 VND) sẽ được trừ khi admin duyệt.
-                </p>
+              <div className="mb-8 p-6 bg-blue-50 dark:bg-blue-900/20 rounded-2xl">
+                <Space direction="vertical" size="small" className="w-full">
+                  <Text className="text-gray-600 dark:text-gray-400">
+                    Số dư hiện tại: <Text strong>{balance.points.toLocaleString()} điểm</Text>
+                  </Text>
+                  <Text className="text-gray-600 dark:text-gray-400">
+                    Mức tối thiểu: <Text strong>{balance.min_withdrawal_points} điểm</Text> ({balance.min_withdrawal_vnd.toLocaleString()} VND)
+                  </Text>
+                  <Divider className="my-2" />
+                  <Text type="warning" className="text-sm italic">
+                    Lưu ý: Phí rút tiền là 10 điểm (1.000 VND) sẽ được trừ khi admin duyệt.
+                  </Text>
+                  <Text type="secondary" className="text-sm mt-2 block">
+                    Ví dụ: Khách hàng chi trả 100 điểm để mua tài liệu của bạn. Bạn nhận được 70% doanh thu = 70 điểm (Quy đổi 10 điểm = 1.000 đ)
+                  </Text>
+                </Space>
               </div>
             )}
 
-            <form onSubmit={handleSubmit} className="space-y-6">
-              <div>
-                <label className="block mb-2 font-semibold">Số điểm muốn rút *</label>
-                <input
-                  type="number"
-                  value={formData.amount}
-                  onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
-                  className="w-full p-3 border border-gray-300 dark:border-neutral-600 rounded-lg bg-white dark:bg-neutral-700 text-gray-900 dark:text-gray-100"
-                  min="500"
-                  step="10"
-                  required
+            <Form
+              form={form}
+              layout="vertical"
+              onFinish={onFinish}
+              className="max-w-xl"
+              initialValues={{ amount: 500 }}
+            >
+              <Form.Item
+                label={<Text strong>Số điểm muốn rút</Text>}
+                name="amount"
+                rules={[
+                  { required: true, message: 'Vui lòng nhập số điểm' },
+                  { type: 'number', min: 500, message: 'Số điểm tối thiểu là 500' }
+                ]}
+              >
+                <InputNumber
+                  className="w-full !h-full !rounded-xl overflow-hidden"
+                  placeholder="Nhập số điểm cần rút"
+                  step={10}
+                  controls={true}
                 />
-                {formData.amount && (
-                  <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
-                    ≈ {((parseInt(formData.amount) || 0) / 10 * 1000).toLocaleString()} VND
-                    {formData.amount >= 500 && (
-                      <span className="text-orange-600 dark:text-orange-400">
-                        {" "}(sau phí: {((parseInt(formData.amount) || 0) - 10) / 10 * 1000} VND)
-                      </span>
-                    )}
-                  </p>
-                )}
-              </div>
+              </Form.Item>
 
-              <div>
-                <label className="block mb-2 font-semibold">Số tài khoản ngân hàng *</label>
-                <input
-                  type="text"
-                  value={formData.bank_account}
-                  onChange={(e) => setFormData({ ...formData, bank_account: e.target.value })}
-                  className="w-full p-3 border border-gray-300 dark:border-neutral-600 rounded-lg bg-white dark:bg-neutral-700 text-gray-900 dark:text-gray-100"
-                  required
-                />
-              </div>
+              <Form.Item
+                noStyle
+                shouldUpdate={(prevValues, currentValues) => prevValues.amount !== currentValues.amount}
+              >
+                {({ getFieldValue }) => {
+                  const amount = getFieldValue('amount') || 0;
+                  return amount > 0 ? (
+                    <Paragraph className="text-sm text-gray-500 mt-[-20px] mb-4">
+                      ≈ {(amount / 10 * 1000).toLocaleString()} VND
+                      {amount >= 500 && (
+                        <Text type="warning" className="ml-2">
+                          (sau phí: {((amount - 10) / 10 * 1000).toLocaleString()} VND)
+                        </Text>
+                      )}
+                    </Paragraph>
+                  ) : null;
+                }}
+              </Form.Item>
 
-              <div>
-                <label className="block mb-2 font-semibold">Tên ngân hàng *</label>
-                <input
-                  type="text"
-                  value={formData.bank_name}
-                  onChange={(e) => setFormData({ ...formData, bank_name: e.target.value })}
-                  className="w-full p-3 border border-gray-300 dark:border-neutral-600 rounded-lg bg-white dark:bg-neutral-700 text-gray-900 dark:text-gray-100"
-                  placeholder="VD: Vietcombank, Techcombank..."
-                  required
-                />
-              </div>
+              <Form.Item
+                label={<Text strong>Số tài khoản ngân hàng</Text>}
+                name="bank_account"
+                rules={[{ required: true, message: 'Vui lòng nhập số tài khoản' }]}
+              >
+                <Input className="!rounded-xl" placeholder="Số tài khoản của bạn" />
+              </Form.Item>
 
-              <div>
-                <label className="block mb-2 font-semibold">Tên chủ tài khoản *</label>
-                <input
-                  type="text"
-                  value={formData.account_holder}
-                  onChange={(e) => setFormData({ ...formData, account_holder: e.target.value })}
-                  className="w-full p-3 border border-gray-300 dark:border-neutral-600 rounded-lg bg-white dark:bg-neutral-700 text-gray-900 dark:text-gray-100"
-                  required
-                />
-              </div>
+              <Form.Item
+                label={<Text strong>Tên ngân hàng</Text>}
+                name="bank_name"
+                rules={[{ required: true, message: 'Vui lòng nhập tên ngân hàng' }]}
+              >
+                <Input className="!rounded-xl" placeholder="VD: Vietcombank, Techcombank..." />
+              </Form.Item>
 
-              <div className="flex gap-4">
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50"
-                >
-                  {loading ? "Đang gửi..." : "Gửi yêu cầu"}
-                </button>
-                <Link
-                  href="/wallet"
-                  className="px-6 py-2 bg-gray-200 dark:bg-neutral-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-300 dark:hover:bg-neutral-600"
-                >
-                  Hủy
-                </Link>
-              </div>
-            </form>
-          </div>
+              <Form.Item
+                label={<Text strong>Tên chủ tài khoản</Text>}
+                name="account_holder"
+                rules={[{ required: true, message: 'Vui lòng nhập tên chủ tài khoản' }]}
+              >
+                <Input className="!rounded-xl" placeholder="NGUYEN VAN A" />
+              </Form.Item>
+
+              <Form.Item className="mt-8">
+                <Space size="middle">
+                  <Button
+                    type="primary"
+                    htmlType="submit"
+                    loading={loading}
+                    className="h-12 px-10 rounded-xl font-bold bg-green-600 border-none hover:!bg-green-700"
+                  >
+                    Gửi yêu cầu
+                  </Button>
+                  <Button
+                    size="large"
+                    className="h-12 px-10 rounded-xl font-medium dark:bg-neutral-700 dark:border-neutral-600 dark:text-gray-300"
+                    onClick={() => router.push("/wallet")}
+                  >
+                    Hủy
+                  </Button>
+                </Space>
+              </Form.Item>
+            </Form>
+          </Card>
         </main>
       </div>
     </HomeLayout>

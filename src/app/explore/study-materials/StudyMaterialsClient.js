@@ -307,7 +307,7 @@ export default function StudyMaterialsClient() {
                 >
                   <Button
                     size="large"
-                    className="rounded-xl px-5 h-[44px] font-medium flex items-center gap-2 bg-gray-50 dark:bg-neutral-900 border-none hover:bg-gray-100 dark:hover:bg-neutral-800 text-gray-700 dark:text-neutral-300 shadow-sm"
+                    className="rounded-xl px-5 h-[44px] font-medium flex items-center gap-2 bg-gray-100 dark:bg-neutral-900 border-none hover:bg-gray-100 dark:hover:bg-neutral-800 text-gray-700 dark:text-neutral-300 shadow-sm"
                   >
                     <FilterOutline
                       color="currentColor"

@@ -430,10 +430,10 @@ export default function StudyMaterialDetailClient({ materialId }) {
                 )}
 
                 {/* Document File Preview (Restricted) */}
-                {!material.is_free && !material.is_purchased && material.file && (
-                  <div className="mb-8 overflow-hidden rounded-2xl border border-gray-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 relative">
+                {!material.is_free && !material.is_purchased && material.file && material.file.file_path && (
+                  <div className="mb-8 overflow-hidden rounded-2xl border border-gray-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 relative select-none">
                     <div className="p-4 border-b border-gray-100 dark:border-neutral-800 flex justify-between items-center bg-gray-50/50 dark:bg-neutral-800/50">
-                      <Title level={4} className="m-0">
+                      <Title level={4} className="!m-0">
                         Xem trước tài liệu
                       </Title>
                       <Tag color="blue" className="rounded-full">Trang 1/???</Tag>
@@ -441,7 +441,7 @@ export default function StudyMaterialDetailClient({ materialId }) {
 
                     <div className="relative h-[600px] w-full overflow-hidden">
                       <iframe
-                        src={`https://view.officeapps.live.com/op/view.aspx?src=${encodeURIComponent(`${process.env.NEXT_PUBLIC_API_URL}/storage/${material.file.file_path}`)}`}
+                        src={`https://view.officeapps.live.com/op/view.aspx?src=${encodeURIComponent(`${process.env.NEXT_PUBLIC_API_URL}/v1.0/study-materials/documents/view?id=${material.id}&key=${material.preview_key || 'temp'}`)}`}
                         className="w-full h-[1000px] border-none"
                         style={{ marginTop: '-2px' }}
                       />

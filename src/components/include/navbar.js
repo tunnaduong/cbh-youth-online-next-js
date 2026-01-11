@@ -33,6 +33,7 @@ import {
   BsGear,
   BsPersonCircle,
   BsQuestionCircle,
+  BsWallet2,
 } from "react-icons/bs";
 import { Drawer, Alert } from "antd";
 import { useState, useEffect } from "react";
@@ -416,6 +417,12 @@ export default function Navbar({ activeNav = null }) {
                   >
                     <BsPersonCircle />
                     Trang cá nhân
+                  </Dropdown.Link>
+                  <Dropdown.Link
+                    className="flex items-center gap-2 py-2"
+                    href="/wallet"
+                  >
+                    <BsWallet2 /> Ví điểm của tôi
                   </Dropdown.Link>
                   <Dropdown.Link
                     className="flex items-center gap-2 py-2"

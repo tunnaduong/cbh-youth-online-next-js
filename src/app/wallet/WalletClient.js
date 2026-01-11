@@ -5,12 +5,14 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuthContext } from "@/contexts/Support";
 import { getWalletBalance, getWalletTransactions } from "@/app/Api";
-import { message } from "antd";
+import { message, Button, Card, Typography, Space, Divider, Empty, Spin } from "antd";
 import Link from "next/link";
-import { WalletOutline, Wallet } from "react-ionicons";
+import { WalletOutline, CashOutline, AddCircleOutline } from "react-ionicons";
+
+const { Title, Text, Paragraph } = Typography;
 
 export default function WalletClient() {
-  const { loggedIn } = useAuthContext();
+  const { loggedIn, authLoading } = useAuthContext();
   const router = useRouter();
   const [balance, setBalance] = useState(null);
   const [transactions, setTransactions] = useState([]);
@@ -21,18 +23,30 @@ export default function WalletClient() {
       key: "wallet",
       href: "/wallet",
       label: "Ví điểm",
-      Icon: Wallet,
-      isExternal: false,
+      Icon: WalletOutline,
+    },
+    {
+      key: "withdraw",
+      href: "/wallet/withdraw",
+      label: "Rút tiền",
+      Icon: CashOutline,
+    },
+    {
+      key: "deposit",
+      href: "/wallet/deposit",
+      label: "Nạp tiền",
+      Icon: AddCircleOutline,
     },
   ];
 
   useEffect(() => {
+    if (authLoading) return;
     if (!loggedIn) {
-      router.push("/login");
+      router.push("/login?continue=" + encodeURIComponent(window.location.href));
       return;
     }
     loadData();
-  }, [loggedIn, router]);
+  }, [loggedIn, authLoading, router]);
 
   const loadData = async () => {
     try {
@@ -56,94 +70,106 @@ export default function WalletClient() {
 
   if (loading) {
     return (
-      <HomeLayout activeNav="explore" sidebarItems={sidebarItems}>
-        <div className="text-center py-12">
-          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-green-600"></div>
+      <HomeLayout activeNav="explore" sidebarItems={sidebarItems} showRightSidebar={false} sidebarType="wallet">
+        <div className="flex justify-center items-center py-24">
+          <Spin size="large" />
         </div>
       </HomeLayout>
     );
   }
 
   return (
-    <HomeLayout activeNav="explore" sidebarItems={sidebarItems}>
+    <HomeLayout activeNav="explore" sidebarItems={sidebarItems} showRightSidebar={false} activeBar="wallet" sidebarType="wallet">
       <div className="px-2.5">
         <main className="px-1 xl:min-h-screen py-4 md:max-w-[936px] mx-auto">
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-6">
+          <Title level={2} className="mb-6 dark:text-gray-100">
             Ví điểm của tôi
-          </h1>
+          </Title>
 
           {/* Balance Card */}
           {balance && (
-            <div className="bg-gradient-to-r from-green-500 to-green-600 rounded-xl shadow-lg p-6 mb-6 text-white">
-              <div className="flex justify-between items-center">
+            <Card
+              className="bg-gradient-to-r from-green-500 to-green-600 rounded-2xl shadow-lg border-none mb-6 overflow-hidden"
+              bodyStyle={{ padding: '24px' }}
+            >
+              <div className="flex justify-between items-center text-white">
                 <div>
-                  <p className="text-green-100 mb-2">Số dư hiện tại</p>
-                  <p className="text-3xl font-bold">{balance.points.toLocaleString()} điểm</p>
-                  <p className="text-green-100 mt-2">
+                  <Text className="text-green-100 mb-2 block">Số dư hiện tại</Text>
+                  <Title level={1} className="m-0 !text-white !font-bold">
+                    {balance.points.toLocaleString()} điểm
+                  </Title>
+                  <Text className="text-green-100 mt-2 block">
                     ≈ {balance.formatted_vnd}
-                  </p>
+                  </Text>
                 </div>
-                <WalletOutline color="#fff" height="48px" width="48px" />
+                <div className="opacity-80">
+                  <WalletOutline color="#fff" height="64px" width="64px" />
+                </div>
               </div>
-              <div className="mt-4 pt-4 border-t border-green-400">
-                <p className="text-sm text-green-100">
-                  Mức tối thiểu rút: {balance.min_withdrawal_points} điểm ({balance.min_withdrawal_vnd.toLocaleString()} VND)
-                </p>
+              <Divider className="my-4 border-green-400 opacity-50" />
+              <div className="text-green-100 text-sm">
+                Mức tối thiểu rút: {balance.min_withdrawal_points} điểm ({balance.min_withdrawal_vnd.toLocaleString()} VND)
               </div>
-            </div>
+            </Card>
           )}
 
           {/* Actions */}
-          <div className="flex gap-4 mb-6">
-            <Link
-              href="/wallet/withdraw"
-              className={`px-6 py-3 rounded-lg font-semibold ${
-                balance && balance.points >= balance.min_withdrawal_points
-                  ? "bg-green-600 text-white hover:bg-green-700"
-                  : "bg-gray-300 dark:bg-neutral-700 text-gray-500 dark:text-gray-400 cursor-not-allowed"
-              }`}
+          <Space size="large" className="mb-8 w-full">
+            <Button
+              type="primary"
+              size="large"
+              className="h-12 px-8 rounded-xl font-semibold bg-green-600 border-none hover:!bg-green-700"
+              onClick={() => router.push("/wallet/withdraw")}
             >
               Rút tiền
-            </Link>
-            <Link
-              href="/wallet/deposit"
-              className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-semibold inline-block text-center"
+            </Button>
+            <Button
+              type="primary"
+              variant="outlined"
+              size="large"
+              className="h-12 px-8 rounded-xl font-semibold bg-blue-600 border-none hover:!bg-blue-700"
+              onClick={() => router.push("/wallet/deposit")}
             >
               Nạp tiền
-            </Link>
-          </div>
+            </Button>
+          </Space>
 
           {/* Transactions */}
-          <div className="bg-white dark:bg-neutral-800 rounded-xl shadow-sm p-6">
-            <h2 className="text-lg font-semibold mb-4">Lịch sử giao dịch</h2>
+          <Card
+            title={<Title level={4} className="!m-0 dark:text-gray-100">Lịch sử giao dịch</Title>}
+            className="rounded-2xl shadow-sm border-none dark:bg-neutral-800 overflow-hidden"
+            bodyStyle={{ padding: 0 }}
+          >
             {transactions.length === 0 ? (
-              <p className="text-gray-500 dark:text-gray-400 text-center py-8">
-                Chưa có giao dịch nào
-              </p>
+              <div className="py-12">
+                <Empty description="Chưa có giao dịch nào" />
+              </div>
             ) : (
-              <div className="space-y-4">
+              <div className="divide-y divide-gray-100 dark:divide-neutral-700">
                 {transactions.map((transaction) => (
                   <div
                     key={transaction.id}
-                    className="flex justify-between items-center p-4 border-b border-gray-200 dark:border-neutral-700 last:border-0"
+                    className="flex justify-between items-center p-6 hover:bg-gray-50 dark:hover:bg-neutral-800/50 transition-colors"
                   >
                     <div>
-                      <p className="font-semibold">{transaction.description}</p>
-                      <p className="text-sm text-gray-500 dark:text-gray-400">
+                      <Text strong className="block text-base dark:text-gray-200">
+                        {transaction.description}
+                      </Text>
+                      <Text type="secondary" className="text-xs">
                         {new Date(transaction.created_at).toLocaleString("vi-VN")}
-                      </p>
+                      </Text>
                     </div>
-                    <div className={`font-semibold ${
-                      transaction.amount > 0 ? "text-green-600" : "text-red-600"
-                    }`}>
+                    <div className={`text-lg font-bold ${transaction.amount > 0 ? "text-green-600" : "text-red-500"
+                      }`}>
                       {transaction.amount > 0 ? "+" : ""}
-                      {transaction.amount.toLocaleString()} điểm
+                      {transaction.amount.toLocaleString()}
+                      <span className="text-sm font-normal ml-1">điểm</span>
                     </div>
                   </div>
                 ))}
               </div>
             )}
-          </div>
+          </Card>
         </main>
       </div>
     </HomeLayout>

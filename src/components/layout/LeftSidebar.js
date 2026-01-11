@@ -78,7 +78,7 @@ export default function LeftSidebar({
       message.error("Vui lòng đăng nhập để xem các bài viết đã lưu của bạn.");
       router.push(
         "/login?continue=" +
-          encodeURIComponent(window.location.origin + "/saved")
+        encodeURIComponent(window.location.origin + "/saved")
       );
     }
   };
@@ -105,13 +105,17 @@ export default function LeftSidebar({
       <div
         className={`w-[${width}] hidden xl:flex flex-col !p-6 sticky h-min`}
         id="left-sidebar"
-        style={{ top: stickyTop, width: width }}
+        style={{ top: stickyTop, minWidth: width }}
       >
         <p className="text-sm font-semibold text-[#6b6b6b] dark:text-neutral-400 pb-3 ml-2.5">
           MENU
         </p>
 
-        {(type === "default" ? items.slice(0, 5) : items).map((it) => {
+        {(type === "default" ? items.slice(0, 5) : items).map((it, idx) => {
+          if (it.type === "divider") {
+            return <hr key={`hr-${idx}`} className="my-3 dark:border-neutral-600" />;
+          }
+
           const isActive = activeBar === it.key;
           const LinkComp = it.isExternal ? "a" : Link;
           const props = it.isExternal
@@ -126,9 +130,8 @@ export default function LeftSidebar({
               key={it.key}
               {...props}
               onClick={handleClick}
-              className={`${baseLinkClass} ${
-                isActive ? activeLinkClass : inactiveLinkClass
-              }`}
+              className={`${baseLinkClass} ${isActive ? activeLinkClass : inactiveLinkClass
+                }`}
             >
               <div
                 className={isActive ? activeIconWrapper : inactiveIconWrapper}
@@ -164,9 +167,8 @@ export default function LeftSidebar({
                   <Link
                     key={it.key}
                     href={it.href}
-                    className={`${baseLinkClass} ${
-                      isActive ? activeLinkClass : inactiveLinkClass
-                    }`}
+                    className={`${baseLinkClass} ${isActive ? activeLinkClass : inactiveLinkClass
+                      }`}
                   >
                     <div
                       className={
@@ -216,7 +218,7 @@ export default function LeftSidebar({
               ))}
           </>
         )}
-      </div>
+      </div >
     </>
   );
 }

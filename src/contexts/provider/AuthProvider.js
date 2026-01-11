@@ -17,6 +17,7 @@ const AuthProvider = ({ children }) => {
   const [userToken, _setUserToken] = useState("");
   const [toast, setToast] = useState({ message: "", show: false });
   const [loggedIn, setLoggedIn] = useState(false);
+  const [authLoading, setAuthLoading] = useState(true);
 
   const setUserToken = (token) => {
     if (token) {
@@ -75,7 +76,12 @@ const AuthProvider = ({ children }) => {
         })
         .catch((err) => {
           console.error("Initial user refresh failed:", err);
+        })
+        .finally(() => {
+          setAuthLoading(false);
         });
+    } else {
+      setAuthLoading(false);
     }
   }, []);
 
@@ -102,6 +108,7 @@ const AuthProvider = ({ children }) => {
         userToken,
         toast,
         loggedIn,
+        authLoading,
         showToast,
         setCurrentUser,
         setUserToken,
