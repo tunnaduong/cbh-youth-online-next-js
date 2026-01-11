@@ -5,10 +5,10 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuthContext } from "@/contexts/Support";
 import { getWalletBalance, requestWithdrawal } from "@/app/Api";
-import { message, Button, Card, Typography, Space, Form, Divider, Breadcrumb, Input, InputNumber } from "antd";
-// import { Input, InputNumber } from "@/components/ui/input";
+import { message, Button, Card, Typography, Space, Form, Divider, Breadcrumb, InputNumber } from "antd";
+import CustomInput from "@/components/ui/input";
 import Link from "next/link";
-import { WalletOutline, CashOutline, AddCircleOutline } from "react-ionicons";
+import { WalletOutline, CashOutline, AddCircleOutline, HelpCircleOutline, DocumentTextOutline } from "react-ionicons";
 
 const { Title, Text, Paragraph } = Typography;
 
@@ -37,6 +37,19 @@ export default function WithdrawClient() {
       href: "/wallet/deposit",
       label: "Nạp tiền",
       Icon: AddCircleOutline,
+    },
+    { type: "divider" },
+    {
+      key: "help",
+      href: "/help",
+      label: "Trợ giúp",
+      Icon: HelpCircleOutline,
+    },
+    {
+      key: "policy",
+      href: "/help/cho-tai-lieu-on-thi/chinh-sach-ban-tai-lieu",
+      label: "Chính sách bán tài liệu",
+      Icon: DocumentTextOutline,
     },
   ];
 
@@ -117,11 +130,14 @@ export default function WithdrawClient() {
                     Số dư hiện tại: <Text strong>{balance.points.toLocaleString()} điểm</Text>
                   </Text>
                   <Text className="text-gray-600 dark:text-gray-400">
+                    Tài khoản khả dụng: <Text type="success" strong>{balance.points.toLocaleString()} ĐIỂM</Text> (= {(balance.points * 100).toLocaleString()} đ)
+                  </Text>
+                  <Text className="text-gray-600 dark:text-gray-400">
                     Mức tối thiểu: <Text strong>{balance.min_withdrawal_points} điểm</Text> ({balance.min_withdrawal_vnd.toLocaleString()} VND)
                   </Text>
                   <Divider className="my-2" />
                   <Text type="warning" className="text-sm italic">
-                    Lưu ý: Phí rút tiền là 10 điểm (1.000 VND) sẽ được trừ khi admin duyệt.
+                    Lưu ý: Phí rút tiền là 10 điểm (1.000 VND) sẽ được trừ khi admin duyệt.<br />Bạn chỉ có thể rút số điểm tích lũy từ doanh thu bán tài liệu, không thể rút lại số điểm đã nạp.
                   </Text>
                   <Text type="secondary" className="text-sm mt-2 block">
                     Ví dụ: Khách hàng chi trả 100 điểm để mua tài liệu của bạn. Bạn nhận được 70% doanh thu = 70 điểm (Quy đổi 10 điểm = 1.000 đ)
@@ -177,7 +193,7 @@ export default function WithdrawClient() {
                 name="bank_account"
                 rules={[{ required: true, message: 'Vui lòng nhập số tài khoản' }]}
               >
-                <Input className="!rounded-xl" placeholder="Số tài khoản của bạn" />
+                <CustomInput className="!rounded-xl" placeholder="Số tài khoản của bạn" />
               </Form.Item>
 
               <Form.Item
@@ -185,7 +201,7 @@ export default function WithdrawClient() {
                 name="bank_name"
                 rules={[{ required: true, message: 'Vui lòng nhập tên ngân hàng' }]}
               >
-                <Input className="!rounded-xl" placeholder="VD: Vietcombank, Techcombank..." />
+                <CustomInput className="!rounded-xl" placeholder="VD: Vietcombank, Techcombank..." />
               </Form.Item>
 
               <Form.Item
@@ -193,7 +209,7 @@ export default function WithdrawClient() {
                 name="account_holder"
                 rules={[{ required: true, message: 'Vui lòng nhập tên chủ tài khoản' }]}
               >
-                <Input className="!rounded-xl" placeholder="NGUYEN VAN A" />
+                <CustomInput className="!rounded-xl" placeholder="NGUYEN VAN A" />
               </Form.Item>
 
               <Form.Item className="mt-8">

@@ -12,7 +12,7 @@ export default function HelpCenterLayout({ children, title, auth }) {
         <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
           <div className="bg-white dark:bg-[#3c3c3c] overflow-hidden shadow-md sm:rounded-xl">
             <div className="p-6 text-gray-900 dark:text-gray-100">
-              <div className="flex flex-col md:flex-row -mx-4">{children}</div>
+              <div className="flex flex-col-reverse md:flex-row -mx-4">{children}</div>
               <div className="px-3">
                 <div className="mx-auto pt-6">
                   <hr className="mb-4" />

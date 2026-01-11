@@ -261,18 +261,18 @@ export default function Navbar({ activeNav = null }) {
           </Link>
           <form
             onSubmit={handleSearch}
-            className="border dark:!border-neutral-500 max-w-52 xl:flex flex-row items-center bg-[#F7F7F7] dark:!bg-neutral-600 rounded-lg pr-1 ml-7 pl-1 hidden"
+            className="border dark:!border-neutral-500 max-w-52 xl:flex flex-row items-center bg-[#F7F7F7]/50 backdrop-blur-xl dark:!bg-neutral-600/50 rounded-lg pr-1 ml-7 pl-1 hidden"
           >
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Tìm kiếm"
-              className="border-0 w-full bg-[#F7F7F7] dark:!bg-neutral-600 text-[13px] p-2 rounded-lg pr-1 focus:ring-0"
+              className="border-0 w-full bg-transparent dark:!bg-transparent text-[13px] p-2 rounded-lg pr-1 focus:ring-0"
             />
             <button
               type="submit"
-              className="bg-white dark:!bg-neutral-700 rounded-lg min-w-[30px] h-[30px] flex items-center justify-center cursor-pointer search-btn dark:!border-neutral-500"
+              className="bg-white/80 dark:!bg-neutral-700/80 rounded-lg min-w-[30px] h-[30px] flex items-center justify-center cursor-pointer search-btn dark:!border-neutral-500"
             >
               <svg
                 stroke="currentColor"

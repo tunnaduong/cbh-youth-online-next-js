@@ -351,4 +351,75 @@ export const helpArticles = [
       },
     ],
   },
+  {
+    category: "Chợ tài liệu ôn thi",
+    slug: "cho-tai-lieu-on-thi",
+    articles: [
+      {
+        title: "Chính sách bán tài liệu",
+        slug: "chinh-sach-ban-tai-lieu",
+        content: `
+          <h3>1. Quy định chung</h3>
+          <p>Chợ tài liệu ôn thi là nơi kết nối giữa người có nhu cầu chia sẻ tài liệu và người cần tìm kiếm tài liệu chất lượng. Tất cả các tài liệu được đăng bán phải tuân thủ nghiêm ngặt các quy định về bản quyền và sở hữu trí tuệ. Người bán chịu hoàn toàn trách nhiệm về nội dung và nguồn gốc của tài liệu mình đăng tải.</p>
+
+          <h3>2. Quy định về đăng bán tài liệu</h3>
+          <ul>
+            <li><strong>Điều kiện đăng bán:</strong> Tài khoản phải được xác thực email hoặc số điện thoại. Người bán cần cung cấp thông tin mô tả chi tiết, trung thực về tài liệu (số trang, định dạng, nội dung tóm tắt).</li>
+            <li><strong>Định giá:</strong> Người bán có quyền tự định giá cho tài liệu của mình bằng đơn vị "điểm". Giá trị quy đổi điểm sẽ được hệ thống công bố và có thể thay đổi tùy thời điểm. Mức giá tối thiểu và tối đa có thể được áp dụng với một số loại tài liệu.</li>
+            <li><strong>Nội dung cấm:</strong> Không được đăng bán các tài liệu vi phạm pháp luật, đồi trụy, chống phá nhà nước, hoặc các tài liệu mạo danh, lừa đảo. Cấm đăng bán các đề thi chưa được phép công bố hoặc các tài liệu thuộc bí mật quốc gia.</li>
+          </ul>
+
+          <h3>3. Phí giao dịch và Doanh thu</h3>
+          <p>Khi một giao dịch thành công, người bán sẽ nhận được số điểm tương ứng với giá bán trừ đi phí nền tảng (nếu có). Điểm này có thể được sử dụng để mua tài liệu khác hoặc quy đổi theo chính sách của diễn đàn. Hiện tại, phí nền tảng cho mỗi giao dịch là <strong>30%</strong> giá trị tài liệu.</p>
+          <p>Ngoài ra, đối với các giao dịch nạp tiền hoặc rút tiền từ ví, hệ thống sẽ thu một khoản phí cố định là <strong>1.000đ/lần</strong> giao dịch để duy trì hạ tầng thanh toán.</p>
+
+          <h3>4. Chính sách hoàn tiền</h3>
+          <p>Người mua có quyền yêu cầu hoàn tiền trong vòng 24 giờ nếu tài liệu bị lỗi kỹ thuật (không mở được, file hỏng) hoặc nội dung hoàn toàn sai lệch so với mô tả. Yêu cầu hoàn tiền sẽ được ban quản trị xem xét. Nếu khiếu nại đúng, người mua sẽ được hoàn lại 100% số điểm đã thanh toán, và tài liệu sẽ bị gỡ bỏ hoặc người bán bị cảnh cáo.</p>
+
+          <h3>5. Xử lý vi phạm</h3>
+          <p>Mọi hành vi gian lận, sao chép trái phép tài liệu của người khác để bán lại, hoặc cố tình đăng tải tài liệu kém chất lượng nhằm trục lợi sẽ bị xử lý nghiêm khắc. Hình thức xử lý bao gồm: gỡ bỏ tài liệu, thu hồi toàn bộ điểm gian lận, khóa chức năng bán hàng, hoặc khóa vĩnh viễn tài khoản tùy mức độ vi phạm.</p>
+        `,
+      },
+      {
+        title: "Hướng dẫn mua và tải tài liệu",
+        slug: "huong-dan-mua-va-tai-tai-lieu",
+        content: `
+          <h3>Bước 1: Tìm kiếm tài liệu phù hợp</h3>
+          <p>Truy cập vào mục "Tài liệu học tập" từ menu chính. Bạn có thể sử dụng bộ lọc để tìm kiếm theo môn học, lớp, hoặc loại tài liệu (đề thi, bài giảng, tóm tắt kiến thức). Đừng quên đọc kỹ tiêu đề và phần mô tả để đảm bảo tài liệu đúng với nhu cầu của bạn.</p>
+
+          <h3>Bước 2: Xem trước tài liệu</h3>
+          <p>Hầu hết các tài liệu đều có tính năng "Xem trước" (Preview) cho phép bạn xem một phần nội dung (thường là trang đầu hoặc mục lục) trước khi quyết định mua. Hãy tận dụng tính năng này để kiểm tra chất lượng file và độ phù hợp của nội dung.</p>
+
+          <h3>Bước 3: Nạp điểm (nếu cần)</h3>
+          <p>Tài liệu trên chợ được giao dịch bằng "điểm". Nếu số dư điểm trong ví của bạn không đủ, hãy vào mục "Ví của tôi" và chọn "Nạp tiền". Hệ thống hỗ trợ nhiều phương thức nạp tiền nhanh chóng và an toàn như chuyển khoản ngân hàng hoặc ví điện tử.</p>
+
+          <h3>Bước 4: Thanh toán và Tải về</h3>
+          <p>Khi đã chọn được tài liệu và có đủ điểm, nhấn nút "Mua ngay" hoặc "Tải về". Một hộp thoại xác nhận sẽ hiện ra thông báo số điểm sẽ bị trừ. Sau khi xác nhận, tài liệu sẽ thuộc quyền sở hữu của bạn vĩnh viễn. Bạn có thể tải file về máy tính hoặc điện thoại để sử dụng bất cứ lúc nào, ngay cả khi không có mạng.</p>
+
+          <h3>Lưu ý:</h3>
+          <p>Tài liệu đã mua sẽ được lưu trong mục "Tài liệu của tôi" để bạn dễ dàng tìm lại. Nếu gặp vấn đề khi mở file sau khi tải, hãy liên hệ ngay với bộ phận hỗ trợ trong vòng 24 giờ để được giải quyết.</p>
+        `,
+      },
+      {
+        title: "Bí quyết bán tài liệu hiệu quả",
+        slug: "bi-quyet-ban-tai-lieu-hieu-qua",
+        content: `
+          <h3>1. Đầu tư vào Tiêu đề và Mô tả</h3>
+          <p>Tiêu đề cần ngắn gọn nhưng đầy đủ từ khóa quan trọng (ví dụ: "Đề thi giữa kì 1 Toán 12 có đáp án chi tiết - Năm 2024"). Phần mô tả nên liệt kê rõ nội dung chính, số trang, và điểm nổi bật của tài liệu. Người mua thường tin tưởng những tài liệu có mô tả kỹ càng.</p>
+
+          <h3>2. Định giá hợp lý</h3>
+          <p>Tham khảo giá của các tài liệu tương tự trên chợ trước khi đặt giá. Một mức giá quá cao sẽ khó tiếp cận người mua, trong khi giá quá thấp có thể khiến họ nghi ngờ về chất lượng. Bạn có thể bắt đầu với mức giá thấp để thu hút những lượt mua đầu tiên và nhận đánh giá tốt.</p>
+
+          <h3>3. Chăm chút chất lượng File</h3>
+          <p>Đảm bảo file tài liệu rõ nét, không bị lỗi font, trình bày đẹp mắt. Nếu là file scan/chụp ảnh, hãy chắc chắn rằng hình ảnh sáng và dễ đọc. File PDF thường được ưa chuộng hơn vì tính ổn định khi hiển thị trên nhiều thiết bị.</p>
+
+          <h3>4. Cung cấp bản xem trước hấp dẫn</h3>
+          <p>Bản xem trước là yếu tố quyết định để người mua "xuống tiền". Hãy chọn những trang tiêu biểu nhất, thể hiện được giá trị cốt lõi của tài liệu để làm bản xem trước. Tuy nhiên, đừng tiết lộ toàn bộ các phần quan trọng nhất (như đáp án cuối cùng) trong bản xem trước.</p>
+
+          <h3>5. Tương tác và hỗ trợ người mua</h3>
+          <p>Thường xuyên kiểm tra thông báo và trả lời các câu hỏi của người mua ở phần bình luận. Thái độ phục vụ tốt sẽ giúp bạn xây dựng uy tín và có thêm nhiều khách hàng trung thành.</p>
+        `,
+      },
+    ],
+  },
 ];

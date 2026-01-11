@@ -473,6 +473,10 @@ export const getWithdrawalRequests = () => {
   return Api.getRequest("/v1.0/wallet/withdrawal-requests");
 };
 
+export const cancelWithdrawalRequest = (id) => {
+  return Api.postRequest(`/v1.0/wallet/withdrawal-requests/${id}/cancel`);
+};
+
 export const getWithdrawalHistory = () => {
   return Api.getRequest("/v1.0/wallet/withdrawal-history");
 };
