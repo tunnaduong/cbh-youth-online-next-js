@@ -13,8 +13,12 @@ import { App } from "antd";
 import { trackOnlineUser } from "@/app/Api";
 import { useEffect } from "react";
 import { usePathname } from "next/navigation";
-import ChatWidget from "@/components/chat/ChatWidget";
 import UpdateNotification from "@/components/UpdateNotification";
+import dynamic from "next/dynamic";
+
+const ChatWidget = dynamic(() => import("@/components/chat/ChatWidget"), {
+  ssr: false,
+});
 
 export default function ClientProviders({ children }) {
   const pathname = usePathname();

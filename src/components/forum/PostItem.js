@@ -11,10 +11,23 @@ import {
   ChatboxOutline,
 } from "react-ionicons";
 import { generatePostSlug } from "@/utils/slugify";
-import { ReactPhotoCollage } from "react-photo-collage";
+import dynamic from "next/dynamic";
 import VerifiedBadge from "@/components/ui/Badges";
 import getCollageSetting from "@/utils/getCollageSetting";
 import { useState, useEffect } from "react";
+
+const ReactPhotoCollage = dynamic(
+  () =>
+    import("react-photo-collage").then((mod) => ({
+      default: mod.ReactPhotoCollage,
+    })),
+  {
+    loading: () => (
+      <div className="h-64 bg-gray-100 dark:bg-neutral-800 animate-pulse rounded-lg" />
+    ),
+    ssr: false,
+  }
+);
 import { Button, ConfigProvider, message, Tooltip, Dropdown, Modal } from "antd";
 import { useRouter } from "@bprogress/next/app";
 import {
