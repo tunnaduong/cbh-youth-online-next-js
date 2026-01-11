@@ -441,7 +441,7 @@ export default function StudyMaterialDetailClient({ materialId }) {
 
                     <div className="relative h-[600px] w-full overflow-hidden">
                       <iframe
-                        src={`https://view.officeapps.live.com/op/view.aspx?src=${encodeURIComponent(`${process.env.NEXT_PUBLIC_API_URL}/v1.0/study-materials/documents/view?id=${material.id}&key=${material.preview_key || 'temp'}`)}`}
+                        src={`https://view.officeapps.live.com/op/view.aspx?src=${encodeURIComponent(`${process.env.NEXT_PUBLIC_API_URL}/v1.0/study-materials/documents/view?id=${material.id}&key=${material.preview_key || 'temp'}&ext=.${material.file?.file_name?.split('.').pop() || 'docx'}`)}`}
                         className="w-full h-[1000px] border-none"
                         style={{ marginTop: '-2px' }}
                       />

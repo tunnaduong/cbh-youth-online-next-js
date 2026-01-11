@@ -67,7 +67,7 @@ export default function StudyMaterialsClient() {
     },
     {
       Icon: Book,
-      label: "Tài liệu ôn thi",
+      label: "Chợ tài liệu",
       key: "study",
       href: "/explore/study-materials",
     },
@@ -212,7 +212,7 @@ export default function StudyMaterialsClient() {
         <main className="max-w-[1000px] mx-auto min-h-screen">
           <div className="flex justify-between items-center mb-8">
             <Title level={2} style={{ margin: 0 }}>
-              Tài liệu ôn thi
+              Chợ tài liệu
             </Title>
             <Link href="/explore/study-materials/upload" onClick={handleUploadClick}>
               <Button

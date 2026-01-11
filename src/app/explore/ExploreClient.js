@@ -35,7 +35,7 @@ export default function ExploreClient() {
     {
       icon: BookOutline,
       sidebarIcon: Book,
-      title: "Tài liệu ôn thi",
+      title: "Chợ tài liệu",
       key: "study",
       href: "/explore/study-materials",
     },

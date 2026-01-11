@@ -126,7 +126,7 @@ export default function Navbar({ activeNav = null }) {
       ],
     },
     {
-      label: "Tài liệu ôn thi",
+      label: "Chợ tài liệu",
       icon: BookOutline,
       href: "/explore/study-materials",
     },
@@ -152,7 +152,7 @@ export default function Navbar({ activeNav = null }) {
 
   const menuItems = [
     { name: "Cộng đồng", href: "/", activeNav: "home" },
-    { name: "Tài liệu ôn thi", href: "/explore/study-materials", activeNav: "study" },
+    { name: "Chợ tài liệu", href: "/explore/study-materials", activeNav: "study" },
     { name: "Tra cứu", href: "/lookup", activeNav: "lookup" },
     { name: "Khám phá", href: "/explore", activeNav: "explore" },
   ];
