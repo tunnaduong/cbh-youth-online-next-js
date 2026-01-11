@@ -3,7 +3,8 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useChatContext } from "@/contexts/Support";
 import Image from "next/image";
-import { moment } from "@/utils/momentConfig";
+import moment from "moment";
+import "moment/locale/vi";
 
 export default function ChatThreadsList({ onSelectConversation }) {
   const { conversations } = useChatContext();
@@ -20,6 +21,7 @@ export default function ChatThreadsList({ onSelectConversation }) {
   const formatTimestamp = (timestamp) => {
     if (!timestamp) return "";
     try {
+      moment.locale("vi");
       return moment(timestamp).fromNow();
     } catch {
       return "";
