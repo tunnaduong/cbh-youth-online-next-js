@@ -52,7 +52,7 @@ export default function UploadMaterialClient() {
       Icon: Home,
       label: "Trang chủ",
       key: "home",
-      href: "/",
+      href: "/explore",
     },
     {
       Icon: Book,
@@ -173,7 +173,7 @@ export default function UploadMaterialClient() {
       sidebarType="all"
       showRightSidebar={false}
     >
-      <div className="px-4 py-8">
+      <div className="bg-gray-50/50 dark:bg-neutral-950 px-4 py-8">
         <main className="max-w-[800px] mx-auto min-h-screen">
           <Breadcrumb
             className="mb-6"
@@ -186,7 +186,7 @@ export default function UploadMaterialClient() {
             ]}
           />
 
-          <Card className="rounded-2xl border-none shadow-sm overflow-hidden">
+          <Card className="rounded-2xl border-none shadow-sm overflow-hidden dark:bg-neutral-800">
             <div className="mb-8">
               <Title level={3} style={{ margin: 0 }}>
                 Đăng tài liệu mới
@@ -266,7 +266,7 @@ export default function UploadMaterialClient() {
                 />
               </Form.Item>
 
-              <div className="bg-gray-50 dark:bg-neutral-900 p-6 rounded-2xl mb-8">
+              <div className="bg-gray-100/50 dark:bg-neutral-900 p-6 rounded-2xl mb-8">
                 <Form.Item name="is_free" valuePropName="checked" className="mb-0">
                   <Checkbox onChange={(e) => setIsFree(e.target.checked)}>
                     <Text strong>Tài liệu miễn phí</Text>

@@ -10,7 +10,15 @@ import {
   Breadcrumb
 } from "antd";
 import {
-  ArrowBackOutline,
+  Home,
+  Book,
+  Search,
+  Map,
+  Print,
+  HelpCircle,
+  GameController,
+  Trophy,
+  People,
   DownloadOutline,
 } from "react-ionicons";
 import HomeLayout from "@/layouts/HomeLayout";
@@ -95,15 +103,64 @@ export default function ViewMaterialClient({ materialId }) {
 
   const sidebarItems = [
     {
-      label: "Quay lại chi tiết",
-      icon: ArrowBackOutline,
-      onClick: () => router.push(`/explore/study-materials/${materialId}`),
-    }
+      Icon: Home,
+      label: "Trang chủ",
+      key: "home",
+      href: "/explore",
+    },
+    {
+      Icon: Book,
+      label: "Tài liệu ôn thi",
+      key: "study",
+      href: "/explore/study-materials",
+    },
+    {
+      Icon: Search,
+      label: "Tra cứu điểm thi",
+      key: "grades",
+      href: "#",
+    },
+    {
+      Icon: Map,
+      label: "Tìm trường ĐH-CĐ",
+      key: "universities",
+      href: "#",
+    },
+    {
+      Icon: Print,
+      label: "In ấn tài liệu",
+      key: "print",
+      href: "#",
+    },
+    {
+      Icon: HelpCircle,
+      label: "Đố vui",
+      key: "quiz",
+      href: "#",
+    },
+    {
+      Icon: GameController,
+      label: "Game",
+      key: "game",
+      href: "#",
+    },
+    {
+      Icon: Trophy,
+      label: "Xếp hạng thành viên",
+      key: "ranking",
+      href: "/users/ranking",
+    },
+    {
+      Icon: People,
+      label: "Xếp hạng lớp",
+      key: "class-ranking",
+      href: "#",
+    },
   ];
 
   if (loading) {
     return (
-      <HomeLayout activeNav="study" activeBar="study">
+      <HomeLayout activeNav="study" activeBar="study" sidebarItems={sidebarItems} sidebarType="all">
         <div className="flex justify-center items-center min-h-screen">
           <Spin size="large" tip="Đang tải tài liệu..." />
         </div>
@@ -113,7 +170,7 @@ export default function ViewMaterialClient({ materialId }) {
 
   if (isUnauthorized) {
     return (
-      <HomeLayout activeNav="study" activeBar="study">
+      <HomeLayout activeNav="study" activeBar="study" sidebarItems={sidebarItems} sidebarType="all">
         <div className="flex flex-col justify-center items-center min-h-screen px-4">
           <Empty description="Bạn không có quyền xem tài liệu này. Vui lòng mua tài liệu trước." />
           <Button
@@ -130,7 +187,7 @@ export default function ViewMaterialClient({ materialId }) {
 
   if (!material) {
     return (
-      <HomeLayout activeNav="study" activeBar="study">
+      <HomeLayout activeNav="study" activeBar="study" sidebarItems={sidebarItems} sidebarType="all">
         <div className="flex justify-center items-center min-h-screen">
           <Empty description="Tài liệu không tồn tại" />
         </div>
@@ -143,8 +200,10 @@ export default function ViewMaterialClient({ materialId }) {
       activeNav="study"
       activeBar="study"
       showRightSidebar={false}
+      sidebarItems={sidebarItems}
+      sidebarType="all"
     >
-      <div className="bg-gray-100 dark:bg-neutral-950 min-h-screen">
+      <div className="min-h-screen">
         <div className="max-w-[1200px] mx-auto px-4 py-6">
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
             <div>
@@ -163,7 +222,7 @@ export default function ViewMaterialClient({ materialId }) {
 
             <div className="flex gap-3">
               <Button
-                icon={<DownloadOutline height="18px" width="18px" style={{ marginBottom: -3 }} />}
+                icon={<DownloadOutline height="16px" width="16px" color="currentColor" />}
                 onClick={handleDownload}
                 className="rounded-xl flex items-center justify-center h-[44px] px-6 font-medium border-gray-200 dark:border-neutral-800 dark:bg-neutral-900 dark:text-neutral-300"
               >
@@ -172,14 +231,14 @@ export default function ViewMaterialClient({ materialId }) {
               <Button
                 type="primary"
                 onClick={() => router.push(`/explore/study-materials/${materialId}`)}
-                className="rounded-xl h-[44px] px-6 font-medium bg-blue-600 border-none shadow-sm"
+                className="rounded-xl h-[44px] px-6 font-medium border-none shadow-sm"
               >
                 Quay lại
               </Button>
             </div>
           </div>
 
-          <div className="bg-white dark:bg-neutral-900 rounded-2xl shadow-xl overflow-hidden min-h-[80vh] flex flex-col relative border border-gray-100 dark:border-neutral-800">
+          <div className="bg-white dark:bg-neutral-800 rounded-2xl shadow-xl overflow-hidden min-h-[80vh] flex flex-col relative border border-gray-100 dark:border-neutral-700">
             {fileUrl ? (
               <iframe
                 src={`${fileUrl}#toolbar=0`}
@@ -194,7 +253,7 @@ export default function ViewMaterialClient({ materialId }) {
             )}
           </div>
 
-          <div className="mt-8 p-6 bg-blue-50 dark:bg-neutral-900 rounded-2xl border border-blue-100 dark:border-neutral-800">
+          <div className="mt-8 p-6 bg-blue-50 dark:bg-neutral-800 rounded-2xl border border-blue-100 dark:border-neutral-700">
             <Text strong className="text-blue-800 dark:text-blue-300 block mb-2 text-lg">Lưu ý bản quyền:</Text>
             <Text className="text-blue-700 dark:text-blue-400">
               Tài liệu này được cung cấp cho mục đích học tập cá nhân. Vui lòng không sao chép, phát tán hoặc kinh doanh trái phép nội dung này khi chưa có sự đồng ý của tác giả và nền tảng.

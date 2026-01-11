@@ -309,7 +309,7 @@ export default function StudyMaterialDetailClient({ materialId }) {
 
   if (loading) {
     return (
-      <HomeLayout activeNav="study" activeBar="study" sidebarItems={sidebarItems}>
+      <HomeLayout activeNav="study" activeBar="study" sidebarItems={sidebarItems} sidebarType="all" showRightSidebar={false}>
         <div className="max-w-[1000px] mx-auto px-4 py-8">
           <Skeleton active avatar paragraph={{ rows: 10 }} />
         </div>
@@ -337,7 +337,7 @@ export default function StudyMaterialDetailClient({ materialId }) {
       sidebarType="all"
       showRightSidebar={false}
     >
-      <div className="px-4 py-8 bg-gray-50 dark:bg-neutral-950 min-h-screen">
+      <div className="px-4 py-8 min-h-screen">
         <main className="max-w-[1000px] mx-auto">
           <Breadcrumb
             className="mb-6"
@@ -352,19 +352,19 @@ export default function StudyMaterialDetailClient({ materialId }) {
 
           <Row gutter={[24, 24]}>
             <Col xs={24} lg={16}>
-              <Card className="rounded-2xl border-none shadow-sm mb-6 overflow-hidden">
+              <Card className="rounded-2xl border-none shadow-sm mb-6 overflow-hidden dark:bg-neutral-800">
                 <div className="flex justify-between items-start mb-6">
                   <div>
                     <Title level={2} className="mb-2">
                       {material.title}
                     </Title>
-                    <Space split={<Divider type="vertical" />} className="text-gray-500 text-sm">
+                    <Space split={<Divider type="vertical" />} className="text-gray-500 dark:text-neutral-400 text-sm">
                       <Space>
-                        <PersonOutline height="14px" width="14px" />
+                        <PersonOutline height="14px" width="14px" color="currentColor" />
                         {material.author.profile_name || material.author.username}
                       </Space>
                       <Space>
-                        <TimeOutline height="14px" width="14px" />
+                        <TimeOutline height="14px" width="14px" color="currentColor" />
                         {new Date(material.created_at).toLocaleDateString("vi-VN")}
                       </Space>
                       {material.category && (
@@ -430,7 +430,7 @@ export default function StudyMaterialDetailClient({ materialId }) {
                       <Button
                         size="large"
                         onClick={handleDownload}
-                        className="rounded-xl h-[50px] px-8 font-semibold flex items-center gap-2 border-gray-200 dark:border-neutral-800 dark:bg-neutral-900 dark:text-neutral-300 shadow-sm"
+                        className="rounded-xl h-[50px] px-8 font-semibold flex items-center gap-2 border-gray-200 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-300 shadow-sm transition-colors hover:dark:bg-neutral-700 hover:bg-gray-50"
                       >
                         <DownloadOutline color="currentColor" height="20px" width="20px" />
                         Tải về
@@ -441,7 +441,7 @@ export default function StudyMaterialDetailClient({ materialId }) {
               </Card>
 
               {/* Rating Section */}
-              <Card className="rounded-2xl border-none shadow-sm mb-6">
+              <Card className="rounded-2xl border-none shadow-sm mb-6 dark:bg-neutral-800">
                 <Title level={4} className="mb-6">
                   Đánh giá tài liệu
                 </Title>
@@ -492,7 +492,7 @@ export default function StudyMaterialDetailClient({ materialId }) {
                             title={
                               <Space className="w-full justify-between">
                                 <Text strong>{item.user.profile_name || item.user.username}</Text>
-                                <Rate disabled defaultValue={item.rating} style={{ fontSize: 12 }} />
+                                <Rate disabled allowHalf value={item.rating} style={{ fontSize: 12 }} />
                               </Space>
                             }
                             description={
@@ -519,12 +519,12 @@ export default function StudyMaterialDetailClient({ materialId }) {
             </Col>
 
             <Col xs={24} lg={8}>
-              <Card className="rounded-2xl border-none shadow-sm mb-6 sticky top-24">
+              <Card className="rounded-2xl border-none shadow-sm mb-6 sticky top-24 dark:bg-neutral-800">
                 <Descriptions title="Thông tin chi tiết" column={1} layout="horizontal" bordered size="middle">
-                  <Descriptions.Item label={<Space><DownloadOutline height="16px" width="16px" /><Text type="secondary">Lượt tải</Text></Space>}>
+                  <Descriptions.Item label={<Space className="dark:text-neutral-300"><DownloadOutline height="16px" width="16px" color="currentColor" /><Text type="secondary">Lượt tải</Text></Space>}>
                     <Text strong>{material.download_count}</Text>
                   </Descriptions.Item>
-                  <Descriptions.Item label={<Space><EyeOutline height="16px" width="16px" /><Text type="secondary">Lượt xem</Text></Space>}>
+                  <Descriptions.Item label={<Space className="dark:text-neutral-300"><EyeOutline height="16px" width="16px" color="currentColor" /><Text type="secondary">Lượt xem</Text></Space>}>
                     <Text strong>{material.view_count}</Text>
                   </Descriptions.Item>
                   <Descriptions.Item label={<Space><Star color="#fadb14" height="16px" width="16px" /><Text type="secondary">Đánh giá</Text></Space>}>

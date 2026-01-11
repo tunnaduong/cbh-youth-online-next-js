@@ -39,6 +39,7 @@ import {
 import HomeLayout from "@/layouts/HomeLayout";
 import { useAuthContext } from "@/contexts/Support";
 import * as Api from "@/app/Api";
+import CustomColorButton from "@/components/ui/CustomColorButton";
 
 const { Title, Text, Paragraph } = Typography;
 
@@ -216,11 +217,10 @@ export default function StudyMaterialsClient() {
             <Link href="/explore/study-materials/upload" onClick={handleUploadClick}>
               <Button
                 type="primary"
-                size="large"
                 icon={<AddOutline color="#fff" height="20px" width="20px" />}
                 className="border-none rounded-lg flex items-center"
               >
-                <span className="ml-1">Đăng tài liệu</span>
+                Đăng tài liệu
               </Button>
             </Link>
           </div>
@@ -228,18 +228,17 @@ export default function StudyMaterialsClient() {
           {/* Search and Filters */}
           <div className="bg-white dark:bg-neutral-800 p-6 rounded-2xl shadow-sm mb-8 space-y-6">
             <Row gutter={[16, 16]} align="middle">
-              <Col xs={24} md={12}>
+              <Col xs={24} md={18}>
                 <Input
                   size="large"
                   placeholder="Tìm kiếm tài liệu..."
                   prefix={<Search color="#9ca3af" height="20px" width="20px" />}
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
-                  className="rounded-xl border-gray-200 dark:border-neutral-700 dark:bg-neutral-900"
                   allowClear
                 />
               </Col>
-              <Col xs={24} md={12}>
+              <Col xs={24} md={6}>
                 <Select
                   size="large"
                   placeholder="Chọn danh mục"
@@ -284,7 +283,7 @@ export default function StudyMaterialsClient() {
                       type={isFree === opt.value ? "primary" : "default"}
                       className={`rounded-xl px-6 h-[44px] font-medium transition-all duration-200 ${isFree === opt.value
                         ? "border-none shadow-sm"
-                        : "bg-gray-50 dark:bg-neutral-900 border-none hover:bg-gray-100 dark:hover:bg-neutral-800 text-gray-600 dark:text-neutral-400"
+                        : "bg-gray-100 dark:bg-neutral-800 border-none hover:bg-gray-200 dark:hover:bg-neutral-700 text-gray-600 dark:text-neutral-400"
                         }`}
                     >
                       {opt.label}
