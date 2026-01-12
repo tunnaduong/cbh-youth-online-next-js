@@ -8,6 +8,7 @@ import { EffectCube } from "swiper/modules";
 import { useRouter } from "@bprogress/next/app";
 import { X, ChevronLeft, ChevronRight, VolumeX, Volume2 } from "lucide-react";
 import { markStoryAsViewed } from "@/app/Api";
+import Link from "next/link";
 
 // Import Swiper styles
 import "swiper/css";
@@ -83,15 +84,19 @@ const UserHeader = ({
   return (
     <div className="absolute top-10 left-4 right-4 z-50 flex items-center justify-between">
       <div className="flex items-center gap-3">
-        <img
-          src={`${process.env.NEXT_PUBLIC_API_URL}/v1.0/users/${user.username}/avatar`}
-          alt={user.name}
-          className="w-10 h-10 rounded-full border-2 border-white object-cover"
-        />
+        <Link href={`/${user.username}`}>
+          <img
+            src={`${process.env.NEXT_PUBLIC_API_URL}/v1.0/users/${user.username}/avatar`}
+            alt={user.name}
+            className="w-10 h-10 rounded-full border-2 border-white object-cover"
+          />
+        </Link>
         <div className="flex flex-col leading-tight">
-          <span className="text-white font-medium text-sm drop-shadow">
-            {user.name}
-          </span>
+          <Link href={`/${user.username}`}>
+            <span className="text-white font-medium text-sm drop-shadow">
+              {user.name}
+            </span>
+          </Link>
           {createdAt && (
             <span className="text-white/80 text-xs drop-shadow">
               {formatTimeAgo(createdAt)}
