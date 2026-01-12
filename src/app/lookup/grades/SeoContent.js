@@ -60,9 +60,10 @@ const SeoContent = () => {
           sinh dễ dàng theo dõi.
         </li>
         <li>
-          <strong>Thông tin học sinh đầy đủ:</strong> Khi sử dụng chức năng "Xem
-          thông tin", hệ thống sẽ hiển thị đầy đủ thông tin cá nhân như Họ tên,
-          Ngày sinh, Lớp, Trường học, đảm bảo tính chính xác khi tra cứu.
+          <strong>Thông tin học sinh đầy đủ:</strong> Khi sử dụng chức năng
+          &quot;Xem thông tin&quot;, hệ thống sẽ hiển thị đầy đủ thông tin cá
+          nhân như Họ tên, Ngày sinh, Lớp, Trường học, đảm bảo tính chính xác
+          khi tra cứu.
         </li>
         <li>
           <strong>Xem xếp hạng (Sắp ra mắt):</strong> Tính năng xếp hạng lớp sẽ
@@ -91,9 +92,10 @@ const SeoContent = () => {
           <strong>Học kỳ</strong> muốn tra cứu.
         </li>
         <li>
-          <strong>Bước 3:</strong> Nhấn nút <strong>"Tra cứu điểm"</strong> để
-          xem bảng điểm nhanh. Nếu muốn xem thông tin chi tiết học sinh, hãy
-          nhấn nút "Xem thông tin" và nhập mã xác thực (Captcha) để bảo mật.
+          <strong>Bước 3:</strong> Nhấn nút{" "}
+          <strong>&quot;Tra cứu điểm&quot;</strong> để xem bảng điểm nhanh. Nếu
+          muốn xem thông tin chi tiết học sinh, hãy nhấn nút &quot;Xem thông
+          tin&quot; và nhập mã xác thực (Captcha) để bảo mật.
         </li>
       </ul>
 
