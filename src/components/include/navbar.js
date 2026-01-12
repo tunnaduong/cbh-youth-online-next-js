@@ -136,6 +136,11 @@ export default function Navbar({ activeNav = null }) {
       href: "/lookup",
       subItems: [
         {
+          icon: SearchOutline,
+          href: "/lookup/grades",
+          label: "Tra cứu điểm thi",
+        },
+        {
           icon: CalendarOutline,
           href: "/lookup/timetable",
           label: "Thời khóa biểu",
@@ -152,7 +157,11 @@ export default function Navbar({ activeNav = null }) {
 
   const menuItems = [
     { name: "Cộng đồng", href: "/", activeNav: "home" },
-    { name: "Chợ tài liệu", href: "/explore/study-materials", activeNav: "study" },
+    {
+      name: "Chợ tài liệu",
+      href: "/explore/study-materials",
+      activeNav: "study",
+    },
     { name: "Tra cứu", href: "/lookup", activeNav: "lookup" },
     { name: "Khám phá", href: "/explore", activeNav: "explore" },
   ];
@@ -294,8 +303,9 @@ export default function Navbar({ activeNav = null }) {
             {menuItems.map((item, index) => (
               <Link
                 key={index}
-                className={`xl:flex px-3 py-2 mr-5 dark:text-neutral-300 dark:hover:text-white hidden h-full items-center min-w-max text-center text-sm font-medium transition-colors duration-200 ${activeNav === item.activeNav ? "nav-active" : ""
-                  }`}
+                className={`xl:flex px-3 py-2 mr-5 dark:text-neutral-300 dark:hover:text-white hidden h-full items-center min-w-max text-center text-sm font-medium transition-colors duration-200 ${
+                  activeNav === item.activeNav ? "nav-active" : ""
+                }`}
                 href={item.href}
               >
                 {item.name}
@@ -308,10 +318,11 @@ export default function Navbar({ activeNav = null }) {
           {!loggedIn ? (
             <div className="min-w-max mr-4">
               <Link
-                href={`/login?continue=${typeof window !== "undefined"
-                  ? encodeURIComponent(window.location.href)
-                  : "/"
-                  }`}
+                href={`/login?continue=${
+                  typeof window !== "undefined"
+                    ? encodeURIComponent(window.location.href)
+                    : "/"
+                }`}
                 className="flex items-center gap-x-1 text-sm font-medium transition-colors duration-200 text-[#319527] hover:text-[#3dbb31]"
                 style={{ borderBottom: "3px solid transparent" }}
               >

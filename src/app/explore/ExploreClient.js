@@ -3,6 +3,7 @@
 import HomeLayout from "@/layouts/HomeLayout";
 import React from "react";
 import Image from "next/image";
+import { message } from "antd";
 import {
   HomeOutline,
   Home,
@@ -44,7 +45,7 @@ export default function ExploreClient() {
       sidebarIcon: Search,
       title: "Tra cứu điểm thi",
       key: "grades",
-      href: "#",
+      href: "/lookup/grades",
     },
     {
       icon: MapOutline,
@@ -90,6 +91,13 @@ export default function ExploreClient() {
     },
   ];
 
+  const handleFeatureClick = (e, feature) => {
+    if (feature.href === "#") {
+      e.preventDefault();
+      message.info("Chức năng đang phát triển");
+    }
+  };
+
   // Convert features to LeftSidebar items format (using non-outline icons)
   const sidebarItems = features.map((feature) => ({
     key: feature.key,
@@ -97,6 +105,7 @@ export default function ExploreClient() {
     label: feature.title,
     Icon: feature.sidebarIcon,
     isExternal: false,
+    onClick: (e) => handleFeatureClick(e, feature),
   }));
 
   return (
@@ -151,6 +160,7 @@ export default function ExploreClient() {
                   <a
                     key={index}
                     href={feature.href}
+                    onClick={(e) => handleFeatureClick(e, feature)}
                     className="feature-card bg-white dark:bg-neutral-800 rounded-xl shadow-sm hover:shadow-md p-6 flex flex-col items-center cursor-pointer hover:scale-105 transition-all duration-200"
                   >
                     <div className="icon-circle bg-green-50 dark:bg-green-900/20 rounded-full w-16 h-16 flex items-center justify-center mb-4">

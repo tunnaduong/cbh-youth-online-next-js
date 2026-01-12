@@ -300,9 +300,17 @@ function StoriesSection() {
                 </div>
               )}
               <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-black/60 to-transparent" />
-              <p className="absolute bottom-2 left-1 right-0 text-white text-xs sm:text-sm font-semibold px-1 line-clamp-2 drop-shadow">
-                {userStories.name}
-              </p>
+              <div
+                className="absolute bottom-2 left-1 right-1 z-10"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  router.push(`/${userStories.username}`);
+                }}
+              >
+                <p className="text-white text-xs sm:text-sm font-semibold px-1 line-clamp-2 drop-shadow hover:underline">
+                  {userStories.name}
+                </p>
+              </div>
             </div>
           );
         })}
