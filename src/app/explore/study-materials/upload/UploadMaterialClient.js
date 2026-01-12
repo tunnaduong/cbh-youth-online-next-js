@@ -237,13 +237,13 @@ export default function UploadMaterialClient() {
                 </Col>
                 <Col xs={12} md={12}>
                   <Form.Item
-                    label={<Text strong>Tải tệp lên (.pdf, .doc, .docx, .txt)</Text>}
+                    label={<Text strong>Tải tệp lên (.pdf, .doc, .docx, .txt, .xlsx, .xls)</Text>}
                     required
                   >
                     <Upload
                       customRequest={customUpload}
                       maxCount={1}
-                      accept=".pdf,.doc,.docx,.txt"
+                      accept=".pdf,.doc,.docx,.txt,.xlsx,.xls"
                       className="w-full"
                       style={{ display: 'block' }}
                     >
