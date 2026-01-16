@@ -7,12 +7,9 @@ import {
   Select,
   Button,
   Card,
-  Row,
-  Col,
   Space,
   Typography,
   Tag,
-  Segmented,
   Spin,
   Empty,
   Avatar,
@@ -39,7 +36,6 @@ import {
 import HomeLayout from "@/layouts/HomeLayout";
 import { useAuthContext } from "@/contexts/Support";
 import * as Api from "@/app/Api";
-import CustomColorButton from "@/components/ui/CustomColorButton";
 
 const { Title, Text, Paragraph } = Typography;
 
@@ -126,9 +122,9 @@ export default function StudyMaterialsClient() {
       message.info("Vui lòng đăng nhập để đăng tài liệu");
       router.push(
         "/login?continue=" +
-          encodeURIComponent(
-            window.location.origin + "/explore/study-materials/upload"
-          )
+        encodeURIComponent(
+          window.location.origin + "/explore/study-materials/upload"
+        )
       );
     }
   };
@@ -253,9 +249,9 @@ export default function StudyMaterialsClient() {
       sidebarType="all"
       showRightSidebar={false}
     >
-      <div className="px-4 py-8">
+      <div className="px-4 py-8 overflow-x-hidden">
         <main className="max-w-[1000px] mx-auto min-h-screen">
-          <div className="flex justify-between items-center mb-8">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-6">
             <Title level={2} style={{ margin: 0 }}>
               Chợ tài liệu
             </Title>
@@ -266,51 +262,74 @@ export default function StudyMaterialsClient() {
               <Button
                 type="primary"
                 icon={<AddOutline color="#fff" height="20px" width="20px" />}
-                className="border-none rounded-lg flex items-center"
+                className="border-none rounded-lg flex items-center justify-center w-full sm:w-auto h-[42px]"
               >
                 Đăng tài liệu
               </Button>
             </Link>
           </div>
 
+          <section className="mb-6">
+            <div className="rounded-3xl p-6 sm:p-8 bg-gradient-to-r from-emerald-500 via-cyan-500 to-blue-500 text-white shadow-lg">
+              <div className="flex flex-col gap-3">
+                <span className="text-xs font-semibold uppercase tracking-[0.2em] text-white/80">
+                  Khám phá học liệu
+                </span>
+                <div className="flex flex-col gap-1">
+                  <h3 className="text-2xl sm:text-3xl font-extrabold leading-tight">Tài liệu chuẩn, tìm kiếm nhanh</h3>
+                  <p className="text-sm sm:text-base text-white/85">
+                    Lọc theo danh mục, tải ngay những tài liệu hữu ích cho kỳ thi sắp tới.
+                  </p>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {["Ôn thi THPT", "Đánh giá năng lực", "IELTS", "Tài liệu miễn phí"].map((topic) => (
+                    <span
+                      key={topic}
+                      className="rounded-full bg-white/15 px-3 py-1 text-xs font-medium backdrop-blur"
+                    >
+                      {topic}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </section>
+
           {/* Search and Filters */}
           <div className="bg-white dark:bg-neutral-800 p-6 rounded-2xl shadow-sm mb-8 space-y-6">
-            <Row gutter={[16, 16]} align="middle">
-              <Col xs={24} md={18}>
-                <Input
-                  size="large"
-                  placeholder="Tìm kiếm tài liệu..."
-                  prefix={<Search color="#9ca3af" height="20px" width="20px" />}
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  allowClear
-                />
-              </Col>
-              <Col xs={24} md={6}>
-                <Select
-                  size="large"
-                  placeholder="Chọn danh mục"
-                  className="w-full rounded-xl"
-                  value={categoryId}
-                  onChange={(value) => setCategoryId(value)}
-                  allowClear
-                >
-                  <Select.Option value={null}>Tất cả danh mục</Select.Option>
-                  {categories.map((cat) => (
-                    <Select.Option key={cat.id} value={cat.id}>
-                      {cat.name}
-                    </Select.Option>
-                  ))}
-                </Select>
-              </Col>
-            </Row>
+            <div className="grid grid-cols-1 md:grid-cols-[2fr,1fr] gap-3">
+              <Input
+                size="large"
+                placeholder="Tìm kiếm tài liệu..."
+                prefix={<Search color="#9ca3af" height="20px" width="20px" />}
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                allowClear
+                className="w-full"
+              />
+              <Select
+                size="large"
+                placeholder="Chọn danh mục"
+                className="w-full rounded-xl"
+                value={categoryId}
+                onChange={(value) => setCategoryId(value)}
+                allowClear
+              >
+                <Select.Option value={null}>Tất cả danh mục</Select.Option>
+                {categories.map((cat) => (
+                  <Select.Option key={cat.id} value={cat.id}>
+                    {cat.name}
+                  </Select.Option>
+                ))}
+              </Select>
+            </div>
 
-            <div className="flex items-center justify-between gap-4">
-              <div className="flex items-center gap-4">
+            <div className="flex flex-col gap-3 sm:gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex flex-col gap-2">
                 <Text strong className="text-gray-500 dark:text-neutral-400">
                   Lọc theo:
                 </Text>
-                <div className="flex gap-3">
+                <div className="flex flex-wrap gap-2">
                   {[
                     { label: "Tất cả", value: "all" },
                     { label: "Miễn phí", value: "free" },
@@ -327,18 +346,17 @@ export default function StudyMaterialsClient() {
                           );
                           router.push(
                             "/login?continue=" +
-                              encodeURIComponent(window.location.href)
+                            encodeURIComponent(window.location.href)
                           );
                           return;
                         }
                         setIsFree(opt.value);
                       }}
                       type={isFree === opt.value ? "primary" : "default"}
-                      className={`rounded-xl px-6 h-[44px] font-medium transition-all duration-200 ${
-                        isFree === opt.value
-                          ? "border-none shadow-sm"
-                          : "bg-gray-100 dark:bg-neutral-800 border-none hover:bg-gray-200 dark:hover:bg-neutral-700 text-gray-600 dark:text-neutral-400"
-                      }`}
+                      className={`rounded-full px-5 h-[42px] font-medium transition-all duration-200 ${isFree === opt.value
+                        ? "border-none shadow-sm"
+                        : "bg-gray-100 dark:bg-neutral-800 border-none hover:bg-gray-200 dark:hover:bg-neutral-700 text-gray-600 dark:text-neutral-400"
+                        }`}
                     >
                       {opt.label}
                     </Button>
@@ -346,7 +364,7 @@ export default function StudyMaterialsClient() {
                 </div>
               </div>
 
-              <div className="flex items-center gap-2">
+              <div className="w-full sm:w-auto">
                 <Dropdown
                   menu={{
                     items: sortOptions.map((opt) => ({
@@ -361,14 +379,14 @@ export default function StudyMaterialsClient() {
                 >
                   <Button
                     size="large"
-                    className="rounded-xl px-5 h-[44px] font-medium flex items-center gap-2 bg-gray-100 dark:bg-neutral-900 border-none hover:bg-gray-100 dark:hover:bg-neutral-800 text-gray-700 dark:text-neutral-300 shadow-sm"
+                    className="w-full rounded-xl px-5 h-[42px] font-medium flex items-center justify-center gap-2 bg-gray-100 dark:bg-neutral-900 border-none hover:bg-gray-100 dark:hover:bg-neutral-800 text-gray-700 dark:text-neutral-300 shadow-sm"
                   >
                     <FilterOutline
                       color="currentColor"
                       height="18px"
                       width="18px"
                     />
-                    <span>{sort.label}</span>
+                    <span className="truncate">{sort.label}</span>
                   </Button>
                 </Dropdown>
               </div>
