@@ -493,3 +493,23 @@ export const getStudyMaterialCategories = () => {
 export const getStudyMaterialCategory = (id) => {
   return Api.getRequest(`/v1.0/study-material-categories/${id}`);
 };
+// Gift Shop
+export const getShopProducts = (params = "") => {
+  return Api.getRequest(`/v1.0/shop/products${params ? `?${params}` : ""}`);
+};
+
+export const getShopProduct = (id) => {
+  return Api.getRequest(`/v1.0/shop/products/${id}`);
+};
+
+export const getShopCategories = () => {
+  return Api.getRequest("/v1.0/shop/categories");
+};
+
+export const placeShopOrder = (params) => {
+  return Api.postRequest("/v1.0/shop/orders", params);
+};
+
+export const getMyShopOrders = (params = "") => {
+  return Api.getRequest(`/v1.0/shop/my-orders${params ? `?${params}` : ""}`);
+};

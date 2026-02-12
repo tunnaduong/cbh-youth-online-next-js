@@ -272,7 +272,7 @@ export default function StudyMaterialsClient() {
           </div>
 
           <section className="mb-6">
-            <div className="rounded-3xl p-6 sm:p-8 bg-gradient-to-r from-emerald-500 via-cyan-500 to-blue-500 text-white shadow-lg">
+            <div className="rounded-3xl p-6 sm:p-8 bg-gradient-to-r from-primary-600 to-green-400 text-white shadow-lg shadow-primary-500/20">
               <div className="flex flex-col gap-3">
                 <span className="text-xs font-semibold uppercase tracking-[0.2em] text-white/80">
                   Khám phá học liệu

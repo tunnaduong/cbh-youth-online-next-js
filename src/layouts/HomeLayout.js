@@ -22,6 +22,7 @@ function HomeLayoutContent({
   showRightSidebar = true,
   sidebarWidth = "260px",
   showLeftSidebar = true,
+  showAds = true,
 }) {
   const { setHandleCreatePost } = useCreatePost();
   const { loggedIn, currentUser } = useAuthContext();
@@ -51,20 +52,22 @@ function HomeLayoutContent({
               : "mt-[4.3rem]"
               }`}
           >
-            <div className="px-3.5">
-              <a href="https://chuyenbienhoa.download?utm_source=cyo_home">
-                <div className="mt-6 mb-2 w-full shadow rounded-lg overflow-hidden md:max-w-[775px] mx-auto">
-                  <Image
-                    src="/images/mobile-app-download-banner.webp"
-                    alt="Tải ứng dụng Chuyên Biên Hòa Online"
-                    width={1200}
-                    height={400}
-                    className="w-full h-auto"
-                    priority
-                  />
-                </div>
-              </a>
-            </div>
+            {showAds && (
+              <div className="px-3.5">
+                <a href="https://chuyenbienhoa.download?utm_source=cyo_home">
+                  <div className="mt-6 mb-2 w-full shadow rounded-lg overflow-hidden md:max-w-[775px] mx-auto">
+                    <Image
+                      src="/images/mobile-app-download-banner.webp"
+                      alt="Tải ứng dụng Chuyên Biên Hòa Online"
+                      width={1200}
+                      height={400}
+                      className="w-full h-auto"
+                      priority
+                    />
+                  </div>
+                </a>
+              </div>
+            )}
             {children}
           </div>
           {showRightSidebar && (
