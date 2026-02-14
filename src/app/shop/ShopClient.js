@@ -25,8 +25,8 @@ export default function ShopClient() {
         getShopProducts(),
         getShopCategories(),
       ]);
-      setProducts(productsRes.data || []);
-      setCategories(categoriesRes || []);
+      setProducts(productsRes.data.data || productsRes.data || []);
+      setCategories(categoriesRes.data || []);
     } catch (error) {
       console.error("Error fetching shop data:", error);
     } finally {
