@@ -580,6 +580,9 @@ export default function PostItem({ post, single = false, onVote, onRefresh = nul
             <span className="mb-2 ml-0.5 text-sm text-gray-500">.</span>
             <span className="ml-0.5 text-gray-500 shrink-0">
               {post.created_at_human || post.created_at || post.time}
+              {post.is_edited && (
+                <span className="ml-1 text-xs text-gray-400 dark:text-neutral-500">(Đã sửa)</span>
+              )}
             </span>
             {/* Desktop view */}
             <div className="flex-1 flex-row-reverse items-center text-gray-500 hidden md:flex">

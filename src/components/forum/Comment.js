@@ -288,10 +288,11 @@ export default function Comment({
               <span className="text-gray-400">•</span>
               <span className="text-gray-500 dark:!text-gray-400 text-sm shrink-0">
                 {comment.created_at}
-                {comment.updated_at &&
-                  comment.updated_at !== comment.created_at && (
-                    <span className="ml-1">(đã chỉnh sửa)</span>
-                  )}
+                {(comment.is_edited !== undefined
+                  ? comment.is_edited
+                  : comment.updated_at && comment.updated_at !== comment.created_at) && (
+                  <span className="ml-1 text-xs text-gray-400 dark:text-neutral-500">(Đã sửa)</span>
+                )}
               </span>
             </div>
 
