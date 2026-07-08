@@ -11,7 +11,7 @@ import { useAuthContext } from "@/contexts/Support";
 import { getStories } from "@/app/Api";
 
 function StoriesSection() {
-  const { currentUser } = useAuthContext();
+  const { currentUser, authLoading } = useAuthContext();
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [viewerModalOpen, setViewerModalOpen] = useState(false);
   const [selectedUserStories, setSelectedUserStories] = useState(null);
@@ -43,6 +43,47 @@ function StoriesSection() {
     fetchStories();
   }, []);
 
+  // Redirect unauthenticated users early if they try to view a specific story link
+  useEffect(() => {
+    if (!authLoading && !currentUser) {
+      const params = new URLSearchParams(window.location.search);
+      const storyId = params.get("storyId");
+      if (storyId) {
+        message.error("Bạn cần đăng nhập để xem tin");
+        const redirectPath = `${window.location.pathname}?storyId=${storyId}`;
+        router.push(`/login?continue=${encodeURIComponent(redirectPath)}`);
+      }
+    }
+  }, [authLoading, currentUser, router]);
+
+  // Handle opening story from query parameter when stories data & auth is loaded
+  useEffect(() => {
+    if (!loading && !authLoading && storiesData && storiesData.length > 0) {
+      const params = new URLSearchParams(window.location.search);
+      const storyId = params.get("storyId");
+      if (storyId) {
+        // Find userStories and storyIndex containing this storyId
+        let foundUserStories = null;
+        let foundStoryIndex = 0;
+        
+        for (const userStories of storiesData) {
+          const index = userStories.stories.findIndex(
+            (s) => String(s.id) === String(storyId)
+          );
+          if (index !== -1) {
+            foundUserStories = userStories;
+            foundStoryIndex = index;
+            break;
+          }
+        }
+        
+        if (foundUserStories) {
+          handleViewStory(foundUserStories, foundStoryIndex);
+        }
+      }
+    }
+  }, [loading, authLoading, storiesData, currentUser]);
+
   useEffect(() => {
     // This effect should only run when the viewer is closed,
     // not on initial render or when it's opened.
@@ -52,6 +93,15 @@ function StoriesSection() {
     }
 
     if (!viewerModalOpen) {
+      // Clear storyId from URL
+      const params = new URLSearchParams(window.location.search);
+      if (params.has("storyId")) {
+        params.delete("storyId");
+        const newSearch = params.toString();
+        const newUrl = window.location.pathname + (newSearch ? `?${newSearch}` : "");
+        window.history.replaceState({}, "", newUrl);
+      }
+
       // TODO: Replace with Next.js router refresh
       // router.reload({
       //   only: ["stories"],
@@ -85,8 +135,11 @@ function StoriesSection() {
   const handleViewStory = (userStories, storyIndex = 0) => {
     if (!currentUser) {
       message.error("Bạn cần đăng nhập để xem tin");
-      // Next.js router navigation without full reload
-      router.push("/login");
+      const clickedStoryId = userStories.stories[storyIndex]?.id;
+      const redirectPath = clickedStoryId 
+        ? `${window.location.pathname}?storyId=${clickedStoryId}`
+        : window.location.pathname;
+      router.push(`/login?continue=${encodeURIComponent(redirectPath)}`);
       return;
     }
 

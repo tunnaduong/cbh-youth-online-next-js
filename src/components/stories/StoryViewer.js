@@ -2,11 +2,11 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { useDrag } from "@use-gesture/react";
 import { animated, useSpring, config } from "@react-spring/web";
-import { Drawer } from "antd";
+import { Drawer, message } from "antd";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { EffectCube } from "swiper/modules";
 import { useRouter } from "@bprogress/next/app";
-import { X, ChevronLeft, ChevronRight, VolumeX, Volume2 } from "lucide-react";
+import { X, ChevronLeft, ChevronRight, VolumeX, Volume2, Link2 } from "lucide-react";
 import { markStoryAsViewed } from "@/app/Api";
 import Link from "next/link";
 
@@ -80,7 +80,22 @@ const UserHeader = ({
   isMuted,
   onToggleMute,
   createdAt,
+  storyId,
 }) => {
+  const handleCopyLink = () => {
+    if (!storyId) return;
+    const shareUrl = `${window.location.origin}${window.location.pathname}?storyId=${storyId}`;
+    navigator.clipboard
+      .writeText(shareUrl)
+      .then(() => {
+        message.success("Đã sao chép liên kết đến tin này!");
+      })
+      .catch((err) => {
+        console.error("Failed to copy link:", err);
+        message.error("Không thể sao chép liên kết.");
+      });
+  };
+
   return (
     <div className="absolute top-10 left-4 right-4 z-50 flex items-center justify-between">
       <div className="flex items-center gap-3">
@@ -117,6 +132,13 @@ const UserHeader = ({
             )}
           </button>
         )}
+        <button
+          onClick={handleCopyLink}
+          className="text-white hover:text-white/80 transition-colors p-2"
+          title="Sao chép liên kết"
+        >
+          <Link2 size={24} className="drop-shadow" />
+        </button>
         <button
           onClick={onClose}
           className="text-white hover:text-white/80 transition-colors p-2"
@@ -360,6 +382,19 @@ const StorySlide = ({
     resetProgress();
   }, [user.id, initialStoryIndex, resetProgress]);
 
+  // Reset/update query parameters when story changes on active slide
+  useEffect(() => {
+    if (isActive && isViewerOpen && currentStory?.id) {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get("storyId") !== String(currentStory.id)) {
+        params.set("storyId", currentStory.id);
+        const newSearch = params.toString();
+        const newUrl = window.location.pathname + (newSearch ? `?${newSearch}` : "");
+        window.history.replaceState({}, "", newUrl);
+      }
+    }
+  }, [isActive, isViewerOpen, currentStory?.id]);
+
   return (
     <div className="relative w-full h-full bg-black">
       <div className="absolute inset-x-0 top-0 h-1/6 bg-gradient-to-b from-black/30 to-transparent pointer-events-none" />
@@ -377,6 +412,7 @@ const StorySlide = ({
         isMuted={isMuted}
         onToggleMute={handleToggleMute}
         createdAt={currentStory?.created_at}
+        storyId={currentStory?.id}
       />
 
       <StoryContent
