@@ -11,6 +11,7 @@ import { useAuthContext } from "@/contexts/Support";
 import { getStories } from "@/app/Api";
 
 function StoriesSection() {
+  const router = useRouter();
   const { currentUser, authLoading } = useAuthContext();
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [viewerModalOpen, setViewerModalOpen] = useState(false);
@@ -22,7 +23,7 @@ function StoriesSection() {
   const isInitialRender = useRef(true);
 
   // Function to fetch stories from API
-  const fetchStories = async () => {
+  const fetchStories = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -36,12 +37,44 @@ function StoriesSection() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  const handleViewStory = useCallback((userStories, storyIndex = 0) => {
+    if (!currentUser) {
+      message.error("Bạn cần đăng nhập để xem tin");
+      const clickedStoryId = userStories.stories[storyIndex]?.id;
+      const redirectPath = clickedStoryId 
+        ? `${window.location.pathname}?storyId=${clickedStoryId}`
+        : window.location.pathname;
+      router.push(`/login?continue=${encodeURIComponent(redirectPath)}`);
+      return;
+    }
+
+    // Calculate global story index
+    let globalIndex = 0;
+    if (Array.isArray(storiesData)) {
+      for (let i = 0; i < storiesData.length; i++) {
+        if (storiesData[i].id === userStories.id) {
+          globalIndex += storyIndex;
+          break;
+        }
+        globalIndex += storiesData[i].stories.length;
+      }
+    }
+
+    console.log("userStories", userStories);
+    console.log("storyIndex", storyIndex);
+    console.log("globalIndex", globalIndex);
+
+    setSelectedUserStories(userStories);
+    setCurrentStoryIndex(storyIndex);
+    setViewerModalOpen(true);
+  }, [currentUser, storiesData, router]);
 
   // Fetch stories on component mount
   useEffect(() => {
     fetchStories();
-  }, []);
+  }, [fetchStories]);
 
   // Redirect unauthenticated users early if they try to view a specific story link
   useEffect(() => {
@@ -82,7 +115,7 @@ function StoriesSection() {
         }
       }
     }
-  }, [loading, authLoading, storiesData, currentUser]);
+  }, [loading, authLoading, storiesData, handleViewStory]);
 
   useEffect(() => {
     // This effect should only run when the viewer is closed,
@@ -120,8 +153,6 @@ function StoriesSection() {
     }
   }, [viewerModalOpen]);
 
-  const router = useRouter();
-
   const handleCreateStory = () => {
     if (!currentUser) {
       message.error("Bạn cần đăng nhập để tạo tin");
@@ -130,38 +161,6 @@ function StoriesSection() {
       return;
     }
     setCreateModalOpen(true);
-  };
-
-  const handleViewStory = (userStories, storyIndex = 0) => {
-    if (!currentUser) {
-      message.error("Bạn cần đăng nhập để xem tin");
-      const clickedStoryId = userStories.stories[storyIndex]?.id;
-      const redirectPath = clickedStoryId 
-        ? `${window.location.pathname}?storyId=${clickedStoryId}`
-        : window.location.pathname;
-      router.push(`/login?continue=${encodeURIComponent(redirectPath)}`);
-      return;
-    }
-
-    // Calculate global story index
-    let globalIndex = 0;
-    if (Array.isArray(storiesData)) {
-      for (let i = 0; i < storiesData.length; i++) {
-        if (storiesData[i].id === userStories.id) {
-          globalIndex += storyIndex;
-          break;
-        }
-        globalIndex += storiesData[i].stories.length;
-      }
-    }
-
-    console.log("userStories", userStories);
-    console.log("storyIndex", storyIndex);
-    console.log("globalIndex", globalIndex);
-
-    setSelectedUserStories(userStories);
-    setCurrentStoryIndex(storyIndex);
-    setViewerModalOpen(true);
   };
 
   const handleStoryCreated = () => {

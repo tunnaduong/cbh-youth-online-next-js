@@ -155,35 +155,40 @@ const StoryContent = ({ story, isActive, onNext, isMuted }) => {
   const audioRef = useRef(null);
 
   useEffect(() => {
+    if (!story) return;
     if (story.type === "video" && videoRef.current) {
       if (isActive) {
-        videoRef.current.play();
+        videoRef.current.play().catch((err) => console.log("Play video failed:", err));
       } else {
         videoRef.current.pause();
       }
     }
     if (story.type === "audio" && audioRef.current) {
       if (isActive) {
-        audioRef.current.play();
+        audioRef.current.play().catch((err) => console.log("Play audio failed:", err));
       } else {
         audioRef.current.pause();
       }
     }
-  }, [isActive, story.type]);
+  }, [isActive, story?.type]);
 
   // Cleanup effect to stop all media when component unmounts
   useEffect(() => {
+    const currentVideo = videoRef.current;
+    const currentAudio = audioRef.current;
     return () => {
-      if (videoRef.current) {
-        videoRef.current.pause();
-        videoRef.current.currentTime = 0;
+      if (currentVideo) {
+        currentVideo.pause();
+        currentVideo.currentTime = 0;
       }
-      if (audioRef.current) {
-        audioRef.current.pause();
-        audioRef.current.currentTime = 0;
+      if (currentAudio) {
+        currentAudio.pause();
+        currentAudio.currentTime = 0;
       }
     };
   }, []);
+
+  if (!story) return null;
 
   if (story.type === "video") {
     return (
