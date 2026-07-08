@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { IoIosAdd } from "react-icons/io";
 // import { router, usePage } from "@inertiajs/react"; // TODO: Replace with Next.js equivalent
 import CreateStoryModal from "../modals/CreateStoryModal";
