@@ -404,6 +404,11 @@ function StoriesSection() {
               : 0
           }
           selectedStoryIndex={currentStoryIndex}
+          currentUser={currentUser}
+          onStoryDeleted={() => {
+            setViewerModalOpen(false);
+            fetchStories();
+          }}
         />
       </Drawer>
     </div>

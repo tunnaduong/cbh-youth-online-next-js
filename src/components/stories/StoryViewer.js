@@ -6,8 +6,9 @@ import { Drawer, message } from "antd";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { EffectCube } from "swiper/modules";
 import { useRouter } from "@bprogress/next/app";
-import { X, ChevronLeft, ChevronRight, VolumeX, Volume2, Link2, Smartphone } from "lucide-react";
-import { markStoryAsViewed } from "@/app/Api";
+import { X, ChevronLeft, ChevronRight, VolumeX, Volume2, Link2, Smartphone, Trash2 } from "lucide-react";
+import { markStoryAsViewed, deleteStory } from "@/app/Api";
+import { Modal } from "antd";
 import Link from "next/link";
 
 // Import Swiper styles
@@ -81,6 +82,8 @@ const UserHeader = ({
   onToggleMute,
   createdAt,
   storyId,
+  isOwner,
+  onDelete,
 }) => {
   const [isMobile, setIsMobile] = useState(false);
 
@@ -183,6 +186,15 @@ const UserHeader = ({
         >
           <Link2 size={24} className="drop-shadow" />
         </button>
+        {isOwner && (
+          <button
+            onClick={onDelete}
+            className="text-white hover:text-red-400 transition-colors p-2"
+            title="Xóa tin này"
+          >
+            <Trash2 size={24} className="drop-shadow" />
+          </button>
+        )}
         <button
           onClick={onClose}
           className="text-white hover:text-white/80 transition-colors p-2"
@@ -322,6 +334,8 @@ const StorySlide = ({
   onClose,
   onUserChange,
   initialStoryIndex = 0,
+  currentUser,
+  onStoryDeleted,
 }) => {
   const [currentStoryIndex, setCurrentStoryIndex] = useState(initialStoryIndex);
   const [progress, setProgress] = useState(0);
@@ -462,6 +476,27 @@ const StorySlide = ({
         onToggleMute={handleToggleMute}
         createdAt={currentStory?.created_at}
         storyId={currentStory?.id}
+        isOwner={currentUser && currentUser.id === user.id}
+        onDelete={() => {
+          Modal.confirm({
+            title: "Xóa tin này?",
+            content: "Bạn có chắc chắn muốn xóa tin này không? Hành động này không thể hoàn tác.",
+            okText: "Xóa",
+            okType: "danger",
+            cancelText: "Hủy",
+            onOk: async () => {
+              try {
+                await deleteStory(currentStory.id);
+                message.success("Đã xóa tin thành công!");
+                if (onStoryDeleted) onStoryDeleted(currentStory.id);
+                onClose();
+              } catch (err) {
+                console.error("Failed to delete story:", err);
+                message.error("Không thể xóa tin. Vui lòng thử lại.");
+              }
+            },
+          });
+        }}
       />
 
       <StoryContent
@@ -503,6 +538,8 @@ export const StoryViewer = ({
   onOpacityChange,
   selectedUserIndex = 0,
   selectedStoryIndex = 0,
+  currentUser,
+  onStoryDeleted,
 }) => {
   const [currentUserIndex, setCurrentUserIndex] = useState(selectedUserIndex);
   const swiperRef = useRef(null);
@@ -623,6 +660,8 @@ export const StoryViewer = ({
               initialStoryIndex={
                 index === selectedUserIndex ? selectedStoryIndex : 0
               }
+              currentUser={currentUser}
+              onStoryDeleted={onStoryDeleted}
             />
           </SwiperSlide>
         ))}
