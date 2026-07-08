@@ -6,7 +6,7 @@ import { Drawer, message } from "antd";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { EffectCube } from "swiper/modules";
 import { useRouter } from "@bprogress/next/app";
-import { X, ChevronLeft, ChevronRight, VolumeX, Volume2, Link2 } from "lucide-react";
+import { X, ChevronLeft, ChevronRight, VolumeX, Volume2, Link2, Smartphone } from "lucide-react";
 import { markStoryAsViewed } from "@/app/Api";
 import Link from "next/link";
 
@@ -82,6 +82,14 @@ const UserHeader = ({
   createdAt,
   storyId,
 }) => {
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      setIsMobile(/iPhone|iPad|iPod|Android/i.test(navigator.userAgent));
+    }
+  }, []);
+
   const handleCopyLink = () => {
     if (!storyId) return;
     const shareUrl = `${window.location.origin}${window.location.pathname}?storyId=${storyId}`;
@@ -94,6 +102,25 @@ const UserHeader = ({
         console.error("Failed to copy link:", err);
         message.error("Không thể sao chép liên kết.");
       });
+  };
+
+  const handleOpenInApp = () => {
+    if (!storyId) return;
+    const appUrl = `com.fatties.youth://story/${storyId}`;
+    window.location.href = appUrl;
+
+    // Fallback: If after 2 seconds still on the page, redirect to store
+    setTimeout(() => {
+      if (!document.hidden) {
+        const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+        const storeUrl = isIOS
+          ? "https://apps.apple.com/app/id_YOUR_APP_STORE_ID"
+          : "https://play.google.com/store/apps/details?id=com.fatties.youth";
+        if (confirm("Chưa cài app? Tải về ngay!")) {
+          window.location.href = storeUrl;
+        }
+      }
+    }, 2000);
   };
 
   return (
@@ -130,6 +157,15 @@ const UserHeader = ({
             ) : (
               <Volume2 size={24} className="drop-shadow" />
             )}
+          </button>
+        )}
+        {isMobile && (
+          <button
+            onClick={handleOpenInApp}
+            className="text-white hover:text-white/80 transition-colors p-2"
+            title="Mở trong App"
+          >
+            <Smartphone size={24} className="drop-shadow" />
           </button>
         )}
         <button

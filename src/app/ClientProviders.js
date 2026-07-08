@@ -14,6 +14,7 @@ import { trackOnlineUser } from "@/app/Api";
 import { useEffect } from "react";
 import { usePathname } from "next/navigation";
 import UpdateNotification from "@/components/UpdateNotification";
+import AppBanner from "@/components/AppBanner";
 import dynamic from "next/dynamic";
 
 const ChatWidget = dynamic(() => import("@/components/chat/ChatWidget"), {
@@ -70,6 +71,7 @@ export default function ClientProviders({ children }) {
                         shallowRouting
                       >
                         {children}
+                        <AppBanner />
                         <ChatWidget />
                         <UpdateNotification />
                       </ProgressProvider>

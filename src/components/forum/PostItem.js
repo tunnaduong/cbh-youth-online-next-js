@@ -41,6 +41,7 @@ import {
   Edit,
   Trash,
   Flag,
+  Smartphone,
 } from "lucide-react";
 import { usePostRefresh } from "@/contexts/PostRefreshContext";
 import CreatePostModal from "../modals/CreatePostModal";
@@ -61,8 +62,13 @@ export default function PostItem({ post, single = false, onVote, onRefresh = nul
   const { triggerRefresh } = usePostRefresh();
   const [showEditModal, setShowEditModal] = useState(false);
 
+  const [isMobile, setIsMobile] = useState(false);
+
   useEffect(() => {
     setIsSaved(!!(post.is_saved || post.saved));
+    if (typeof window !== "undefined") {
+      setIsMobile(/iPhone|iPad|iPod|Android/i.test(navigator.userAgent));
+    }
   }, [post.is_saved, post.saved]);
 
   const toggleShowFullContent = (e) => {
@@ -253,6 +259,25 @@ export default function PostItem({ post, single = false, onVote, onRefresh = nul
     });
   };
 
+  const handleOpenInApp = () => {
+    const postSlug = generatePostSlug(post.id, post.title);
+    const appUrl = `com.fatties.youth://post/${postSlug}`;
+    window.location.href = appUrl;
+
+    // Fallback
+    setTimeout(() => {
+      if (!document.hidden) {
+        const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+        const storeUrl = isIOS
+          ? "https://apps.apple.com/app/id_YOUR_APP_STORE_ID"
+          : "https://play.google.com/store/apps/details?id=com.fatties.youth";
+        if (confirm("Chưa cài app? Tải về ngay!")) {
+          window.location.href = storeUrl;
+        }
+      }
+    }, 2000);
+  };
+
   const handleReport = () => {
     message.info("Tính năng đang phát triển");
   };
@@ -264,6 +289,16 @@ export default function PostItem({ post, single = false, onVote, onRefresh = nul
       icon: <Share size={16} />,
       onClick: handleShare,
     },
+    ...(isMobile
+      ? [
+          {
+            key: "open-in-app",
+            label: "Mở trong ứng dụng",
+            icon: <Smartphone size={16} />,
+            onClick: handleOpenInApp,
+          },
+        ]
+      : []),
     {
       key: "report",
       label: "Báo cáo bài viết",
