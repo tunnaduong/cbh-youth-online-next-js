@@ -86,7 +86,15 @@ const UserHeader = ({
 
   useEffect(() => {
     if (typeof window !== "undefined") {
-      setIsMobile(/iPhone|iPad|iPod|Android/i.test(navigator.userAgent));
+      const checkMobile = () => {
+        setIsMobile(
+          /iPhone|iPad|iPod|Android/i.test(navigator.userAgent) ||
+          window.innerWidth < 768
+        );
+      };
+      checkMobile();
+      window.addEventListener("resize", checkMobile);
+      return () => window.removeEventListener("resize", checkMobile);
     }
   }, []);
 

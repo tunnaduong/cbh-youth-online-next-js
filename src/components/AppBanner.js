@@ -12,7 +12,9 @@ export default function AppBanner() {
     if (typeof window === "undefined") return;
 
     const handleCheckBanner = () => {
-      const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+      const isMobile =
+        /iPhone|iPad|iPod|Android/i.test(navigator.userAgent) ||
+        window.innerWidth < 768;
       if (!isMobile) {
         setVisible(false);
         return;
