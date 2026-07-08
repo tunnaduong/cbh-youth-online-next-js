@@ -118,18 +118,30 @@ const UserHeader = ({
   const handleOpenInApp = () => {
     if (!storyId) return;
     const appUrl = `com.fatties.youth://story/${storyId}`;
-    window.location.href = appUrl;
 
-    // Fallback: If after 2 seconds still on the page, redirect to store
+    // Try to open the app
+    const iframe = document.createElement("iframe");
+    iframe.style.display = "none";
+    iframe.src = appUrl;
+    document.body.appendChild(iframe);
+
+    // Fallback: If after 2 seconds still on the page, offer to redirect to store
     setTimeout(() => {
+      document.body.removeChild(iframe);
       if (!document.hidden) {
         const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
         const storeUrl = isIOS
           ? "https://apps.apple.com/app/id_YOUR_APP_STORE_ID"
           : "https://play.google.com/store/apps/details?id=com.fatties.youth";
-        if (confirm("Chưa cài app? Tải về ngay!")) {
-          window.location.href = storeUrl;
-        }
+        Modal.confirm({
+          title: "Mở trong ứng dụng",
+          content: "Chưa cài app CBH Youth? Tải về để trải nghiệm tốt hơn!",
+          okText: "Tải app",
+          cancelText: "Đóng",
+          onOk: () => {
+            window.open(storeUrl, "_blank");
+          },
+        });
       }
     }, 2000);
   };
@@ -170,15 +182,13 @@ const UserHeader = ({
             )}
           </button>
         )}
-        {isMobile && (
-          <button
-            onClick={handleOpenInApp}
-            className="text-white hover:text-white/80 transition-colors p-2"
-            title="Mở trong App"
-          >
-            <Smartphone size={24} className="drop-shadow" />
-          </button>
-        )}
+        <button
+          onClick={handleOpenInApp}
+          className="text-white hover:text-white/80 transition-colors p-2"
+          title="Mở trong App"
+        >
+          <Smartphone size={24} className="drop-shadow" />
+        </button>
         <button
           onClick={handleCopyLink}
           className="text-white hover:text-white/80 transition-colors p-2"

@@ -273,18 +273,30 @@ export default function PostItem({ post, single = false, onVote, onRefresh = nul
   const handleOpenInApp = () => {
     const postSlug = generatePostSlug(post.id, post.title);
     const appUrl = `com.fatties.youth://post/${postSlug}`;
-    window.location.href = appUrl;
 
-    // Fallback
+    // Try to open the app using a hidden iframe (avoids navigating away)
+    const iframe = document.createElement("iframe");
+    iframe.style.display = "none";
+    iframe.src = appUrl;
+    document.body.appendChild(iframe);
+
+    // Fallback: offer to redirect to store if app didn't open
     setTimeout(() => {
+      document.body.removeChild(iframe);
       if (!document.hidden) {
         const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
         const storeUrl = isIOS
           ? "https://apps.apple.com/app/id_YOUR_APP_STORE_ID"
           : "https://play.google.com/store/apps/details?id=com.fatties.youth";
-        if (confirm("Chưa cài app? Tải về ngay!")) {
-          window.location.href = storeUrl;
-        }
+        Modal.confirm({
+          title: "Mở trong ứng dụng",
+          content: "Chưa cài app CBH Youth? Tải về để trải nghiệm tốt hơn!",
+          okText: "Tải app",
+          cancelText: "Đóng",
+          onOk: () => {
+            window.open(storeUrl, "_blank");
+          },
+        });
       }
     }, 2000);
   };
@@ -479,15 +491,13 @@ export default function PostItem({ post, single = false, onVote, onRefresh = nul
               )}
             </div>
             <div className="pt-1 flex items-center gap-1">
-              {isMobile && (
-                <button
-                  onClick={handleOpenInApp}
-                  className="p-1 rounded-full hover:bg-gray-100 dark:hover:bg-neutral-700 text-gray-500 dark:text-neutral-400"
-                  title="Mở trong ứng dụng"
-                >
-                  <Smartphone size={20} />
-                </button>
-              )}
+              <button
+                onClick={handleOpenInApp}
+                className="p-1 rounded-full hover:bg-gray-100 dark:hover:bg-neutral-700 text-gray-500 dark:text-neutral-400"
+                title="Mở trong ứng dụng"
+              >
+                <Smartphone size={20} />
+              </button>
               <Dropdown
                 menu={{ items: menuItems }}
                 trigger={["click"]}
