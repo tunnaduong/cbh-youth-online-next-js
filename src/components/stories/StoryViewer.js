@@ -147,69 +147,69 @@ const UserHeader = ({
   };
 
   return (
-    <div className="absolute top-10 left-4 right-4 z-50 flex items-center justify-between">
-      <div className="flex items-center gap-3">
-        <Link href={`/${user.username}`}>
+    <div className="absolute top-10 left-4 right-4 z-50 flex items-center justify-between gap-2">
+      <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
+        <Link href={`/${user.username}`} className="flex-shrink-0">
           <img
             src={`${process.env.NEXT_PUBLIC_API_URL}/v1.0/users/${user.username}/avatar`}
             alt={user.name}
-            className="w-10 h-10 rounded-full border-2 border-white object-cover"
+            className="w-8 h-8 sm:w-10 sm:h-10 rounded-full border-2 border-white object-cover"
           />
         </Link>
-        <div className="flex flex-col leading-tight">
+        <div className="flex flex-col leading-tight min-w-0">
           <Link href={`/${user.username}`}>
-            <span className="text-white font-medium text-sm drop-shadow">
+            <span className="text-white font-medium text-xs sm:text-sm drop-shadow truncate block">
               {user.name}
             </span>
           </Link>
           {createdAt && (
-            <span className="text-white/80 text-xs drop-shadow">
+            <span className="text-white/80 text-[10px] sm:text-xs drop-shadow truncate block">
               {formatTimeAgo(createdAt)}
             </span>
           )}
         </div>
       </div>
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
         {(storyType === "video" || storyType === "audio") && (
           <button
             onClick={onToggleMute}
-            className="text-white hover:text-white/80 transition-colors p-2"
+            className="text-white hover:text-white/80 transition-colors p-1.5 sm:p-2 flex-shrink-0"
           >
             {isMuted ? (
-              <VolumeX size={24} className="drop-shadow" />
+              <VolumeX className="w-5 h-5 sm:w-6 sm:h-6 drop-shadow" />
             ) : (
-              <Volume2 size={24} className="drop-shadow" />
+              <Volume2 className="w-5 h-5 sm:w-6 sm:h-6 drop-shadow" />
             )}
           </button>
         )}
         <button
           onClick={handleOpenInApp}
-          className="text-white hover:text-white/80 transition-colors p-2"
+          className="text-white hover:text-white/80 transition-colors p-1.5 sm:p-2 flex-shrink-0"
           title="Mở trong App"
         >
-          <Smartphone size={24} className="drop-shadow" />
+          <Smartphone className="w-5 h-5 sm:w-6 sm:h-6 drop-shadow" />
         </button>
         <button
           onClick={handleCopyLink}
-          className="text-white hover:text-white/80 transition-colors p-2"
+          className="text-white hover:text-white/80 transition-colors p-1.5 sm:p-2 flex-shrink-0"
           title="Sao chép liên kết"
         >
-          <Link2 size={24} className="drop-shadow" />
+          <Link2 className="w-5 h-5 sm:w-6 sm:h-6 drop-shadow" />
         </button>
         {isOwner && (
           <button
             onClick={onDelete}
-            className="text-white hover:text-red-400 transition-colors p-2"
+            className="text-white hover:text-red-400 transition-colors p-1.5 sm:p-2 flex-shrink-0"
             title="Xóa tin này"
           >
-            <Trash2 size={24} className="drop-shadow" />
+            <Trash2 className="w-5 h-5 sm:w-6 sm:h-6 drop-shadow" />
           </button>
         )}
         <button
           onClick={onClose}
-          className="text-white hover:text-white/80 transition-colors p-2"
+          className="text-white hover:text-white/80 transition-colors p-1.5 sm:p-2 flex-shrink-0"
         >
-          <X size={24} className="drop-shadow" />
+          <X className="w-5 h-5 sm:w-6 sm:h-6 drop-shadow" />
         </button>
       </div>
     </div>
@@ -486,7 +486,13 @@ const StorySlide = ({
         onToggleMute={handleToggleMute}
         createdAt={currentStory?.created_at}
         storyId={currentStory?.id}
-        isOwner={currentUser && (currentUser.id === user.id || currentUser.username === user.username)}
+        isOwner={
+          currentUser && (
+            String(currentUser.id) === String(user.id) ||
+            currentUser.username?.toLowerCase() === user.username?.toLowerCase() ||
+            (currentStory && currentStory.user_id && String(currentStory.user_id) === String(currentUser.id))
+          )
+        }
         onDelete={() => {
           Modal.confirm({
             title: "Xóa tin này?",
