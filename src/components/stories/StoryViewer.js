@@ -641,7 +641,7 @@ export const StoryViewer = ({
   return (
     <animated.div
       {...bind()}
-      style={{ y, touchAction: "pan-x", opacity }}
+      style={{ transform: y.to(v => `translateY(${v}px)`), touchAction: "pan-x", opacity }}
       className="w-full h-screen bg-black fixed inset-0"
     >
       <Swiper
