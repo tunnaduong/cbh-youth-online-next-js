@@ -486,7 +486,7 @@ const StorySlide = ({
         onToggleMute={handleToggleMute}
         createdAt={currentStory?.created_at}
         storyId={currentStory?.id}
-        isOwner={currentUser && currentUser.id === user.id}
+        isOwner={currentUser && (currentUser.id === user.id || currentUser.username === user.username)}
         onDelete={() => {
           Modal.confirm({
             title: "Xóa tin này?",
