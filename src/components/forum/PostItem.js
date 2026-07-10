@@ -71,14 +71,9 @@ export default function PostItem({ post, single = false, onVote, onRefresh = nul
   useEffect(() => {
     if (typeof window !== "undefined") {
       const checkMobile = () => {
-        setIsMobile(
-          /iPhone|iPad|iPod|Android/i.test(navigator.userAgent) ||
-          window.innerWidth < 768
-        );
+        setIsMobile(/iPhone|iPad|iPod|Android/i.test(navigator.userAgent));
       };
       checkMobile();
-      window.addEventListener("resize", checkMobile);
-      return () => window.removeEventListener("resize", checkMobile);
     }
   }, []);
 
@@ -491,13 +486,15 @@ export default function PostItem({ post, single = false, onVote, onRefresh = nul
               )}
             </div>
             <div className="pt-1 flex items-center gap-1">
-              <button
-                onClick={handleOpenInApp}
-                className="p-1 rounded-full hover:bg-gray-100 dark:hover:bg-neutral-700 text-gray-500 dark:text-neutral-400"
-                title="Mở trong ứng dụng"
-              >
-                <Smartphone size={20} />
-              </button>
+              {isMobile && (
+                <button
+                  onClick={handleOpenInApp}
+                  className="p-1 rounded-full hover:bg-gray-100 dark:hover:bg-neutral-700 text-gray-500 dark:text-neutral-400"
+                  title="Mở trong ứng dụng"
+                >
+                  <Smartphone size={20} />
+                </button>
+              )}
               <Dropdown
                 menu={{ items: menuItems }}
                 trigger={["click"]}

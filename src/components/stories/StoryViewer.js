@@ -90,14 +90,9 @@ const UserHeader = ({
   useEffect(() => {
     if (typeof window !== "undefined") {
       const checkMobile = () => {
-        setIsMobile(
-          /iPhone|iPad|iPod|Android/i.test(navigator.userAgent) ||
-          window.innerWidth < 768
-        );
+        setIsMobile(/iPhone|iPad|iPod|Android/i.test(navigator.userAgent));
       };
       checkMobile();
-      window.addEventListener("resize", checkMobile);
-      return () => window.removeEventListener("resize", checkMobile);
     }
   }, []);
 
@@ -182,13 +177,15 @@ const UserHeader = ({
             )}
           </button>
         )}
-        <button
-          onClick={handleOpenInApp}
-          className="text-white hover:text-white/80 transition-colors p-1.5 sm:p-2 flex-shrink-0"
-          title="Mở trong App"
-        >
-          <Smartphone className="w-5 h-5 sm:w-6 sm:h-6 drop-shadow" />
-        </button>
+        {isMobile && (
+          <button
+            onClick={handleOpenInApp}
+            className="text-white hover:text-white/80 transition-colors p-1.5 sm:p-2 flex-shrink-0"
+            title="Mở trong App"
+          >
+            <Smartphone className="w-5 h-5 sm:w-6 sm:h-6 drop-shadow" />
+          </button>
+        )}
         <button
           onClick={handleCopyLink}
           className="text-white hover:text-white/80 transition-colors p-1.5 sm:p-2 flex-shrink-0"
