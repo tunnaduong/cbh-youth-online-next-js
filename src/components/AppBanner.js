@@ -12,14 +12,6 @@ export default function AppBanner() {
     if (typeof window === "undefined") return;
 
     const handleCheckBanner = () => {
-      const isMobile =
-        /iPhone|iPad|iPod|Android/i.test(navigator.userAgent) ||
-        window.innerWidth < 768;
-      if (!isMobile) {
-        setVisible(false);
-        return;
-      }
-
       // Check if user has closed the banner in the current session
       if (sessionStorage.getItem("app_banner_closed")) {
         setVisible(false);
