@@ -12,9 +12,10 @@ export default function AppBanner() {
     if (typeof window === "undefined") return;
 
     const handleCheckBanner = () => {
+      // Only show on actual mobile devices, not on PC even with narrow screen
       const isMobile =
-        /iPhone|iPad|iPod|Android/i.test(navigator.userAgent) ||
-        window.innerWidth < 768;
+        /iPhone|iPad|iPod|Android/i.test(navigator.userAgent) &&
+        (window.innerWidth < 768 || ('ontouchstart' in window || navigator.maxTouchPoints > 0));
       if (!isMobile) {
         setVisible(false);
         return;
