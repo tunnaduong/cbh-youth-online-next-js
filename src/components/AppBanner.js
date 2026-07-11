@@ -12,15 +12,6 @@ export default function AppBanner() {
     if (typeof window === "undefined") return;
 
     const handleCheckBanner = () => {
-      // Only show on actual mobile devices, not on PC even with narrow screen
-      const isMobile =
-        /iPhone|iPad|iPod|Android/i.test(navigator.userAgent) &&
-        (window.innerWidth < 768 || ('ontouchstart' in window || navigator.maxTouchPoints > 0));
-      if (!isMobile) {
-        setVisible(false);
-        return;
-      }
-
       // Check if user has closed the banner in the current session
       if (sessionStorage.getItem("app_banner_closed")) {
         setVisible(false);
