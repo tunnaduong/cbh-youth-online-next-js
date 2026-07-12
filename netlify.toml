@@ -1,2 +1,9 @@
-[build.environment]
-  NPM_FLAGS = "--legacy-peer-deps"
+[[headers]]
+for = "/.well-known/apple-app-site-association"
+[headers.values]
+Content-Type = "application/json"
+
+[[redirects]]
+from = "/*"
+to = "/index.html"
+status = 200

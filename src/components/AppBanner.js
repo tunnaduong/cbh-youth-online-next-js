@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { usePathname } from "next/navigation";
+import { openDeepLink, isIOSDevice } from "@/lib/deepLink";
 
 export default function AppBanner() {
   const pathname = usePathname();
@@ -57,20 +58,23 @@ export default function AppBanner() {
 
   const handleOpenInApp = () => {
     if (!appUrl) return;
-    window.location.href = appUrl;
 
-    // Fallback: If after 2 seconds we are still on the web page, offer to download the app
-    setTimeout(() => {
-      if (!document.hidden) {
-        const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
-        const storeUrl = isIOS
-          ? "https://apps.apple.com/app/id_YOUR_APP_STORE_ID"
-          : "https://play.google.com/store/apps/details?id=com.fatties.youth";
-        if (confirm("Chưa cài app? Tải về ngay để trải nghiệm tốt nhất!")) {
-          window.location.href = storeUrl;
-        }
-      }
-    }, 2000);
+    const appType = appUrl.includes("story") ? "story" : appUrl.includes("post") ? "post" : "";
+    const value = appType === "story" ? new URLSearchParams(window.location.search).get("storyId") : appType === "post" ? window.location.pathname.split("/")[3] : "";
+
+    if (appType && value) {
+      openDeepLink(appType, value, {
+        onFallback: (storeUrl) => {
+          if (confirm("Chưa cài app? Tải về ngay để trải nghiệm tốt nhất!")) {
+            window.location.href = storeUrl;
+          }
+        },
+        delay: isIOSDevice() ? 2500 : 2000,
+      });
+      return;
+    }
+
+    window.location.href = appUrl;
   };
 
   const handleClose = () => {
