@@ -11,6 +11,7 @@ import RightSidebar from "@/components/layout/RightSidebar";
 import BottomCTA from "@/components/marketing/BottomCTA";
 import { useAuthContext } from "@/contexts/Support";
 import Image from "next/image";
+import { useState, useEffect } from "react";
 
 function HomeLayoutContent({
   children,
@@ -26,6 +27,25 @@ function HomeLayoutContent({
 }) {
   const { setHandleCreatePost } = useCreatePost();
   const { loggedIn, currentUser } = useAuthContext();
+  const [showAppBanner, setShowAppBanner] = useState(false);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const ua = navigator.userAgent;
+    const isAndroidOrIOS =
+      /Android/i.test(ua) || /iPhone|iPad|iPod/i.test(ua);
+    if (
+      isAndroidOrIOS &&
+      !sessionStorage.getItem("home_app_banner_closed")
+    ) {
+      setShowAppBanner(true);
+    }
+  }, []);
+
+  const handleCloseAppBanner = () => {
+    setShowAppBanner(false);
+    sessionStorage.setItem("home_app_banner_closed", "1");
+  };
 
   const handleRightSidebarCallback = (fn) => {
     setHandleCreatePost(() => fn);
@@ -52,10 +72,10 @@ function HomeLayoutContent({
               : "mt-[4.3rem]"
               }`}
           >
-            {showAds && (
+            {showAds && showAppBanner && (
               <div className="px-3.5">
-                <a href="https://chuyenbienhoa.download?utm_source=cyo_home">
-                  <div className="mt-6 mb-2 w-full shadow rounded-lg overflow-hidden md:max-w-[775px] mx-auto">
+                <div className="relative mt-6 mb-2 w-full shadow rounded-lg overflow-hidden md:max-w-[775px] mx-auto">
+                  <a href="https://chuyenbienhoa.download?utm_source=cyo_home">
                     <Image
                       src="/images/mobile-app-download-banner.webp"
                       alt="Tải ứng dụng Chuyên Biên Hòa Online"
@@ -64,8 +84,23 @@ function HomeLayoutContent({
                       className="w-full h-auto"
                       priority
                     />
-                  </div>
-                </a>
+                  </a>
+                  <button
+                    onClick={handleCloseAppBanner}
+                    aria-label="Đóng"
+                    className="absolute top-2 right-2 flex items-center justify-center bg-black/50 text-white rounded-full"
+                    style={{
+                      width: "44px",
+                      height: "44px",
+                      fontSize: "22px",
+                      lineHeight: 1,
+                      border: "none",
+                      cursor: "pointer",
+                    }}
+                  >
+                    ✕
+                  </button>
+                </div>
               </div>
             )}
             {children}
