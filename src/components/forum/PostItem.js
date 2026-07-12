@@ -30,6 +30,7 @@ const ReactPhotoCollage = dynamic(
 );
 import { Button, ConfigProvider, message, Tooltip, Dropdown, Modal } from "antd";
 import { useRouter } from "@bprogress/next/app";
+import { openDeepLink } from "@/lib/deepLink";
 import {
   savePost as savePostApi,
   unsavePost as unsavePostApi,
@@ -267,22 +268,8 @@ export default function PostItem({ post, single = false, onVote, onRefresh = nul
 
   const handleOpenInApp = () => {
     const postSlug = generatePostSlug(post.id, post.title);
-    const appUrl = `com.fatties.youth://post/${postSlug}`;
-
-    // Try to open the app using a hidden iframe (avoids navigating away)
-    const iframe = document.createElement("iframe");
-    iframe.style.display = "none";
-    iframe.src = appUrl;
-    document.body.appendChild(iframe);
-
-    // Fallback: offer to redirect to store if app didn't open
-    setTimeout(() => {
-      document.body.removeChild(iframe);
-      if (!document.hidden) {
-        const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
-        const storeUrl = isIOS
-          ? "https://apps.apple.com/app/id_YOUR_APP_STORE_ID"
-          : "https://play.google.com/store/apps/details?id=com.fatties.youth";
+    openDeepLink("post", postSlug, {
+      onFallback: (storeUrl) => {
         Modal.confirm({
           title: "Mở trong ứng dụng",
           content: "Chưa cài app CBH Youth? Tải về để trải nghiệm tốt hơn!",
@@ -292,8 +279,8 @@ export default function PostItem({ post, single = false, onVote, onRefresh = nul
             window.open(storeUrl, "_blank");
           },
         });
-      }
-    }, 2000);
+      },
+    });
   };
 
   const handleReport = () => {

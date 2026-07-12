@@ -10,6 +10,7 @@ import { X, ChevronLeft, ChevronRight, VolumeX, Volume2, Link2, Smartphone, Tras
 import { markStoryAsViewed, deleteStory } from "@/app/Api";
 import { Modal } from "antd";
 import Link from "next/link";
+import { openDeepLink } from "@/lib/deepLink";
 
 // Import Swiper styles
 import "swiper/css";
@@ -112,22 +113,8 @@ const UserHeader = ({
 
   const handleOpenInApp = () => {
     if (!storyId) return;
-    const appUrl = `com.fatties.youth://story/${storyId}`;
-
-    // Try to open the app
-    const iframe = document.createElement("iframe");
-    iframe.style.display = "none";
-    iframe.src = appUrl;
-    document.body.appendChild(iframe);
-
-    // Fallback: If after 2 seconds still on the page, offer to redirect to store
-    setTimeout(() => {
-      document.body.removeChild(iframe);
-      if (!document.hidden) {
-        const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
-        const storeUrl = isIOS
-          ? "https://apps.apple.com/app/id_YOUR_APP_STORE_ID"
-          : "https://play.google.com/store/apps/details?id=com.fatties.youth";
+    openDeepLink("story", storyId, {
+      onFallback: (storeUrl) => {
         Modal.confirm({
           title: "Mở trong ứng dụng",
           content: "Chưa cài app CBH Youth? Tải về để trải nghiệm tốt hơn!",
@@ -137,8 +124,8 @@ const UserHeader = ({
             window.open(storeUrl, "_blank");
           },
         });
-      }
-    }, 2000);
+      },
+    });
   };
 
   return (

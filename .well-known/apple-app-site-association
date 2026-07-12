@@ -1,0 +1,19 @@
+{
+  "applinks": {
+    "apps": [],
+    "details": [
+      {
+        "appID": "62H5L8QDTS.com.fatties.youth",
+        "paths": [
+          "/story/*",
+          "/post/*",
+          "/open/story/*",
+          "/open/post/*"
+        ]
+      }
+    ]
+  },
+  "webcredentials": {
+    "apps": ["62H5L8QDTS.com.fatties.youth"]
+  }
+}
