@@ -23,6 +23,12 @@ export default function AppBanner() {
         return;
       }
 
+      // If user already closed it, never show again
+      if (localStorage.getItem("app_banner_closed")) {
+        setVisible(false);
+        return;
+      }
+
       // Always show on mobile. Determine deep link from current location.
       const params = new URLSearchParams(window.location.search);
       const storyId = params.get("storyId");
@@ -69,6 +75,7 @@ export default function AppBanner() {
 
   const handleClose = () => {
     setVisible(false);
+    localStorage.setItem("app_banner_closed", "1");
   };
 
   if (!visible) return null;
