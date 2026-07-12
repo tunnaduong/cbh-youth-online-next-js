@@ -137,11 +137,11 @@ export default function AppBanner() {
             color: "#fff",
             border: "none",
             cursor: "pointer",
-            fontSize: "22px",
-            padding: "10px 12px",
+            fontSize: "16px",
+            padding: "6px 8px",
             lineHeight: 1,
-            minWidth: "44px",
-            minHeight: "44px",
+            minWidth: "32px",
+            minHeight: "32px",
             borderRadius: "8px",
           }}
         >

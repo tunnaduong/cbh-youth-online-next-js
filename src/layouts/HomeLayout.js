@@ -90,9 +90,9 @@ function HomeLayoutContent({
                     aria-label="Đóng"
                     className="absolute top-2 right-2 flex items-center justify-center bg-black/50 text-white rounded-full"
                     style={{
-                      width: "44px",
-                      height: "44px",
-                      fontSize: "22px",
+                      width: "32px",
+                      height: "32px",
+                      fontSize: "16px",
                       lineHeight: 1,
                       border: "none",
                       cursor: "pointer",
