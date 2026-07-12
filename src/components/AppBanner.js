@@ -23,32 +23,22 @@ export default function AppBanner() {
         return;
       }
 
-      // Check if user has closed the banner in the current session
-      if (sessionStorage.getItem("app_banner_closed")) {
-        setVisible(false);
-        return;
-      }
-
-      // 1. Check Story ID in Query Params
+      // Always show on mobile. Determine deep link from current location.
       const params = new URLSearchParams(window.location.search);
       const storyId = params.get("storyId");
       if (storyId) {
         setAppUrl(`com.fatties.youth://story/${storyId}`);
-        setVisible(true);
-        return;
+      } else {
+        // Expected path: /[username]/posts/[postId] (e.g. /anonymous/posts/366199398-phong-canh)
+        const pathParts = window.location.pathname.split("/");
+        if (pathParts[2] === "posts" && pathParts[3]) {
+          setAppUrl(`com.fatties.youth://post/${pathParts[3]}`);
+        } else {
+          setAppUrl("com.fatties.youth://");
+        }
       }
 
-      // 2. Check Post Segment in Path
-      // Expected path: /[username]/posts/[postId] (e.g. /anonymous/posts/366199398-phong-canh)
-      const pathParts = window.location.pathname.split("/");
-      if (pathParts[2] === "posts" && pathParts[3]) {
-        const postSegment = pathParts[3];
-        setAppUrl(`com.fatties.youth://post/${postSegment}`);
-        setVisible(true);
-        return;
-      }
-
-      setVisible(false);
+      setVisible(true);
     };
 
     // Run initial check
@@ -79,7 +69,6 @@ export default function AppBanner() {
 
   const handleClose = () => {
     setVisible(false);
-    sessionStorage.setItem("app_banner_closed", "1");
   };
 
   if (!visible) return null;
@@ -116,7 +105,11 @@ export default function AppBanner() {
         <div style={{ textAlign: "left" }}>
           <div style={{ fontWeight: "600", color: "#ffffff" }}>CBH Youth Online</div>
           <div style={{ fontSize: "12px", opacity: 0.7, color: "#cccccc" }}>
-            {appUrl.includes("story") ? "Xem tin này trong ứng dụng" : "Xem bài viết này trong ứng dụng"}
+            {appUrl.includes("story")
+              ? "Xem tin này trong ứng dụng"
+              : appUrl.includes("post")
+              ? "Xem bài viết này trong ứng dụng"
+              : "Mở ứng dụng để trải nghiệm tốt hơn"}
           </div>
         </div>
       </div>
