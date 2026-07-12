@@ -11,12 +11,14 @@ export default function AppBanner() {
   useEffect(() => {
     if (typeof window === "undefined") return;
 
+    const isAndroidOrIOS = () => {
+      const ua = navigator.userAgent;
+      return /Android/i.test(ua) || /iPhone|iPad|iPod/i.test(ua);
+    };
+
     const handleCheckBanner = () => {
-      // Only show on actual mobile devices, not on PC even with narrow screen
-      const isMobile =
-        /iPhone|iPad|iPod|Android/i.test(navigator.userAgent) &&
-        (window.innerWidth < 768 || ('ontouchstart' in window || navigator.maxTouchPoints > 0));
-      if (!isMobile) {
+      // Only show banner on Android and iOS devices
+      if (!isAndroidOrIOS()) {
         setVisible(false);
         return;
       }
@@ -136,14 +138,18 @@ export default function AppBanner() {
         </button>
         <button
           onClick={handleClose}
+          aria-label="Đóng"
           style={{
             background: "transparent",
-            color: "#aaa",
+            color: "#fff",
             border: "none",
             cursor: "pointer",
-            fontSize: "18px",
-            padding: "4px",
+            fontSize: "22px",
+            padding: "10px 12px",
             lineHeight: 1,
+            minWidth: "44px",
+            minHeight: "44px",
+            borderRadius: "8px",
           }}
         >
           ✕
