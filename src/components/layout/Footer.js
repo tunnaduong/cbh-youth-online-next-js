@@ -155,6 +155,22 @@ export default function Footer() {
                   @CBHYouthOnline
                 </a>
               </li>
+              <li className="mt-3 flex gap-2">
+                <a href="https://apps.apple.com/vn/app/cbh-online-chuy%C3%AAn-bi%C3%AAn-h%C3%B2a/id6746458139?l=vi" target="_blank" rel="noopener noreferrer">
+                  <img
+                    src="/images/appstore.png"
+                    alt="App Store"
+                    className="h-10 inline"
+                  />
+                </a>
+                <a href="https://play.google.com/store/apps/details?id=com.fatties.youth" target="_blank" rel="noopener noreferrer">
+                  <img
+                    src="/images/googleplay.png"
+                    alt="Google Play"
+                    className="h-10 inline"
+                  />
+                </a>
+              </li>
             </ul>
           </div>
         </div>
