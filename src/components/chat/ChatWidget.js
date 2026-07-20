@@ -131,7 +131,10 @@ export default function ChatWidget() {
               }}
             />
           ) : selectedConversationId ? (
-            <ChatConversation conversationId={selectedConversationId} />
+            <ChatConversation
+              conversationId={selectedConversationId}
+              conversation={selectedConversation}
+            />
           ) : (
             <ChatThreadsList onSelectConversation={handleSelectConversation} />
           )}

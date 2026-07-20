@@ -124,13 +124,15 @@ const ChatProvider = ({ children }) => {
               : message.sender?.profile_name ||
                 message.sender?.username ||
                 "Người dùng"
-            : conversation.participants?.[0]?.profile_name ||
+            : conversation.display_name ||
+              conversation.participants?.[0]?.profile_name ||
               conversation.participants?.[0]?.username ||
               "Người dùng";
           const conversationName =
             conversation.type === "group"
               ? conversation.name || "Nhóm"
-              : conversation.participants?.[0]?.profile_name ||
+              : conversation.display_name ||
+                conversation.participants?.[0]?.profile_name ||
                 conversation.participants?.[0]?.username ||
                 "Người dùng";
 
@@ -144,7 +146,8 @@ const ChatProvider = ({ children }) => {
           const avatarUrl =
             conversation.type === "group"
               ? "/images/placeholder-user.jpg"
-              : conversation.participants?.[0]?.avatar_url ||
+              : conversation.display_avatar_url ||
+                conversation.participants?.[0]?.avatar_url ||
                 "/images/placeholder-user.jpg";
 
           console.log("[ChatProvider] Showing notification for:", {

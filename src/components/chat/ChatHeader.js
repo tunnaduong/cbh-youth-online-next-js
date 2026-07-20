@@ -62,29 +62,41 @@ export default function ChatHeader({
               </button>
             )}
             {/* Avatar for conversation view */}
-            {conversation?.participants?.[0]?.avatar_url ? (
+            {conversation?.display_avatar_url ||
+            conversation?.participants?.[0]?.avatar_url ? (
               <Avatar className="w-6 h-6 flex-shrink-0">
                 <AvatarImage
-                  src={conversation.participants[0].avatar_url}
+                  src={
+                    conversation.display_avatar_url ||
+                    conversation.participants[0].avatar_url
+                  }
                   alt={
+                    conversation.display_name ||
                     conversation.participants[0].profile_name ||
                     conversation.participants[0].username
                   }
                 />
                 <AvatarFallback>
-                  {conversation.participants[0].username?.[0]?.toUpperCase() ||
+                  {conversation.display_name?.[0]?.toUpperCase() ||
+                    conversation.participants[0].username?.[0]?.toUpperCase() ||
                     "?"}
                 </AvatarFallback>
               </Avatar>
             ) : (
               <div className="w-6 h-6 bg-gray-300 dark:bg-neutral-600 rounded-full flex items-center justify-center flex-shrink-0">
                 <span className="text-xs text-gray-600 dark:text-gray-300">
-                  {conversation?.name?.[0]?.toUpperCase() || "?"}
+                  {conversation?.display_name?.[0]?.toUpperCase() ||
+                    conversation?.name?.[0]?.toUpperCase() ||
+                    "?"}
                 </span>
               </div>
             )}
             <div className="min-w-0 flex-1">
-              {conversation?.type === "group" ? (
+              {conversation?.display_name ? (
+                <h2 className="font-semibold text-sm dark:text-white truncate">
+                  {conversation.display_name}
+                </h2>
+              ) : conversation?.type === "group" ? (
                 <h2 className="font-semibold text-sm dark:text-white truncate">
                   {conversation?.name || "Chat"}
                 </h2>

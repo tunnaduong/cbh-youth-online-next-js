@@ -29,6 +29,9 @@ export default function ChatThreadsList({ onSelectConversation }) {
   };
 
   const getThreadDisplayName = (conversation) => {
+    if (conversation.display_name) {
+      return conversation.display_name;
+    }
     if (conversation.type === "group" && conversation.name) {
       return conversation.name;
     }
@@ -42,6 +45,9 @@ export default function ChatThreadsList({ onSelectConversation }) {
   };
 
   const getThreadAvatar = (conversation) => {
+    if (conversation.display_avatar_url) {
+      return conversation.display_avatar_url;
+    }
     if (conversation.type === "group" && conversation.name) {
       // Group chat - use first letter of group name
       return null;

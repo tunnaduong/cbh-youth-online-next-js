@@ -10,6 +10,7 @@ import ChatMessageInput from "./ChatMessageInput";
 
 export default function ChatConversation({
   conversationId,
+  conversation,
   previewParticipant,
   onConversationCreated,
 }) {
@@ -31,6 +32,7 @@ export default function ChatConversation({
   const conversationMessages = conversationId
     ? messages[conversationId] || []
     : [];
+  const isGroupChat = conversation?.type === "group";
 
   // Reset initial load flag when conversation changes
   useEffect(() => {
@@ -227,7 +229,7 @@ export default function ChatConversation({
               }`}
             >
               <div className="flex items-center gap-2 mb-1 min-w-0">
-                {!message.is_myself &&
+                {!message.is_myself && isGroupChat &&
                   (message.sender?.username ? (
                     <Link
                       href={`/${message.sender.username}`}
