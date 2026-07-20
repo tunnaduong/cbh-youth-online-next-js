@@ -229,7 +229,7 @@ export default function ChatConversation({
               }`}
             >
               <div className="flex items-center gap-2 mb-1 min-w-0">
-                {!message.is_myself && isGroupChat &&
+                {!message.is_myself &&
                   (message.sender?.username ? (
                     <Link
                       href={`/${message.sender.username}`}
