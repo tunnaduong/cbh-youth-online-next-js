@@ -2,6 +2,7 @@ import "./globals.css";
 import ClientProviders from "./ClientProviders";
 import GlobalConsoleMessage from "../components/GlobalConsoleMessage";
 import { Analytics } from "@vercel/analytics/next";
+import Script from "next/script";
 
 export const metadata = {
   title: {
@@ -39,6 +40,13 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="vi">
+      <head>
+        <Script
+          async
+          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3425905751761094"
+          crossOrigin="anonymous"
+        />
+      </head>
       <body className="bg-[#F8F8F8] dark:bg-neutral-800">
         <GlobalConsoleMessage />
         <ClientProviders>{children}</ClientProviders>
