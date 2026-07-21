@@ -202,6 +202,23 @@ function RegisterClientInner() {
                   className="mt-2"
                 />
               </div>
+              <div className="text-xs text-gray-500 dark:text-gray-300 leading-5">
+                Bằng cách tiếp tục tạo tài khoản, bạn đồng ý với{" "}
+                <Link
+                  href="/policy/terms"
+                  className="text-primary-500 hover:underline"
+                >
+                  Điều khoản sử dụng
+                </Link>{" "}
+                và{" "}
+                <Link
+                  href="/policy/privacy"
+                  className="text-primary-500 hover:underline"
+                >
+                  Chính sách bảo mật
+                </Link>
+                .
+              </div>
               <CustomColorButton
                 bgColor={"#319527"}
                 block
