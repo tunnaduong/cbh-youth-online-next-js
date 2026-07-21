@@ -1,6 +1,8 @@
 import React from "react";
 import Link from "next/link";
 import { IoLogoFacebook, IoLogoGithub } from "react-icons/io5";
+import { FaDiscord } from "react-icons/fa";
+
 
 export default function Footer() {
   return (
@@ -54,6 +56,13 @@ export default function Footer() {
                 className="rounded-full h-[35px] w-[35px] flex justify-center items-center bg-black text-white"
               >
                 <IoLogoGithub color={"white"} />
+              </a>
+              <a
+                href="https://discord.chuyenbienhoa.com"
+                target="_blank"
+                className="rounded-full h-[35px] w-[35px] flex justify-center items-center bg-[#7289da] text-white"
+              >
+                <FaDiscord color={"white"} />
               </a>
             </div>
             <p className="text-[13px] mt-5">
