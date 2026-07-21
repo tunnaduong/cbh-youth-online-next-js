@@ -46,12 +46,14 @@ import {
 } from "lucide-react";
 import { usePostRefresh } from "@/contexts/PostRefreshContext";
 import CreatePostModal from "../modals/CreatePostModal";
+import PostVotesModal from "./PostVotesModal";
 
 export default function PostItem({ post, single = false, onVote, onRefresh = null }) {
   const { currentUser, refreshUser } = useAuthContext();
   const { fetchTopUsers } = useTopUsersContext();
   const [showFullContent, setShowFullContent] = useState(false);
   const [isSaved, setIsSaved] = useState(!!(post.is_saved || post.saved));
+  const [showVotesModal, setShowVotesModal] = useState(false);
   const maxLength = 300; // Số ký tự tối đa trước khi truncate
   const myVote =
     post.votes?.find((v) => v.username === currentUser?.username)?.vote_value ||
@@ -283,6 +285,12 @@ export default function PostItem({ post, single = false, onVote, onRefresh = nul
     });
   };
 
+  const handleOpenVotesModal = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setShowVotesModal(true);
+  };
+
   const handleReport = () => {
     message.info("Tính năng đang phát triển");
   };
@@ -338,6 +346,12 @@ export default function PostItem({ post, single = false, onVote, onRefresh = nul
       className="px-1.5 md:px-0 md:max-w-[775px] mx-auto w-full"
       key={post.id}
     >
+      <PostVotesModal
+        open={showVotesModal}
+        postId={post.id}
+        postTitle={post.title}
+        onClose={() => setShowVotesModal(false)}
+      />
       <div className="post-container-post post-container mb-4 shadow-lg rounded-xl !p-6 bg-white flex flex-col-reverse md:flex-row">
         <div className="min-w-[72px]">
           <div className="sticky-reaction-bar items-center md:!mt-1 mt-3 gap-x-3 flex md:!flex-col flex-row md:ml-[-20px] text-[13px] font-semibold text-gray-400">
@@ -349,16 +363,20 @@ export default function PostItem({ post, single = false, onVote, onRefresh = nul
             >
               <ArrowUpOutline height="26px" width="26px" color="currentColor" />
             </Button>
-            <span
+            <button
+              type="button"
               className={`select-none text-lg vote-count ${myVote === 1
                 ? "text-primary-500"
                 : myVote === -1
                   ? "text-red-600"
                   : "text-gray-400"
-                }`}
+                } cursor-pointer rounded px-1 hover:underline focus:outline-none focus:ring-2 focus:ring-primary-400 focus:ring-offset-2`}
+              onClick={handleOpenVotesModal}
+              aria-label="Xem danh sách người đã vote"
+              title="Xem danh sách người đã vote"
             >
               {votesCount}
-            </span>
+            </button>
             <ConfigProvider
               theme={{
                 components: {
