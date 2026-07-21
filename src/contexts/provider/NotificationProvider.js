@@ -34,6 +34,7 @@ const NotificationProvider = ({ children }) => {
   const pollIntervalRef = useRef(null);
   const isPollingRef = useRef(false);
   const subscriptionRequestedRef = useRef(false);
+  const hasLoadedNotificationsRef = useRef(false);
 
   // Fetch notifications
   const fetchNotifications = useCallback(
@@ -52,16 +53,18 @@ const NotificationProvider = ({ children }) => {
           per_page: 20,
         });
 
-        if (response?.notifications) {
+        const payload = response?.data ?? response;
+
+        if (payload?.notifications) {
           if (append) {
-            setNotifications((prev) => [...prev, ...response.notifications]);
+            setNotifications((prev) => [...prev, ...payload.notifications]);
           } else {
-            setNotifications(response.notifications);
+            setNotifications(payload.notifications);
           }
           setHasMore(
-            response.pagination?.current_page < response.pagination?.last_page
+            payload.pagination?.current_page < payload.pagination?.last_page
           );
-          setCurrentPage(response.pagination?.current_page || page);
+          setCurrentPage(payload.pagination?.current_page || page);
         }
       } catch (err) {
         console.error("Error fetching notifications:", err);
@@ -82,8 +85,9 @@ const NotificationProvider = ({ children }) => {
 
     try {
       const response = await getUnreadNotificationCount();
-      if (response?.unread_count !== undefined) {
-        setUnreadCount(response.unread_count);
+      const payload = response?.data ?? response;
+      if (payload?.unread_count !== undefined) {
+        setUnreadCount(payload.unread_count);
       }
     } catch (err) {
       console.error("Error fetching unread count:", err);
@@ -231,6 +235,7 @@ const NotificationProvider = ({ children }) => {
     if (!loggedIn) {
       setNotifications([]);
       setUnreadCount(0);
+      hasLoadedNotificationsRef.current = false;
       if (pollIntervalRef.current) {
         clearInterval(pollIntervalRef.current);
         pollIntervalRef.current = null;
@@ -241,6 +246,11 @@ const NotificationProvider = ({ children }) => {
     // Only fetch unread count on login, not notifications list
     // Notifications list will be fetched when dropdown is opened
     fetchUnreadCount();
+
+    if (!hasLoadedNotificationsRef.current) {
+      hasLoadedNotificationsRef.current = true;
+      fetchNotifications(1, false);
+    }
 
     // Set up polling for unread count only
     if (!isPollingRef.current) {
