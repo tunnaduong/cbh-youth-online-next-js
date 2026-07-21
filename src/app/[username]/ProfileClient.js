@@ -8,12 +8,14 @@ import { Button, message } from "antd";
 import { useState, useEffect } from "react";
 import FollowButton from "@/components/profile/FollowButton";
 import { BsFillGearFill } from "react-icons/bs";
+import { IoChatbubbleEllipsesOutline } from "react-icons/io5";
 import { IoCalendarOutline, IoLocationOutline } from "react-icons/io5";
-import { useAuthContext } from "@/contexts/Support";
+import { useAuthContext, useChatContext } from "@/contexts/Support";
 import { followUser, unfollowUser, registerVote, getProfile } from "@/app/Api";
 
 export default function ProfileClient({ initialProfile, activeTab, username }) {
   const { currentUser } = useAuthContext();
+  const { openChat, createConversation } = useChatContext();
   const router = useRouter();
 
   // Transform API response to component format
@@ -40,6 +42,7 @@ export default function ProfileClient({ initialProfile, activeTab, username }) {
     }
 
     return {
+      id: user.id,
       username: user.username,
       profile_name: user.profile?.profile_name || user.username,
       bio: user.profile?.bio || null,
@@ -116,9 +119,36 @@ export default function ProfileClient({ initialProfile, activeTab, username }) {
     }
   }, [profile?.isFollowing]);
   const [loading, setLoading] = useState(false);
+  const [messaging, setMessaging] = useState(false);
   const [followingList, setFollowingList] = useState(profile?.following || []);
   const [followersList, setFollowersList] = useState(profile?.followers || []);
   const [posts, setPosts] = useState(profile?.posts || []);
+
+  const handleMessage = async () => {
+    if (!currentUser) {
+      message.error("Vui lòng đăng nhập để nhắn tin");
+      router.push(
+        "/login?continue=" + encodeURIComponent(window.location.href)
+      );
+      return;
+    }
+
+    if (!profile?.id) {
+      message.error("Không thể mở cuộc trò chuyện lúc này");
+      return;
+    }
+
+    setMessaging(true);
+    try {
+      await openChat();
+      await createConversation(profile.id);
+    } catch (error) {
+      console.error("Message button error:", error);
+      message.error("Không thể mở cuộc trò chuyện. Vui lòng thử lại.");
+    } finally {
+      setMessaging(false);
+    }
+  };
 
   const handleFollow = async () => {
     // Check if user is authenticated
@@ -619,7 +649,7 @@ export default function ProfileClient({ initialProfile, activeTab, username }) {
                   </div>
                 )}
               </div>
-              <div className="flex-1 flex justify-end items-center mt-3">
+              <div className="flex-1 flex justify-end items-center mt-3 gap-2">
                 {currentUser && currentUser.username == profile.username ? (
                   <Link href="/settings" className="flex items-center gap-x-2">
                     <Button className="rounded-full text-[#6c757d] px-4">
@@ -628,11 +658,22 @@ export default function ProfileClient({ initialProfile, activeTab, username }) {
                     </Button>
                   </Link>
                 ) : (
-                  <FollowButton
-                    isFollowing={isFollowing}
-                    loading={loading}
-                    handleFollow={handleFollow}
-                  />
+                  <>
+                    <Button
+                      shape="circle"
+                      icon={<IoChatbubbleEllipsesOutline className="w-5 h-5 mt-1" />}
+                      aria-label="Nhắn tin"
+                      title="Nhắn tin"
+                      loading={messaging}
+                      onClick={handleMessage}
+                      className="!flex !items-center !justify-center !border-[#319527]"
+                    />
+                    <FollowButton
+                      isFollowing={isFollowing}
+                      loading={loading}
+                      handleFollow={handleFollow}
+                    />
+                  </>
                 )}
               </div>
             </div>
@@ -729,7 +770,7 @@ export default function ProfileClient({ initialProfile, activeTab, username }) {
                   </p>
                 </div>
               </div>
-              <div className="flex-1 flex justify-end items-center">
+              <div className="flex-1 flex justify-end items-center gap-2">
                 {currentUser && currentUser.username == profile.username ? (
                   <Link href="/settings" className="flex items-center gap-x-2">
                     <Button className="rounded-full text-[#6c757d] px-4">
@@ -738,11 +779,22 @@ export default function ProfileClient({ initialProfile, activeTab, username }) {
                     </Button>
                   </Link>
                 ) : (
-                  <FollowButton
-                    isFollowing={isFollowing}
-                    loading={loading}
-                    handleFollow={handleFollow}
-                  />
+                  <>
+                    <Button
+                      shape="circle"
+                      icon={<IoChatbubbleEllipsesOutline className="w-5 h-5 mt-1" />}
+                      aria-label="Nhắn tin"
+                      title="Nhắn tin"
+                      loading={messaging}
+                      onClick={handleMessage}
+                      className="!flex !items-center !justify-center !border-[#319527]"
+                    />
+                    <FollowButton
+                      isFollowing={isFollowing}
+                      loading={loading}
+                      handleFollow={handleFollow}
+                    />
+                  </>
                 )}
               </div>
             </div>
