@@ -37,6 +37,7 @@ const CreateStoryModal = ({ open, onClose, onStoryCreated }) => {
   const [previewUrl, setPreviewUrl] = useState(null);
   const [useCustomColor, setUseCustomColor] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isMuted, setIsMuted] = useState(false);
 
   // Mock form data for now - replace with proper form handling
   const [data, setData] = useState({
@@ -80,6 +81,10 @@ const CreateStoryModal = ({ open, onClose, onStoryCreated }) => {
     // Add media file if present
     if (mediaFile) {
       formData.append("media_file", mediaFile);
+    }
+
+    if (mediaType === "video") {
+      formData.append("is_muted", String(isMuted));
     }
 
     // Only add text-specific fields for text stories
@@ -130,6 +135,7 @@ const CreateStoryModal = ({ open, onClose, onStoryCreated }) => {
         setMediaFile(null);
         setPreviewUrl(null);
         setUseCustomColor(false);
+        setIsMuted(false);
         setIsSubmitting(false);
         onClose();
 
@@ -174,6 +180,7 @@ const CreateStoryModal = ({ open, onClose, onStoryCreated }) => {
     setData({ ...data, media_type: type });
     setMediaFile(null);
     setPreviewUrl(null);
+    setIsMuted(false);
   };
 
   const getMediaIcon = () => {
@@ -263,6 +270,18 @@ const CreateStoryModal = ({ open, onClose, onStoryCreated }) => {
                   : "âm thanh"}
               </Button>
             </Upload>
+            {mediaType === "video" && (
+              <div className="mt-3 flex items-center gap-2">
+                <Checkbox
+                  checked={isMuted}
+                  onChange={(e) => setIsMuted(e.target.checked)}
+                >
+                  <span className="text-sm text-gray-600 dark:text-neutral-300">
+                    Tắt âm khi phát video
+                  </span>
+                </Checkbox>
+              </div>
+            )}
             {previewUrl && (
               <div className="mt-2">
                 {mediaType === "image" ? (

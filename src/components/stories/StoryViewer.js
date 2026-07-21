@@ -85,6 +85,7 @@ const UserHeader = ({
   storyId,
   isOwner,
   onDelete,
+  isMuteLocked,
 }) => {
   const [isMobile, setIsMobile] = useState(false);
 
@@ -155,7 +156,9 @@ const UserHeader = ({
         {(storyType === "video" || storyType === "audio") && (
           <button
             onClick={onToggleMute}
-            className="text-white hover:text-white/80 transition-colors p-1.5 sm:p-2 flex-shrink-0"
+            disabled={isMuteLocked}
+            className={`transition-colors p-1.5 sm:p-2 flex-shrink-0 ${isMuteLocked ? "text-white/70 cursor-not-allowed" : "text-white hover:text-white/80"}`}
+            title={isMuteLocked ? "Âm thanh của tin này bị khóa" : isMuted ? "Bật âm" : "Tắt âm"}
           >
             {isMuted ? (
               <VolumeX className="w-5 h-5 sm:w-6 sm:h-6 drop-shadow" />
@@ -333,13 +336,15 @@ const StorySlide = ({
 }) => {
   const [currentStoryIndex, setCurrentStoryIndex] = useState(initialStoryIndex);
   const [progress, setProgress] = useState(0);
-  const [isMuted, setIsMuted] = useState(true);
+  const [isMuted, setIsMuted] = useState(false);
   const progressIntervalRef = useRef();
 
   const currentStory = user.stories[currentStoryIndex];
 
   useEffect(() => {
     if (currentStory) {
+      setIsMuted(Boolean(currentStory.is_muted));
+
       // Mark story as viewed using API call
       markStoryAsViewed(currentStory.id)
         .then((response) => {
@@ -349,11 +354,12 @@ const StorySlide = ({
           console.error("Failed to mark story as viewed:", error);
         });
     }
-  }, [currentStory]);
+  }, [currentStory?.id, currentStory?.is_muted]);
 
   const handleToggleMute = useCallback(() => {
+    if (currentStory?.is_muted) return;
     setIsMuted((prev) => !prev);
-  }, []);
+  }, [currentStory?.is_muted]);
 
   const stopProgress = useCallback(() => {
     if (progressIntervalRef.current) {
@@ -470,6 +476,7 @@ const StorySlide = ({
         onToggleMute={handleToggleMute}
         createdAt={currentStory?.created_at}
         storyId={currentStory?.id}
+        isMuteLocked={Boolean(currentStory?.is_muted)}
         isOwner={
           currentUser && (
             String(currentUser.id) === String(user.id) ||
