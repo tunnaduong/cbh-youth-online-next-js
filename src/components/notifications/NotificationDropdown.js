@@ -130,7 +130,7 @@ export default function NotificationDropdown({
                   onClick={loadMore}
                   disabled={loading}
                   variant="outline"
-                  className="w-full"
+                  className="w-full dark:text-white"
                 >
                   {loading ? "Đang tải..." : "Tải thêm"}
                 </Button>
