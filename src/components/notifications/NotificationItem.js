@@ -210,9 +210,9 @@ export default function NotificationItem({ notification }) {
 
   return (
     <div
-      className={`group flex items-start gap-3 p-3 hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer transition-colors ${!notification.is_read
-        ? "bg-blue-50 dark:bg-blue-900/20"
-        : "bg-white dark:bg-gray-900"
+      className={`group flex items-start gap-3 p-3 hover:bg-neutral-700/20 dark:hover:bg-gray-800 cursor-pointer transition-colors ${!notification.is_read
+        ? "bg-blue-50 dark:bg-neutral-700/20"
+        : "bg-white dark:bg-neutral-700"
         }`}
       onClick={handleClick}
     >
