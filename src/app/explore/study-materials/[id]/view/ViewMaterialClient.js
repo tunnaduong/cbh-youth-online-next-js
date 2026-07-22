@@ -56,9 +56,14 @@ export default function ViewMaterialClient({ materialId }) {
         return;
       }
 
-      // Fetch the actual file for viewing
-      await fetchFileContent();
-
+      const documentViewUrl = `${process.env.NEXT_PUBLIC_API_URL}/v1.0/study-materials/documents/view?id=${materialId}&key=${data.preview_key}`;
+      const fileExtension = data?.file?.file_name?.split('.').pop()?.toLowerCase();
+      const officePreviewExtensions = ["pdf", "doc", "docx", "xls", "xlsx", "ppt", "pptx"];
+      if (officePreviewExtensions.includes(fileExtension)) {
+        setFileUrl(`https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(documentViewUrl)}`);
+      } else {
+        setFileUrl(documentViewUrl);
+      }
     } catch (err) {
       console.error("Error loading material:", err);
       message.error("Không thể tải thông tin tài liệu");
@@ -67,38 +72,33 @@ export default function ViewMaterialClient({ materialId }) {
     }
   };
 
-  const fetchFileContent = async () => {
+  const handleDownload = async () => {
     try {
       const token = localStorage.getItem("TOKEN");
-      const url = `${process.env.NEXT_PUBLIC_API_URL}/v1.0/study-materials/${materialId}/download`;
-
-      const response = await fetch(url, {
+      const downloadUrl = `${process.env.NEXT_PUBLIC_API_URL}/v1.0/study-materials/${materialId}/download`;
+      const response = await fetch(downloadUrl, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
       });
 
       if (!response.ok) {
-        throw new Error("Failed to fetch file");
+        throw new Error("Download failed");
       }
 
       const blob = await response.blob();
       const objectUrl = window.URL.createObjectURL(blob);
-      setFileUrl(objectUrl);
+      const link = document.createElement("a");
+      link.href = objectUrl;
+      link.setAttribute("download", material?.file?.file_name || "document");
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(objectUrl);
     } catch (err) {
-      console.error("Error fetching file content:", err);
-      message.error("Không thể tải nội dung tài liệu");
+      console.error("Download error:", err);
+      message.error("Không thể tải tài liệu");
     }
-  };
-
-  const handleDownload = () => {
-    if (!fileUrl) return;
-    const link = document.createElement("a");
-    link.href = fileUrl;
-    link.setAttribute("download", material?.file?.file_name || "document");
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
   };
 
   const sidebarItems = [

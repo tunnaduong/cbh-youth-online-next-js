@@ -46,13 +46,10 @@ import {
   DocumentTextOutline,
   ChevronBackOutline,
 } from "react-ionicons";
-import FileViewer from "react-file-viewer";
 import { useAuthContext, useTopUsersContext, useChatContext } from "@/contexts/Support";
-import * as Api from "@/app/Api";
 import {
   getStudyMaterial,
   purchaseMaterial,
-  downloadMaterial,
   viewMaterial,
   getMaterialRatings,
   rateMaterial,
@@ -365,6 +362,15 @@ export default function StudyMaterialDetailClient({ materialId }) {
   }
 
   const canDownload = material.is_free || material.is_purchased;
+  const fileExtension = material?.file?.file_name?.split(".").pop()?.toLowerCase();
+  const officePreviewExtensions = ["pdf", "doc", "docx", "xls", "xlsx", "ppt", "pptx"];
+  const isOfficePreviewable = officePreviewExtensions.includes(fileExtension);
+  const documentViewUrl = material?.id
+    ? `${process.env.NEXT_PUBLIC_API_URL}/v1.0/study-materials/documents/view?id=${material.id}&key=${material.preview_key}`
+    : null;
+  const officeViewerUrl = isOfficePreviewable && documentViewUrl
+    ? `https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(documentViewUrl)}`
+    : null;
 
   return (
     <HomeLayout
@@ -464,35 +470,34 @@ export default function StudyMaterialDetailClient({ materialId }) {
                       className={`relative w-full bg-neutral-50 dark:bg-neutral-900/50 select-none h-[700px] border-b border-gray-100 dark:border-neutral-800 ${(!material.is_free && !material.is_purchased) ? "overflow-hidden" : "overflow-auto"}`}
                       onContextMenu={(e) => e.preventDefault()}
                     >
-                      {(!material.is_free && !material.is_purchased) ? (
-                        <div className="relative h-full w-full bg-white dark:bg-neutral-900">
-                          {material.preview_path ? (
-                            <img
-                              src={material.preview_path}
-                              alt="Tài liệu xem trước"
-                              className="w-full h-full object-cover object-top"
-                            />
-                          ) : (
-                            <div className="flex flex-col items-center justify-center h-full text-center p-8">
-                              <div className="w-32 h-32 bg-gray-50 dark:bg-neutral-800 rounded-2xl shadow-sm flex items-center justify-center mb-6 border border-gray-100 dark:border-neutral-700">
-                                {material.file?.file_type?.includes('pdf') ? (
-                                  <DocumentOutline height="64px" width="64px" color="#ef4444" />
-                                ) : (
-                                  <DocumentTextOutline height="64px" width="64px" color="#3b82f6" />
-                                )}
-                              </div>
-                              <h3 className="text-xl font-bold mb-2">Bản xem trước giới hạn</h3>
-                              <p className="text-gray-500 max-w-sm">Tài liệu bao gồm {material.file?.file_size ? (material.file.file_size / 1024 / 1024).toFixed(2) : '??'} MB. Hãy mua để xem toàn bộ nội dung chất lượng cao.</p>
+                      <div className="relative h-full w-full bg-white dark:bg-neutral-900">
+                        {officeViewerUrl ? (
+                          <iframe
+                            src={officeViewerUrl}
+                            className="absolute inset-0 w-full h-full border-none"
+                            title="Xem trước tài liệu"
+                            allowFullScreen
+                          />
+                        ) : material.preview_path ? (
+                          <img
+                            src={material.preview_path}
+                            alt="Tài liệu xem trước"
+                            className="w-full h-full object-cover object-top"
+                          />
+                        ) : (
+                          <div className="flex flex-col items-center justify-center h-full text-center p-8">
+                            <div className="w-32 h-32 bg-gray-50 dark:bg-neutral-800 rounded-2xl shadow-sm flex items-center justify-center mb-6 border border-gray-100 dark:border-neutral-700">
+                              {material.file?.file_type?.includes('pdf') ? (
+                                <DocumentOutline height="64px" width="64px" color="#ef4444" />
+                              ) : (
+                                <DocumentTextOutline height="64px" width="64px" color="#3b82f6" />
+                              )}
                             </div>
-                          )}
-                        </div>
-                      ) : (
-                        <FileViewer
-                          fileType={material.file?.file_name?.split('.').pop() || 'docx'}
-                          filePath={`${process.env.NEXT_PUBLIC_API_URL}/v1.0/study-materials/documents/view?id=${material.id}&key=${material.preview_key || 'temp'}`}
-                          onError={(e) => console.error("Error in FileViewer:", e)}
-                        />
-                      )}
+                            <h3 className="text-xl font-bold mb-2">Bản xem trước giới hạn</h3>
+                            <p className="text-gray-500 max-w-sm">Tài liệu bao gồm {material.file?.file_size ? (material.file.file_size / 1024 / 1024).toFixed(2) : '??'} MB. Hãy mua để xem toàn bộ nội dung chất lượng cao.</p>
+                          </div>
+                        )}
+                      </div>
                       {/* Overlay Mask */}
                       {(!material.is_free && !material.is_purchased) && (
                         <div className="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-white via-white/90 to-transparent dark:from-neutral-900 dark:via-neutral-900/90 flex flex-col items-center justify-end pb-12 px-6 text-center">
