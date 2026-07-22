@@ -363,14 +363,17 @@ export default function StudyMaterialDetailClient({ materialId }) {
 
   const canDownload = material.is_free || material.is_purchased;
   const fileExtension = material?.file?.file_name?.split(".").pop()?.toLowerCase();
-  const officePreviewExtensions = ["pdf", "doc", "docx", "xls", "xlsx", "ppt", "pptx"];
+  const officePreviewExtensions = ["doc", "docx", "xls", "xlsx", "ppt", "pptx"];
+  const isPdf = fileExtension === "pdf";
   const isOfficePreviewable = officePreviewExtensions.includes(fileExtension);
-  const documentViewUrl = material?.id
-    ? `${process.env.NEXT_PUBLIC_API_URL}/v1.0/study-materials/documents/view?id=${material.id}&key=${material.preview_key}`
+  const directPreviewUrl = material?.file_url
+    || (material?.file?.file_path
+      ? `${process.env.NEXT_PUBLIC_API_URL}/storage/${material.file.file_path.replace(/^\/+/, "")}`
+      : null);
+  const officeViewerUrl = isOfficePreviewable && directPreviewUrl
+    ? `https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(directPreviewUrl)}`
     : null;
-  const officeViewerUrl = isOfficePreviewable && documentViewUrl
-    ? `https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(documentViewUrl)}`
-    : null;
+  const pdfViewerUrl = isPdf && directPreviewUrl ? directPreviewUrl : null;
 
   return (
     <HomeLayout
@@ -471,7 +474,14 @@ export default function StudyMaterialDetailClient({ materialId }) {
                       onContextMenu={(e) => e.preventDefault()}
                     >
                       <div className="relative h-full w-full bg-white dark:bg-neutral-900">
-                        {officeViewerUrl ? (
+                        {pdfViewerUrl ? (
+                          <iframe
+                            src={pdfViewerUrl}
+                            className="absolute inset-0 w-full h-full border-none"
+                            title="Xem trước tài liệu"
+                            allowFullScreen
+                          />
+                        ) : officeViewerUrl ? (
                           <iframe
                             src={officeViewerUrl}
                             className="absolute inset-0 w-full h-full border-none"
