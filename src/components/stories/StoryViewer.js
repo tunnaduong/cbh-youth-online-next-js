@@ -248,6 +248,11 @@ const StoryContent = ({ story, isActive, onNext, isMuted }) => {
       <video
         ref={videoRef}
         src={process.env.NEXT_PUBLIC_API_URL + story.media_url}
+        poster={
+          story.video_first_frame_url
+            ? process.env.NEXT_PUBLIC_API_URL + story.video_first_frame_url
+            : undefined
+        }
         className="w-full h-full object-cover"
         autoPlay={isActive}
         muted={isMuted}

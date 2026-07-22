@@ -341,6 +341,16 @@ function StoriesSection() {
                   className="w-full h-full object-cover"
                   loading="lazy"
                 />
+              ) : firstStory.type === "video" && firstStory.video_first_frame_url ? (
+                <img
+                  src={
+                    process.env.NEXT_PUBLIC_API_URL +
+                    firstStory.video_first_frame_url
+                  }
+                  alt={userStories.name}
+                  className="w-full h-full object-cover"
+                  loading="lazy"
+                />
               ) : (
                 <div className="w-full h-full bg-gray-800 flex flex-col items-center justify-center">
                   <span className="text-4xl mb-2">
