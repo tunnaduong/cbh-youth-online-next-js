@@ -100,7 +100,10 @@ const CreatePostModal = ({ open, onClose, isEditMode = false, postData = null, o
   const [processing, setProcessing] = useState(false);
   const [errors, setErrors] = useState({});
   const [isPreviewMode, setIsPreviewMode] = useState(false);
+  const [isDraggingFiles, setIsDraggingFiles] = useState(false);
   const textareaRef = useRef(null);
+  const imageInputRef = useRef(null);
+  const documentInputRef = useRef(null);
 
   // Handle auto-continuation for lists
   const handleTextareaKeyDown = (e) => {
@@ -289,12 +292,9 @@ const CreatePostModal = ({ open, onClose, isEditMode = false, postData = null, o
     }
   };
 
-  const handleImageChange = (e) => {
-    const files = Array.from(e.target.files);
-
+  const handleImageFiles = (files) => {
     if (files.length === 0) return;
 
-    // Validate all files
     for (const file of files) {
       if (!file.type.startsWith("image/")) {
         message.error("Vui lòng chọn file ảnh hợp lệ");
@@ -329,15 +329,10 @@ const CreatePostModal = ({ open, onClose, isEditMode = false, postData = null, o
     });
   };
 
-  const handleDocumentChange = (e) => {
-    const files = Array.from(e.target.files);
-
+  const handleDocumentFiles = (files) => {
     if (files.length === 0) return;
 
-    // Validate all files
     for (const file of files) {
-      console.log("File type:", file.type, "File name:", file.name);
-
       const validTypes = [
         "application/pdf",
         "application/msword",
@@ -364,6 +359,28 @@ const CreatePostModal = ({ open, onClose, isEditMode = false, postData = null, o
     const newFiles = [...documentFiles, ...files];
     setDocumentFiles(newFiles);
     setData((prev) => ({ ...prev, document_files: newFiles }));
+  };
+
+  const handleImageChange = (e) => {
+    handleImageFiles(Array.from(e.target.files));
+    e.target.value = "";
+  };
+
+  const handleDocumentChange = (e) => {
+    handleDocumentFiles(Array.from(e.target.files));
+    e.target.value = "";
+  };
+
+  const handleFilesDrop = (e) => {
+    e.preventDefault();
+    setIsDraggingFiles(false);
+
+    const files = Array.from(e.dataTransfer.files);
+    const imageFilesToAdd = files.filter((file) => file.type.startsWith("image/"));
+    const documentFilesToAdd = files.filter((file) => !file.type.startsWith("image/"));
+
+    if (imageFilesToAdd.length > 0) handleImageFiles(imageFilesToAdd);
+    if (documentFilesToAdd.length > 0) handleDocumentFiles(documentFilesToAdd);
   };
 
   const removeImage = (index) => {
@@ -770,6 +787,7 @@ const CreatePostModal = ({ open, onClose, isEditMode = false, postData = null, o
                   )}
                 </p>
                 <input
+                  ref={imageInputRef}
                   id="fileInput"
                   accept="image/*"
                   type="file"
@@ -778,6 +796,7 @@ const CreatePostModal = ({ open, onClose, isEditMode = false, postData = null, o
                   style={{ display: "none" }}
                 />
                 <input
+                  ref={documentInputRef}
                   id="documentInput"
                   accept=".pdf,.doc,.docx,.txt"
                   type="file"
@@ -789,7 +808,7 @@ const CreatePostModal = ({ open, onClose, isEditMode = false, postData = null, o
                   <Button
                     size="small"
                     className="h-8 px-2 rounded-full border-0"
-                    onClick={() => document.getElementById("fileInput").click()}
+                    onClick={() => imageInputRef.current?.click()}
                   >
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
@@ -816,9 +835,7 @@ const CreatePostModal = ({ open, onClose, isEditMode = false, postData = null, o
                   <Button
                     size="small"
                     className="h-8 px-2 rounded-full border-0"
-                    onClick={() =>
-                      document.getElementById("documentInput").click()
-                    }
+                    onClick={() => documentInputRef.current?.click()}
                   >
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
@@ -835,6 +852,42 @@ const CreatePostModal = ({ open, onClose, isEditMode = false, postData = null, o
                     </svg>
                   </Button>
                 </div>
+              </div>
+              <div
+                role="button"
+                tabIndex={0}
+                onClick={() => imageInputRef.current?.click()}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    imageInputRef.current?.click();
+                  }
+                }}
+                onDragEnter={(e) => {
+                  e.preventDefault();
+                  setIsDraggingFiles(true);
+                }}
+                onDragOver={(e) => e.preventDefault()}
+                onDragLeave={(e) => {
+                  if (!e.currentTarget.contains(e.relatedTarget)) {
+                    setIsDraggingFiles(false);
+                  }
+                }}
+                onDrop={handleFilesDrop}
+                className={`rounded-lg border-2 border-dashed p-4 text-center transition-colors cursor-pointer ${
+                  isDraggingFiles
+                    ? "border-emerald-500 bg-emerald-50 dark:bg-emerald-950/30"
+                    : "border-gray-300 bg-gray-50 hover:border-emerald-400 dark:border-neutral-500 dark:bg-neutral-700"
+                }`}
+              >
+                <p className="text-sm font-medium">
+                  {isDraggingFiles
+                    ? "Thả ảnh hoặc tài liệu tại đây"
+                    : "Kéo và thả ảnh hoặc tài liệu vào đây"}
+                </p>
+                <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                  Ảnh tối đa 10MB, tài liệu PDF/DOC/DOCX/TXT tối đa 25MB
+                </p>
               </div>
             </div>
             <CustomColorButton
