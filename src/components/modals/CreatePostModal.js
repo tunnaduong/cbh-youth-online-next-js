@@ -104,6 +104,7 @@ const CreatePostModal = ({ open, onClose, isEditMode = false, postData = null, o
   const textareaRef = useRef(null);
   const imageInputRef = useRef(null);
   const documentInputRef = useRef(null);
+  const dragCounterRef = useRef(0);
 
   // Handle auto-continuation for lists
   const handleTextareaKeyDown = (e) => {
@@ -373,6 +374,7 @@ const CreatePostModal = ({ open, onClose, isEditMode = false, postData = null, o
 
   const handleFilesDrop = (e) => {
     e.preventDefault();
+    dragCounterRef.current = 0;
     setIsDraggingFiles(false);
 
     const files = Array.from(e.dataTransfer.files);
@@ -381,6 +383,22 @@ const CreatePostModal = ({ open, onClose, isEditMode = false, postData = null, o
 
     if (imageFilesToAdd.length > 0) handleImageFiles(imageFilesToAdd);
     if (documentFilesToAdd.length > 0) handleDocumentFiles(documentFilesToAdd);
+  };
+
+  const handleFilesDragEnter = (e) => {
+    e.preventDefault();
+    if (!e.dataTransfer.types.includes("Files")) return;
+
+    dragCounterRef.current += 1;
+    setIsDraggingFiles(true);
+  };
+
+  const handleFilesDragLeave = (e) => {
+    e.preventDefault();
+    if (!e.dataTransfer.types.includes("Files")) return;
+
+    dragCounterRef.current = Math.max(0, dragCounterRef.current - 1);
+    if (dragCounterRef.current === 0) setIsDraggingFiles(false);
   };
 
   const removeImage = (index) => {
@@ -478,7 +496,17 @@ const CreatePostModal = ({ open, onClose, isEditMode = false, postData = null, o
         style={{ top: 40 }}
         className="custom-modal"
       >
-        <div>
+        <div
+          onDragEnter={handleFilesDragEnter}
+          onDragOver={(e) => {
+            e.preventDefault();
+            if (e.dataTransfer.types.includes("Files")) {
+              e.dataTransfer.dropEffect = "copy";
+            }
+          }}
+          onDragLeave={handleFilesDragLeave}
+          onDrop={handleFilesDrop}
+        >
           <div className="flex flex-row justify-center items-center pb-[34px] relative">
             <h1 className="text-lg font-bold text-center absolute -top-1.5">
               {isEditMode ? 'Chỉnh sửa bài viết' : 'Tạo cuộc thảo luận'}
@@ -864,17 +892,6 @@ const CreatePostModal = ({ open, onClose, isEditMode = false, postData = null, o
                       imageInputRef.current?.click();
                     }
                   }}
-                  onDragEnter={(e) => {
-                    e.preventDefault();
-                    setIsDraggingFiles(true);
-                  }}
-                  onDragOver={(e) => e.preventDefault()}
-                  onDragLeave={(e) => {
-                    if (!e.currentTarget.contains(e.relatedTarget)) {
-                      setIsDraggingFiles(false);
-                    }
-                  }}
-                  onDrop={handleFilesDrop}
                   className="rounded-lg border-2 border-dashed border-emerald-500 bg-emerald-50 p-4 text-center transition-colors dark:bg-emerald-950/30"
                 >
                   <p className="text-sm font-medium">
