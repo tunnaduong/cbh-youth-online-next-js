@@ -853,42 +853,38 @@ const CreatePostModal = ({ open, onClose, isEditMode = false, postData = null, o
                   </Button>
                 </div>
               </div>
-              <div
-                role="button"
-                tabIndex={0}
-                onClick={() => imageInputRef.current?.click()}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" || e.key === " ") {
+              {isDraggingFiles && (
+                <div
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => imageInputRef.current?.click()}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      imageInputRef.current?.click();
+                    }
+                  }}
+                  onDragEnter={(e) => {
                     e.preventDefault();
-                    imageInputRef.current?.click();
-                  }
-                }}
-                onDragEnter={(e) => {
-                  e.preventDefault();
-                  setIsDraggingFiles(true);
-                }}
-                onDragOver={(e) => e.preventDefault()}
-                onDragLeave={(e) => {
-                  if (!e.currentTarget.contains(e.relatedTarget)) {
-                    setIsDraggingFiles(false);
-                  }
-                }}
-                onDrop={handleFilesDrop}
-                className={`rounded-lg border-2 border-dashed p-4 text-center transition-colors cursor-pointer ${
-                  isDraggingFiles
-                    ? "border-emerald-500 bg-emerald-50 dark:bg-emerald-950/30"
-                    : "border-gray-300 bg-gray-50 hover:border-emerald-400 dark:border-neutral-500 dark:bg-neutral-700"
-                }`}
-              >
-                <p className="text-sm font-medium">
-                  {isDraggingFiles
-                    ? "Thả ảnh hoặc tài liệu tại đây"
-                    : "Kéo và thả ảnh hoặc tài liệu vào đây"}
-                </p>
-                <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                  Ảnh tối đa 10MB, tài liệu PDF/DOC/DOCX/TXT tối đa 25MB
-                </p>
-              </div>
+                    setIsDraggingFiles(true);
+                  }}
+                  onDragOver={(e) => e.preventDefault()}
+                  onDragLeave={(e) => {
+                    if (!e.currentTarget.contains(e.relatedTarget)) {
+                      setIsDraggingFiles(false);
+                    }
+                  }}
+                  onDrop={handleFilesDrop}
+                  className="rounded-lg border-2 border-dashed border-emerald-500 bg-emerald-50 p-4 text-center transition-colors dark:bg-emerald-950/30"
+                >
+                  <p className="text-sm font-medium">
+                    Kéo và thả ảnh hoặc tài liệu vào đây
+                  </p>
+                  <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                    Ảnh tối đa 10MB, tài liệu PDF/DOC/DOCX/TXT tối đa 25MB
+                  </p>
+                </div>
+              )}
             </div>
             <CustomColorButton
               block
