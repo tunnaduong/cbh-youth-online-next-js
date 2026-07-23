@@ -26,6 +26,9 @@ export function getEcho() {
   echoInstance = new Echo({
     broadcaster: "reverb",
     key: process.env.NEXT_PUBLIC_REVERB_APP_KEY,
+    // pusher-js unconditionally requires a `cluster` key even when wsHost/wsPort
+    // point at a self-hosted Reverb server - it's unused here, just to satisfy validation.
+    cluster: "",
     wsHost: process.env.NEXT_PUBLIC_REVERB_HOST,
     wsPort: Number(process.env.NEXT_PUBLIC_REVERB_PORT) || 80,
     wssPort: Number(process.env.NEXT_PUBLIC_REVERB_PORT) || 443,
