@@ -71,5 +71,5 @@ export function disconnectEcho() {
 
 /** The socket id of the sender, used as the `X-Socket-Id` header so `->toOthers()` excludes it. */
 export function getSocketId() {
-  return echoInstance?.connector?.pusher?.connection?.socket_id || null;
+  return echoInstance?.socketId() || null;
 }
