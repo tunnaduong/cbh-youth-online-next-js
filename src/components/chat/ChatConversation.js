@@ -23,6 +23,8 @@ export default function ChatConversation({
     createConversation,
     loadConversations,
     selectConversation,
+    typingUsers,
+    sendTyping,
   } = useChatContext();
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
@@ -33,6 +35,7 @@ export default function ChatConversation({
     ? messages[conversationId] || []
     : [];
   const isGroupChat = conversation?.type === "group";
+  const typingUser = conversationId ? typingUsers[conversationId] : null;
 
   // Reset initial load flag when conversation changes
   useEffect(() => {
@@ -159,7 +162,11 @@ export default function ChatConversation({
             </p>
           </div>
         </div>
-        <ChatMessageInput onSend={handleSendMessage} sending={sending} />
+        <ChatMessageInput
+          onSend={handleSendMessage}
+          sending={sending}
+          onTyping={() => sendTyping(conversationId)}
+        />
       </div>
     );
   }
@@ -184,7 +191,11 @@ export default function ChatConversation({
             </p>
           </div>
         </div>
-        <ChatMessageInput onSend={handleSendMessage} sending={sending} />
+        <ChatMessageInput
+          onSend={handleSendMessage}
+          sending={sending}
+          onTyping={() => sendTyping(conversationId)}
+        />
       </div>
     );
   }
@@ -274,8 +285,20 @@ export default function ChatConversation({
         })}
       </div>
 
+      {typingUser && (
+        <div className="px-4 py-1 text-xs text-gray-500 dark:text-gray-400 italic">
+          {isGroupChat
+            ? `${typingUser.name || "Ai đó"} đang nhập...`
+            : "Đang nhập..."}
+        </div>
+      )}
+
       {/* Input */}
-      <ChatMessageInput onSend={handleSendMessage} sending={sending} />
+      <ChatMessageInput
+        onSend={handleSendMessage}
+        sending={sending}
+        onTyping={() => sendTyping(conversationId)}
+      />
     </div>
   );
 }

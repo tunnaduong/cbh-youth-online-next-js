@@ -23,8 +23,11 @@ import {
 } from "@/app/Api";
 import { getEcho, disconnectEcho } from "@/lib/echo";
 
+const TYPING_THROTTLE_MS = 2000;
+const TYPING_EXPIRY_MS = 4000;
+
 const ChatProvider = ({ children }) => {
-  const { loggedIn } = useAuthContext();
+  const { loggedIn, currentUser } = useAuthContext();
   const [isOpen, setIsOpen] = useState(false);
   const [isMinimized, setIsMinimized] = useState(false);
   const [conversations, setConversations] = useState([]);
@@ -32,6 +35,7 @@ const ChatProvider = ({ children }) => {
   const [messages, setMessages] = useState({}); // { conversationId: [messages] }
   const [loading, setLoading] = useState(false);
   const [sending, setSending] = useState(false);
+  const [typingUsers, setTypingUsers] = useState({}); // { conversationId: { userId, name } }
 
   const previousConversationsRef = useRef([]); // Track previous conversations to detect new messages
   const notificationPermissionRequestedRef = useRef(false);
@@ -40,6 +44,8 @@ const ChatProvider = ({ children }) => {
 
   // Realtime (Reverb/Echo) plumbing
   const channelsRef = useRef({}); // { conversationId: Echo presence channel }
+  const typingTimeoutsRef = useRef({}); // { conversationId: auto-clear timer }
+  const typingLastSentRef = useRef({}); // { conversationId: timestamp of last whisper sent }
   const isOpenRef = useRef(isOpen);
   const isMinimizedRef = useRef(isMinimized);
   const selectedConversationIdRef = useRef(selectedConversationId);
@@ -420,6 +426,26 @@ const ChatProvider = ({ children }) => {
     }
   }, []);
 
+  // Realtime: someone whispered that they're typing in `conversationId` - show it for
+  // a few seconds, auto-clearing if no further whisper arrives (no explicit "stopped").
+  const handleTypingWhisper = useCallback((conversationId, data) => {
+    if (!data || String(data.user_id) === String(currentUser?.id)) return;
+
+    setTypingUsers((prev) => ({
+      ...prev,
+      [conversationId]: { userId: data.user_id, name: data.name },
+    }));
+
+    clearTimeout(typingTimeoutsRef.current[conversationId]);
+    typingTimeoutsRef.current[conversationId] = setTimeout(() => {
+      setTypingUsers((prev) => {
+        const next = { ...prev };
+        delete next[conversationId];
+        return next;
+      });
+    }, TYPING_EXPIRY_MS);
+  }, [currentUser?.id]);
+
   const subscribeToConversation = useCallback(
     (conversationId) => {
       if (channelsRef.current[conversationId]) return;
@@ -431,18 +457,43 @@ const ChatProvider = ({ children }) => {
         .join(`chat.${conversationId}`)
         .listen(".message.sent", () => handleMessageSent(conversationId))
         .listen(".message.read", () => handleMessageMutated(conversationId))
-        .listen(".message.deleted", () => handleMessageMutated(conversationId));
+        .listen(".message.deleted", () => handleMessageMutated(conversationId))
+        .listenForWhisper("typing", (data) =>
+          handleTypingWhisper(conversationId, data)
+        );
 
       channelsRef.current[conversationId] = channel;
     },
-    [handleMessageSent, handleMessageMutated]
+    [handleMessageSent, handleMessageMutated, handleTypingWhisper]
   );
 
   const unsubscribeFromConversation = useCallback((conversationId) => {
     if (!channelsRef.current[conversationId]) return;
     getEcho()?.leave(`chat.${conversationId}`);
     delete channelsRef.current[conversationId];
+    clearTimeout(typingTimeoutsRef.current[conversationId]);
+    delete typingTimeoutsRef.current[conversationId];
+    delete typingLastSentRef.current[conversationId];
   }, []);
+
+  // Whisper that the current user is typing in `conversationId`, throttled so rapid
+  // keystrokes don't flood the channel with client events.
+  const sendTyping = useCallback(
+    (conversationId) => {
+      if (!conversationId || !currentUser?.id) return;
+
+      const now = Date.now();
+      const lastSent = typingLastSentRef.current[conversationId] || 0;
+      if (now - lastSent < TYPING_THROTTLE_MS) return;
+      typingLastSentRef.current[conversationId] = now;
+
+      channelsRef.current[conversationId]?.whisper("typing", {
+        user_id: currentUser.id,
+        name: currentUser.profile_name || currentUser.username,
+      });
+    },
+    [currentUser?.id, currentUser?.profile_name, currentUser?.username]
+  );
 
   // Keep one presence-channel subscription per conversation the user is part of, so
   // message.sent/read/deleted events arrive instantly instead of via polling.
@@ -886,6 +937,7 @@ const ChatProvider = ({ children }) => {
     messages,
     loading,
     sending,
+    typingUsers,
 
     // Actions
     openChat,
@@ -899,6 +951,7 @@ const ChatProvider = ({ children }) => {
     sendMessage,
     markAsRead,
     createConversation,
+    sendTyping,
   };
 
   return <ChatContext.Provider value={value}>{children}</ChatContext.Provider>;

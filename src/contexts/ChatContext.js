@@ -11,7 +11,8 @@ const ChatContext = createContext({
   messages: {},
   loading: false,
   sending: false,
-  
+  typingUsers: {},
+
   // Actions
   openChat: () => {},
   closeChat: () => {},
@@ -24,6 +25,7 @@ const ChatContext = createContext({
   sendMessage: () => {},
   markAsRead: () => {},
   createConversation: () => {},
+  sendTyping: () => {},
 });
 
 export default ChatContext;

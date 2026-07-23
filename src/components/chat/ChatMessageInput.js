@@ -4,7 +4,7 @@ import { useState, useRef } from "react";
 import Input from "@/components/ui/input";
 import { Paperclip, Send } from "lucide-react";
 
-export default function ChatMessageInput({ onSend, sending }) {
+export default function ChatMessageInput({ onSend, sending, onTyping }) {
   const [message, setMessage] = useState("");
   const inputRef = useRef(null);
 
@@ -41,7 +41,10 @@ export default function ChatMessageInput({ onSend, sending }) {
       <Input
         ref={inputRef}
         value={message}
-        onChange={(e) => setMessage(e.target.value)}
+        onChange={(e) => {
+          setMessage(e.target.value);
+          onTyping?.();
+        }}
         onKeyDown={handleKeyDown}
         placeholder="Gửi tin nhắn..."
         disabled={sending}
