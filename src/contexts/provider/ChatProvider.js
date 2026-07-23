@@ -429,6 +429,7 @@ const ChatProvider = ({ children }) => {
   // Realtime: someone whispered that they're typing in `conversationId` - show it for
   // a few seconds, auto-clearing if no further whisper arrives (no explicit "stopped").
   const handleTypingWhisper = useCallback((conversationId, data) => {
+    console.log("[ChatProvider] typing whisper received on", conversationId, data);
     if (!data || String(data.user_id) === String(currentUser?.id)) return;
 
     setTypingUsers((prev) => ({
@@ -487,7 +488,16 @@ const ChatProvider = ({ children }) => {
       if (now - lastSent < TYPING_THROTTLE_MS) return;
       typingLastSentRef.current[conversationId] = now;
 
-      channelsRef.current[conversationId]?.whisper("typing", {
+      const channel = channelsRef.current[conversationId];
+      console.log(
+        "[ChatProvider] sendTyping",
+        conversationId,
+        "channel found:",
+        !!channel,
+        "subscribed:",
+        channel?.subscription?.subscribed
+      );
+      channel?.whisper("typing", {
         user_id: currentUser.id,
         name: currentUser.profile_name || currentUser.username,
       });
