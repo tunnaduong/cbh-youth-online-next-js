@@ -477,8 +477,6 @@ const ChatProvider = ({ children }) => {
     delete typingLastSentRef.current[conversationId];
   }, []);
 
-  // Whisper that the current user is typing in `conversationId`, throttled so rapid
-  // keystrokes don't flood the channel with client events.
   const sendTyping = useCallback(
     (conversationId) => {
       if (!conversationId || !currentUser?.id) return;
@@ -489,15 +487,9 @@ const ChatProvider = ({ children }) => {
       typingLastSentRef.current[conversationId] = now;
 
       const channel = channelsRef.current[conversationId];
-      console.log(
-        "[ChatProvider] sendTyping",
-        conversationId,
-        "channel found:",
-        !!channel,
-        "subscribed:",
-        channel?.subscription?.subscribed
-      );
-      channel?.whisper("typing", {
+      if (!channel) return;
+
+      channel.whisper("typing", {
         user_id: currentUser.id,
         name: currentUser.profile_name || currentUser.username,
       });
