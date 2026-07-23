@@ -21,6 +21,7 @@ import {
   subscribeToPushNotifications as subscribePushApi,
   unsubscribeFromPushNotifications as unsubscribePushApi,
 } from "@/app/Api";
+import { getEcho, disconnectEcho } from "@/lib/echo";
 
 const ChatProvider = ({ children }) => {
   const { loggedIn } = useAuthContext();
@@ -32,12 +33,29 @@ const ChatProvider = ({ children }) => {
   const [loading, setLoading] = useState(false);
   const [sending, setSending] = useState(false);
 
-  const conversationsPollIntervalRef = useRef(null);
-  const messagesPollIntervalRef = useRef(null);
   const previousConversationsRef = useRef([]); // Track previous conversations to detect new messages
   const notificationPermissionRequestedRef = useRef(false);
   const pushSubscriptionRef = useRef(null); // Track push subscription
   const subscriptionSentToServerRef = useRef(false); // Track if subscription has been sent to server
+
+  // Realtime (Reverb/Echo) plumbing
+  const channelsRef = useRef({}); // { conversationId: Echo presence channel }
+  const isOpenRef = useRef(isOpen);
+  const isMinimizedRef = useRef(isMinimized);
+  const selectedConversationIdRef = useRef(selectedConversationId);
+  const loadConversationsRef = useRef(null);
+  const loadMessagesRef = useRef(null);
+  const markAsReadRef = useRef(null);
+
+  useEffect(() => {
+    isOpenRef.current = isOpen;
+  }, [isOpen]);
+  useEffect(() => {
+    isMinimizedRef.current = isMinimized;
+  }, [isMinimized]);
+  useEffect(() => {
+    selectedConversationIdRef.current = selectedConversationId;
+  }, [selectedConversationId]);
 
   // Check for new messages and show notifications
   const checkForNewMessages = useCallback(
@@ -237,7 +255,7 @@ const ChatProvider = ({ children }) => {
     []
   );
 
-  // Polling: Load conversations every 10 seconds
+  // Load conversations - called on mount/login and whenever a realtime chat event arrives
   const loadConversations = useCallback(async () => {
     if (!loggedIn) return;
 
@@ -260,7 +278,7 @@ const ChatProvider = ({ children }) => {
     checkForNewMessages,
   ]);
 
-  // Polling: Load messages for selected conversation every 5 seconds
+  // Load messages for a conversation - called on selection and whenever a realtime chat event arrives
   const loadMessages = useCallback(
     async (conversationId, page = 1, append = false) => {
       if (!loggedIn || !conversationId) return { messages: [], pagination: {} };
@@ -354,6 +372,121 @@ const ChatProvider = ({ children }) => {
     },
     [loggedIn, loadConversations]
   );
+
+  useEffect(() => {
+    loadConversationsRef.current = loadConversations;
+  }, [loadConversations]);
+  useEffect(() => {
+    loadMessagesRef.current = loadMessages;
+  }, [loadMessages]);
+  useEffect(() => {
+    markAsReadRef.current = markAsRead;
+  }, [markAsRead]);
+
+  // Realtime: a message was sent in `conversationId`. If that conversation is the one
+  // currently open, refetch its messages (and mark read); otherwise just refresh the
+  // conversation list so unread badges/notifications update via checkForNewMessages.
+  const handleMessageSent = useCallback((conversationId) => {
+    const isViewingThisConversation =
+      isOpenRef.current &&
+      !isMinimizedRef.current &&
+      String(selectedConversationIdRef.current) === String(conversationId);
+
+    if (isViewingThisConversation) {
+      loadMessagesRef.current?.(conversationId).then((result) => {
+        if (result?.messages) {
+          setMessages((prev) => ({ ...prev, [conversationId]: result.messages }));
+        }
+      });
+      markAsReadRef.current?.(conversationId); // also refreshes the conversation list
+    } else {
+      loadConversationsRef.current?.();
+    }
+  }, []);
+
+  // Realtime: a message was read/deleted in `conversationId` - refetch it if it's open.
+  const handleMessageMutated = useCallback((conversationId) => {
+    const isViewingThisConversation =
+      isOpenRef.current &&
+      !isMinimizedRef.current &&
+      String(selectedConversationIdRef.current) === String(conversationId);
+
+    if (isViewingThisConversation) {
+      loadMessagesRef.current?.(conversationId).then((result) => {
+        if (result?.messages) {
+          setMessages((prev) => ({ ...prev, [conversationId]: result.messages }));
+        }
+      });
+    }
+  }, []);
+
+  const subscribeToConversation = useCallback(
+    (conversationId) => {
+      if (channelsRef.current[conversationId]) return;
+
+      const echo = getEcho();
+      if (!echo) return;
+
+      const channel = echo
+        .join(`chat.${conversationId}`)
+        .listen(".message.sent", () => handleMessageSent(conversationId))
+        .listen(".message.read", () => handleMessageMutated(conversationId))
+        .listen(".message.deleted", () => handleMessageMutated(conversationId));
+
+      channelsRef.current[conversationId] = channel;
+    },
+    [handleMessageSent, handleMessageMutated]
+  );
+
+  const unsubscribeFromConversation = useCallback((conversationId) => {
+    if (!channelsRef.current[conversationId]) return;
+    getEcho()?.leave(`chat.${conversationId}`);
+    delete channelsRef.current[conversationId];
+  }, []);
+
+  // Keep one presence-channel subscription per conversation the user is part of, so
+  // message.sent/read/deleted events arrive instantly instead of via polling.
+  useEffect(() => {
+    if (!loggedIn) {
+      Object.keys(channelsRef.current).forEach((id) =>
+        unsubscribeFromConversation(id)
+      );
+      disconnectEcho();
+      return;
+    }
+
+    const currentIds = conversations.map((c) => String(c.id));
+    const subscribedIds = Object.keys(channelsRef.current);
+
+    currentIds.forEach((id) => subscribeToConversation(id));
+    subscribedIds
+      .filter((id) => !currentIds.includes(id))
+      .forEach((id) => unsubscribeFromConversation(id));
+  }, [loggedIn, conversations, subscribeToConversation, unsubscribeFromConversation]);
+
+  // Resync on reconnect - events fired while we were disconnected would otherwise be missed.
+  useEffect(() => {
+    if (!loggedIn) return undefined;
+
+    const echo = getEcho();
+    const pusher = echo?.connector?.pusher;
+    if (!pusher) return undefined;
+
+    const onConnected = () => {
+      loadConversationsRef.current?.();
+      const openId = selectedConversationIdRef.current;
+      if (openId) {
+        loadMessagesRef.current?.(openId).then((result) => {
+          if (result?.messages) {
+            setMessages((prev) => ({ ...prev, [openId]: result.messages }));
+          }
+        });
+      }
+    };
+
+    pusher.connection.bind("connected", onConnected);
+    return () => pusher.connection.unbind("connected", onConnected);
+  }, [loggedIn]);
 
   // Create new conversation
   const createConversation = useCallback(
@@ -645,29 +778,6 @@ const ChatProvider = ({ children }) => {
     setIsMinimized(false);
   }, []);
 
-  // Setup polling for messages when chat is open and conversation is selected
-  useEffect(() => {
-    if (loggedIn && isOpen && !isMinimized && selectedConversationId) {
-      // Poll messages for selected conversation every 5 seconds
-      messagesPollIntervalRef.current = setInterval(() => {
-        loadMessages(selectedConversationId).then((result) => {
-          if (result && result.messages) {
-            setMessages((prev) => ({
-              ...prev,
-              [selectedConversationId]: result.messages,
-            }));
-          }
-        });
-      }, 5000);
-    }
-
-    return () => {
-      if (messagesPollIntervalRef.current) {
-        clearInterval(messagesPollIntervalRef.current);
-      }
-    };
-  }, [loggedIn, isOpen, isMinimized, selectedConversationId, loadMessages]);
-
   // Load messages when conversation is selected
   useEffect(() => {
     if (selectedConversationId && loggedIn) {
@@ -722,7 +832,8 @@ const ChatProvider = ({ children }) => {
     }
   }, []);
 
-  // Initialize: Start polling conversations and subscribe to push when user is logged in
+  // Initialize: load conversations once and subscribe to push when user is logged in.
+  // Realtime updates after this are driven by the Echo subscriptions set up above.
   useEffect(() => {
     console.log("[ChatProvider] useEffect triggered, loggedIn:", loggedIn);
 
@@ -749,16 +860,8 @@ const ChatProvider = ({ children }) => {
         // This will be updated after first load completes
       });
 
-      // Start polling conversations every 10 seconds (to detect new messages for notifications)
-      conversationsPollIntervalRef.current = setInterval(() => {
-        loadConversations();
-      }, 10000);
-
       return () => {
         clearTimeout(subscribeTimer);
-        if (conversationsPollIntervalRef.current) {
-          clearInterval(conversationsPollIntervalRef.current);
-        }
       };
     } else {
       console.log(
@@ -766,12 +869,6 @@ const ChatProvider = ({ children }) => {
       );
       // Unsubscribe when logged out
       unsubscribeFromChatPush();
-
-    return () => {
-      if (conversationsPollIntervalRef.current) {
-        clearInterval(conversationsPollIntervalRef.current);
-      }
-    };
     }
   }, [
     loggedIn,

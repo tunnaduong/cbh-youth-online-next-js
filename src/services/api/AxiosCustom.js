@@ -1,5 +1,6 @@
 import axios from "axios";
 import { getTokenFromAnywhere } from "@/utils/cookies";
+import { getSocketId } from "@/lib/echo";
 
 // Hàm tạo một instance của axios với cấu hình tùy chỉnh
 const axiosInstance = axios.create({
@@ -18,6 +19,12 @@ axiosInstance.interceptors.request.use((config) => {
       // Only add Authorization header if token exists and is not empty
       if (token && token.trim() !== "") {
         config.headers.Authorization = `Bearer ${token}`;
+      }
+
+      // Lets broadcast()->toOthers() on the backend exclude this tab's own socket
+      const socketId = getSocketId();
+      if (socketId) {
+        config.headers["X-Socket-Id"] = socketId;
       }
     }
     return config;
