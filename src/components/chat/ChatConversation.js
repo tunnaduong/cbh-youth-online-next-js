@@ -205,7 +205,14 @@ export default function ChatConversation({
           </div>
         )}
 
-        {conversationMessages.map((message) => (
+        {conversationMessages.map((message, index) => {
+          const isLastOwnMessage =
+            message.is_myself &&
+            !conversationMessages
+              .slice(index + 1)
+              .some((m) => m.is_myself);
+
+          return (
           <div
             key={message.id}
             className={`flex gap-2 ${
@@ -256,9 +263,15 @@ export default function ChatConversation({
               >
                 {message.content}
               </div>
+              {isLastOwnMessage && (
+                <span className="text-[11px] text-gray-400 dark:text-gray-500 mt-0.5">
+                  {message.read_at ? "Đã xem" : "Đã gửi"}
+                </span>
+              )}
             </div>
           </div>
-        ))}
+          );
+        })}
       </div>
 
       {/* Input */}
