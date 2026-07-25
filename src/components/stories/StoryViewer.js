@@ -7,7 +7,8 @@ import { Swiper, SwiperSlide } from "swiper/react";
 import { EffectCube } from "swiper/modules";
 import { useRouter } from "@bprogress/next/app";
 import { X, ChevronLeft, ChevronRight, VolumeX, Volume2, Link2, Smartphone, Trash2, Send } from "lucide-react";
-import { markStoryAsViewed, deleteStory, reactToStory, removeStoryReaction, replyToStory } from "@/app/Api";
+import { markStoryAsViewed, deleteStory, reactToStory, removeStoryReaction } from "@/app/Api";
+import { postRequest } from "@/services/api/ApiByAxios";
 import { Modal } from "antd";
 import Link from "next/link";
 import { openDeepLink } from "@/lib/deepLink";
@@ -551,7 +552,7 @@ const StorySlide = ({
     const text = replyText;
     setReplyText("");
     try {
-      await replyToStory(storyId, { content: text });
+      await postRequest(`/v1.0/stories/${storyId}/reply`, { content: text });
       message.success("Đã gửi tin nhắn!");
     } catch (err) {
       const status = err?.response?.status;
