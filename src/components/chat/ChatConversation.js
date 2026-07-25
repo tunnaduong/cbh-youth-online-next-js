@@ -223,13 +223,37 @@ export default function ChatConversation({
               .slice(index + 1)
               .some((m) => m.is_myself);
 
+          const isStoryReply = message.type === "story_reply";
+          const storyReplyCaption = isStoryReply
+            ? message.is_myself
+              ? `Bạn đã bình luận về tin của ${
+                  message.story_owner?.profile_name ||
+                  message.story_owner?.username ||
+                  "người dùng"
+                }`
+              : `${
+                  message.sender?.profile_name ||
+                  message.sender?.username ||
+                  "Ai đó"
+                } đã bình luận về tin của bạn`
+            : null;
+
           return (
-          <div
-            key={message.id}
-            className={`flex gap-2 ${
-              message.is_myself ? "flex-row-reverse" : "flex-row"
-            }`}
-          >
+          <div key={message.id} className="flex flex-col">
+            {storyReplyCaption && (
+              <div
+                className={`text-[11px] text-gray-400 dark:text-gray-500 mb-1 px-1 ${
+                  message.is_myself ? "text-right" : "text-left"
+                }`}
+              >
+                {storyReplyCaption}
+              </div>
+            )}
+            <div
+              className={`flex gap-2 ${
+                message.is_myself ? "flex-row-reverse" : "flex-row"
+              }`}
+            >
             {!message.is_myself && (
               <Avatar className="w-8 h-8 flex-shrink-0">
                 <AvatarImage
@@ -279,6 +303,7 @@ export default function ChatConversation({
                   {message.read_at ? "Đã xem" : "Đã gửi"}
                 </span>
               )}
+            </div>
             </div>
           </div>
           );
