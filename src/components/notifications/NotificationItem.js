@@ -25,7 +25,10 @@ const getNotificationMessage = (notification) => {
     case "mentioned":
       return `${actorName} đã nhắc đến bạn`;
     case "story_reacted":
-      return `${actorName} đã bày tỏ cảm xúc về tin của bạn`
+      return `${actorName} đã bày tỏ cảm xúc về tin của bạn`;
+    case "story_replied":
+    case "story_commented":
+      return `${actorName} đã bình luận về tin của bạn`;
     case "topic_pinned":
       return "Bài viết của bạn đã được ghim";
     case "topic_moved":
