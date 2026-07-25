@@ -372,22 +372,82 @@ const CreatePostModal = ({ open, onClose, isEditMode = false, postData = null, o
     e.target.value = "";
   };
 
+  // A drag originating from another tab/page (e.g. dragging an <img> from a website)
+  // never exposes "Files" — it shows up as a URL/HTML payload instead.
+  const isDraggableImageSource = (dataTransfer) =>
+    dataTransfer.types.includes("Files") ||
+    dataTransfer.types.includes("text/uri-list") ||
+    dataTransfer.types.includes("text/html");
+
+  const extractImageUrlFromDataTransfer = (dataTransfer) => {
+    const uriList = dataTransfer.getData("text/uri-list");
+    if (uriList) {
+      const url = uriList.split("\n").find((line) => line && !line.startsWith("#"));
+      if (url) return url.trim();
+    }
+
+    const html = dataTransfer.getData("text/html");
+    if (html) {
+      const match = html.match(/<img[^>]+src=["']([^"']+)["']/i);
+      if (match) return match[1];
+    }
+
+    const plainText = dataTransfer.getData("text/plain");
+    if (plainText && /^https?:\/\//i.test(plainText.trim())) {
+      return plainText.trim();
+    }
+
+    return null;
+  };
+
+  const handleRemoteImageDrop = async (url) => {
+    try {
+      const response = await fetch(url);
+      if (!response.ok) throw new Error("Fetch failed");
+
+      const blob = await response.blob();
+      if (!blob.type.startsWith("image/")) {
+        message.error("Đường dẫn kéo thả không phải là ảnh hợp lệ");
+        return;
+      }
+
+      const extension = blob.type.split("/")[1] || "png";
+      const fileName = `image-${Date.now()}.${extension}`;
+      const file = new File([blob], fileName, { type: blob.type });
+      handleImageFiles([file]);
+    } catch (error) {
+      console.error("Error fetching dropped image URL:", error);
+      message.error(
+        "Không thể tải ảnh từ đường dẫn này (có thể do giới hạn CORS của trang nguồn)"
+      );
+    }
+  };
+
   const handleFilesDrop = (e) => {
     e.preventDefault();
     dragCounterRef.current = 0;
     setIsDraggingFiles(false);
 
     const files = Array.from(e.dataTransfer.files);
-    const imageFilesToAdd = files.filter((file) => file.type.startsWith("image/"));
-    const documentFilesToAdd = files.filter((file) => !file.type.startsWith("image/"));
+    if (files.length > 0) {
+      const imageFilesToAdd = files.filter((file) => file.type.startsWith("image/"));
+      const documentFilesToAdd = files.filter((file) => !file.type.startsWith("image/"));
 
-    if (imageFilesToAdd.length > 0) handleImageFiles(imageFilesToAdd);
-    if (documentFilesToAdd.length > 0) handleDocumentFiles(documentFilesToAdd);
+      if (imageFilesToAdd.length > 0) handleImageFiles(imageFilesToAdd);
+      if (documentFilesToAdd.length > 0) handleDocumentFiles(documentFilesToAdd);
+      return;
+    }
+
+    // No local files were dropped — this is likely an image dragged from another tab.
+    const imageUrl = extractImageUrlFromDataTransfer(e.dataTransfer);
+    if (imageUrl) {
+      handleRemoteImageDrop(imageUrl);
+    }
   };
 
   const handleFilesDragEnter = (e) => {
     e.preventDefault();
-    if (!e.dataTransfer.types.includes("Files")) return;
+    if (!isDraggableImageSource(e.dataTransfer)) return;
 
     dragCounterRef.current += 1;
     setIsDraggingFiles(true);
@@ -395,7 +455,7 @@ const CreatePostModal = ({ open, onClose, isEditMode = false, postData = null, o
 
   const handleFilesDragLeave = (e) => {
     e.preventDefault();
-    if (!e.dataTransfer.types.includes("Files")) return;
+    if (!isDraggableImageSource(e.dataTransfer)) return;
 
     dragCounterRef.current = Math.max(0, dragCounterRef.current - 1);
     if (dragCounterRef.current === 0) setIsDraggingFiles(false);
@@ -500,7 +560,7 @@ const CreatePostModal = ({ open, onClose, isEditMode = false, postData = null, o
           onDragEnter={handleFilesDragEnter}
           onDragOver={(e) => {
             e.preventDefault();
-            if (e.dataTransfer.types.includes("Files")) {
+            if (isDraggableImageSource(e.dataTransfer)) {
               e.dataTransfer.dropEffect = "copy";
             }
           }}
