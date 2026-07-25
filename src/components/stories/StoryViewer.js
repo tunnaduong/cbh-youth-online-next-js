@@ -338,6 +338,26 @@ const REACTIONS = [
   { type: "angry", emoji: "😡" },
 ];
 
+const FLOAT_ROTATE_CSS = `
+  @keyframes emojiFloat {
+    0%   { opacity: 0;   transform: translate(-50%, -50%) scale(0.3) rotate(0deg); }
+    12%  { opacity: 1;   transform: translate(-50%, -50%) scale(1.5) rotate(-12deg); }
+    30%  { opacity: 1;   transform: translate(calc(-50% + 12px), calc(-50% - 90px))  scale(1.2) rotate(14deg); }
+    50%  { opacity: 1;   transform: translate(calc(-50% - 10px), calc(-50% - 180px)) scale(1.15) rotate(-10deg); }
+    70%  { opacity: 0.8; transform: translate(calc(-50% + 8px),  calc(-50% - 265px)) scale(1.1) rotate(8deg); }
+    85%  { opacity: 0.4; transform: translate(calc(-50% - 6px),  calc(-50% - 320px)) scale(1.05) rotate(-6deg); }
+    100% { opacity: 0;   transform: translate(calc(-50% + 4px),  calc(-50% - 370px)) scale(1) rotate(4deg); }
+  }
+  .emoji-float-rotate {
+    position: fixed;
+    pointer-events: none;
+    z-index: 9999;
+    font-size: 2.4rem;
+    line-height: 1;
+    animation: emojiFloat 1.8s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+  }
+`;
+
 const StoryFooter = ({
   currentReaction,
   onReact,
@@ -348,58 +368,107 @@ const StoryFooter = ({
   onInputBlur,
   isSending,
   isLoggedIn,
-}) => (
-  <div
-    className="absolute bottom-0 left-0 right-0 z-50 px-3 pb-4 pt-8 bg-gradient-to-t from-black/60 to-transparent"
-    onClick={(e) => e.stopPropagation()}
-  >
-    <div className="flex items-center gap-2">
-      <div className="flex items-center gap-1.5">
-        {REACTIONS.map(({ type, emoji }) => (
-          <button
-            key={type}
-            onClick={() => onReact(type)}
-            className={`text-lg transition-all duration-150 select-none ${
-              currentReaction === type
-                ? "scale-125 drop-shadow-[0_0_6px_rgba(255,255,255,0.8)]"
-                : "opacity-70 hover:opacity-100 hover:scale-110"
-            }`}
-            title={type}
-          >
-            {emoji}
-          </button>
-        ))}
-      </div>
-      {isLoggedIn && (
-        <div className="flex-1 flex items-center gap-1.5">
-          <input
-            type="text"
-            value={replyText}
-            onChange={(e) => setReplyText(e.target.value)}
-            onFocus={onInputFocus}
-            onBlur={onInputBlur}
-            placeholder="Bình luận..."
-            maxLength={500}
-            className="flex-1 bg-white/20 text-white placeholder-white/50 rounded-full px-3 py-1.5 text-sm outline-none border border-white/30 focus:border-white/70 transition-colors"
-            onKeyDown={(e) => {
-              if (e.key === "Enter" && !e.shiftKey) {
-                e.preventDefault();
-                onSendReply();
-              }
-            }}
-          />
-          <button
-            onClick={onSendReply}
-            disabled={!replyText.trim() || isSending}
-            className="text-white/80 hover:text-white disabled:opacity-30 transition-opacity flex-shrink-0"
-          >
-            <Send size={18} />
-          </button>
+  isOwner,
+}) => {
+  const [flyingEmojis, setFlyingEmojis] = useState([]);
+
+  const handleReactClick = (type, emoji, e) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const cx = rect.left + rect.width / 2;
+    const cy = rect.top + rect.height / 2;
+    // Spawn 3 copies with slight offset + staggered delay for richness
+    const spawns = [
+      { dx: 0,   dy: 0,  delay: 0   },
+      { dx: -12, dy: -6, delay: 80  },
+      { dx: 12,  dy: -4, delay: 160 },
+    ];
+    spawns.forEach(({ dx, dy, delay }) => {
+      const id = Date.now() + Math.random();
+      setTimeout(() => {
+        setFlyingEmojis((prev) => [...prev, { id, emoji, x: cx + dx, y: cy + dy }]);
+        setTimeout(() => {
+          setFlyingEmojis((prev) => prev.filter((f) => f.id !== id));
+        }, 1200);
+      }, delay);
+    });
+    onReact(type);
+  };
+
+  return (
+    <>
+      <style>{FLOAT_ROTATE_CSS}</style>
+
+      {/* Flying emojis layer — fixed so they escape the story container */}
+      {flyingEmojis.map(({ id, emoji, x, y }) => (
+        <div key={id} className="emoji-float-rotate" style={{ left: x, top: y }}>
+          {emoji}
         </div>
-      )}
-    </div>
-  </div>
-);
+      ))}
+
+      {/* Footer: stacked vertically */}
+      <div
+        className="absolute bottom-0 left-0 right-0 z-50 px-4 pb-5 pt-10 bg-gradient-to-t from-black/70 to-transparent flex flex-col items-center gap-3"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Reaction row */}
+        <div className="flex items-center gap-4">
+          {REACTIONS.map(({ type, emoji }) => {
+            const isSelected = currentReaction === type;
+            return (
+              <button
+                key={type}
+                onClick={(e) => handleReactClick(type, emoji, e)}
+                className="relative flex flex-col items-center select-none focus:outline-none"
+                style={{
+                  fontSize: isSelected ? "2rem" : "1.75rem",
+                  filter: isSelected ? "drop-shadow(0 0 8px rgba(255,255,255,0.9))" : "none",
+                  transform: isSelected ? "scale(1.2)" : "scale(1)",
+                  transition: "transform 0.15s, filter 0.15s, font-size 0.15s",
+                }}
+              >
+                {emoji}
+                {isSelected && (
+                  <span className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-white" />
+                )}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Reply input row — hidden for story owner */}
+        {!isOwner && (
+          <div className="w-full flex items-center gap-2">
+            <input
+              type="text"
+              value={replyText}
+              onChange={(e) => setReplyText(e.target.value)}
+              onFocus={onInputFocus}
+              onBlur={onInputBlur}
+              placeholder={isLoggedIn ? "Gửi tin nhắn..." : "Đăng nhập để phản hồi"}
+              disabled={!isLoggedIn || isSending}
+              maxLength={500}
+              className="flex-1 bg-white/15 text-white placeholder-white/50 rounded-full px-4 py-2 text-sm outline-none disabled:opacity-50"
+              style={{ border: "1.5px solid rgba(255,255,255,0.25)", boxShadow: "none" }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !e.shiftKey) {
+                  e.preventDefault();
+                  onSendReply();
+                }
+              }}
+            />
+            <button
+              onClick={onSendReply}
+              disabled={!replyText.trim() || !isLoggedIn || isSending}
+              className="text-white/80 hover:text-white disabled:opacity-30 transition-opacity flex-shrink-0"
+            >
+              <Send size={18} />
+            </button>
+          </div>
+        )}
+      </div>
+    </>
+  );
+};
 
 const StorySlide = ({
   user,
@@ -418,7 +487,15 @@ const StorySlide = ({
   const [currentReaction, setCurrentReaction] = useState(null);
   const [replyText, setReplyText] = useState("");
   const [isSending, setIsSending] = useState(false);
+  const sendingRef = useRef(false);
   const progressIntervalRef = useRef();
+
+  const isOwner = Boolean(
+    currentUser && (
+      String(currentUser.id) === String(user.id) ||
+      currentUser.username?.toLowerCase() === user.username?.toLowerCase()
+    )
+  );
 
   const currentStory = user.stories[currentStoryIndex];
 
@@ -465,20 +542,25 @@ const StorySlide = ({
   }, [currentUser, currentStory?.id, currentReaction]);
 
   const handleSendReply = useCallback(async () => {
-    if (!replyText.trim() || !currentUser) return;
+    if (!replyText.trim() || !currentUser || sendingRef.current) return;
     const storyId = currentStory?.id;
     if (!storyId) return;
 
+    sendingRef.current = true;
     setIsSending(true);
     const text = replyText;
     setReplyText("");
     try {
       await replyToStory(storyId, { content: text });
-      message.success("Đã gửi bình luận!");
-    } catch {
+      message.success("Đã gửi tin nhắn!");
+    } catch (err) {
+      const status = err?.response?.status;
+      const serverMsg = err?.response?.data?.message;
+      console.error("[StoryReply] failed:", status, serverMsg || err?.message, err);
       setReplyText(text);
-      message.error("Không thể gửi bình luận. Vui lòng thử lại.");
+      message.error(serverMsg || "Không thể gửi. Vui lòng thử lại.");
     } finally {
+      sendingRef.current = false;
       setIsSending(false);
     }
   }, [replyText, currentUser, currentStory?.id]);
@@ -605,13 +687,7 @@ const StorySlide = ({
         createdAt={currentStory?.created_at}
         storyId={currentStory?.id}
         isMuteLocked={Boolean(currentStory?.is_muted)}
-        isOwner={
-          currentUser && (
-            String(currentUser.id) === String(user.id) ||
-            currentUser.username?.toLowerCase() === user.username?.toLowerCase() ||
-            (currentStory && currentStory.user_id && String(currentStory.user_id) === String(currentUser.id))
-          )
-        }
+        isOwner={isOwner}
         onDelete={() => {
           Modal.confirm({
             title: "Xóa tin này?",
@@ -671,6 +747,7 @@ const StorySlide = ({
         onSendReply={handleSendReply}
         onInputFocus={() => setIsPaused(true)}
         onInputBlur={() => setIsPaused(false)}
+        isOwner={isOwner}
         isSending={isSending}
         isLoggedIn={Boolean(currentUser)}
       />
