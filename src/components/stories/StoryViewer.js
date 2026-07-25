@@ -204,27 +204,27 @@ const UserHeader = ({
   );
 };
 
-const StoryContent = ({ story, isActive, onNext, isMuted }) => {
+const StoryContent = ({ story, isActive, isPaused, onNext, isMuted }) => {
   const videoRef = useRef(null);
   const audioRef = useRef(null);
 
   useEffect(() => {
     if (!story) return;
     if (story.type === "video" && videoRef.current) {
-      if (isActive) {
+      if (isActive && !isPaused) {
         videoRef.current.play().catch((err) => console.log("Play video failed:", err));
       } else {
         videoRef.current.pause();
       }
     }
     if (story.type === "audio" && audioRef.current) {
-      if (isActive) {
+      if (isActive && !isPaused) {
         audioRef.current.play().catch((err) => console.log("Play audio failed:", err));
       } else {
         audioRef.current.pause();
       }
     }
-  }, [isActive, story?.type]);
+  }, [isActive, isPaused, story?.type]);
 
   // Cleanup effect to stop all media when component unmounts
   useEffect(() => {
@@ -714,6 +714,7 @@ const StorySlide = ({
       <StoryContent
         story={currentStory}
         isActive={isActive && isViewerOpen}
+        isPaused={isPaused}
         onNext={handleNextStory}
         isMuted={isMuted}
       />
