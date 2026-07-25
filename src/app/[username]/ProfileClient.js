@@ -729,7 +729,7 @@ export default function ProfileClient({ initialProfile, activeTab, username }) {
                   }}
                 >
                   <p className="font-semibold text-sm text-slate-600 dark:text-neutral-400">
-                    Người theo dõi
+                    Người t.dõi
                   </p>
                   <p className="font-bold text-xl text-primary-500 follower_count">
                     {profile.stats.followers}
@@ -746,7 +746,7 @@ export default function ProfileClient({ initialProfile, activeTab, username }) {
                   }}
                 >
                   <p className="font-semibold text-sm text-slate-600 dark:text-neutral-400">
-                    Đang theo dõi
+                    Đang t.dõi
                   </p>
                   <p className="font-bold text-xl text-primary-500">
                     {profile.stats.following}
