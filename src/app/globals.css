@@ -977,6 +977,22 @@ body {
   @apply !mt-0;
 }
 
+/* Hashtag links inside post content (see PostItem.js / HashtagService.php) */
+.prose .hashtag-link {
+  color: #2563eb;
+  font-weight: 500;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.prose .hashtag-link:hover {
+  text-decoration: underline;
+}
+
+.dark .prose .hashtag-link {
+  color: #60a5fa;
+}
+
 .custom-prose p:first-child,
 .custom-prose p:last-child {
   @apply !m-0;
