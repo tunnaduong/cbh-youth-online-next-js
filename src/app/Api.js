@@ -329,6 +329,14 @@ export const updateAvatar = (username, params) => {
   return Api.postFormDataRequest(`/v1.0/users/${username}/avatar`, params);
 };
 
+export const getCover = (username) => {
+  return Api.getRequest(`/v1.0/users/${username}/cover`);
+};
+
+export const updateCover = (username, params) => {
+  return Api.postFormDataRequest(`/v1.0/users/${username}/cover`, params);
+};
+
 export const followUser = (username) => {
   return Api.postRequest(`/v1.0/users/${username}/follow`);
 };

@@ -314,7 +314,8 @@ a:hover {
   } */
 
 @media (max-width: 1023px) {
-  .blur-effect {
+  .blur-effect,
+  .cover-photo-bg {
     position: absolute;
     top: 0;
     left: 0;
@@ -353,6 +354,12 @@ hr {
   -webkit-filter: blur(100px);
   filter: blur(100px);
   opacity: 0.3;
+  background-repeat: no-repeat;
+  background-position: center center;
+  background-size: cover;
+}
+
+.cover-photo-bg {
   background-repeat: no-repeat;
   background-position: center center;
   background-size: cover;

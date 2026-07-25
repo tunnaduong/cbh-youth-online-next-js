@@ -12,6 +12,7 @@ import { useTheme } from "@/contexts/themeContext";
 import {
   updateProfile,
   updateAvatar,
+  updateCover,
   deleteAccount,
   resendVerificationEmail,
   getCurrentUser,
@@ -30,6 +31,7 @@ export default function SettingsClient({ initialUser, hasAuthError }) {
   const [loading, setLoading] = useState(false);
   const [resendingEmail, setResendingEmail] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const [uploadingCover, setUploadingCover] = useState(false);
   const [errors, setErrors] = useState({});
 
   // Handle authentication check on client-side to avoid redirect loops
@@ -305,6 +307,60 @@ export default function SettingsClient({ initialUser, hasAuthError }) {
       );
     } finally {
       setUploadingAvatar(false);
+      // Reset file input
+      e.target.value = "";
+    }
+  };
+
+  const handleCoverUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith("image/")) {
+      message.error("Vui lòng chọn file ảnh hợp lệ");
+      return;
+    }
+
+    // Validate file size (max 10MB)
+    if (file.size > 10 * 1024 * 1024) {
+      message.error("Kích thước file không được vượt quá 10MB");
+      return;
+    }
+
+    try {
+      setUploadingCover(true);
+      const formData = new FormData();
+      formData.append("cover", file);
+
+      const response = await updateCover(currentUser.username, formData);
+      const responseData = response?.data || response;
+
+      message.success(responseData?.message || "Cập nhật ảnh bìa thành công!");
+
+      // Refresh user data to get new cover photo url
+      try {
+        const userResponse = await getCurrentUser();
+        const updatedUserData = userResponse?.data || userResponse;
+
+        if (updatedUserData) {
+          setCurrentUser(updatedUserData);
+        }
+      } catch (error) {
+        console.error("Error fetching updated user data:", error);
+      }
+
+      // Force reload to update cover photo in all places
+      setTimeout(() => {
+        window.location.reload();
+      }, 1000);
+    } catch (error) {
+      console.error("Error uploading cover photo:", error);
+      message.error(
+        error.response?.data?.message || "Có lỗi xảy ra khi cập nhật ảnh bìa"
+      );
+    } finally {
+      setUploadingCover(false);
       // Reset file input
       e.target.value = "";
     }
@@ -912,6 +968,50 @@ export default function SettingsClient({ initialUser, hasAuthError }) {
                       style={{ display: "none" }}
                     />
                   </div>
+                </div>
+              </div>
+              {/* Cover Photo */}
+              <div className="flex-1">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Ảnh bìa
+                </label>
+                <div className="relative w-full max-w-md">
+                  {(currentUser?.profile?.cover_photo_url ||
+                    userData?.profile?.cover_photo_url) ? (
+                    <img
+                      src={(() => {
+                        const url =
+                          currentUser?.profile?.cover_photo_url ||
+                          userData?.profile?.cover_photo_url;
+                        const separator = url.includes("?") ? "&" : "?";
+                        return `${url}${separator}t=${Date.now()}`;
+                      })()}
+                      alt="Ảnh bìa"
+                      className="border border-gray-300 dark:!border-[#737373] w-full h-40 rounded-lg object-cover"
+                    />
+                  ) : (
+                    <div className="border border-dashed border-gray-300 dark:!border-[#737373] w-full h-40 rounded-lg flex items-center justify-center text-sm text-gray-500 dark:text-gray-400">
+                      Chưa có ảnh bìa
+                    </div>
+                  )}
+                  <Button
+                    loading={uploadingCover}
+                    disabled={uploadingCover}
+                    onClick={() =>
+                      document.getElementById("cover-upload")?.click()
+                    }
+                    className="flex items-center dark:border-[#737373] absolute left-0 bottom-0 ml-2 mb-2 h-[36px] !px-3 text-[13px] font-semibold cursor-pointer"
+                  >
+                    <Edit2Icon className="w-4 h-4" />
+                    <span>Sửa</span>
+                  </Button>
+                  <input
+                    type="file"
+                    id="cover-upload"
+                    accept="image/*"
+                    onChange={handleCoverUpload}
+                    style={{ display: "none" }}
+                  />
                 </div>
               </div>
             </form>

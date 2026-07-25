@@ -14,7 +14,9 @@ import { generatePostSlug } from "@/utils/slugify";
 import dynamic from "next/dynamic";
 import VerifiedBadge from "@/components/ui/Badges";
 import getCollageSetting from "@/utils/getCollageSetting";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
+import { extractHeadingsAndInjectIds } from "@/utils/toc";
+import ArticleToc from "./ArticleToc";
 
 const ReactPhotoCollage = dynamic(
   () =>
@@ -224,6 +226,13 @@ export default function PostItem({ post, single = false, onVote, onRefresh = nul
     photos: post.image_urls?.map((url) => ({ source: url })),
     showNumOfRemainingPhotos: true,
   };
+
+  // Only build a "Xem nhanh" ToC for the single post view, from the raw content
+  // (headings get injected once here so ids match between the ToC and the body).
+  const { html: contentWithHeadingIds, headings: tocHeadings } = useMemo(() => {
+    if (!single || !post.content) return { html: post.content, headings: [] };
+    return extractHeadingsAndInjectIds(post.content);
+  }, [single, post.content]);
 
   const handleShare = () => {
     const url =
@@ -511,6 +520,7 @@ export default function PostItem({ post, single = false, onVote, onRefresh = nul
               </Dropdown>
             </div>
           </div>
+          {single && <ArticleToc headings={tocHeadings} />}
           <div
             className="text-base max-w-[600px] overflow-wrap prose mt-[0.75em]"
             dangerouslySetInnerHTML={{
@@ -518,7 +528,7 @@ export default function PostItem({ post, single = false, onVote, onRefresh = nul
                 !post.content || post.content.trim() === ""
                   ? '<span style="color: #9ca3af;">(Chưa có nội dung)</span>'
                   : single
-                    ? wrapIframes(post.content)
+                    ? wrapIframes(contentWithHeadingIds)
                     : getContentWithReadMore(),
             }}
             onClick={(e) => {
