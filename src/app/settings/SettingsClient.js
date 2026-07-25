@@ -331,7 +331,7 @@ export default function SettingsClient({ initialUser, hasAuthError }) {
     try {
       setUploadingCover(true);
       const formData = new FormData();
-      formData.append("cover", file);
+      formData.append("cover_photo", file);
 
       const response = await updateCover(currentUser.username, formData);
       const responseData = response?.data || response;
