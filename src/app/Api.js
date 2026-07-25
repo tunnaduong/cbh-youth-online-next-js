@@ -275,6 +275,10 @@ export const markStoryAsViewed = (storyId) => {
   return Api.postRequest(`/v1.0/stories/${storyId}/view`);
 };
 
+export const replyToStory = (storyId, params) => {
+  return Api.postRequest(`/v1.0/stories/${storyId}/reply`, params);
+};
+
 // Topics
 export const getComments = (id) => {
   return Api.getRequest(`/v1.0/topics/${id}/comments`);

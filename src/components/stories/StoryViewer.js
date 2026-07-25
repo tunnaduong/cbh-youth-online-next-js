@@ -6,8 +6,8 @@ import { Drawer, message } from "antd";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { EffectCube } from "swiper/modules";
 import { useRouter } from "@bprogress/next/app";
-import { X, ChevronLeft, ChevronRight, VolumeX, Volume2, Link2, Smartphone, Trash2 } from "lucide-react";
-import { markStoryAsViewed, deleteStory } from "@/app/Api";
+import { X, ChevronLeft, ChevronRight, VolumeX, Volume2, Link2, Smartphone, Trash2, Send } from "lucide-react";
+import { markStoryAsViewed, deleteStory, reactToStory, removeStoryReaction, replyToStory } from "@/app/Api";
 import { Modal } from "antd";
 import Link from "next/link";
 import { openDeepLink } from "@/lib/deepLink";
@@ -329,6 +329,78 @@ const StoryContent = ({ story, isActive, onNext, isMuted }) => {
   );
 };
 
+const REACTIONS = [
+  { type: "like", emoji: "👍" },
+  { type: "love", emoji: "❤️" },
+  { type: "haha", emoji: "😂" },
+  { type: "wow", emoji: "😮" },
+  { type: "sad", emoji: "😢" },
+  { type: "angry", emoji: "😡" },
+];
+
+const StoryFooter = ({
+  currentReaction,
+  onReact,
+  replyText,
+  setReplyText,
+  onSendReply,
+  onInputFocus,
+  onInputBlur,
+  isSending,
+  isLoggedIn,
+}) => (
+  <div
+    className="absolute bottom-0 left-0 right-0 z-50 px-3 pb-4 pt-8 bg-gradient-to-t from-black/60 to-transparent"
+    onClick={(e) => e.stopPropagation()}
+  >
+    <div className="flex items-center gap-2">
+      <div className="flex items-center gap-1.5">
+        {REACTIONS.map(({ type, emoji }) => (
+          <button
+            key={type}
+            onClick={() => onReact(type)}
+            className={`text-lg transition-all duration-150 select-none ${
+              currentReaction === type
+                ? "scale-125 drop-shadow-[0_0_6px_rgba(255,255,255,0.8)]"
+                : "opacity-70 hover:opacity-100 hover:scale-110"
+            }`}
+            title={type}
+          >
+            {emoji}
+          </button>
+        ))}
+      </div>
+      {isLoggedIn && (
+        <div className="flex-1 flex items-center gap-1.5">
+          <input
+            type="text"
+            value={replyText}
+            onChange={(e) => setReplyText(e.target.value)}
+            onFocus={onInputFocus}
+            onBlur={onInputBlur}
+            placeholder="Bình luận..."
+            maxLength={500}
+            className="flex-1 bg-white/20 text-white placeholder-white/50 rounded-full px-3 py-1.5 text-sm outline-none border border-white/30 focus:border-white/70 transition-colors"
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                onSendReply();
+              }
+            }}
+          />
+          <button
+            onClick={onSendReply}
+            disabled={!replyText.trim() || isSending}
+            className="text-white/80 hover:text-white disabled:opacity-30 transition-opacity flex-shrink-0"
+          >
+            <Send size={18} />
+          </button>
+        </div>
+      )}
+    </div>
+  </div>
+);
+
 const StorySlide = ({
   user,
   isActive,
@@ -342,6 +414,10 @@ const StorySlide = ({
   const [currentStoryIndex, setCurrentStoryIndex] = useState(initialStoryIndex);
   const [progress, setProgress] = useState(0);
   const [isMuted, setIsMuted] = useState(false);
+  const [isPaused, setIsPaused] = useState(false);
+  const [currentReaction, setCurrentReaction] = useState(null);
+  const [replyText, setReplyText] = useState("");
+  const [isSending, setIsSending] = useState(false);
   const progressIntervalRef = useRef();
 
   const currentStory = user.stories[currentStoryIndex];
@@ -349,6 +425,7 @@ const StorySlide = ({
   useEffect(() => {
     if (currentStory) {
       setIsMuted(Boolean(currentStory.is_muted));
+      setCurrentReaction(currentStory.user_reaction || null);
 
       // Mark story as viewed using API call
       markStoryAsViewed(currentStory.id)
@@ -360,6 +437,51 @@ const StorySlide = ({
         });
     }
   }, [currentStory?.id, currentStory?.is_muted]);
+
+  const handleReact = useCallback(async (reactionType) => {
+    if (!currentUser) {
+      message.warning("Bạn cần đăng nhập để thả cảm xúc.");
+      return;
+    }
+    const storyId = currentStory?.id;
+    if (!storyId) return;
+
+    if (currentReaction === reactionType) {
+      setCurrentReaction(null);
+      try {
+        await removeStoryReaction(storyId);
+      } catch {
+        setCurrentReaction(reactionType);
+      }
+    } else {
+      const prev = currentReaction;
+      setCurrentReaction(reactionType);
+      try {
+        await reactToStory(storyId, { reaction_type: reactionType });
+      } catch {
+        setCurrentReaction(prev);
+      }
+    }
+  }, [currentUser, currentStory?.id, currentReaction]);
+
+  const handleSendReply = useCallback(async () => {
+    if (!replyText.trim() || !currentUser) return;
+    const storyId = currentStory?.id;
+    if (!storyId) return;
+
+    setIsSending(true);
+    const text = replyText;
+    setReplyText("");
+    try {
+      await replyToStory(storyId, { content: text });
+      message.success("Đã gửi bình luận!");
+    } catch {
+      setReplyText(text);
+      message.error("Không thể gửi bình luận. Vui lòng thử lại.");
+    } finally {
+      setIsSending(false);
+    }
+  }, [replyText, currentUser, currentStory?.id]);
 
   const handleToggleMute = useCallback(() => {
     if (currentStory?.is_muted) return;
@@ -434,6 +556,7 @@ const StorySlide = ({
   useEffect(() => {
     if (
       isActive &&
+      !isPaused &&
       (currentStory?.type === "image" || currentStory?.type === "text")
     ) {
       startProgress();
@@ -442,7 +565,7 @@ const StorySlide = ({
     }
 
     return () => stopProgress();
-  }, [isActive, currentStoryIndex, currentStory, startProgress, stopProgress]);
+  }, [isActive, isPaused, currentStoryIndex, currentStory, startProgress, stopProgress]);
 
   // RESET khi user thay đổi hoặc khi initialStoryIndex thay đổi (ví dụ khi remount)
   useEffect(() => {
@@ -518,8 +641,8 @@ const StorySlide = ({
         isMuted={isMuted}
       />
 
-      {/* Touch areas for navigation */}
-      <div className="absolute inset-0 flex">
+      {/* Touch areas for navigation — exclude bottom footer */}
+      <div className="absolute inset-x-0 top-0 bottom-16 flex">
         <div className="flex-1 cursor-pointer" onClick={handlePrevStory} />
         <div className="flex-1 cursor-pointer" onClick={handleNextStory} />
       </div>
@@ -539,6 +662,18 @@ const StorySlide = ({
           <ChevronRight size={32} />
         </button>
       </div>
+
+      <StoryFooter
+        currentReaction={currentReaction}
+        onReact={handleReact}
+        replyText={replyText}
+        setReplyText={setReplyText}
+        onSendReply={handleSendReply}
+        onInputFocus={() => setIsPaused(true)}
+        onInputBlur={() => setIsPaused(false)}
+        isSending={isSending}
+        isLoggedIn={Boolean(currentUser)}
+      />
     </div>
   );
 };
