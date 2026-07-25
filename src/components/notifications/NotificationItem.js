@@ -8,7 +8,10 @@ import { generatePostSlug } from "@/utils/slugify";
 
 const getNotificationMessage = (notification) => {
   const { type, actor, data } = notification;
-  const actorName = actor?.profile_name || actor?.username || "Ai đó";
+  const isCommentAnonymous = data?.is_anonymous === true;
+  const actorName = isCommentAnonymous
+    ? "Người dùng ẩn danh"
+    : actor?.profile_name || actor?.username || "Ai đó";
 
   switch (type) {
     case "topic_liked":
@@ -178,6 +181,8 @@ export default function NotificationItem({ notification }) {
     }
   };
 
+  const isCommentAnonymous = notification.data?.is_anonymous === true;
+
   // Determine avatar URL
   const getAvatarUrl = () => {
     // System notification (no actor)
@@ -185,8 +190,13 @@ export default function NotificationItem({ notification }) {
       return `${process.env.NEXT_PUBLIC_API_URL}/v1.0/users/Admin/avatar`;
     }
 
-    // Anonymous notification
-    if (notification.actor && !notification.actor.id) {
+    // Anonymous comment — hide actor identity
+    if (isCommentAnonymous) {
+      return null;
+    }
+
+    // Actor with no id (legacy anonymous)
+    if (!notification.actor.id) {
       return null;
     }
 
@@ -205,8 +215,10 @@ export default function NotificationItem({ notification }) {
   };
 
   const avatarUrl = getAvatarUrl();
-  const avatarAlt = notification.actor?.username || "Hệ thống";
-  const isAnonymous = notification.actor && !notification.actor.id;
+  const avatarAlt = isCommentAnonymous
+    ? "Người dùng ẩn danh"
+    : notification.actor?.username || "Hệ thống";
+  const isAnonymous = isCommentAnonymous || (notification.actor && !notification.actor.id);
 
   return (
     <div
