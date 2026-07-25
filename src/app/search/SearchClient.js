@@ -13,7 +13,11 @@ import refreshAnimation from "@/assets/refresh.json";
 export default function SearchClient() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const queryParam = searchParams.get("q") || "";
+  const isHashtagParam = searchParams.get("type") === "hashtag";
+  const rawQueryParam = searchParams.get("q") || "";
+  const queryParam = isHashtagParam
+    ? rawQueryParam.replace(/^#/, "")
+    : rawQueryParam;
 
   const [searchQuery, setSearchQuery] = useState(queryParam);
   const [activeTab, setActiveTab] = useState("all"); // all, users, posts
@@ -22,43 +26,63 @@ export default function SearchClient() {
     users: [],
     posts: [],
   });
+  // Set only when we're showing "posts tagged #x" results (reached by
+  // clicking a hashtag or typing "#x" into the search box), rather than
+  // the normal all/users/posts tabs.
+  const [hashtagTag, setHashtagTag] = useState(null);
 
   useEffect(() => {
     setSearchQuery(queryParam);
     if (queryParam) {
-      performSearch(queryParam, "all");
+      if (isHashtagParam) {
+        performSearch(queryParam, "hashtag");
+      } else {
+        performSearch(queryParam, "all");
+      }
     }
-  }, [queryParam]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [queryParam, isHashtagParam]);
 
   const performSearch = async (query, type) => {
     if (!query.trim()) {
       setResults({ users: [], posts: [] });
+      setHashtagTag(null);
       return;
     }
 
     setLoading(true);
     try {
       const response = await search({
-        query: query.trim(),
+        query: type === "hashtag" ? query.trim().replace(/^#/, "") : query.trim(),
         type: type === "all" ? "all" : type,
-        limit: 10,
+        limit: type === "hashtag" ? 20 : 10,
       });
 
       if (response.data?.status === "success") {
         if (type === "all") {
+          setHashtagTag(null);
           setResults({
             users: response.data.data.users || [],
             posts: response.data.data.posts || [],
           });
         } else if (type === "users") {
+          setHashtagTag(null);
           setResults({
             users: response.data.data || [],
             posts: [],
           });
         } else if (type === "posts") {
+          setHashtagTag(null);
           setResults({
             users: [],
             posts: response.data.data || [],
+          });
+        } else if (type === "hashtag") {
+          setActiveTab("posts");
+          setHashtagTag(response.data.data.hashtag || query.trim().replace(/^#/, ""));
+          setResults({
+            users: [],
+            posts: response.data.data.posts || [],
           });
         }
       }
@@ -72,14 +96,22 @@ export default function SearchClient() {
 
   const handleSearch = (e) => {
     e.preventDefault();
-    if (searchQuery.trim()) {
-      router.push(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
-      performSearch(searchQuery.trim(), activeTab);
+    const trimmed = searchQuery.trim();
+    if (!trimmed) return;
+
+    if (trimmed.startsWith("#") && trimmed.length > 1) {
+      const tag = trimmed.slice(1);
+      router.push(`/search?type=hashtag&q=${encodeURIComponent(tag)}`);
+      performSearch(tag, "hashtag");
+    } else {
+      router.push(`/search?q=${encodeURIComponent(trimmed)}`);
+      performSearch(trimmed, activeTab === "hashtag" ? "all" : activeTab);
     }
   };
 
   const handleTabChange = (tab) => {
     setActiveTab(tab);
+    setHashtagTag(null);
     if (searchQuery.trim()) {
       performSearch(searchQuery.trim(), tab);
     }
@@ -88,6 +120,7 @@ export default function SearchClient() {
   const handleClear = () => {
     setSearchQuery("");
     setResults({ users: [], posts: [] });
+    setHashtagTag(null);
     router.push("/search");
   };
 
@@ -297,7 +330,9 @@ export default function SearchClient() {
               {(activeTab === "all" || activeTab === "posts") && (
                 <div>
                   <h2 className="text-lg font-bold text-primary-500 dark:text-primary-500 mb-4">
-                    Bài viết ({results.posts.length})
+                    {hashtagTag
+                      ? `Kết quả cho #${hashtagTag} (${results.posts.length})`
+                      : `Bài viết (${results.posts.length})`}
                   </h2>
                   {results.posts.length > 0 ? (
                     <div className="bg-white dark:bg-neutral-800 rounded-lg divide-y divide-gray-200 dark:divide-neutral-700">

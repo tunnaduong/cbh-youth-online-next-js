@@ -532,6 +532,15 @@ export default function PostItem({ post, single = false, onVote, onRefresh = nul
                     : getContentWithReadMore(),
             }}
             onClick={(e) => {
+              const hashtagEl = e.target.closest(".hashtag-link");
+              if (hashtagEl) {
+                e.preventDefault();
+                router.push(
+                  "/search?type=hashtag&q=" +
+                    encodeURIComponent(hashtagEl.dataset.hashtag || "")
+                );
+                return;
+              }
               if (!single && e.target.classList.contains("read-more-link")) {
                 toggleShowFullContent(e);
               }
