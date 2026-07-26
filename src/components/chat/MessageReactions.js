@@ -2,18 +2,27 @@
 
 import { Popover } from "antd";
 import { X } from "lucide-react";
+import {
+  BsEmojiSmile,
+  BsHandThumbsUpFill,
+  BsHeartFill,
+  BsEmojiLaughingFill,
+  BsEmojiAstonishedFill,
+  BsEmojiFrownFill,
+  BsEmojiAngryFill,
+} from "react-icons/bs";
 
 export const REACTION_TYPES = [
-  { type: "like", emoji: "👍" },
-  { type: "love", emoji: "❤️" },
-  { type: "haha", emoji: "😆" },
-  { type: "wow", emoji: "😮" },
-  { type: "sad", emoji: "😢" },
-  { type: "angry", emoji: "😠" },
+  { type: "like", Icon: BsHandThumbsUpFill, color: "#2078f4" },
+  { type: "love", Icon: BsHeartFill, color: "#f33e58" },
+  { type: "haha", Icon: BsEmojiLaughingFill, color: "#f7b125" },
+  { type: "wow", Icon: BsEmojiAstonishedFill, color: "#f7b125" },
+  { type: "sad", Icon: BsEmojiFrownFill, color: "#f7b125" },
+  { type: "angry", Icon: BsEmojiAngryFill, color: "#e9710f" },
 ];
 
-const REACTION_EMOJI = REACTION_TYPES.reduce((acc, r) => {
-  acc[r.type] = r.emoji;
+const REACTION_MAP = REACTION_TYPES.reduce((acc, r) => {
+  acc[r.type] = r;
   return acc;
 }, {});
 
@@ -31,19 +40,19 @@ export default function MessageReactions({
 
   const pickerContent = (
     <div className="flex items-center gap-1 p-1">
-      {REACTION_TYPES.map((r) => (
+      {REACTION_TYPES.map(({ type, Icon, color }) => (
         <button
-          key={r.type}
+          key={type}
           type="button"
-          onClick={() => onReact(r.type === myReaction ? null : r.type)}
-          className={`text-xl w-8 h-8 flex items-center justify-center rounded-full hover:scale-125 transition-transform ${
-            myReaction === r.type
+          onClick={() => onReact(type === myReaction ? null : type)}
+          className={`w-8 h-8 flex items-center justify-center rounded-full hover:scale-125 transition-transform ${
+            myReaction === type
               ? "ring-2 ring-[#319527] bg-green-50 dark:bg-neutral-700"
               : ""
           }`}
-          title={r.type}
+          title={type}
         >
-          {r.emoji}
+          <Icon className="w-5 h-5" style={{ color }} />
         </button>
       ))}
       {myReaction && (
@@ -76,31 +85,34 @@ export default function MessageReactions({
         {total > 0 ? (
           <button
             type="button"
-            className="flex items-center gap-0.5 bg-white dark:bg-neutral-700 rounded-full shadow px-1.5 py-0.5 text-xs border border-gray-200 dark:border-neutral-600"
+            className="flex items-center gap-0.5 bg-white dark:bg-neutral-700 rounded-full shadow px-1.5 py-0.5 border border-gray-200 dark:border-neutral-600"
           >
-            {summary.slice(0, 3).map((s) => (
-              <span
-                key={s.type}
-                className={
-                  myReaction === s.type
-                    ? "ring-1 ring-[#319527] rounded-full"
-                    : ""
-                }
-              >
-                {REACTION_EMOJI[s.type] || "👍"}
-              </span>
-            ))}
-            <span className="text-gray-600 dark:text-gray-300 ml-0.5">
+            {summary.slice(0, 3).map((s) => {
+              const r = REACTION_MAP[s.type];
+              if (!r) return null;
+              const { Icon, color } = r;
+              return (
+                <span
+                  key={s.type}
+                  className={`w-3.5 h-3.5 flex items-center justify-center rounded-full ${
+                    myReaction === s.type ? "ring-1 ring-[#319527]" : ""
+                  }`}
+                >
+                  <Icon className="w-3 h-3" style={{ color }} />
+                </span>
+              );
+            })}
+            <span className="text-[11px] text-gray-600 dark:text-gray-300 ml-0.5">
               {total}
             </span>
           </button>
         ) : (
           <button
             type="button"
-            className="w-6 h-6 flex items-center justify-center rounded-full bg-white dark:bg-neutral-700 shadow border border-gray-200 dark:border-neutral-600 text-xs"
+            className="w-6 h-6 flex items-center justify-center rounded-full bg-white dark:bg-neutral-700 shadow border border-gray-200 dark:border-neutral-600 text-gray-500 dark:text-gray-300"
             title="React"
           >
-            🙂
+            <BsEmojiSmile className="w-3.5 h-3.5" />
           </button>
         )}
       </div>

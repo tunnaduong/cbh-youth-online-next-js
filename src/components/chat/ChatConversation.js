@@ -27,6 +27,17 @@ function resolveFileUrl(url) {
     : `${process.env.NEXT_PUBLIC_API_URL}${url}`;
 }
 
+const IMAGE_EXTENSION_RE = /\.(png|jpe?g|gif|webp|bmp|svg|heic|heif)$/i;
+
+// Some attachments got persisted with type: "file" even though they're really
+// images (e.g. the browser's file picker reported a blank/generic MIME type
+// on upload). Fall back to sniffing the name/URL so old messages like that
+// still preview inline instead of showing a download card forever.
+function looksLikeImage(message) {
+  return IMAGE_EXTENSION_RE.test(message.file_name || message.content || "") ||
+    IMAGE_EXTENSION_RE.test(message.file_url || "");
+}
+
 export default function ChatConversation({
   conversationId,
   conversation,
@@ -383,7 +394,8 @@ export default function ChatConversation({
                 </span>
               </div>
               <div className="relative mb-2">
-                {message.type === "image" ? (
+                {message.type === "image" ||
+                (message.type === "file" && looksLikeImage(message)) ? (
                   <div
                     className="relative rounded-lg overflow-hidden max-w-[240px] cursor-pointer"
                     onClick={() =>

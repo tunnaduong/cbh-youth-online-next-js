@@ -371,8 +371,20 @@ const ChatProvider = ({ children }) => {
     async (conversationId, file) => {
       if (!loggedIn || !conversationId || !file) return;
 
-      const isImage = file.type?.startsWith("image/");
-      const isVideo = file.type?.startsWith("video/");
+      // Some file pickers (mobile "Files" providers, certain Windows dialogs) leave
+      // file.type blank or generic instead of a proper image/* or video/* MIME, which
+      // would otherwise mislabel real images/videos as generic files forever (the
+      // server just persists whatever type we tell it). Fall back to the filename
+      // extension in that case.
+      const IMAGE_EXTENSION_RE = /\.(png|jpe?g|gif|webp|bmp|svg|heic|heif)$/i;
+      const VIDEO_EXTENSION_RE = /\.(mp4|mov|avi|webm|mkv)$/i;
+      const isImage =
+        file.type?.startsWith("image/") ||
+        (!file.type && IMAGE_EXTENSION_RE.test(file.name || ""));
+      const isVideo =
+        !isImage &&
+        (file.type?.startsWith("video/") ||
+          (!file.type && VIDEO_EXTENSION_RE.test(file.name || "")));
       const type = isImage ? "image" : isVideo ? "video" : "file";
       const tempId = `temp-${Date.now()}`;
       const localUrl = isImage || isVideo ? URL.createObjectURL(file) : null;
