@@ -391,8 +391,8 @@ function StoriesSection() {
         height="100%"
         placement="bottom"
         styles={{
-          body: { padding: 0, height: "100vh", overflow: "hidden" },
-          content: { background: "transparent", opacity: undefined },
+          body: { padding: 0, height: "100dvh", overflow: "hidden" },
+          content: { background: "transparent", opacity: undefined, height: "100dvh" },
           mask: { boxShadow: "none" },
         }}
         mask={false}
