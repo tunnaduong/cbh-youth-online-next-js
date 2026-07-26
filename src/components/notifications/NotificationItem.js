@@ -6,9 +6,19 @@ import { useAuthContext, useNotificationContext } from "@/contexts/Support";
 import { useRouter } from "@bprogress/next/app";
 import { generatePostSlug } from "@/utils/slugify";
 
+// Only these notification types mean the actor authored the anonymous
+// content themselves (their own anonymous reply/comment). Voters/likers are
+// never anonymous, even when they vote/like someone else's anonymous
+// comment/post, so `data.is_anonymous` must not hide them for other types.
+const ANONYMOUS_ACTOR_TYPES = ["comment_replied", "topic_commented"];
+
+const isActorAnonymous = (notification) =>
+  ANONYMOUS_ACTOR_TYPES.includes(notification?.type) &&
+  notification?.data?.is_anonymous === true;
+
 const getNotificationMessage = (notification) => {
-  const { type, actor, data } = notification;
-  const isCommentAnonymous = data?.is_anonymous === true;
+  const { type, actor } = notification;
+  const isCommentAnonymous = isActorAnonymous(notification);
   const actorName = isCommentAnonymous
     ? "Người dùng ẩn danh"
     : actor?.profile_name || actor?.username || "Ai đó";
@@ -184,7 +194,7 @@ export default function NotificationItem({ notification }) {
     }
   };
 
-  const isCommentAnonymous = notification.data?.is_anonymous === true;
+  const isCommentAnonymous = isActorAnonymous(notification);
 
   // Determine avatar URL
   const getAvatarUrl = () => {
