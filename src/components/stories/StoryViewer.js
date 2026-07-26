@@ -406,7 +406,8 @@ const StoryFooter = ({
         </div>
       ))}
 
-      {/* Footer: stacked vertically */}
+      {/* Footer: stacked vertically — hidden entirely for the story owner */}
+      {!isOwner && (
       <div
         className="absolute bottom-0 left-0 right-0 z-50 px-4 pb-5 pt-10 bg-gradient-to-t from-black/70 to-transparent flex flex-col items-center gap-3"
         onClick={(e) => e.stopPropagation()}
@@ -436,8 +437,7 @@ const StoryFooter = ({
           })}
         </div>
 
-        {/* Reply input row — hidden for story owner */}
-        {!isOwner && (
+        {/* Reply input row */}
           <div className="w-full flex items-center gap-2">
             <input
               type="text"
@@ -465,8 +465,8 @@ const StoryFooter = ({
               <Send size={18} />
             </button>
           </div>
-        )}
       </div>
+      )}
     </>
   );
 };
