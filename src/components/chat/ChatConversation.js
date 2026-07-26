@@ -498,7 +498,7 @@ export default function ChatConversation({
                   </a>
                 ) : (
                   <div
-                    className={`rounded-lg px-3 py-2 text-sm break-words whitespace-pre-wrap break-all ${
+                    className={`rounded-lg px-3 py-2 text-sm break-words whitespace-pre-wrap ${
                       message.is_myself
                         ? "bg-[#319527] text-white"
                         : "bg-gray-200 dark:bg-neutral-600 dark:text-white"
