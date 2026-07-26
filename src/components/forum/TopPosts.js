@@ -37,8 +37,8 @@ export default function TopPosts({ initialLatestPosts = {} }) {
 
   // Handle tab loading state and data fetching
   useEffect(() => {
-    const hasContextData = contextLatestPosts[currentSort];
-    const hasInitialData = initialLatestPosts[currentSort];
+    const hasContextData = contextLatestPosts[currentSort]?.length > 0;
+    const hasInitialData = initialLatestPosts[currentSort]?.length > 0;
 
     // If we have data, stop loading immediately
     if (hasContextData || hasInitialData) {
