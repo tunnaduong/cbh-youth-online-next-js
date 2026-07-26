@@ -370,7 +370,7 @@ export default function ChatConversation({
               </Avatar>
             )}
             <div
-              className={`flex flex-col max-w-[70%] ${
+              className={`flex flex-col max-w-[70%] min-w-0 ${
                 message.is_myself ? "items-end" : "items-start"
               }`}
             >
