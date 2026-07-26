@@ -11,6 +11,35 @@ import MessageInput from "./MessageInput";
 import ParticipantsList from "./ParticipantsList";
 import { Menu } from "lucide-react";
 
+const URL_RE = /(https?:\/\/[^\s]+)/g;
+
+// Plain text wraps at word boundaries (break-words) so Vietnamese diacritics
+// never get split mid-character. URLs have no word boundaries to wrap at, so
+// they alone get break-all — otherwise they'd overflow the bubble instead of
+// wrapping.
+function linkifyText(text) {
+  if (!text) return text;
+  const parts = text.split(URL_RE);
+  return parts.map((part, i) =>
+    i % 2 === 1 ? (
+      <a
+        key={i}
+        href={part}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="underline break-all"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {part}
+      </a>
+    ) : (
+      <span key={i} className="break-words">
+        {part}
+      </span>
+    )
+  );
+}
+
 export default function PublicChat() {
   const { currentUser, loggedIn } = useAuthContext();
   const [messages, setMessages] = useState([]);
@@ -480,8 +509,8 @@ export default function PublicChat() {
                           {formatTime(message.created_at)}
                         </span>
                       </div>
-                      <div className="text-gray-700 dark:text-gray-300 text-sm whitespace-pre-wrap break-words">
-                        {message.content}
+                      <div className="text-gray-700 dark:text-gray-300 text-sm whitespace-pre-wrap">
+                        {linkifyText(message.content)}
                       </div>
                     </div>
                   </div>

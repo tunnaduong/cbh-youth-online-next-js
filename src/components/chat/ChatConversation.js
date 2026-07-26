@@ -29,6 +29,35 @@ function resolveFileUrl(url) {
 
 const IMAGE_EXTENSION_RE = /\.(png|jpe?g|gif|webp|bmp|svg|heic|heif)$/i;
 
+const URL_RE = /(https?:\/\/[^\s]+)/g;
+
+// Plain text wraps at word boundaries (break-words) so Vietnamese diacritics
+// never get split mid-character. URLs have no word boundaries to wrap at, so
+// they alone get break-all — otherwise they'd overflow the bubble instead of
+// wrapping.
+function linkifyText(text, linkClassName) {
+  if (!text) return text;
+  const parts = text.split(URL_RE);
+  return parts.map((part, i) =>
+    i % 2 === 1 ? (
+      <a
+        key={i}
+        href={part}
+        target="_blank"
+        rel="noopener noreferrer"
+        className={`underline break-all ${linkClassName || ""}`}
+        onClick={(e) => e.stopPropagation()}
+      >
+        {part}
+      </a>
+    ) : (
+      <span key={i} className="break-words">
+        {part}
+      </span>
+    )
+  );
+}
+
 // Some attachments got persisted with type: "file" even though they're really
 // images (e.g. the browser's file picker reported a blank/generic MIME type
 // on upload). Fall back to sniffing the name/URL so old messages like that
@@ -498,7 +527,7 @@ export default function ChatConversation({
                   </a>
                 ) : (
                   <div
-                    className={`rounded-lg px-3 py-2 text-sm break-words whitespace-pre-wrap ${
+                    className={`rounded-lg px-3 py-2 text-sm whitespace-pre-wrap ${
                       message.is_myself
                         ? "bg-[#319527] text-white"
                         : "bg-gray-200 dark:bg-neutral-600 dark:text-white"
@@ -511,7 +540,7 @@ export default function ChatConversation({
                     onTouchMove={clearLongPressTimer}
                     onContextMenu={(e) => e.preventDefault()}
                   >
-                    {message.content}
+                    {linkifyText(message.content)}
                   </div>
                 )}
                 {!message.is_sending && (
