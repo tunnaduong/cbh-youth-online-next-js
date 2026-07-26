@@ -27,6 +27,8 @@ const ChatContext = createContext({
   markAsRead: () => {},
   createConversation: () => {},
   sendTyping: () => {},
+  reactToMessage: () => {},
+  removeMessageReaction: () => {},
 });
 
 export default ChatContext;

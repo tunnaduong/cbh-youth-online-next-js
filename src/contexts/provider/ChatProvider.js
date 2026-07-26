@@ -10,6 +10,8 @@ import {
   sendMessageWithFile as sendMessageWithFileApi,
   markAsRead as markAsReadApi,
   createPrivateConversation,
+  reactToMessage as reactToMessageApi,
+  removeMessageReaction as removeMessageReactionApi,
 } from "@/app/Api";
 import { useAuthContext } from "../Support";
 import {
@@ -370,9 +372,10 @@ const ChatProvider = ({ children }) => {
       if (!loggedIn || !conversationId || !file) return;
 
       const isImage = file.type?.startsWith("image/");
-      const type = isImage ? "image" : "file";
+      const isVideo = file.type?.startsWith("video/");
+      const type = isImage ? "image" : isVideo ? "video" : "file";
       const tempId = `temp-${Date.now()}`;
-      const localUrl = isImage ? URL.createObjectURL(file) : null;
+      const localUrl = isImage || isVideo ? URL.createObjectURL(file) : null;
 
       const optimisticMessage = {
         id: tempId,
@@ -425,6 +428,60 @@ const ChatProvider = ({ children }) => {
       }
     },
     [loggedIn]
+  );
+
+  // Patch a single message's reactions summary in local state.
+  const patchMessageReactions = useCallback((conversationId, messageId, reactions) => {
+    setMessages((prev) => {
+      const list = prev[conversationId];
+      if (!list) return prev;
+      return {
+        ...prev,
+        [conversationId]: list.map((m) =>
+          String(m.id) === String(messageId) ? { ...m, reactions } : m
+        ),
+      };
+    });
+  }, []);
+
+  // React to a message with one of the fixed reaction types (like/love/haha/wow/sad/angry).
+  const reactToMessage = useCallback(
+    async (conversationId, messageId, reactionType) => {
+      if (!loggedIn || !conversationId || !messageId || !reactionType) return;
+
+      try {
+        const response = await reactToMessageApi(messageId, reactionType);
+        const data = response?.data || response;
+        if (data?.reactions) {
+          patchMessageReactions(conversationId, messageId, data.reactions);
+        }
+        return data;
+      } catch (error) {
+        console.error("[ChatProvider] Error reacting to message:", error);
+        throw error;
+      }
+    },
+    [loggedIn, patchMessageReactions]
+  );
+
+  // Remove the current user's reaction from a message.
+  const removeMessageReaction = useCallback(
+    async (conversationId, messageId) => {
+      if (!loggedIn || !conversationId || !messageId) return;
+
+      try {
+        const response = await removeMessageReactionApi(messageId);
+        const data = response?.data || response;
+        if (data?.reactions) {
+          patchMessageReactions(conversationId, messageId, data.reactions);
+        }
+        return data;
+      } catch (error) {
+        console.error("[ChatProvider] Error removing message reaction:", error);
+        throw error;
+      }
+    },
+    [loggedIn, patchMessageReactions]
   );
 
   // Mark conversation as read
@@ -511,6 +568,13 @@ const ChatProvider = ({ children }) => {
     }, TYPING_EXPIRY_MS);
   }, [currentUser?.id]);
 
+  // Realtime: someone reacted (or unreacted) to a message in `conversationId` -
+  // patch that message's reaction summary directly, no need to refetch.
+  const handleMessageReacted = useCallback((conversationId, data) => {
+    if (!data?.message_id || !data?.reactions) return;
+    patchMessageReactions(conversationId, data.message_id, data.reactions);
+  }, [patchMessageReactions]);
+
   const subscribeToConversation = useCallback(
     (conversationId) => {
       if (channelsRef.current[conversationId]) return;
@@ -523,13 +587,16 @@ const ChatProvider = ({ children }) => {
         .listen(".message.sent", () => handleMessageSent(conversationId))
         .listen(".message.read", () => handleMessageMutated(conversationId))
         .listen(".message.deleted", () => handleMessageMutated(conversationId))
+        .listen(".message.reacted", (data) =>
+          handleMessageReacted(conversationId, data)
+        )
         .listenForWhisper("typing", (data) =>
           handleTypingWhisper(conversationId, data)
         );
 
       channelsRef.current[conversationId] = channel;
     },
-    [handleMessageSent, handleMessageMutated, handleTypingWhisper]
+    [handleMessageSent, handleMessageMutated, handleMessageReacted, handleTypingWhisper]
   );
 
   const unsubscribeFromConversation = useCallback((conversationId) => {
@@ -1027,6 +1094,8 @@ const ChatProvider = ({ children }) => {
     markAsRead,
     createConversation,
     sendTyping,
+    reactToMessage,
+    removeMessageReaction,
   };
 
   return <ChatContext.Provider value={value}>{children}</ChatContext.Provider>;

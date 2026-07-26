@@ -7,13 +7,24 @@ import { useChatContext } from "@/contexts/Support";
 import moment from "moment";
 import "moment/locale/vi";
 import ChatMessageInput from "./ChatMessageInput";
-import { FileText, Download } from "lucide-react";
+import MessageReactions from "./MessageReactions";
+import ChatMediaLightbox from "./ChatMediaLightbox";
+import { FileText, Download, PlayCircle } from "lucide-react";
+
+const LONG_PRESS_MS = 450;
 
 function formatFileSize(bytes) {
   if (!bytes && bytes !== 0) return "";
   if (bytes < 1024) return `${bytes} B`;
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+function resolveFileUrl(url) {
+  if (!url) return url;
+  return url.startsWith("http") || url.startsWith("blob:")
+    ? url
+    : `${process.env.NEXT_PUBLIC_API_URL}${url}`;
 }
 
 export default function ChatConversation({
@@ -34,12 +45,17 @@ export default function ChatConversation({
     selectConversation,
     typingUsers,
     sendTyping,
+    reactToMessage,
+    removeMessageReaction,
   } = useChatContext();
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [hasMorePages, setHasMorePages] = useState(true); // Start as true to allow loading
   const [isInitialLoad, setIsInitialLoad] = useState(true);
+  const [openReactionMessageId, setOpenReactionMessageId] = useState(null);
+  const [lightboxMedia, setLightboxMedia] = useState(null);
   const messagesContainerRef = useRef(null);
+  const longPressTimerRef = useRef(null);
   const conversationMessages = conversationId
     ? messages[conversationId] || []
     : [];
@@ -186,6 +202,46 @@ export default function ChatConversation({
     }
   };
 
+  const handleReact = async (messageId, reactionType) => {
+    if (!conversationId) return;
+    try {
+      if (reactionType) {
+        await reactToMessage(conversationId, messageId, reactionType);
+      } else {
+        await removeMessageReaction(conversationId, messageId);
+      }
+    } catch (error) {
+      console.error("[ChatConversation] Error reacting to message:", error);
+    } finally {
+      setOpenReactionMessageId(null);
+    }
+  };
+
+  const handleRemoveReaction = async (messageId) => {
+    if (!conversationId) return;
+    try {
+      await removeMessageReaction(conversationId, messageId);
+    } catch (error) {
+      console.error("[ChatConversation] Error removing reaction:", error);
+    } finally {
+      setOpenReactionMessageId(null);
+    }
+  };
+
+  const clearLongPressTimer = () => {
+    if (longPressTimerRef.current) {
+      clearTimeout(longPressTimerRef.current);
+      longPressTimerRef.current = null;
+    }
+  };
+
+  const startLongPress = (messageId) => {
+    clearLongPressTimer();
+    longPressTimerRef.current = setTimeout(() => {
+      setOpenReactionMessageId(messageId);
+    }, LONG_PRESS_MS);
+  };
+
   // Show preview state
   if (previewParticipant && !conversationId) {
     return (
@@ -326,69 +382,139 @@ export default function ChatConversation({
                     formatTimestamp(message.created_at)}
                 </span>
               </div>
-              {message.type === "image" ? (
-                <div className="relative rounded-lg overflow-hidden max-w-[240px]">
-                  <img
-                    src={
-                      message.file_url?.startsWith("http") ||
-                      message.file_url?.startsWith("blob:")
-                        ? message.file_url
-                        : `${process.env.NEXT_PUBLIC_API_URL}${message.file_url}`
+              <div className="relative mb-2">
+                {message.type === "image" ? (
+                  <div
+                    className="relative rounded-lg overflow-hidden max-w-[240px] cursor-pointer"
+                    onClick={() =>
+                      !message.is_sending &&
+                      setLightboxMedia({
+                        type: "image",
+                        url: resolveFileUrl(message.file_url),
+                      })
                     }
-                    alt={message.content || "image"}
-                    className="w-full h-auto max-h-[300px] object-cover"
-                  />
-                  {message.is_sending && (
-                    <div className="absolute inset-0 flex items-center justify-center bg-black/30">
-                      <span className="text-xs text-white">Đang gửi...</span>
-                    </div>
-                  )}
-                </div>
-              ) : message.type === "file" ? (
-                <a
-                  href={
-                    message.file_url?.startsWith("http") ||
-                    message.file_url?.startsWith("blob:")
-                      ? message.file_url
-                      : `${process.env.NEXT_PUBLIC_API_URL}${message.file_url}`
-                  }
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className={`flex items-center gap-2 rounded-lg px-3 py-2 text-sm max-w-[240px] ${
-                    message.is_myself
-                      ? "bg-[#319527] text-white"
-                      : "bg-gray-200 dark:bg-neutral-600 dark:text-white"
-                  }`}
-                >
-                  <FileText className="w-6 h-6 flex-shrink-0" />
-                  <div className="flex flex-col min-w-0">
-                    <span className="truncate font-medium">
-                      {message.content || message.file_name || "Tệp đính kèm"}
-                    </span>
-                    {message.file_size ? (
-                      <span className="text-xs opacity-80">
-                        {formatFileSize(message.file_size)}
-                      </span>
-                    ) : (
-                      !message.is_sending && (
-                        <span className="text-xs opacity-80 flex items-center gap-1">
-                          <Download className="w-3 h-3" /> Tải xuống
-                        </span>
-                      )
+                    onMouseDown={() => startLongPress(message.id)}
+                    onMouseUp={clearLongPressTimer}
+                    onMouseLeave={clearLongPressTimer}
+                    onTouchStart={() => startLongPress(message.id)}
+                    onTouchEnd={clearLongPressTimer}
+                    onTouchMove={clearLongPressTimer}
+                    onContextMenu={(e) => e.preventDefault()}
+                  >
+                    <img
+                      src={resolveFileUrl(message.file_url)}
+                      alt={message.content || "image"}
+                      className="w-full h-auto max-h-[300px] object-cover"
+                    />
+                    {message.is_sending && (
+                      <div className="absolute inset-0 flex items-center justify-center bg-black/30">
+                        <span className="text-xs text-white">Đang gửi...</span>
+                      </div>
                     )}
                   </div>
-                </a>
-              ) : (
-                <div
-                  className={`rounded-lg px-3 py-2 text-sm break-words whitespace-pre-wrap break-all ${
-                    message.is_myself
-                      ? "bg-[#319527] text-white"
-                      : "bg-gray-200 dark:bg-neutral-600 dark:text-white"
-                  }`}
-                >
-                  {message.content}
-                </div>
-              )}
+                ) : message.type === "video" ? (
+                  <div
+                    className="relative rounded-lg overflow-hidden max-w-[240px] cursor-pointer"
+                    onClick={() =>
+                      !message.is_sending &&
+                      setLightboxMedia({
+                        type: "video",
+                        url: resolveFileUrl(message.file_url),
+                        poster: resolveFileUrl(message.metadata?.thumbnail_url),
+                      })
+                    }
+                    onMouseDown={() => startLongPress(message.id)}
+                    onMouseUp={clearLongPressTimer}
+                    onMouseLeave={clearLongPressTimer}
+                    onTouchStart={() => startLongPress(message.id)}
+                    onTouchEnd={clearLongPressTimer}
+                    onTouchMove={clearLongPressTimer}
+                    onContextMenu={(e) => e.preventDefault()}
+                  >
+                    <video
+                      src={resolveFileUrl(message.file_url)}
+                      poster={resolveFileUrl(message.metadata?.thumbnail_url)}
+                      preload="metadata"
+                      muted
+                      playsInline
+                      className="w-full h-auto max-h-[300px] object-cover"
+                    />
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/20 pointer-events-none">
+                      <PlayCircle className="w-10 h-10 text-white drop-shadow" />
+                    </div>
+                    {message.is_sending && (
+                      <div className="absolute inset-0 flex items-center justify-center bg-black/30">
+                        <span className="text-xs text-white">Đang gửi...</span>
+                      </div>
+                    )}
+                  </div>
+                ) : message.type === "file" ? (
+                  <a
+                    href={resolveFileUrl(message.file_url)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={`flex items-center gap-2 rounded-lg px-3 py-2 text-sm max-w-[240px] ${
+                      message.is_myself
+                        ? "bg-[#319527] text-white"
+                        : "bg-gray-200 dark:bg-neutral-600 dark:text-white"
+                    }`}
+                    onMouseDown={() => startLongPress(message.id)}
+                    onMouseUp={clearLongPressTimer}
+                    onMouseLeave={clearLongPressTimer}
+                    onTouchStart={() => startLongPress(message.id)}
+                    onTouchEnd={clearLongPressTimer}
+                    onTouchMove={clearLongPressTimer}
+                    onContextMenu={(e) => e.preventDefault()}
+                  >
+                    <FileText className="w-6 h-6 flex-shrink-0" />
+                    <div className="flex flex-col min-w-0">
+                      <span className="truncate font-medium">
+                        {message.content || message.file_name || "Tệp đính kèm"}
+                      </span>
+                      {message.file_size ? (
+                        <span className="text-xs opacity-80">
+                          {formatFileSize(message.file_size)}
+                        </span>
+                      ) : (
+                        !message.is_sending && (
+                          <span className="text-xs opacity-80 flex items-center gap-1">
+                            <Download className="w-3 h-3" /> Tải xuống
+                          </span>
+                        )
+                      )}
+                    </div>
+                  </a>
+                ) : (
+                  <div
+                    className={`rounded-lg px-3 py-2 text-sm break-words whitespace-pre-wrap break-all ${
+                      message.is_myself
+                        ? "bg-[#319527] text-white"
+                        : "bg-gray-200 dark:bg-neutral-600 dark:text-white"
+                    }`}
+                    onMouseDown={() => startLongPress(message.id)}
+                    onMouseUp={clearLongPressTimer}
+                    onMouseLeave={clearLongPressTimer}
+                    onTouchStart={() => startLongPress(message.id)}
+                    onTouchEnd={clearLongPressTimer}
+                    onTouchMove={clearLongPressTimer}
+                    onContextMenu={(e) => e.preventDefault()}
+                  >
+                    {message.content}
+                  </div>
+                )}
+                {!message.is_sending && (
+                  <MessageReactions
+                    reactions={message.reactions}
+                    isOwn={message.is_myself}
+                    open={openReactionMessageId === message.id}
+                    onOpenChange={(isOpen) =>
+                      setOpenReactionMessageId(isOpen ? message.id : null)
+                    }
+                    onReact={(type) => handleReact(message.id, type)}
+                    onRemove={() => handleRemoveReaction(message.id)}
+                  />
+                )}
+              </div>
               {isLastOwnMessage && (
                 <span className="text-[11px] text-gray-400 dark:text-gray-500 mt-0.5">
                   {message.read_at ? "Đã xem" : "Đã gửi"}
@@ -415,6 +541,11 @@ export default function ChatConversation({
         onSendFile={handleSendFile}
         sending={sending}
         onTyping={() => sendTyping(conversationId)}
+      />
+
+      <ChatMediaLightbox
+        media={lightboxMedia}
+        onClose={() => setLightboxMedia(null)}
       />
     </div>
   );

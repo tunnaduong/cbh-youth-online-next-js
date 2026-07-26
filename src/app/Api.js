@@ -197,6 +197,16 @@ export const editMessage = (messageId, params) => {
   return Api.putRequest(`/v1.0/chat/messages/${messageId}`, params);
 };
 
+export const reactToMessage = (messageId, reactionType) => {
+  return Api.postRequest(`/v1.0/chat/messages/${messageId}/reactions`, {
+    reaction_type: reactionType,
+  });
+};
+
+export const removeMessageReaction = (messageId) => {
+  return Api.deleteRequest(`/v1.0/chat/messages/${messageId}/reactions`);
+};
+
 export const searchUserForChat = (params) => {
   return Api.getRequest("/v1.0/chat/search/users", params);
 };
