@@ -317,7 +317,7 @@ export default function StudyMaterialsClient() {
                 onChange={(value) => setCategoryId(value)}
                 allowClear
               >
-                <Select.Option value={null}>Tất cả danh mục</Select.Option>
+                <Select.Option value={null}>Tất cả môn học</Select.Option>
                 {categories.map((cat) => (
                   <Select.Option key={cat.id} value={cat.id}>
                     {cat.name}

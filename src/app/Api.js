@@ -157,6 +157,13 @@ export const sendMessage = (conversationId, params) => {
   );
 };
 
+export const sendMessageWithFile = (conversationId, formData) => {
+  return Api.postFormDataRequest(
+    `/v1.0/chat/conversations/${conversationId}/messages`,
+    formData
+  );
+};
+
 export const markAsRead = (conversationId) => {
   return Api.postRequest(`/v1.0/chat/conversations/${conversationId}/read`);
 };

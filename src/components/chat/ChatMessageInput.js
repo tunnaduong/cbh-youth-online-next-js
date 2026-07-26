@@ -4,9 +4,15 @@ import { useState, useRef } from "react";
 import Input from "@/components/ui/input";
 import { Paperclip, Send } from "lucide-react";
 
-export default function ChatMessageInput({ onSend, sending, onTyping }) {
+export default function ChatMessageInput({
+  onSend,
+  onSendFile,
+  sending,
+  onTyping,
+}) {
   const [message, setMessage] = useState("");
   const inputRef = useRef(null);
+  const fileInputRef = useRef(null);
 
   const handleSubmit = async () => {
     if (!message.trim() || sending) return;
@@ -29,12 +35,31 @@ export default function ChatMessageInput({ onSend, sending, onTyping }) {
     }
   };
 
+  const handleFileChange = async (e) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file || !onSendFile) return;
+
+    try {
+      await onSendFile(file);
+    } catch (error) {
+      console.error("[ChatMessageInput] Error sending file:", error);
+    }
+  };
+
   return (
     <div className="flex items-center gap-2 px-4 py-3 border-t dark:border-neutral-600 bg-white dark:bg-neutral-700 rounded-b-lg overflow-hidden">
+      <input
+        ref={fileInputRef}
+        type="file"
+        onChange={handleFileChange}
+        style={{ display: "none" }}
+      />
       <button
         className="p-2 hover:bg-gray-100 dark:hover:bg-neutral-600 rounded transition-colors flex-shrink-0"
         title="Đính kèm file"
         disabled={sending}
+        onClick={() => fileInputRef.current?.click()}
       >
         <Paperclip className="w-4 h-4 text-gray-600 dark:text-gray-300" />
       </button>
