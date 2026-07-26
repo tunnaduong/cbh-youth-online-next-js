@@ -17,7 +17,7 @@ const isActorAnonymous = (notification) =>
   notification?.data?.is_anonymous === true;
 
 const getNotificationMessage = (notification) => {
-  const { type, actor } = notification;
+  const { type, actor, data } = notification;
   const isCommentAnonymous = isActorAnonymous(notification);
   const actorName = isCommentAnonymous
     ? "Người dùng ẩn danh"
