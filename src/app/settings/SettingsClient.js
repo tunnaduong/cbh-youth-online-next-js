@@ -936,24 +936,71 @@ export default function SettingsClient({ initialUser, hasAuthError }) {
                   </Button>
                 </div>
               </div>
-              {/* Profile Picture */}
-              <div className="flex-1">
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Ảnh đại diện
-                </label>
-                <div className="flex items-center space-x-4">
-                  <div className="relative">
-                    <img
-                      src={`${process.env.NEXT_PUBLIC_API_URL}/v1.0/users/${currentUser?.username || userData?.username
-                        }/avatar?t=${Date.now()}`}
-                      alt="Avatar"
-                      className="border border-gray-300 dark:!border-[#737373] w-52 h-52 rounded-full object-cover"
-                    />
+              {/* Profile Picture & Cover Photo */}
+              <div className="flex-1 flex flex-col gap-y-4">
+                {/* Profile Picture */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Ảnh đại diện
+                  </label>
+                  <div className="flex items-center space-x-4">
+                    <div className="relative">
+                      <img
+                        src={`${process.env.NEXT_PUBLIC_API_URL}/v1.0/users/${currentUser?.username || userData?.username
+                          }/avatar?t=${Date.now()}`}
+                        alt="Avatar"
+                        className="border border-gray-300 dark:!border-[#737373] w-52 h-52 rounded-full object-cover"
+                      />
+                      <Button
+                        loading={uploadingAvatar}
+                        disabled={uploadingAvatar}
+                        onClick={() =>
+                          document.getElementById("avatar-upload")?.click()
+                        }
+                        className="flex items-center dark:border-[#737373] absolute left-0 bottom-0 ml-2 mb-2 h-[36px] !px-3 text-[13px] font-semibold cursor-pointer"
+                      >
+                        <Edit2Icon className="w-4 h-4" />
+                        <span>Sửa</span>
+                      </Button>
+                      <input
+                        type="file"
+                        id="avatar-upload"
+                        accept="image/*"
+                        onChange={handleAvatarUpload}
+                        style={{ display: "none" }}
+                      />
+                    </div>
+                  </div>
+                </div>
+                {/* Cover Photo */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Ảnh bìa
+                  </label>
+                  <div className="relative w-full max-w-md">
+                    {(currentUser?.profile?.cover_photo_url ||
+                      userData?.profile?.cover_photo_url) ? (
+                      <img
+                        src={(() => {
+                          const url =
+                            currentUser?.profile?.cover_photo_url ||
+                            userData?.profile?.cover_photo_url;
+                          const separator = url.includes("?") ? "&" : "?";
+                          return `${url}${separator}t=${Date.now()}`;
+                        })()}
+                        alt="Ảnh bìa"
+                        className="border border-gray-300 dark:!border-[#737373] w-full h-40 rounded-lg object-cover"
+                      />
+                    ) : (
+                      <div className="border border-dashed border-gray-300 dark:!border-[#737373] w-full h-40 rounded-lg flex items-center justify-center text-sm text-gray-500 dark:text-gray-400">
+                        Chưa có ảnh bìa
+                      </div>
+                    )}
                     <Button
-                      loading={uploadingAvatar}
-                      disabled={uploadingAvatar}
+                      loading={uploadingCover}
+                      disabled={uploadingCover}
                       onClick={() =>
-                        document.getElementById("avatar-upload")?.click()
+                        document.getElementById("cover-upload")?.click()
                       }
                       className="flex items-center dark:border-[#737373] absolute left-0 bottom-0 ml-2 mb-2 h-[36px] !px-3 text-[13px] font-semibold cursor-pointer"
                     >
@@ -962,56 +1009,12 @@ export default function SettingsClient({ initialUser, hasAuthError }) {
                     </Button>
                     <input
                       type="file"
-                      id="avatar-upload"
+                      id="cover-upload"
                       accept="image/*"
-                      onChange={handleAvatarUpload}
+                      onChange={handleCoverUpload}
                       style={{ display: "none" }}
                     />
                   </div>
-                </div>
-              </div>
-              {/* Cover Photo */}
-              <div className="flex-1">
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Ảnh bìa
-                </label>
-                <div className="relative w-full max-w-md">
-                  {(currentUser?.profile?.cover_photo_url ||
-                    userData?.profile?.cover_photo_url) ? (
-                    <img
-                      src={(() => {
-                        const url =
-                          currentUser?.profile?.cover_photo_url ||
-                          userData?.profile?.cover_photo_url;
-                        const separator = url.includes("?") ? "&" : "?";
-                        return `${url}${separator}t=${Date.now()}`;
-                      })()}
-                      alt="Ảnh bìa"
-                      className="border border-gray-300 dark:!border-[#737373] w-full h-40 rounded-lg object-cover"
-                    />
-                  ) : (
-                    <div className="border border-dashed border-gray-300 dark:!border-[#737373] w-full h-40 rounded-lg flex items-center justify-center text-sm text-gray-500 dark:text-gray-400">
-                      Chưa có ảnh bìa
-                    </div>
-                  )}
-                  <Button
-                    loading={uploadingCover}
-                    disabled={uploadingCover}
-                    onClick={() =>
-                      document.getElementById("cover-upload")?.click()
-                    }
-                    className="flex items-center dark:border-[#737373] absolute left-0 bottom-0 ml-2 mb-2 h-[36px] !px-3 text-[13px] font-semibold cursor-pointer"
-                  >
-                    <Edit2Icon className="w-4 h-4" />
-                    <span>Sửa</span>
-                  </Button>
-                  <input
-                    type="file"
-                    id="cover-upload"
-                    accept="image/*"
-                    onChange={handleCoverUpload}
-                    style={{ display: "none" }}
-                  />
                 </div>
               </div>
             </form>
