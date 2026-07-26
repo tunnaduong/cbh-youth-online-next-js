@@ -7,6 +7,7 @@ import {
   getConversations,
   getMessages,
   sendMessage as sendMessageApi,
+  sendMessageWithFile as sendMessageWithFileApi,
   markAsRead as markAsReadApi,
   createPrivateConversation,
 } from "@/app/Api";
@@ -361,6 +362,69 @@ const ChatProvider = ({ children }) => {
       }
     },
     [loggedIn, loadMessages]
+  );
+
+  // Send an image/file attachment message
+  const sendFileMessage = useCallback(
+    async (conversationId, file) => {
+      if (!loggedIn || !conversationId || !file) return;
+
+      const isImage = file.type?.startsWith("image/");
+      const type = isImage ? "image" : "file";
+      const tempId = `temp-${Date.now()}`;
+      const localUrl = isImage ? URL.createObjectURL(file) : null;
+
+      const optimisticMessage = {
+        id: tempId,
+        content: file.name,
+        type,
+        file_url: localUrl,
+        file_name: file.name,
+        file_size: file.size,
+        is_myself: true,
+        is_sending: true,
+        created_at: new Date().toISOString(),
+        read_at: null,
+      };
+
+      setMessages((prev) => ({
+        ...prev,
+        [conversationId]: [...(prev[conversationId] || []), optimisticMessage],
+      }));
+
+      setSending(true);
+      try {
+        const formData = new FormData();
+        formData.append("file", file);
+        formData.append("type", type);
+        formData.append("content", file.name);
+
+        const response = await sendMessageWithFileApi(conversationId, formData);
+        const messageData = response?.data || response;
+
+        setMessages((prev) => ({
+          ...prev,
+          [conversationId]: (prev[conversationId] || []).map((m) =>
+            m.id === tempId ? messageData : m
+          ),
+        }));
+
+        return messageData;
+      } catch (error) {
+        console.error("[ChatProvider] Error sending file message:", error);
+        setMessages((prev) => ({
+          ...prev,
+          [conversationId]: (prev[conversationId] || []).filter(
+            (m) => m.id !== tempId
+          ),
+        }));
+        throw error;
+      } finally {
+        if (localUrl) URL.revokeObjectURL(localUrl);
+        setSending(false);
+      }
+    },
+    [loggedIn]
   );
 
   // Mark conversation as read
@@ -959,6 +1023,7 @@ const ChatProvider = ({ children }) => {
     selectConversation,
     loadMessages,
     sendMessage,
+    sendFileMessage,
     markAsRead,
     createConversation,
     sendTyping,

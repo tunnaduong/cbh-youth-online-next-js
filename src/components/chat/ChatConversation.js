@@ -7,6 +7,14 @@ import { useChatContext } from "@/contexts/Support";
 import moment from "moment";
 import "moment/locale/vi";
 import ChatMessageInput from "./ChatMessageInput";
+import { FileText, Download } from "lucide-react";
+
+function formatFileSize(bytes) {
+  if (!bytes && bytes !== 0) return "";
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
 
 export default function ChatConversation({
   conversationId,
@@ -17,6 +25,7 @@ export default function ChatConversation({
   const {
     messages,
     sendMessage,
+    sendFileMessage,
     sending,
     selectedConversationId,
     loadMessages,
@@ -151,6 +160,32 @@ export default function ChatConversation({
     }
   };
 
+  const handleSendFile = async (file) => {
+    if (!file) return;
+
+    // If this is a preview conversation, create it first
+    if (previewParticipant && !conversationId) {
+      try {
+        const conversation = await createConversation(previewParticipant.id);
+        if (conversation?.id) {
+          await loadConversations();
+          await selectConversation(conversation.id);
+          if (onConversationCreated) {
+            onConversationCreated(conversation.id);
+          }
+          await sendFileMessage(conversation.id, file);
+        }
+      } catch (error) {
+        console.error("[ChatConversation] Error creating conversation:", error);
+      }
+      return;
+    }
+
+    if (conversationId) {
+      await sendFileMessage(conversationId, file);
+    }
+  };
+
   // Show preview state
   if (previewParticipant && !conversationId) {
     return (
@@ -164,6 +199,7 @@ export default function ChatConversation({
         </div>
         <ChatMessageInput
           onSend={handleSendMessage}
+          onSendFile={handleSendFile}
           sending={sending}
           onTyping={() => sendTyping(conversationId)}
         />
@@ -193,6 +229,7 @@ export default function ChatConversation({
         </div>
         <ChatMessageInput
           onSend={handleSendMessage}
+          onSendFile={handleSendFile}
           sending={sending}
           onTyping={() => sendTyping(conversationId)}
         />
@@ -289,15 +326,69 @@ export default function ChatConversation({
                     formatTimestamp(message.created_at)}
                 </span>
               </div>
-              <div
-                className={`rounded-lg px-3 py-2 text-sm break-words whitespace-pre-wrap break-all ${
-                  message.is_myself
-                    ? "bg-[#319527] text-white"
-                    : "bg-gray-200 dark:bg-neutral-600 dark:text-white"
-                }`}
-              >
-                {message.content}
-              </div>
+              {message.type === "image" ? (
+                <div className="relative rounded-lg overflow-hidden max-w-[240px]">
+                  <img
+                    src={
+                      message.file_url?.startsWith("http") ||
+                      message.file_url?.startsWith("blob:")
+                        ? message.file_url
+                        : `${process.env.NEXT_PUBLIC_API_URL}${message.file_url}`
+                    }
+                    alt={message.content || "image"}
+                    className="w-full h-auto max-h-[300px] object-cover"
+                  />
+                  {message.is_sending && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/30">
+                      <span className="text-xs text-white">Đang gửi...</span>
+                    </div>
+                  )}
+                </div>
+              ) : message.type === "file" ? (
+                <a
+                  href={
+                    message.file_url?.startsWith("http") ||
+                    message.file_url?.startsWith("blob:")
+                      ? message.file_url
+                      : `${process.env.NEXT_PUBLIC_API_URL}${message.file_url}`
+                  }
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={`flex items-center gap-2 rounded-lg px-3 py-2 text-sm max-w-[240px] ${
+                    message.is_myself
+                      ? "bg-[#319527] text-white"
+                      : "bg-gray-200 dark:bg-neutral-600 dark:text-white"
+                  }`}
+                >
+                  <FileText className="w-6 h-6 flex-shrink-0" />
+                  <div className="flex flex-col min-w-0">
+                    <span className="truncate font-medium">
+                      {message.content || message.file_name || "Tệp đính kèm"}
+                    </span>
+                    {message.file_size ? (
+                      <span className="text-xs opacity-80">
+                        {formatFileSize(message.file_size)}
+                      </span>
+                    ) : (
+                      !message.is_sending && (
+                        <span className="text-xs opacity-80 flex items-center gap-1">
+                          <Download className="w-3 h-3" /> Tải xuống
+                        </span>
+                      )
+                    )}
+                  </div>
+                </a>
+              ) : (
+                <div
+                  className={`rounded-lg px-3 py-2 text-sm break-words whitespace-pre-wrap break-all ${
+                    message.is_myself
+                      ? "bg-[#319527] text-white"
+                      : "bg-gray-200 dark:bg-neutral-600 dark:text-white"
+                  }`}
+                >
+                  {message.content}
+                </div>
+              )}
               {isLastOwnMessage && (
                 <span className="text-[11px] text-gray-400 dark:text-gray-500 mt-0.5">
                   {message.read_at ? "Đã xem" : "Đã gửi"}
@@ -321,6 +412,7 @@ export default function ChatConversation({
       {/* Input */}
       <ChatMessageInput
         onSend={handleSendMessage}
+        onSendFile={handleSendFile}
         sending={sending}
         onTyping={() => sendTyping(conversationId)}
       />

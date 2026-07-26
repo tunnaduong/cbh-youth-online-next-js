@@ -251,7 +251,7 @@ export default function SubforumClient({
                     Xem
                   </th>
                   <th className="sm:!p-3 pr-3 text-right text-xs font-medium uppercase tracking-wider min-w-[115px] max-w-[200px]">
-                    Bài viết cuối
+                    Hoạt động cuối
                   </th>
                 </tr>
               </thead>

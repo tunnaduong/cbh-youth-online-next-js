@@ -23,6 +23,7 @@ const ChatContext = createContext({
   selectConversation: () => {},
   loadMessages: () => {},
   sendMessage: () => {},
+  sendFileMessage: () => {},
   markAsRead: () => {},
   createConversation: () => {},
   sendTyping: () => {},
