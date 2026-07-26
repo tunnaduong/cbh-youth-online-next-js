@@ -5,7 +5,6 @@ import { Button, Popover, Dropdown } from "antd";
 import { LuType, LuArrowUp, LuChevronDown } from "react-icons/lu";
 import { RiEmojiStickerLine, RiAttachment2 } from "react-icons/ri";
 import { useAuthContext } from "@/contexts/Support";
-import data from "@emoji-mart/data";
 import Picker from "@emoji-mart/react";
 import { useTheme } from "@/contexts/themeContext";
 import MarkdownToolbar from "@/components/ui/MarkdownToolbar";
@@ -231,7 +230,7 @@ export function CommentInput({
               content={
                 <div>
                   <Picker
-                    data={data}
+                    data={async () => (await import("@emoji-mart/data")).default}
                     onEmojiSelect={(emoji) => {
                       insertEmojiAtCursor(emoji.native);
                     }}

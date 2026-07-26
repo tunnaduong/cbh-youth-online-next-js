@@ -4,7 +4,6 @@ import { useState, useRef, useEffect } from "react";
 import { Button, Popover, Input } from "antd";
 import { Send } from "lucide-react";
 import { RiEmojiStickerLine } from "react-icons/ri";
-import data from "@emoji-mart/data";
 import Picker from "@emoji-mart/react";
 import CustomInput from "@/components/ui/input";
 import { useTheme } from "@/contexts/themeContext";
@@ -156,7 +155,7 @@ export default function MessageInput({ onSend, sending, loggedIn }) {
             content={
               <div>
                 <Picker
-                  data={data}
+                  data={async () => (await import("@emoji-mart/data")).default}
                   onEmojiSelect={(emoji) => {
                     insertEmoji(emoji.native);
                     // Don't close popover when emoji is selected

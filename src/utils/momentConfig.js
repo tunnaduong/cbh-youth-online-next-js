@@ -3,7 +3,7 @@ import "moment/locale/vi";
 
 // Configure Vietnamese locale for moment.js
 export const configureVietnameseLocale = () => {
-  moment.locale("vi", {
+  moment.updateLocale("vi", {
     relativeTime: {
       future: "%s tới",
       past: "%s trước",
@@ -21,6 +21,7 @@ export const configureVietnameseLocale = () => {
       yy: "%d năm",
     },
   });
+  moment.locale("vi");
 };
 
 // Initialize the locale configuration
