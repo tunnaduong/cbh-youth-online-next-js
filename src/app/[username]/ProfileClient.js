@@ -539,23 +539,24 @@ export default function ProfileClient({ initialProfile, activeTab, username }) {
     );
   }
 
+  const coverImageUrl =
+    profile.cover_photo_url ||
+    `${process.env.NEXT_PUBLIC_API_URL}/v1.0/users/${profile.username}/avatar`;
+
   return (
     <DefaultLayout activeNav="home">
       <div>
         <div className="flex-1">
-          <div className="relative h-min lg:h-56 overflow-hidden px-2.5 py-8">
+          <div className="relative h-min lg:h-56 overflow-hidden">
             <div
-              style={{
-                backgroundImage: `url(${
-                  profile.cover_photo_url ||
-                  `${process.env.NEXT_PUBLIC_API_URL}/v1.0/users/${profile.username}/avatar`
-                })`,
-              }}
-              className={`bg-gray-300 w-full h-[450px] lg:h-56 ${
-                profile.cover_photo_url ? "cover-photo-bg" : "blur-effect"
-              }`}
+              style={{ backgroundImage: `url(${coverImageUrl})` }}
+              className="cover-photo-bg bg-gray-300 absolute inset-0"
             />
-            <div className="lg:hidden flex flex-col items-center gap-y-2 relative z-10">
+            <div
+              style={{ backgroundImage: `url(${coverImageUrl})` }}
+              className="blur-effect absolute inset-0 lg:hidden"
+            />
+            <div className="lg:hidden flex flex-col items-center gap-y-2 relative z-10 px-2.5 py-8">
               <a
                 href={`${process.env.NEXT_PUBLIC_API_URL}/v1.0/users/${profile.username}/avatar`}
               >
