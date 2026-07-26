@@ -34,6 +34,8 @@ const getNotificationMessage = (notification) => {
       return `${actorName} đã bình luận bài viết của bạn`;
     case "mentioned":
       return `${actorName} đã nhắc đến bạn`;
+    case "message_reacted":
+      return `${actorName} đã bày tỏ cảm xúc ${data?.reaction_emoji || "👍"} với tin nhắn của bạn`;
     case "story_reacted":
       return `${actorName} đã bày tỏ cảm xúc về tin của bạn`;
     case "story_replied":
@@ -265,6 +267,11 @@ export default function NotificationItem({ notification }) {
         {notification.data?.comment_excerpt && (
           <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 line-clamp-2">
             {notification.data.comment_excerpt}
+          </p>
+        )}
+        {notification.type === "message_reacted" && notification.data?.message_content && (
+          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 line-clamp-2">
+            {notification.data.message_content}
           </p>
         )}
         <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
