@@ -17,6 +17,10 @@ export const getFeedPosts = (page = 1) => {
   return Api.getRequest("/v1.0/topics?page=" + page);
 };
 
+export const getPersonalizedFeedPosts = (page = 1) => {
+  return Api.getRequest("/v1.0/topics/feed?page=" + page);
+};
+
 export const incrementPostView = (id) => {
   return Api.postRequest("/v1.0/topics/" + id + "/views");
 };
@@ -327,6 +331,14 @@ export const getAvatar = (username) => {
 
 export const updateAvatar = (username, params) => {
   return Api.postFormDataRequest(`/v1.0/users/${username}/avatar`, params);
+};
+
+export const getCover = (username) => {
+  return Api.getRequest(`/v1.0/users/${username}/cover`);
+};
+
+export const updateCover = (username, params) => {
+  return Api.postFormDataRequest(`/v1.0/users/${username}/cover`, params);
 };
 
 export const followUser = (username) => {

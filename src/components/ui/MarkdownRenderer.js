@@ -41,16 +41,55 @@ const MarkdownRenderer = ({ content, className = "" }) => {
     return { processedContent, iframes };
   };
 
-  const { processedContent, iframes } = processContent(content);
+  // Best-effort hashtag highlighting for the composer preview. The real
+  // clickable linking happens server-side (in content_html); this just
+  // gives visual feedback while writing. Skips fenced/inline code so
+  // "#123" inside a code sample isn't touched.
+  const linkifyHashtagsInMarkdown = (markdown) => {
+    const codeSplitRegex = /(```[\s\S]*?```|`[^`\n]*`)/g;
+    const hashtagRegex = /(?<![\w&])#([\p{L}\p{N}_]+)/gu;
+
+    return markdown
+      .split(codeSplitRegex)
+      .map((segment, index) => {
+        // Odd indices are the captured code segments — leave them untouched.
+        if (index % 2 === 1) return segment;
+        return segment.replace(
+          hashtagRegex,
+          (_match, tag) => `[#${tag}](##hashtag:${tag})`
+        );
+      })
+      .join("");
+  };
+
+  const { processedContent: iframeStrippedContent, iframes } =
+    processContent(content);
+  const processedContent = linkifyHashtagsInMarkdown(iframeStrippedContent);
 
   return (
     <div className={`markdown-preview prose dark:prose-invert ${className}`}>
       <ReactMarkdown
         remarkPlugins={[remarkGfm, remarkBreaks]}
         components={{
-          a: ({ node, ...props }) => (
-            <a {...props} target="_blank" rel="noopener noreferrer" />
-          ),
+          a: ({ node, href, children, ...props }) => {
+            if (typeof href === "string" && href.startsWith("##hashtag:")) {
+              return (
+                <span className="text-blue-600 dark:text-blue-400 font-medium">
+                  {children}
+                </span>
+              );
+            }
+            return (
+              <a
+                {...props}
+                href={href}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                {children}
+              </a>
+            );
+          },
           code: ({
             node,
             inline,

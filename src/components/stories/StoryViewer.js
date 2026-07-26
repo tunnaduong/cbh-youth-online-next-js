@@ -7,7 +7,8 @@ import { Swiper, SwiperSlide } from "swiper/react";
 import { EffectCube } from "swiper/modules";
 import { useRouter } from "@bprogress/next/app";
 import { X, ChevronLeft, ChevronRight, VolumeX, Volume2, Link2, Smartphone, Trash2, Send } from "lucide-react";
-import { markStoryAsViewed, deleteStory, reactToStory, removeStoryReaction, replyToStory } from "@/app/Api";
+import { markStoryAsViewed, deleteStory, reactToStory, removeStoryReaction } from "@/app/Api";
+import { postRequest } from "@/services/api/ApiByAxios";
 import { Modal } from "antd";
 import Link from "next/link";
 import { openDeepLink } from "@/lib/deepLink";
@@ -203,27 +204,27 @@ const UserHeader = ({
   );
 };
 
-const StoryContent = ({ story, isActive, onNext, isMuted }) => {
+const StoryContent = ({ story, isActive, isPaused, onNext, isMuted }) => {
   const videoRef = useRef(null);
   const audioRef = useRef(null);
 
   useEffect(() => {
     if (!story) return;
     if (story.type === "video" && videoRef.current) {
-      if (isActive) {
+      if (isActive && !isPaused) {
         videoRef.current.play().catch((err) => console.log("Play video failed:", err));
       } else {
         videoRef.current.pause();
       }
     }
     if (story.type === "audio" && audioRef.current) {
-      if (isActive) {
+      if (isActive && !isPaused) {
         audioRef.current.play().catch((err) => console.log("Play audio failed:", err));
       } else {
         audioRef.current.pause();
       }
     }
-  }, [isActive, story?.type]);
+  }, [isActive, isPaused, story?.type]);
 
   // Cleanup effect to stop all media when component unmounts
   useEffect(() => {
@@ -551,7 +552,7 @@ const StorySlide = ({
     const text = replyText;
     setReplyText("");
     try {
-      await replyToStory(storyId, { content: text });
+      await postRequest(`/v1.0/stories/${storyId}/reply`, { content: text });
       message.success("Đã gửi tin nhắn!");
     } catch (err) {
       const status = err?.response?.status;
@@ -713,6 +714,7 @@ const StorySlide = ({
       <StoryContent
         story={currentStory}
         isActive={isActive && isViewerOpen}
+        isPaused={isPaused}
         onNext={handleNextStory}
         isMuted={isMuted}
       />
