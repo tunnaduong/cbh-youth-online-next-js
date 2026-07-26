@@ -58,7 +58,16 @@ export default function ChatThreadsList({ onSelectConversation }) {
   const getLatestMessagePreview = (conversation) => {
     if (!conversation.latest_message) return "Không có tin nhắn";
 
-    const prefix = conversation.latest_message.is_myself ? "Bạn: " : "";
+    const { is_myself, type } = conversation.latest_message;
+
+    if (type === "story_reply") {
+      const partnerName = getThreadDisplayName(conversation);
+      return is_myself
+        ? `Bạn đã bình luận về tin của ${partnerName}`
+        : `${partnerName} đã bình luận về tin của bạn`;
+    }
+
+    const prefix = is_myself ? "Bạn: " : "";
     const content = conversation.latest_message.content || "";
 
     if (content.length > 50) {
