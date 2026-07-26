@@ -1,14 +1,17 @@
+import { forwardRef } from "react";
 import { Input as AntdInput } from "antd";
 
-const Input = ({ className = "", ...props }) => {
+const Input = forwardRef(({ className = "", ...props }, ref) => {
   return (
     <AntdInput
+      ref={ref}
       {...props}
       prefix={<></>}
       className={`!pl-2 shadow-sm focus:shadow-md-ring ${className}`}
     />
   );
-};
+});
+Input.displayName = "Input";
 
 const InputTextArea = ({ className = "", shadow = true, ...props }) => {
   return (
