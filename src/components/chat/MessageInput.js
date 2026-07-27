@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { Button, Popover, Input } from "antd";
-import { Send } from "lucide-react";
+import { Send, Paperclip } from "lucide-react";
 import { RiEmojiStickerLine } from "react-icons/ri";
 import Picker from "@emoji-mart/react";
 import CustomInput from "@/components/ui/input";
@@ -10,12 +10,13 @@ import { useTheme } from "@/contexts/themeContext";
 
 const { TextArea } = Input;
 
-export default function MessageInput({ onSend, sending, loggedIn }) {
+export default function MessageInput({ onSend, onSendFile, sending, loggedIn }) {
   const [message, setMessage] = useState("");
   const [guestName, setGuestName] = useState("");
   const [showGuestNameInput, setShowGuestNameInput] = useState(false);
   const [showEmoji, setShowEmoji] = useState(false);
   const textareaRef = useRef(null);
+  const fileInputRef = useRef(null);
   const { theme } = useTheme();
 
   // Load guest name from localStorage and update showGuestNameInput based on loggedIn
@@ -85,6 +86,18 @@ export default function MessageInput({ onSend, sending, loggedIn }) {
     }
   };
 
+  const handleFileChange = async (e) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file || !onSendFile || !loggedIn) return;
+
+    try {
+      await onSendFile(file);
+    } catch (error) {
+      console.error("[MessageInput] Error sending file:", error);
+    }
+  };
+
   const insertEmoji = (emoji) => {
     const textarea = textareaRef.current?.resizableTextArea?.textArea;
     if (!textarea) {
@@ -146,6 +159,25 @@ export default function MessageInput({ onSend, sending, loggedIn }) {
           }}
         />
         <div className="flex flex-col gap-2">
+          {/* Attach file (registered users only) */}
+          {loggedIn && (
+            <>
+              <input
+                ref={fileInputRef}
+                type="file"
+                onChange={handleFileChange}
+                style={{ display: "none" }}
+              />
+              <button
+                className="p-2 hover:bg-gray-200 dark:hover:bg-neutral-700 rounded transition flex items-center justify-center"
+                title="Đính kèm ảnh, video hoặc tệp"
+                disabled={sending}
+                onClick={() => fileInputRef.current?.click()}
+              >
+                <Paperclip className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+              </button>
+            </>
+          )}
           {/* Emoji button above send button */}
           <Popover
             trigger="click"

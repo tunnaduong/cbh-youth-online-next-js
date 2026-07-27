@@ -220,6 +220,10 @@ export const sendPublicMessage = (params) => {
   return Api.postRequest("/v1.0/chat/public/messages", params);
 };
 
+export const sendPublicMessageWithFile = (formData) => {
+  return Api.postFormDataRequest("/v1.0/chat/public/messages", formData);
+};
+
 export const getPublicChatParticipants = () => {
   return Api.getRequest("/v1.0/chat/public/participants");
 };

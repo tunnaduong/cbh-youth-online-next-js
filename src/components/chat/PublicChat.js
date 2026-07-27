@@ -5,13 +5,39 @@ import { useAuthContext } from "@/contexts/Support";
 import {
   getPublicChatMessages,
   sendPublicMessage,
+  sendPublicMessageWithFile,
   getPublicChatParticipants,
 } from "@/app/Api";
 import MessageInput from "./MessageInput";
 import ParticipantsList from "./ParticipantsList";
-import { Menu } from "lucide-react";
+import ChatMediaLightbox from "./ChatMediaLightbox";
+import { Menu, FileText, Download, PlayCircle } from "lucide-react";
 
 const URL_RE = /(https?:\/\/[^\s]+)/g;
+
+const IMAGE_EXTENSION_RE = /\.(png|jpe?g|gif|webp|bmp|svg|heic|heif)$/i;
+const VIDEO_EXTENSION_RE = /\.(mp4|mov|avi|webm|mkv)$/i;
+
+function resolveFileUrl(url) {
+  if (!url) return url;
+  return url.startsWith("http") || url.startsWith("blob:")
+    ? url
+    : `${process.env.NEXT_PUBLIC_API_URL}${url}`;
+}
+
+function looksLikeImage(message) {
+  return (
+    IMAGE_EXTENSION_RE.test(message.file_name || message.content || "") ||
+    IMAGE_EXTENSION_RE.test(message.file_url || "")
+  );
+}
+
+function formatFileSize(bytes) {
+  if (!bytes && bytes !== 0) return "";
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
 
 // Plain text wraps at word boundaries (break-words) so Vietnamese diacritics
 // never get split mid-character. URLs have no word boundaries to wrap at, so
@@ -50,6 +76,7 @@ export default function PublicChat() {
   const [hasMorePages, setHasMorePages] = useState(false);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
   const [showParticipants, setShowParticipants] = useState(false); // Default: hide on mobile, can toggle on desktop
+  const [lightboxMedia, setLightboxMedia] = useState(null);
   const messagesContainerRef = useRef(null);
 
   // Initialize showParticipants based on screen size (desktop: true, mobile: false)
@@ -345,6 +372,64 @@ export default function PublicChat() {
     }
   };
 
+  const handleSendFile = async (file) => {
+    // Only registered users may send attachments; guests are text-only.
+    if (!loggedIn || !file) return;
+
+    const isImage =
+      file.type?.startsWith("image/") ||
+      (!file.type && IMAGE_EXTENSION_RE.test(file.name || ""));
+    const isVideo =
+      !isImage &&
+      (file.type?.startsWith("video/") ||
+        (!file.type && VIDEO_EXTENSION_RE.test(file.name || "")));
+    const type = isImage ? "image" : isVideo ? "video" : "file";
+
+    setSending(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("type", type);
+      formData.append("content", file.name);
+
+      const response = await sendPublicMessageWithFile(formData);
+
+      let newMessage = null;
+      if (response.data) {
+        if (response.data.id && response.data.content !== undefined) {
+          newMessage = response.data;
+        } else if (response.data.data && response.data.data.id) {
+          newMessage = response.data.data;
+        }
+      }
+
+      if (newMessage && newMessage.sender && newMessage.sender.username) {
+        setMessages((prev) => {
+          const prevArray = Array.isArray(prev) ? prev : [];
+          const exists = prevArray.some((m) => m.id === newMessage.id);
+          if (exists) return prevArray;
+          return [...prevArray, newMessage];
+        });
+      }
+
+      loadParticipants();
+
+      setTimeout(() => {
+        scrollToBottom();
+      }, 100);
+    } catch (error) {
+      console.error("Error sending file message:", error);
+      const errorMessage =
+        error?.response?.data?.message ||
+        error?.message ||
+        "Không thể gửi tệp đính kèm";
+      alert(errorMessage);
+      throw error;
+    } finally {
+      setSending(false);
+    }
+  };
+
   const getAvatarInitial = (name) => {
     if (!name) return "?";
     return name.charAt(0).toUpperCase();
@@ -509,9 +594,80 @@ export default function PublicChat() {
                           {formatTime(message.created_at)}
                         </span>
                       </div>
-                      <div className="text-gray-700 dark:text-gray-300 text-sm whitespace-pre-wrap">
-                        {linkifyText(message.content)}
-                      </div>
+                      {message.type === "image" ||
+                      (message.type === "file" && looksLikeImage(message)) ? (
+                        <div
+                          className="relative rounded-lg overflow-hidden max-w-[240px] cursor-pointer"
+                          onClick={() =>
+                            setLightboxMedia({
+                              type: "image",
+                              url: resolveFileUrl(message.file_url),
+                            })
+                          }
+                        >
+                          <img
+                            src={resolveFileUrl(message.file_url)}
+                            alt={message.content || "image"}
+                            className="w-full h-auto max-h-[300px] object-cover"
+                          />
+                        </div>
+                      ) : message.type === "video" ? (
+                        <div
+                          className="relative rounded-lg overflow-hidden max-w-[240px] cursor-pointer"
+                          onClick={() =>
+                            setLightboxMedia({
+                              type: "video",
+                              url: resolveFileUrl(message.file_url),
+                              poster: resolveFileUrl(
+                                message.metadata?.thumbnail_url
+                              ),
+                            })
+                          }
+                        >
+                          <video
+                            src={resolveFileUrl(message.file_url)}
+                            poster={resolveFileUrl(
+                              message.metadata?.thumbnail_url
+                            )}
+                            preload="metadata"
+                            muted
+                            playsInline
+                            className="w-full h-auto max-h-[300px] object-cover"
+                          />
+                          <div className="absolute inset-0 flex items-center justify-center bg-black/20 pointer-events-none">
+                            <PlayCircle className="w-10 h-10 text-white drop-shadow" />
+                          </div>
+                        </div>
+                      ) : message.type === "file" ? (
+                        <a
+                          href={resolveFileUrl(message.file_url)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm max-w-[240px] bg-gray-200 dark:bg-neutral-600 dark:text-white"
+                        >
+                          <FileText className="w-6 h-6 flex-shrink-0" />
+                          <div className="flex flex-col min-w-0">
+                            <span className="truncate font-medium">
+                              {message.content ||
+                                message.file_name ||
+                                "Tệp đính kèm"}
+                            </span>
+                            {message.file_size ? (
+                              <span className="text-xs opacity-80">
+                                {formatFileSize(message.file_size)}
+                              </span>
+                            ) : (
+                              <span className="text-xs opacity-80 flex items-center gap-1">
+                                <Download className="w-3 h-3" /> Tải xuống
+                              </span>
+                            )}
+                          </div>
+                        </a>
+                      ) : (
+                        <div className="text-gray-700 dark:text-gray-300 text-sm whitespace-pre-wrap">
+                          {linkifyText(message.content)}
+                        </div>
+                      )}
                     </div>
                   </div>
                 );
@@ -551,10 +707,16 @@ export default function PublicChat() {
       <div className="border-t dark:!border-[#585857] p-4 bg-gray-50 dark:!bg-[var(--main-white)]">
         <MessageInput
           onSend={handleSendMessage}
+          onSendFile={handleSendFile}
           sending={sending}
           loggedIn={loggedIn}
         />
       </div>
+
+      <ChatMediaLightbox
+        media={lightboxMedia}
+        onClose={() => setLightboxMedia(null)}
+      />
     </div>
   );
 }
