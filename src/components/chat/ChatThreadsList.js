@@ -5,6 +5,7 @@ import { useChatContext } from "@/contexts/Support";
 import Image from "next/image";
 import moment from "moment";
 import "moment/locale/vi";
+import { Image as ImageIcon, Video as VideoIcon, FileText } from "lucide-react";
 
 export default function ChatThreadsList({ onSelectConversation }) {
   const { conversations } = useChatContext();
@@ -68,6 +69,41 @@ export default function ChatThreadsList({ onSelectConversation }) {
     }
 
     const prefix = is_myself ? "Bạn: " : "";
+
+    if (type === "image") {
+      return (
+        <span className="inline-flex items-center gap-1">
+          {prefix}
+          <ImageIcon className="w-3.5 h-3.5 flex-shrink-0" />
+          Hình ảnh
+        </span>
+      );
+    }
+
+    if (type === "video") {
+      return (
+        <span className="inline-flex items-center gap-1">
+          {prefix}
+          <VideoIcon className="w-3.5 h-3.5 flex-shrink-0" />
+          Video
+        </span>
+      );
+    }
+
+    if (type === "file") {
+      const fileName =
+        conversation.latest_message.file_name ||
+        conversation.latest_message.content ||
+        "Tệp đính kèm";
+      return (
+        <span className="inline-flex items-center gap-1 min-w-0">
+          {prefix}
+          <FileText className="w-3.5 h-3.5 flex-shrink-0" />
+          <span className="truncate">{fileName}</span>
+        </span>
+      );
+    }
+
     const content = conversation.latest_message.content || "";
 
     if (content.length > 50) {
@@ -143,7 +179,7 @@ export default function ChatThreadsList({ onSelectConversation }) {
                 </span>
               )}
             </div>
-            <p className="text-xs text-gray-600 dark:text-gray-400 truncate">
+            <p className="text-xs text-gray-600 dark:text-gray-400 truncate flex items-center min-w-0">
               {getLatestMessagePreview(conversation)}
             </p>
           </div>
