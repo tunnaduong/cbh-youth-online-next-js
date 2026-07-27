@@ -160,25 +160,23 @@ export default function MessageInput({ onSend, onSendFile, sending, loggedIn }) 
         </div>
       )}
 
-      {/* Text Input Area */}
-      <TextArea
-        ref={textareaRef}
-        value={message}
-        onChange={(e) => setMessage(e.target.value)}
-        onKeyDown={handleKeyDown}
-        onPaste={handlePaste}
-        placeholder="Viết một tin nhắn..."
-        rows={3}
-        autoSize={{ minRows: 3, maxRows: 6 }}
-        className="w-full"
-        classNames={{
-          textarea:
-            "dark:!bg-neutral-600 bg-white dark:!text-gray-100 dark:!placeholder-gray-400 dark:!border-[#585857]",
-        }}
-      />
+      {/* Input row: textarea + attach + emoji + send all inline */}
+      <div className="flex items-end gap-2">
+        <TextArea
+          ref={textareaRef}
+          value={message}
+          onChange={(e) => setMessage(e.target.value)}
+          onKeyDown={handleKeyDown}
+          onPaste={handlePaste}
+          placeholder="Viết một tin nhắn..."
+          autoSize={{ minRows: 3, maxRows: 6 }}
+          className="flex-1"
+          classNames={{
+            textarea:
+              "dark:!bg-neutral-600 bg-white dark:!text-gray-100 dark:!placeholder-gray-400 dark:!border-[#585857]",
+          }}
+        />
 
-      {/* Action Row: attach, emoji on left — send on right */}
-      <div className="flex items-center gap-1 mt-2">
         {/* Attach file (registered users only) */}
         {loggedIn && (
           <>
@@ -189,7 +187,7 @@ export default function MessageInput({ onSend, onSendFile, sending, loggedIn }) 
               style={{ display: "none" }}
             />
             <button
-              className="p-2 hover:bg-gray-200 dark:hover:bg-neutral-700 rounded transition flex items-center justify-center"
+              className="p-2 hover:bg-gray-200 dark:hover:bg-neutral-700 rounded transition flex items-center justify-center flex-shrink-0"
               title="Đính kèm ảnh, video hoặc tệp"
               disabled={sending}
               onClick={() => fileInputRef.current?.click()}
@@ -224,21 +222,19 @@ export default function MessageInput({ onSend, onSendFile, sending, loggedIn }) 
           styles={{ body: { padding: 0 } }}
         >
           <button
-            className="p-2 hover:bg-gray-200 dark:hover:bg-neutral-700 rounded transition flex items-center justify-center"
+            className="p-2 hover:bg-gray-200 dark:hover:bg-neutral-700 rounded transition flex items-center justify-center flex-shrink-0"
             title="Emoji"
           >
             <RiEmojiStickerLine className="w-4 h-4 text-gray-600 dark:text-gray-400" />
           </button>
         </Popover>
 
-        <div className="flex-1" />
-
         <Button
           onClick={handleSubmit}
           disabled={!message.trim() || sending}
           loading={sending}
           type="primary"
-          className="h-9 px-4"
+          className="h-9 px-4 flex-shrink-0"
         >
           <Send className="w-4 h-4" />
         </Button>
