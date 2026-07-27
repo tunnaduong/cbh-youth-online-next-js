@@ -547,7 +547,7 @@ export default function ProfileClient({ initialProfile, activeTab, username }) {
     <DefaultLayout activeNav="home">
       <div>
         <div className="flex-1">
-          <div className="relative h-min lg:h-72 overflow-hidden">
+          <div className="relative h-min lg:h-96 overflow-hidden">
             <div
               style={{ backgroundImage: `url(${coverImageUrl})` }}
               className="cover-photo-bg bg-gray-300 absolute inset-0"
