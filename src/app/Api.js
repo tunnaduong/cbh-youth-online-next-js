@@ -41,16 +41,16 @@ export const unsavePost = (id) => {
   return Api.deleteRequest("/v1.0/user/saved-topics/" + id);
 };
 
-export const createPost = (params) => {
-  return Api.postRequest("/v1.0/topics", params);
+export const createPost = (params, config = {}) => {
+  return Api.postRequest("/v1.0/topics", params, config);
 };
 
 export const deletePost = (id) => {
   return Api.deleteRequest("/v1.0/topics/" + id);
 };
 
-export const updatePost = (id, params) => {
-  return Api.postFormDataRequest("/v1.0/topics/" + id, params);
+export const updatePost = (id, params, config = {}) => {
+  return Api.postFormDataRequest("/v1.0/topics/" + id, params, config);
 };
 
 export const verifyEmail = (token) => {

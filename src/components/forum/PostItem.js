@@ -615,6 +615,19 @@ export default function PostItem({ post, single = false, onVote, onRefresh = nul
               <ReactPhotoCollage {...setting} />
             </div>
           )}
+          {post.video_urls?.length != 0 && (
+            <div className="mt-3 flex flex-col gap-2">
+              {post.video_urls?.map((url, index) => (
+                <video
+                  key={`video-${post.id}-${index}`}
+                  src={url}
+                  controls
+                  preload="metadata"
+                  className="w-full rounded-lg border dark:!border-neutral-500 bg-black max-h-[480px]"
+                />
+              ))}
+            </div>
+          )}
           <hr className="!my-5 border-t-2" />
           <div className="flex-row flex text-[13px] items-center">
             {post.anonymous ? (
