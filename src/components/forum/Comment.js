@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useAuthContext, useTopUsersContext } from "@/contexts/Support";
 // // import { usePage, router } from "@inertiajs/react"; // TODO: Replace with Next.js equivalent // TODO: Replace with Next.js equivalent
@@ -198,8 +198,22 @@ export default function Comment({
 
   const commentDomId = comment?.id ? `comment-${comment.id}` : undefined;
 
+  const [isHighlighted, setIsHighlighted] = useState(false);
+
+  useEffect(() => {
+    if (typeof window === "undefined" || !commentDomId) return;
+    if (window.location.hash === `#${commentDomId}`) {
+      setIsHighlighted(true);
+      const timer = setTimeout(() => setIsHighlighted(false), 2500);
+      return () => clearTimeout(timer);
+    }
+  }, [commentDomId]);
+
   return (
-    <div className="relative" id={commentDomId}>
+    <div
+      className={`relative transition-colors duration-700 rounded ${isHighlighted ? "bg-yellow-100 dark:bg-yellow-900/30" : ""}`}
+      id={commentDomId}
+    >
       {/* Reddit-style curved connector lines for nested comments */}
       {comment.replies?.length > 0 && !isCollapsed && (
         <div
