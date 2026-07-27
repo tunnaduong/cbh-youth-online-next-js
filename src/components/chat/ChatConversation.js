@@ -412,6 +412,19 @@ export default function ChatConversation({
                 } đã bình luận về tin của bạn`
             : null;
 
+          const replyBtn = !message.is_sending && (
+            <div className={`flex-shrink-0 transition-opacity ${hoveredMessageId === message.id ? "opacity-100" : "opacity-0 pointer-events-none"}`}>
+              <button
+                type="button"
+                title="Trả lời"
+                onClick={() => handleStartReply(message)}
+                className="p-1.5 rounded-full hover:bg-gray-200 dark:hover:bg-neutral-600 text-gray-500 dark:text-gray-400"
+              >
+                <CornerUpLeft className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          );
+
           return (
           <div
             key={message.id}
@@ -421,53 +434,25 @@ export default function ChatConversation({
             onMouseLeave={() => setHoveredMessageId(null)}
           >
             {storyReplyCaption && (
-              <div
-                className={`text-[11px] text-gray-400 dark:text-gray-500 mb-1 px-1 ${
-                  message.is_myself ? "text-right" : "text-left"
-                }`}
-              >
+              <div className={`text-[11px] text-gray-400 dark:text-gray-500 mb-1 px-1 ${message.is_myself ? "text-right" : "text-left"}`}>
                 {storyReplyCaption}
               </div>
             )}
-            <div
-              className={`flex items-center gap-1 ${
-                message.is_myself ? "flex-row-reverse" : "flex-row"
-              }`}
-            >
-            {/* Hover action bar */}
-            {!message.is_sending && (
-              <div
-                className={`flex items-center gap-0.5 transition-opacity ${
-                  hoveredMessageId === message.id ? "opacity-100" : "opacity-0 pointer-events-none"
-                }`}
-              >
-                <button
-                  type="button"
-                  title="Trả lời"
-                  onClick={() => handleStartReply(message)}
-                  className="p-1.5 rounded-full hover:bg-gray-200 dark:hover:bg-neutral-600 text-gray-500 dark:text-gray-400"
-                >
-                  <CornerUpLeft className="w-3.5 h-3.5" />
-                </button>
-              </div>
-            )}
-            <div className={`flex gap-2 ${message.is_myself ? "flex-row-reverse" : "flex-row"}`}>
-            {!message.is_myself && (
-              <Avatar className="w-8 h-8 flex-shrink-0">
-                <AvatarImage
-                  src={message.sender?.avatar_url}
-                  alt={message.sender?.profile_name || message.sender?.username}
-                />
-                <AvatarFallback>
-                  {message.sender?.username?.[0]?.toUpperCase() || "?"}
-                </AvatarFallback>
-              </Avatar>
-            )}
-            <div
-              className={`flex flex-col max-w-[70%] min-w-0 ${
-                message.is_myself ? "items-end" : "items-start"
-              }`}
-            >
+            {/* Row: reply-btn (left) + avatar + bubble + reply-btn (right) */}
+            <div className={`flex items-center gap-1 ${message.is_myself ? "justify-end" : "justify-start"}`}>
+              {/* Own message: reply btn on LEFT of bubble */}
+              {message.is_myself && replyBtn}
+
+              {/* Avatar (others only) */}
+              {!message.is_myself && (
+                <Avatar className="w-8 h-8 flex-shrink-0 self-end mb-2">
+                  <AvatarImage src={message.sender?.avatar_url} alt={message.sender?.profile_name || message.sender?.username} />
+                  <AvatarFallback>{message.sender?.username?.[0]?.toUpperCase() || "?"}</AvatarFallback>
+                </Avatar>
+              )}
+
+              {/* Bubble column */}
+              <div className={`flex flex-col min-w-0 max-w-[65%] ${message.is_myself ? "items-end" : "items-start"}`}>
               <div className="flex items-center gap-2 mb-1 min-w-0">
                 {!message.is_myself &&
                   (message.sender?.username ? (
@@ -634,9 +619,9 @@ export default function ChatConversation({
                   {message.read_at ? "Đã xem" : "Đã gửi"}
                 </span>
               )}
+              </div>
+              {!message.is_myself && replyBtn}
             </div>
-            </div>
-          </div>
           </div>
           );
         })}

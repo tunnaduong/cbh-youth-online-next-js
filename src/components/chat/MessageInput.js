@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { Button, Popover, Input } from "antd";
-import { Send, Paperclip } from "lucide-react";
+import { Send, Paperclip, X, FileText, Video } from "lucide-react";
 import { RiEmojiStickerLine } from "react-icons/ri";
 import Picker from "@emoji-mart/react";
 import CustomInput from "@/components/ui/input";
@@ -10,7 +10,42 @@ import { useTheme } from "@/contexts/themeContext";
 
 const { TextArea } = Input;
 
-export default function MessageInput({ onSend, onSendFile, sending, loggedIn }) {
+function ReplyComposerBar({ replyingTo, onCancel }) {
+  if (!replyingTo) return null;
+  const name = replyingTo.sender?.profile_name || replyingTo.sender?.username || "Ai đó";
+  const resolveUrl = (url) =>
+    !url ? url : url.startsWith("http") || url.startsWith("blob:") ? url : `${process.env.NEXT_PUBLIC_API_URL}${url}`;
+
+  const preview =
+    replyingTo.type === "image" ? (
+      <span className="flex items-center gap-1.5">
+        {replyingTo.file_url && <img src={resolveUrl(replyingTo.file_url)} alt="" className="w-6 h-6 rounded object-cover flex-shrink-0" />}
+        <span className="truncate opacity-70">Hình ảnh</span>
+      </span>
+    ) : replyingTo.type === "video" ? (
+      <span className="flex items-center gap-1 opacity-70"><Video className="w-3.5 h-3.5" /> Video</span>
+    ) : replyingTo.type === "file" ? (
+      <span className="flex items-center gap-1 opacity-70"><FileText className="w-3.5 h-3.5" /> Tệp đính kèm</span>
+    ) : (
+      <span className="truncate opacity-70">{replyingTo.content}</span>
+    );
+
+  return (
+    <div className="flex items-center gap-2 px-1 py-1.5 mb-1 rounded border-l-[3px] border-[#319527] bg-gray-100 dark:bg-neutral-700">
+      <div className="flex-1 min-w-0">
+        <p className="text-[11px] font-semibold text-[#319527] truncate">
+          Đang trả lời {replyingTo.isSelf ? "chính bạn" : name}
+        </p>
+        <div className="text-[12px] whitespace-nowrap overflow-hidden">{preview}</div>
+      </div>
+      <button type="button" onClick={onCancel} className="p-1 rounded-full hover:bg-gray-200 dark:hover:bg-neutral-600 text-gray-500 flex-shrink-0">
+        <X className="w-3.5 h-3.5" />
+      </button>
+    </div>
+  );
+}
+
+export default function MessageInput({ onSend, onSendFile, sending, loggedIn, replyingTo, onCancelReply }) {
   const [message, setMessage] = useState("");
   const [guestName, setGuestName] = useState("");
   const [showGuestNameInput, setShowGuestNameInput] = useState(false);
@@ -51,7 +86,8 @@ export default function MessageInput({ onSend, onSendFile, sending, loggedIn }) 
     try {
       // If logged in, send message without guest name
       if (loggedIn) {
-        await onSend(message, null);
+        await onSend(message, null, replyingTo?.id || null);
+        onCancelReply?.();
       } else {
         // If not logged in, must have guest name
         if (!guestName || !guestName.trim()) {
@@ -137,6 +173,7 @@ export default function MessageInput({ onSend, onSendFile, sending, loggedIn }) 
 
   return (
     <div className="space-y-2">
+      <ReplyComposerBar replyingTo={replyingTo} onCancel={onCancelReply} />
       {/* Guest Name Input (shown if not logged in and no saved name) */}
       {!loggedIn && showGuestNameInput && (
         <div className="mb-2">

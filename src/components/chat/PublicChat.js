@@ -11,8 +11,9 @@ import {
 import MessageInput from "./MessageInput";
 import ParticipantsList from "./ParticipantsList";
 import ChatMediaLightbox from "./ChatMediaLightbox";
-import { Menu, FileText, Download, PlayCircle } from "lucide-react";
+import { Menu, FileText, Download, PlayCircle, CornerUpLeft } from "lucide-react";
 import { REACTION_TYPES } from "./MessageReactions";
+import ReplyPreviewBubble from "./ReplyPreviewBubble";
 import { reactToMessage, removeMessageReaction } from "@/app/Api";
 import { Popover } from "antd";
 import { BsEmojiSmile } from "react-icons/bs";
@@ -84,6 +85,8 @@ export default function PublicChat() {
   const [lightboxMedia, setLightboxMedia] = useState(null);
   const [openReactionMessageId, setOpenReactionMessageId] = useState(null);
   const [localReactions, setLocalReactions] = useState({});
+  const [replyingTo, setReplyingTo] = useState(null);
+  const [hoveredMessageId, setHoveredMessageId] = useState(null);
   const messagesContainerRef = useRef(null);
 
   // Initialize showParticipants based on screen size (desktop: true, mobile: false)
@@ -279,7 +282,15 @@ export default function PublicChat() {
     }
   };
 
-  const handleSendMessage = async (content, guestName = null) => {
+  const handleScrollToMessage = (messageId) => {
+    const el = document.getElementById(`public-msg-${messageId}`);
+    if (!el) return;
+    el.scrollIntoView({ behavior: "smooth", block: "center" });
+    el.classList.add("chat-message-highlight");
+    setTimeout(() => el.classList.remove("chat-message-highlight"), 2000);
+  };
+
+  const handleSendMessage = async (content, guestName = null, replyToId = null) => {
     if (!content.trim()) return;
 
     console.log(
@@ -311,6 +322,11 @@ export default function PublicChat() {
       if (!loggedIn && guestName) {
         params.guest_name = guestName.trim();
       }
+
+      if (replyToId) {
+        params.reply_to_message_id = replyToId;
+      }
+      setReplyingTo(null);
 
       console.log("[PublicChat] Sending message with params:", params);
       const response = await sendPublicMessage(params);
@@ -613,7 +629,10 @@ export default function PublicChat() {
                 return (
                   <div
                     key={message.id}
+                    id={`public-msg-${message.id}`}
                     className="group relative flex items-start gap-3 hover:bg-gray-50 dark:hover:bg-neutral-800 px-2 py-1 -mx-2 rounded transition"
+                    onMouseEnter={() => setHoveredMessageId(message.id)}
+                    onMouseLeave={() => setHoveredMessageId(null)}
                   >
                     {/* Avatar */}
                     <div
@@ -640,7 +659,32 @@ export default function PublicChat() {
                         <span className="text-xs text-gray-500 dark:text-gray-400">
                           {formatTime(message.created_at)}
                         </span>
+                        {/* Reply button — visible on hover */}
+                        {loggedIn && (
+                          <button
+                            type="button"
+                            title="Trả lời"
+                            onClick={() => setReplyingTo({
+                              id: message.id,
+                              content: message.content,
+                              type: message.type,
+                              file_url: message.file_url || null,
+                              sender: message.sender,
+                              isSelf: false,
+                            })}
+                            className={`p-1 rounded-full hover:bg-gray-200 dark:hover:bg-neutral-600 text-gray-400 transition-opacity ${hoveredMessageId === message.id ? "opacity-100" : "opacity-0 pointer-events-none"}`}
+                          >
+                            <CornerUpLeft className="w-3 h-3" />
+                          </button>
+                        )}
                       </div>
+                      {message.reply_to && (
+                        <ReplyPreviewBubble
+                          replyTo={message.reply_to}
+                          isOwn={false}
+                          onClick={() => handleScrollToMessage(message.reply_to.id)}
+                        />
+                      )}
                       {message.type === "image" ||
                       (message.type === "file" && looksLikeImage(message)) ? (
                         <div
@@ -833,6 +877,8 @@ export default function PublicChat() {
           onSendFile={handleSendFile}
           sending={sending}
           loggedIn={loggedIn}
+          replyingTo={replyingTo}
+          onCancelReply={() => setReplyingTo(null)}
         />
       </div>
 
