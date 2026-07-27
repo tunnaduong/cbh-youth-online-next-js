@@ -8,8 +8,9 @@ import moment from "moment";
 import "moment/locale/vi";
 import ChatMessageInput from "./ChatMessageInput";
 import MessageReactions from "./MessageReactions";
+import ReplyPreviewBubble from "./ReplyPreviewBubble";
 import ChatMediaLightbox from "./ChatMediaLightbox";
-import { FileText, Download, PlayCircle } from "lucide-react";
+import { CornerUpLeft, FileText, Download, PlayCircle } from "lucide-react";
 
 const LONG_PRESS_MS = 450;
 
@@ -96,6 +97,8 @@ export default function ChatConversation({
   const [isInitialLoad, setIsInitialLoad] = useState(true);
   const [openReactionMessageId, setOpenReactionMessageId] = useState(null);
   const [lightboxMedia, setLightboxMedia] = useState(null);
+  const [replyingTo, setReplyingTo] = useState(null);
+  const [hoveredMessageId, setHoveredMessageId] = useState(null);
   const messagesContainerRef = useRef(null);
   const longPressTimerRef = useRef(null);
   const conversationMessages = conversationId
@@ -200,35 +203,51 @@ export default function ChatConversation({
     }
   };
 
+  const handleStartReply = (message) => {
+    setReplyingTo({
+      id: message.id,
+      content: message.content,
+      type: message.type,
+      file_url: message.file_url || null,
+      sender: message.sender,
+      isSelf: message.is_myself,
+    });
+    setOpenReactionMessageId(null);
+  };
+
+  const handleCancelReply = () => setReplyingTo(null);
+
+  const handleScrollToMessage = (messageId) => {
+    const el = document.getElementById(`chat-message-${messageId}`);
+    if (!el) return;
+    el.scrollIntoView({ behavior: "smooth", block: "center" });
+    el.classList.add("chat-message-highlight");
+    setTimeout(() => el.classList.remove("chat-message-highlight"), 2000);
+  };
+
   const handleSendMessage = async (content) => {
     if (!content.trim()) return;
+    const replyId = replyingTo?.id || null;
 
     // If this is a preview conversation, create it first
     if (previewParticipant && !conversationId) {
       try {
         const conversation = await createConversation(previewParticipant.id);
         if (conversation?.id) {
-          // Reload conversations to get the new one
           await loadConversations();
-          // Select the newly created conversation
           await selectConversation(conversation.id);
-          // Clear preview
-          if (onConversationCreated) {
-            onConversationCreated(conversation.id);
-          }
-          // Now send the message to the newly created conversation
-          await sendMessage(conversation.id, content);
+          if (onConversationCreated) onConversationCreated(conversation.id);
+          await sendMessage(conversation.id, content, "text", replyId);
         }
       } catch (error) {
         console.error("[ChatConversation] Error creating conversation:", error);
-        // Error will be shown in the UI if needed
       }
       return;
     }
 
-    // Normal conversation - just send message
     if (conversationId) {
-      await sendMessage(conversationId, content);
+      await sendMessage(conversationId, content, "text", replyId);
+      setReplyingTo(null);
     }
   };
 
@@ -298,6 +317,8 @@ export default function ChatConversation({
     }, LONG_PRESS_MS);
   };
 
+  const longPressMessageRef = useRef(null);
+
   // Show preview state
   if (previewParticipant && !conversationId) {
     return (
@@ -314,6 +335,8 @@ export default function ChatConversation({
           onSendFile={handleSendFile}
           sending={sending}
           onTyping={() => sendTyping(conversationId)}
+          replyingTo={replyingTo}
+          onCancelReply={handleCancelReply}
         />
       </div>
     );
@@ -344,6 +367,8 @@ export default function ChatConversation({
           onSendFile={handleSendFile}
           sending={sending}
           onTyping={() => sendTyping(conversationId)}
+          replyingTo={replyingTo}
+          onCancelReply={handleCancelReply}
         />
       </div>
     );
@@ -388,7 +413,13 @@ export default function ChatConversation({
             : null;
 
           return (
-          <div key={message.id} id={`chat-message-${message.id}`} className="flex flex-col transition-colors duration-700">
+          <div
+            key={message.id}
+            id={`chat-message-${message.id}`}
+            className="flex flex-col transition-colors duration-700"
+            onMouseEnter={() => setHoveredMessageId(message.id)}
+            onMouseLeave={() => setHoveredMessageId(null)}
+          >
             {storyReplyCaption && (
               <div
                 className={`text-[11px] text-gray-400 dark:text-gray-500 mb-1 px-1 ${
@@ -399,10 +430,28 @@ export default function ChatConversation({
               </div>
             )}
             <div
-              className={`flex gap-2 ${
+              className={`flex items-center gap-1 ${
                 message.is_myself ? "flex-row-reverse" : "flex-row"
               }`}
             >
+            {/* Hover action bar */}
+            {!message.is_sending && (
+              <div
+                className={`flex items-center gap-0.5 transition-opacity ${
+                  hoveredMessageId === message.id ? "opacity-100" : "opacity-0 pointer-events-none"
+                }`}
+              >
+                <button
+                  type="button"
+                  title="Trả lời"
+                  onClick={() => handleStartReply(message)}
+                  className="p-1.5 rounded-full hover:bg-gray-200 dark:hover:bg-neutral-600 text-gray-500 dark:text-gray-400"
+                >
+                  <CornerUpLeft className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            )}
+            <div className={`flex gap-2 ${message.is_myself ? "flex-row-reverse" : "flex-row"}`}>
             {!message.is_myself && (
               <Avatar className="w-8 h-8 flex-shrink-0">
                 <AvatarImage
@@ -439,6 +488,13 @@ export default function ChatConversation({
                 </span>
               </div>
               <div className="relative mb-2">
+                {message.reply_to && (
+                  <ReplyPreviewBubble
+                    replyTo={message.reply_to}
+                    isOwn={message.is_myself}
+                    onClick={() => handleScrollToMessage(message.reply_to.id)}
+                  />
+                )}
                 {message.type === "image" ||
                 (message.type === "file" && looksLikeImage(message)) ? (
                   <div
@@ -569,6 +625,7 @@ export default function ChatConversation({
                     }
                     onReact={(type) => handleReact(message.id, type)}
                     onRemove={() => handleRemoveReaction(message.id)}
+                    onReply={() => handleStartReply(message)}
                   />
                 )}
               </div>
@@ -579,6 +636,7 @@ export default function ChatConversation({
               )}
             </div>
             </div>
+          </div>
           </div>
           );
         })}

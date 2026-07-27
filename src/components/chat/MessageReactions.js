@@ -11,6 +11,7 @@ import {
   BsEmojiFrownFill,
   BsEmojiAngryFill,
 } from "react-icons/bs";
+import { CornerUpLeft } from "lucide-react";
 
 export const REACTION_TYPES = [
   { type: "like", Icon: BsHandThumbsUpFill, color: "#2078f4" },
@@ -33,36 +34,49 @@ export default function MessageReactions({
   onOpenChange,
   onReact,
   onRemove,
+  onReply,
 }) {
   const summary = reactions?.summary || [];
   const total = reactions?.total || 0;
   const myReaction = reactions?.my_reaction || null;
 
   const pickerContent = (
-    <div className="flex items-center gap-1 p-1">
-      {REACTION_TYPES.map(({ type, Icon, color }) => (
+    <div className="flex flex-col gap-1 p-1">
+      <div className="flex items-center gap-1">
+        {REACTION_TYPES.map(({ type, Icon, color }) => (
+          <button
+            key={type}
+            type="button"
+            onClick={() => onReact(type === myReaction ? null : type)}
+            className={`w-8 h-8 flex items-center justify-center rounded-full hover:scale-125 transition-transform ${
+              myReaction === type
+                ? "ring-2 ring-[#319527] bg-green-50 dark:bg-neutral-700"
+                : ""
+            }`}
+            title={type}
+          >
+            <Icon className="w-5 h-5" style={{ color }} />
+          </button>
+        ))}
+        {myReaction && (
+          <button
+            type="button"
+            onClick={onRemove}
+            className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 dark:hover:bg-neutral-700 text-gray-500 dark:text-gray-300"
+            title="Bỏ react"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        )}
+      </div>
+      {onReply && (
         <button
-          key={type}
           type="button"
-          onClick={() => onReact(type === myReaction ? null : type)}
-          className={`w-8 h-8 flex items-center justify-center rounded-full hover:scale-125 transition-transform ${
-            myReaction === type
-              ? "ring-2 ring-[#319527] bg-green-50 dark:bg-neutral-700"
-              : ""
-          }`}
-          title={type}
+          onClick={() => { onReply(); onOpenChange(false); }}
+          className="flex items-center gap-2 w-full px-2 py-1.5 rounded hover:bg-gray-100 dark:hover:bg-neutral-700 text-sm text-gray-700 dark:text-gray-200"
         >
-          <Icon className="w-5 h-5" style={{ color }} />
-        </button>
-      ))}
-      {myReaction && (
-        <button
-          type="button"
-          onClick={onRemove}
-          className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 dark:hover:bg-neutral-700 text-gray-500 dark:text-gray-300"
-          title="Bỏ react"
-        >
-          <X className="w-4 h-4" />
+          <CornerUpLeft className="w-4 h-4" />
+          Trả lời
         </button>
       )}
     </div>

@@ -329,15 +329,14 @@ const ChatProvider = ({ children }) => {
 
   // Send message
   const sendMessage = useCallback(
-    async (conversationId, content, type = "text") => {
+    async (conversationId, content, type = "text", replyToMessageId = null) => {
       if (!loggedIn || !conversationId || !content?.trim()) return;
 
       setSending(true);
       try {
-        const response = await sendMessageApi(conversationId, {
-          content: content.trim(),
-          type,
-        });
+        const payload = { content: content.trim(), type };
+        if (replyToMessageId) payload.reply_to_message_id = replyToMessageId;
+        const response = await sendMessageApi(conversationId, payload);
 
         const messageData = response?.data || response;
 
