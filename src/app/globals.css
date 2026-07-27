@@ -1031,3 +1031,9 @@ body.has-email-verification-alert [class*="mt-\\[4\\.3rem\\]"] {
 .preview-restricted .pg-viewer-wrapper {
   overflow: hidden !important;
 }
+
+/* Chat message highlight (from reaction notification) */
+.chat-message-highlight {
+  background-color: rgba(234, 179, 8, 0.15) !important;
+  border-radius: 8px;
+}

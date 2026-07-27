@@ -87,6 +87,8 @@ export default function ChatConversation({
     sendTyping,
     reactToMessage,
     removeMessageReaction,
+    highlightMessageId,
+    setHighlightMessageId,
   } = useChatContext();
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
@@ -108,6 +110,20 @@ export default function ChatConversation({
       setIsInitialLoad(true);
     }
   }, [conversationId]);
+
+  // Scroll to and highlight the target message when highlightMessageId is set
+  useEffect(() => {
+    if (!highlightMessageId || !conversationMessages.length) return;
+    const el = document.getElementById(`chat-message-${highlightMessageId}`);
+    if (!el) return;
+    el.scrollIntoView({ behavior: "smooth", block: "center" });
+    el.classList.add("chat-message-highlight");
+    const timer = setTimeout(() => {
+      el.classList.remove("chat-message-highlight");
+      setHighlightMessageId(null);
+    }, 2500);
+    return () => clearTimeout(timer);
+  }, [highlightMessageId, conversationMessages]);
 
   // Auto-scroll to bottom on initial load or new messages
   useEffect(() => {
@@ -372,7 +388,7 @@ export default function ChatConversation({
             : null;
 
           return (
-          <div key={message.id} className="flex flex-col">
+          <div key={message.id} id={`chat-message-${message.id}`} className="flex flex-col transition-colors duration-700">
             {storyReplyCaption && (
               <div
                 className={`text-[11px] text-gray-400 dark:text-gray-500 mb-1 px-1 ${

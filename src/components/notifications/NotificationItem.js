@@ -177,6 +177,18 @@ export default function NotificationItem({ notification }) {
       await markAsRead(notification.id);
     }
 
+    if (notification.type === "message_reacted") {
+      const data = notification.data || {};
+      const conversationId = data.conversation_id;
+      const messageId = data.message_id;
+      if (conversationId) {
+        const params = new URLSearchParams({ conversation: conversationId });
+        if (messageId) params.set("message", messageId);
+        router.push(`/chat?${params.toString()}`);
+        return;
+      }
+    }
+
     const targetUrl = buildNotificationTargetUrl(
       notification,
       currentUser?.username

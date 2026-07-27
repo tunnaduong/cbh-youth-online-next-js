@@ -39,6 +39,7 @@ const ChatProvider = ({ children }) => {
   const [loading, setLoading] = useState(false);
   const [sending, setSending] = useState(false);
   const [typingUsers, setTypingUsers] = useState({}); // { conversationId: { userId, name } }
+  const [highlightMessageId, setHighlightMessageId] = useState(null);
 
   const previousConversationsRef = useRef([]); // Track previous conversations to detect new messages
   const notificationPermissionRequestedRef = useRef(false);
@@ -1091,6 +1092,7 @@ const ChatProvider = ({ children }) => {
     loading,
     sending,
     typingUsers,
+    highlightMessageId,
 
     // Actions
     openChat,
@@ -1108,6 +1110,7 @@ const ChatProvider = ({ children }) => {
     sendTyping,
     reactToMessage,
     removeMessageReaction,
+    setHighlightMessageId,
   };
 
   return <ChatContext.Provider value={value}>{children}</ChatContext.Provider>;
