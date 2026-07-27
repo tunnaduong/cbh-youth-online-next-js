@@ -12,6 +12,11 @@ import MessageInput from "./MessageInput";
 import ParticipantsList from "./ParticipantsList";
 import ChatMediaLightbox from "./ChatMediaLightbox";
 import { Menu, FileText, Download, PlayCircle } from "lucide-react";
+import { REACTION_TYPES } from "./MessageReactions";
+import { reactToMessage, removeMessageReaction } from "@/app/Api";
+import { Popover } from "antd";
+import { BsEmojiSmile } from "react-icons/bs";
+import { X } from "lucide-react";
 
 const URL_RE = /(https?:\/\/[^\s]+)/g;
 
@@ -77,6 +82,8 @@ export default function PublicChat() {
   const [isInitialLoad, setIsInitialLoad] = useState(true);
   const [showParticipants, setShowParticipants] = useState(false); // Default: hide on mobile, can toggle on desktop
   const [lightboxMedia, setLightboxMedia] = useState(null);
+  const [openReactionMessageId, setOpenReactionMessageId] = useState(null);
+  const [localReactions, setLocalReactions] = useState({});
   const messagesContainerRef = useRef(null);
 
   // Initialize showParticipants based on screen size (desktop: true, mobile: false)
@@ -430,6 +437,46 @@ export default function PublicChat() {
     }
   };
 
+  const getMessageReactions = (message) => {
+    return localReactions[message.id] ?? message.reactions ?? null;
+  };
+
+  const handleReact = async (messageId, reactionType) => {
+    if (!loggedIn) return;
+    try {
+      setLocalReactions((prev) => {
+        const cur = prev[messageId] || { summary: [], total: 0, my_reaction: null };
+        const prev_type = cur.my_reaction;
+        if (reactionType === null || reactionType === prev_type) {
+          const summary = cur.summary
+            .map((s) => s.type === prev_type ? { ...s, count: s.count - 1 } : s)
+            .filter((s) => s.count > 0);
+          return { ...prev, [messageId]: { summary, total: Math.max(0, cur.total - 1), my_reaction: null } };
+        }
+        let summary = [...cur.summary];
+        if (prev_type) {
+          summary = summary.map((s) => s.type === prev_type ? { ...s, count: s.count - 1 } : s).filter((s) => s.count > 0);
+        }
+        const existing = summary.find((s) => s.type === reactionType);
+        if (existing) {
+          summary = summary.map((s) => s.type === reactionType ? { ...s, count: s.count + 1 } : s);
+        } else {
+          summary = [...summary, { type: reactionType, count: 1 }];
+        }
+        const delta = prev_type ? 0 : 1;
+        return { ...prev, [messageId]: { summary, total: cur.total + delta, my_reaction: reactionType } };
+      });
+      if (reactionType) {
+        await reactToMessage(messageId, reactionType);
+      } else {
+        await removeMessageReaction(messageId);
+      }
+    } catch (error) {
+      console.error("[PublicChat] Error reacting:", error);
+    }
+    setOpenReactionMessageId(null);
+  };
+
   const getAvatarInitial = (name) => {
     if (!name) return "?";
     return name.charAt(0).toUpperCase();
@@ -566,7 +613,7 @@ export default function PublicChat() {
                 return (
                   <div
                     key={message.id}
-                    className="flex items-start gap-3 hover:bg-gray-50 dark:hover:bg-neutral-800 px-2 py-1 -mx-2 rounded transition"
+                    className="group relative flex items-start gap-3 hover:bg-gray-50 dark:hover:bg-neutral-800 px-2 py-1 -mx-2 rounded transition"
                   >
                     {/* Avatar */}
                     <div
@@ -668,7 +715,83 @@ export default function PublicChat() {
                           {linkifyText(message.content)}
                         </div>
                       )}
+
+                      {/* Reactions */}
+                      {loggedIn && (() => {
+                        const rxns = getMessageReactions(message);
+                        const summary = rxns?.summary || [];
+                        const total = rxns?.total || 0;
+                        const myReaction = rxns?.my_reaction || null;
+                        const isOpen = openReactionMessageId === message.id;
+                        const pickerContent = (
+                          <div className="flex items-center gap-1 p-1">
+                            {REACTION_TYPES.map(({ type, Icon, color }) => (
+                              <button
+                                key={type}
+                                type="button"
+                                onClick={() => handleReact(message.id, type === myReaction ? null : type)}
+                                className={`w-8 h-8 flex items-center justify-center rounded-full hover:scale-125 transition-transform ${myReaction === type ? "ring-2 ring-[#319527] bg-green-50 dark:bg-neutral-700" : ""}`}
+                                title={type}
+                              >
+                                <Icon className="w-5 h-5" style={{ color }} />
+                              </button>
+                            ))}
+                            {myReaction && (
+                              <button
+                                type="button"
+                                onClick={() => handleReact(message.id, null)}
+                                className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 dark:hover:bg-neutral-700 text-gray-500 dark:text-gray-300"
+                                title="Bỏ react"
+                              >
+                                <X className="w-4 h-4" />
+                              </button>
+                            )}
+                          </div>
+                        );
+                        return (
+                          <div className="flex items-center gap-1 mt-1 flex-wrap">
+                            {/* Count badge (click to open picker) */}
+                            {total > 0 && (
+                              <button
+                                type="button"
+                                onClick={() => setOpenReactionMessageId(isOpen ? null : message.id)}
+                                className="flex items-center gap-0.5 bg-white dark:bg-neutral-700 rounded-full shadow-sm px-1.5 py-0.5 border border-gray-200 dark:border-neutral-600 hover:border-gray-400 transition"
+                              >
+                                {summary.slice(0, 3).map((s) => {
+                                  const r = REACTION_TYPES.find((x) => x.type === s.type);
+                                  if (!r) return null;
+                                  const { Icon, color } = r;
+                                  return (
+                                    <span key={s.type} className={`w-3.5 h-3.5 flex items-center justify-center ${myReaction === s.type ? "ring-1 ring-[#319527] rounded-full" : ""}`}>
+                                      <Icon className="w-3 h-3" style={{ color }} />
+                                    </span>
+                                  );
+                                })}
+                                <span className="text-[11px] text-gray-600 dark:text-gray-300 ml-0.5">{total}</span>
+                              </button>
+                            )}
+                            {/* Emoji button with picker */}
+                            <Popover
+                              trigger="click"
+                              open={isOpen}
+                              onOpenChange={(v) => setOpenReactionMessageId(v ? message.id : null)}
+                              placement="topLeft"
+                              content={pickerContent}
+                              styles={{ body: { padding: 4 } }}
+                            >
+                              <button
+                                type="button"
+                                className={`w-6 h-6 flex items-center justify-center rounded-full border border-gray-200 dark:border-neutral-600 text-gray-400 hover:text-gray-600 hover:border-gray-400 transition opacity-0 group-hover:opacity-100 ${isOpen ? "!opacity-100" : ""}`}
+                                title="React"
+                              >
+                                <BsEmojiSmile className="w-3.5 h-3.5" />
+                              </button>
+                            </Popover>
+                          </div>
+                        );
+                      })()}
                     </div>
+
                   </div>
                 );
               })

@@ -160,86 +160,88 @@ export default function MessageInput({ onSend, onSendFile, sending, loggedIn }) 
         </div>
       )}
 
-      {/* Text Input Area with Emoji button */}
-      <div className="flex items-end gap-2">
-        <TextArea
-          ref={textareaRef}
-          value={message}
-          onChange={(e) => setMessage(e.target.value)}
-          onKeyDown={handleKeyDown}
-          onPaste={handlePaste}
-          placeholder="Viết một tin nhắn..."
-          rows={3}
-          autoSize={{ minRows: 3, maxRows: 6 }}
-          className="flex-1"
-          classNames={{
-            textarea:
-              "dark:!bg-neutral-600 bg-white dark:!text-gray-100 dark:!placeholder-gray-400 dark:!border-[#585857]",
-          }}
-        />
-        <div className="flex flex-col gap-2">
-          {/* Attach file (registered users only) */}
-          {loggedIn && (
-            <>
-              <input
-                ref={fileInputRef}
-                type="file"
-                onChange={handleFileChange}
-                style={{ display: "none" }}
-              />
-              <button
-                className="p-2 hover:bg-gray-200 dark:hover:bg-neutral-700 rounded transition flex items-center justify-center"
-                title="Đính kèm ảnh, video hoặc tệp"
-                disabled={sending}
-                onClick={() => fileInputRef.current?.click()}
-              >
-                <Paperclip className="w-4 h-4 text-gray-600 dark:text-gray-400" />
-              </button>
-            </>
-          )}
-          {/* Emoji button above send button */}
-          <Popover
-            trigger="click"
-            placement="topLeft"
-            open={showEmoji}
-            onOpenChange={(open) => setShowEmoji(open)}
-            content={
-              <div>
-                <Picker
-                  data={async () => (await import("@emoji-mart/data")).default}
-                  onEmojiSelect={(emoji) => {
-                    insertEmoji(emoji.native);
-                    // Don't close popover when emoji is selected
-                    // Only close when clicking outside
-                  }}
-                  previewPosition="none"
-                  searchPosition="none"
-                  navPosition="top"
-                  locale="vi"
-                  skinTonePosition="none"
-                  theme={theme}
-                />
-              </div>
-            }
-            styles={{ body: { padding: 0 } }}
-          >
+      {/* Text Input Area */}
+      <TextArea
+        ref={textareaRef}
+        value={message}
+        onChange={(e) => setMessage(e.target.value)}
+        onKeyDown={handleKeyDown}
+        onPaste={handlePaste}
+        placeholder="Viết một tin nhắn..."
+        rows={3}
+        autoSize={{ minRows: 3, maxRows: 6 }}
+        className="w-full"
+        classNames={{
+          textarea:
+            "dark:!bg-neutral-600 bg-white dark:!text-gray-100 dark:!placeholder-gray-400 dark:!border-[#585857]",
+        }}
+      />
+
+      {/* Action Row: attach, emoji on left — send on right */}
+      <div className="flex items-center gap-1 mt-2">
+        {/* Attach file (registered users only) */}
+        {loggedIn && (
+          <>
+            <input
+              ref={fileInputRef}
+              type="file"
+              onChange={handleFileChange}
+              style={{ display: "none" }}
+            />
             <button
               className="p-2 hover:bg-gray-200 dark:hover:bg-neutral-700 rounded transition flex items-center justify-center"
-              title="Emoji"
+              title="Đính kèm ảnh, video hoặc tệp"
+              disabled={sending}
+              onClick={() => fileInputRef.current?.click()}
             >
-              <RiEmojiStickerLine className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+              <Paperclip className="w-4 h-4 text-gray-600 dark:text-gray-400" />
             </button>
-          </Popover>
-          <Button
-            onClick={handleSubmit}
-            disabled={!message.trim() || sending}
-            loading={sending}
-            type="primary"
-            className="h-10 px-4"
+          </>
+        )}
+
+        {/* Emoji picker */}
+        <Popover
+          trigger="click"
+          placement="topLeft"
+          open={showEmoji}
+          onOpenChange={(open) => setShowEmoji(open)}
+          content={
+            <div>
+              <Picker
+                data={async () => (await import("@emoji-mart/data")).default}
+                onEmojiSelect={(emoji) => {
+                  insertEmoji(emoji.native);
+                }}
+                previewPosition="none"
+                searchPosition="none"
+                navPosition="top"
+                locale="vi"
+                skinTonePosition="none"
+                theme={theme}
+              />
+            </div>
+          }
+          styles={{ body: { padding: 0 } }}
+        >
+          <button
+            className="p-2 hover:bg-gray-200 dark:hover:bg-neutral-700 rounded transition flex items-center justify-center"
+            title="Emoji"
           >
-            <Send className="w-4 h-4" />
-          </Button>
-        </div>
+            <RiEmojiStickerLine className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+          </button>
+        </Popover>
+
+        <div className="flex-1" />
+
+        <Button
+          onClick={handleSubmit}
+          disabled={!message.trim() || sending}
+          loading={sending}
+          type="primary"
+          className="h-9 px-4"
+        >
+          <Send className="w-4 h-4" />
+        </Button>
       </div>
     </div>
   );
