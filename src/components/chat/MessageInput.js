@@ -98,6 +98,24 @@ export default function MessageInput({ onSend, onSendFile, sending, loggedIn }) 
     }
   };
 
+  const handlePaste = async (e) => {
+    if (!onSendFile || !loggedIn) return;
+
+    const items = Array.from(e.clipboardData?.items || []);
+    const fileItem = items.find((item) => item.kind === "file");
+    if (!fileItem) return; // Let normal text paste proceed
+
+    e.preventDefault();
+    const file = fileItem.getAsFile();
+    if (!file) return;
+
+    try {
+      await onSendFile(file);
+    } catch (error) {
+      console.error("[MessageInput] Error sending pasted file:", error);
+    }
+  };
+
   const insertEmoji = (emoji) => {
     const textarea = textareaRef.current?.resizableTextArea?.textArea;
     if (!textarea) {
@@ -149,6 +167,7 @@ export default function MessageInput({ onSend, onSendFile, sending, loggedIn }) 
           value={message}
           onChange={(e) => setMessage(e.target.value)}
           onKeyDown={handleKeyDown}
+          onPaste={handlePaste}
           placeholder="Viết một tin nhắn..."
           rows={3}
           autoSize={{ minRows: 3, maxRows: 6 }}

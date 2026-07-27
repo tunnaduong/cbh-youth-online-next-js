@@ -47,6 +47,24 @@ export default function ChatMessageInput({
     }
   };
 
+  const handlePaste = async (e) => {
+    if (!onSendFile) return;
+
+    const items = Array.from(e.clipboardData?.items || []);
+    const fileItem = items.find((item) => item.kind === "file");
+    if (!fileItem) return; // Let normal text paste proceed
+
+    e.preventDefault();
+    const file = fileItem.getAsFile();
+    if (!file) return;
+
+    try {
+      await onSendFile(file);
+    } catch (error) {
+      console.error("[ChatMessageInput] Error sending pasted file:", error);
+    }
+  };
+
   return (
     <div className="flex items-center gap-2 px-4 py-3 border-t dark:border-neutral-600 bg-white dark:bg-neutral-700 rounded-b-lg overflow-hidden">
       <input
@@ -71,6 +89,7 @@ export default function ChatMessageInput({
           onTyping?.();
         }}
         onKeyDown={handleKeyDown}
+        onPaste={handlePaste}
         placeholder="Gửi tin nhắn..."
         disabled={sending}
         className="flex-1"
