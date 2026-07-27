@@ -543,7 +543,7 @@ export default function ChatConversation({
                   </a>
                 ) : (
                   <div
-                    className={`rounded-lg px-3 py-2 text-sm whitespace-pre-wrap ${
+                    className={`rounded-lg px-3 py-2 text-sm whitespace-pre-wrap break-words min-w-0 w-full ${
                       message.is_myself
                         ? "bg-[#319527] text-white"
                         : "bg-gray-200 dark:bg-neutral-600 dark:text-white"
