@@ -202,11 +202,17 @@ export default function Comment({
 
   useEffect(() => {
     if (typeof window === "undefined" || !commentDomId) return;
-    if (window.location.hash === `#${commentDomId}`) {
-      setIsHighlighted(true);
-      const timer = setTimeout(() => setIsHighlighted(false), 2500);
-      return () => clearTimeout(timer);
-    }
+
+    const tryHighlight = () => {
+      if (window.location.hash === `#${commentDomId}`) {
+        setIsHighlighted(true);
+        setTimeout(() => setIsHighlighted(false), 2500);
+      }
+    };
+
+    tryHighlight();
+    window.addEventListener("hashchange", tryHighlight);
+    return () => window.removeEventListener("hashchange", tryHighlight);
   }, [commentDomId]);
 
   return (
