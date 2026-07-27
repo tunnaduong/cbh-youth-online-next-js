@@ -169,7 +169,7 @@ export default function MessageInput({ onSend, onSendFile, sending, loggedIn }) 
           onKeyDown={handleKeyDown}
           onPaste={handlePaste}
           placeholder="Viết một tin nhắn..."
-          autoSize={{ minRows: 3, maxRows: 6 }}
+          autoSize={{ minRows: 1, maxRows: 6 }}
           className="flex-1"
           classNames={{
             textarea:
