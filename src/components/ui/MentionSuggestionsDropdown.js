@@ -24,7 +24,7 @@ export default function MentionSuggestionsDropdown({ suggestions, onSelect, onCl
   return (
     <div
       ref={listRef}
-      className="absolute z-50 bottom-full mb-1 left-0 w-64 max-h-48 overflow-y-auto bg-white dark:bg-neutral-800 border border-gray-200 dark:border-neutral-600 rounded-xl shadow-lg"
+      className="absolute z-50 bottom-full mb-1 left-0 w-64 max-h-80 overflow-y-auto bg-white dark:bg-neutral-800 border border-gray-200 dark:border-neutral-600 rounded-xl shadow-lg"
     >
       {suggestions.map((user) => (
         <button
