@@ -11,10 +11,10 @@ import {
 import MessageInput from "./MessageInput";
 import ParticipantsList from "./ParticipantsList";
 import ChatMediaLightbox from "./ChatMediaLightbox";
-import { Menu, FileText, Download, PlayCircle, CornerUpLeft } from "lucide-react";
+import { Menu, FileText, Download, PlayCircle, CornerUpLeft, Undo2, Pencil } from "lucide-react";
 import { REACTION_TYPES } from "./MessageReactions";
 import ReplyPreviewBubble from "./ReplyPreviewBubble";
-import { reactToMessage, removeMessageReaction } from "@/app/Api";
+import { reactToMessage, removeMessageReaction, recallMessage, editMessage } from "@/app/Api";
 import { Popover } from "antd";
 import { BsEmojiSmile } from "react-icons/bs";
 import { X } from "lucide-react";
@@ -86,6 +86,7 @@ export default function PublicChat() {
   const [openReactionMessageId, setOpenReactionMessageId] = useState(null);
   const [localReactions, setLocalReactions] = useState({});
   const [replyingTo, setReplyingTo] = useState(null);
+  const [editingMessage, setEditingMessage] = useState(null);
   const [hoveredMessageId, setHoveredMessageId] = useState(null);
   const messagesContainerRef = useRef(null);
 
@@ -493,6 +494,39 @@ export default function PublicChat() {
     setOpenReactionMessageId(null);
   };
 
+  const handleRecallPublic = async (messageId) => {
+    try {
+      await recallMessage(messageId);
+      setMessages((prev) =>
+        prev.map((m) =>
+          m.id === messageId
+            ? { ...m, is_recalled: true, content: null, file_url: null, metadata: null }
+            : m
+        )
+      );
+    } catch (error) {
+      console.error("[PublicChat] Error recalling message:", error);
+    }
+  };
+
+  const handleSaveEditPublic = async (newContent) => {
+    if (!editingMessage || !newContent.trim()) return;
+    try {
+      await editMessage(editingMessage.id, { content: newContent.trim() });
+      setMessages((prev) =>
+        prev.map((m) =>
+          m.id === editingMessage.id
+            ? { ...m, content: newContent.trim(), is_edited: true }
+            : m
+        )
+      );
+    } catch (error) {
+      console.error("[PublicChat] Error editing message:", error);
+    } finally {
+      setEditingMessage(null);
+    }
+  };
+
   const getAvatarInitial = (name) => {
     if (!name) return "?";
     return name.charAt(0).toUpperCase();
@@ -656,26 +690,49 @@ export default function PublicChat() {
                         <span className="font-medium text-gray-900 dark:text-gray-100 text-sm">
                           @{senderName}
                         </span>
-                        <span className="text-xs text-gray-500 dark:text-gray-400">
+                        <span className="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1">
                           {formatTime(message.created_at)}
+                          {message.is_edited && !message.is_recalled && <span className="italic">(Đã sửa)</span>}
                         </span>
-                        {/* Reply button — visible on hover */}
-                        {loggedIn && (
-                          <button
-                            type="button"
-                            title="Trả lời"
-                            onClick={() => setReplyingTo({
-                              id: message.id,
-                              content: message.content,
-                              type: message.type,
-                              file_url: message.file_url || null,
-                              sender: message.sender,
-                              isSelf: false,
-                            })}
-                            className={`p-1 rounded-full hover:bg-gray-200 dark:hover:bg-neutral-600 text-gray-400 transition-opacity ${hoveredMessageId === message.id ? "opacity-100" : "opacity-0 pointer-events-none"}`}
-                          >
-                            <CornerUpLeft className="w-3 h-3" />
-                          </button>
+                        {/* Action buttons — visible on hover, registered users only */}
+                        {loggedIn && !message.is_recalled && (
+                          <>
+                            <button
+                              type="button"
+                              title="Trả lời"
+                              onClick={() => setReplyingTo({
+                                id: message.id,
+                                content: message.content,
+                                type: message.type,
+                                file_url: message.file_url || null,
+                                sender: message.sender,
+                                isSelf: message.sender?.username === currentUser?.username,
+                              })}
+                              className={`p-1 rounded-full hover:bg-gray-200 dark:hover:bg-neutral-600 text-gray-400 transition-opacity ${hoveredMessageId === message.id ? "opacity-100" : "opacity-0 pointer-events-none"}`}
+                            >
+                              <CornerUpLeft className="w-3 h-3" />
+                            </button>
+                            {message.sender?.username === currentUser?.username && message.type === "text" && (
+                              <button
+                                type="button"
+                                title="Sửa tin nhắn"
+                                onClick={() => setEditingMessage({ id: message.id, content: message.content || "" })}
+                                className={`p-1 rounded-full hover:bg-gray-200 dark:hover:bg-neutral-600 text-gray-400 transition-opacity ${hoveredMessageId === message.id ? "opacity-100" : "opacity-0 pointer-events-none"}`}
+                              >
+                                <Pencil className="w-3 h-3" />
+                              </button>
+                            )}
+                            {message.sender?.username === currentUser?.username && (
+                              <button
+                                type="button"
+                                title="Thu hồi"
+                                onClick={() => handleRecallPublic(message.id)}
+                                className={`p-1 rounded-full hover:bg-red-100 dark:hover:bg-red-900/30 text-red-400 transition-opacity ${hoveredMessageId === message.id ? "opacity-100" : "opacity-0 pointer-events-none"}`}
+                              >
+                                <Undo2 className="w-3 h-3" />
+                              </button>
+                            )}
+                          </>
                         )}
                       </div>
                       {message.reply_to && (
@@ -685,7 +742,9 @@ export default function PublicChat() {
                           onClick={() => handleScrollToMessage(message.reply_to.id)}
                         />
                       )}
-                      {message.type === "image" ||
+                      {message.is_recalled ? (
+                        <p className="text-sm italic text-gray-400 dark:text-gray-500">Tin nhắn đã bị thu hồi</p>
+                      ) : message.type === "image" ||
                       (message.type === "file" && looksLikeImage(message)) ? (
                         <div
                           className="relative rounded-lg overflow-hidden max-w-[240px] cursor-pointer"
@@ -879,6 +938,9 @@ export default function PublicChat() {
           loggedIn={loggedIn}
           replyingTo={replyingTo}
           onCancelReply={() => setReplyingTo(null)}
+          editingMessage={editingMessage}
+          onSaveEdit={handleSaveEditPublic}
+          onCancelEdit={() => setEditingMessage(null)}
         />
       </div>
 

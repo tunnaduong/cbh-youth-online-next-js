@@ -68,6 +68,12 @@ export default function ChatThreadsList({ onSelectConversation }) {
         : `${partnerName} đã bình luận về tin của bạn`;
     }
 
+    if (conversation.latest_message.is_recalled) {
+      return (
+        <span className="italic text-gray-400">Tin nhắn đã bị thu hồi</span>
+      );
+    }
+
     const prefix = is_myself ? "Bạn: " : "";
 
     if (type === "image") {
@@ -105,11 +111,10 @@ export default function ChatThreadsList({ onSelectConversation }) {
     }
 
     const content = conversation.latest_message.content || "";
+    const editedSuffix = conversation.latest_message.is_edited ? " (Đã sửa)" : "";
+    const truncated = content.length > 50 ? content.substring(0, 50) + "..." : content;
 
-    if (content.length > 50) {
-      return prefix + content.substring(0, 50) + "...";
-    }
-    return prefix + content;
+    return prefix + truncated + editedSuffix;
   };
 
   if (filteredConversations.length === 0) {

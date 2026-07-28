@@ -11,7 +11,7 @@ import MessageReactions from "./MessageReactions";
 import ReplyPreviewBubble from "./ReplyPreviewBubble";
 import ChatMediaLightbox from "./ChatMediaLightbox";
 import { CornerUpLeft, FileText, Download, PlayCircle } from "lucide-react";
-import { recallMessage } from "@/app/Api";
+import { recallMessage, editMessage } from "@/app/Api";
 
 const LONG_PRESS_MS = 450;
 
@@ -100,6 +100,7 @@ export default function ChatConversation({
   const [openReactionMessageId, setOpenReactionMessageId] = useState(null);
   const [lightboxMedia, setLightboxMedia] = useState(null);
   const [replyingTo, setReplyingTo] = useState(null);
+  const [editingMessage, setEditingMessage] = useState(null); // { id, content }
   const [hoveredMessageId, setHoveredMessageId] = useState(null);
   const isSelectingTextRef = useRef(false);
   const messagesContainerRef = useRef(null);
@@ -348,6 +349,26 @@ export default function ChatConversation({
     }
   };
 
+  const handleStartEdit = (message) => {
+    setEditingMessage({ id: message.id, content: message.content || "" });
+    setOpenReactionMessageId(null);
+  };
+
+  const handleSaveEdit = async (newContent) => {
+    if (!editingMessage || !newContent.trim()) return;
+    try {
+      await editMessage(editingMessage.id, { content: newContent.trim() });
+      updateMessageLocally(conversationId, editingMessage.id, {
+        content: newContent.trim(),
+        is_edited: true,
+      });
+    } catch (error) {
+      console.error("[ChatConversation] Error editing message:", error);
+    } finally {
+      setEditingMessage(null);
+    }
+  };
+
   const clearLongPressTimer = () => {
     if (longPressTimerRef.current) {
       clearTimeout(longPressTimerRef.current);
@@ -497,7 +518,7 @@ export default function ChatConversation({
               )}
 
               {/* Bubble column */}
-              <div className={`flex flex-col w-full max-w-[75%] ${message.is_myself ? "items-end" : "items-start"}`}>
+              <div className={`flex flex-col min-w-0 max-w-[75%] ${message.is_myself ? "items-end" : "items-start"}`}>
               <div className="flex items-center gap-2 mb-1 min-w-0 max-w-full overflow-hidden">
                 {!message.is_myself &&
                   (message.sender?.username ? (
@@ -512,9 +533,11 @@ export default function ChatConversation({
                       {message.sender?.profile_name || message.sender?.username}
                     </span>
                   ))}
-                <span className="text-xs text-gray-500 dark:text-gray-400 flex-shrink-0">
-                  {message.created_at_human ||
-                    formatTimestamp(message.created_at)}
+                <span className="text-xs text-gray-500 dark:text-gray-400 flex-shrink-0 flex items-center gap-1">
+                  {message.created_at_human || formatTimestamp(message.created_at)}
+                  {message.is_edited && !message.is_recalled && (
+                    <span className="italic">(Đã sửa)</span>
+                  )}
                 </span>
               </div>
               <div className="relative mb-2 min-w-0">
@@ -544,7 +567,7 @@ export default function ChatConversation({
                         url: resolveFileUrl(message.file_url),
                       })
                     }
-                    onMouseDown={() => startLongPress(message.id)}
+                    onMouseDown={(e) => { if (e.button === 0) startLongPress(message.id); }}
                     onMouseMove={clearLongPressTimer}
                     onMouseUp={clearLongPressTimer}
                     onMouseLeave={clearLongPressTimer}
@@ -575,7 +598,7 @@ export default function ChatConversation({
                         poster: resolveFileUrl(message.metadata?.thumbnail_url),
                       })
                     }
-                    onMouseDown={() => startLongPress(message.id)}
+                    onMouseDown={(e) => { if (e.button === 0) startLongPress(message.id); }}
                     onMouseMove={clearLongPressTimer}
                     onMouseUp={clearLongPressTimer}
                     onMouseLeave={clearLongPressTimer}
@@ -611,7 +634,7 @@ export default function ChatConversation({
                         ? "bg-[#319527] text-white"
                         : "bg-gray-200 dark:bg-neutral-600 dark:text-white"
                     }`}
-                    onMouseDown={() => startLongPress(message.id)}
+                    onMouseDown={(e) => { if (e.button === 0) startLongPress(message.id); }}
                     onMouseMove={clearLongPressTimer}
                     onMouseUp={clearLongPressTimer}
                     onMouseLeave={clearLongPressTimer}
@@ -640,12 +663,12 @@ export default function ChatConversation({
                   </a>
                 ) : (
                   <div
-                    className={`rounded-lg px-3 py-2 text-sm whitespace-pre-wrap break-words w-fit max-w-full min-w-0 ${
+                    className={`rounded-lg px-3 py-2 text-sm whitespace-pre-wrap break-words [overflow-wrap:anywhere] w-fit max-w-[75vw] sm:max-w-full min-w-0 ${
                       message.is_myself
                         ? "bg-[#319527] text-white"
                         : "bg-gray-200 dark:bg-neutral-600 dark:text-white"
                     }`}
-                    onMouseDown={() => startLongPress(message.id)}
+                    onMouseDown={(e) => { if (e.button === 0) startLongPress(message.id); }}
                     onMouseMove={clearLongPressTimer}
                     onMouseUp={clearLongPressTimer}
                     onMouseLeave={clearLongPressTimer}
@@ -657,7 +680,7 @@ export default function ChatConversation({
                     {linkifyText(message.content)}
                   </div>
                 )}
-                {!message.is_sending && !message.is_recalled && (
+                {!message.is_sending && (
                   <MessageReactions
                     reactions={message.reactions}
                     isOwn={message.is_myself}
@@ -667,8 +690,9 @@ export default function ChatConversation({
                     }
                     onReact={(type) => handleReact(message.id, type)}
                     onRemove={() => handleRemoveReaction(message.id)}
-                    onReply={() => handleStartReply(message)}
-                    onRecall={message.is_myself ? () => handleRecall(message.id) : undefined}
+                    onReply={!message.is_recalled ? () => handleStartReply(message) : undefined}
+                    onRecall={message.is_myself && !message.is_recalled ? () => handleRecall(message.id) : undefined}
+                    onEdit={message.is_myself && message.type === "text" && !message.is_recalled ? () => handleStartEdit(message) : undefined}
                   />
                 )}
               </div>
@@ -701,6 +725,9 @@ export default function ChatConversation({
         onTyping={() => sendTyping(conversationId)}
         replyingTo={replyingTo}
         onCancelReply={handleCancelReply}
+        editingMessage={editingMessage}
+        onSaveEdit={handleSaveEdit}
+        onCancelEdit={() => setEditingMessage(null)}
       />
 
       <ChatMediaLightbox

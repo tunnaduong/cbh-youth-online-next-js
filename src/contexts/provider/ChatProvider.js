@@ -1117,6 +1117,13 @@ const ChatProvider = ({ children }) => {
           m.id === messageId ? { ...m, ...patch } : m
         ),
       }));
+      setConversations((prev) =>
+        prev.map((c) => {
+          if (String(c.id) !== String(conversationId)) return c;
+          if (!c.latest_message || String(c.latest_message.id) !== String(messageId)) return c;
+          return { ...c, latest_message: { ...c.latest_message, ...patch } };
+        })
+      );
     },
   };
 

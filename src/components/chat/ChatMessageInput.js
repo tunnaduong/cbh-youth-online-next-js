@@ -1,8 +1,31 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import Input from "@/components/ui/input";
-import { FileText, Paperclip, Send, Video, X } from "lucide-react";
+import { FileText, Paperclip, Pencil, Send, Video, X } from "lucide-react";
+
+function EditComposerBar({ editingMessage, onCancel }) {
+  if (!editingMessage) return null;
+  return (
+    <div className="flex items-center gap-2 px-4 py-2 border-t border-gray-200 dark:border-neutral-600 bg-gray-50 dark:bg-neutral-700">
+      <div className="flex-1 min-w-0 border-l-[3px] border-blue-500 pl-2">
+        <p className="text-[11px] font-semibold text-blue-500 flex items-center gap-1 truncate">
+          <Pencil className="w-3 h-3" /> Đang sửa tin nhắn
+        </p>
+        <p className="text-[12px] truncate text-gray-600 dark:text-gray-300 overflow-hidden whitespace-nowrap">
+          {editingMessage.content}
+        </p>
+      </div>
+      <button
+        type="button"
+        onClick={onCancel}
+        className="p-1 rounded-full hover:bg-gray-200 dark:hover:bg-neutral-600 text-gray-500 dark:text-gray-400 flex-shrink-0"
+      >
+        <X className="w-4 h-4" />
+      </button>
+    </div>
+  );
+}
 
 function ReplyComposerBar({ replyingTo, onCancel }) {
   if (!replyingTo) return null;
@@ -85,22 +108,39 @@ export default function ChatMessageInput({
   onTyping,
   replyingTo,
   onCancelReply,
+  editingMessage,
+  onSaveEdit,
+  onCancelEdit,
 }) {
   const [message, setMessage] = useState("");
   const inputRef = useRef(null);
   const fileInputRef = useRef(null);
 
+  // Pre-fill input when entering edit mode
+  useEffect(() => {
+    if (editingMessage) {
+      setMessage(editingMessage.content || "");
+      setTimeout(() => inputRef.current?.focus(), 0);
+    } else {
+      setMessage("");
+    }
+  }, [editingMessage?.id]);
+
   const handleSubmit = async () => {
     if (!message.trim() || sending) return;
 
     try {
-      await onSend(message.trim());
+      if (editingMessage) {
+        await onSaveEdit(message.trim());
+      } else {
+        await onSend(message.trim());
+      }
       setMessage("");
       if (inputRef.current) {
         inputRef.current.focus();
       }
     } catch (error) {
-      console.error("[ChatMessageInput] Error sending message:", error);
+      console.error("[ChatMessageInput] Error:", error);
     }
   };
 
@@ -143,6 +183,7 @@ export default function ChatMessageInput({
 
   return (
     <div className="flex flex-col">
+      <EditComposerBar editingMessage={editingMessage} onCancel={onCancelEdit} />
       <ReplyComposerBar replyingTo={replyingTo} onCancel={onCancelReply} />
       <div className="flex items-center gap-2 px-4 py-3 border-t dark:border-neutral-600 bg-white dark:bg-neutral-700 rounded-b-lg overflow-hidden">
         <input

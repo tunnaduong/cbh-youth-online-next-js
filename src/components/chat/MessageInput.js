@@ -2,13 +2,32 @@
 
 import { useState, useRef, useEffect } from "react";
 import { Button, Popover, Input } from "antd";
-import { Send, Paperclip, X, FileText, Video } from "lucide-react";
+import { Send, Paperclip, Pencil, X, FileText, Video } from "lucide-react";
 import { RiEmojiStickerLine } from "react-icons/ri";
 import Picker from "@emoji-mart/react";
 import CustomInput from "@/components/ui/input";
 import { useTheme } from "@/contexts/themeContext";
 
 const { TextArea } = Input;
+
+function EditComposerBar({ editingMessage, onCancel }) {
+  if (!editingMessage) return null;
+  return (
+    <div className="flex items-center gap-2 px-1 py-1.5 mb-1 rounded border-l-[3px] border-blue-500 bg-gray-100 dark:bg-neutral-700">
+      <div className="flex-1 min-w-0">
+        <p className="text-[11px] font-semibold text-blue-500 flex items-center gap-1 truncate">
+          <Pencil className="w-3 h-3" /> Đang sửa tin nhắn
+        </p>
+        <p className="text-[12px] truncate text-gray-600 dark:text-gray-300 overflow-hidden whitespace-nowrap">
+          {editingMessage.content}
+        </p>
+      </div>
+      <button type="button" onClick={onCancel} className="p-1 rounded-full hover:bg-gray-200 dark:hover:bg-neutral-600 text-gray-500 flex-shrink-0">
+        <X className="w-3.5 h-3.5" />
+      </button>
+    </div>
+  );
+}
 
 function ReplyComposerBar({ replyingTo, onCancel }) {
   if (!replyingTo) return null;
@@ -45,7 +64,7 @@ function ReplyComposerBar({ replyingTo, onCancel }) {
   );
 }
 
-export default function MessageInput({ onSend, onSendFile, sending, loggedIn, replyingTo, onCancelReply }) {
+export default function MessageInput({ onSend, onSendFile, sending, loggedIn, replyingTo, onCancelReply, editingMessage, onSaveEdit, onCancelEdit }) {
   const [message, setMessage] = useState("");
   const [guestName, setGuestName] = useState("");
   const [showGuestNameInput, setShowGuestNameInput] = useState(false);
@@ -53,6 +72,15 @@ export default function MessageInput({ onSend, onSendFile, sending, loggedIn, re
   const textareaRef = useRef(null);
   const fileInputRef = useRef(null);
   const { theme } = useTheme();
+
+  useEffect(() => {
+    if (editingMessage) {
+      setMessage(editingMessage.content || "");
+      setTimeout(() => textareaRef.current?.focus(), 0);
+    } else {
+      setMessage("");
+    }
+  }, [editingMessage?.id]);
 
   // Load guest name from localStorage and update showGuestNameInput based on loggedIn
   useEffect(() => {
@@ -74,16 +102,13 @@ export default function MessageInput({ onSend, onSendFile, sending, loggedIn, re
   const handleSubmit = async () => {
     if (!message.trim()) return;
 
-    console.log(
-      "[MessageInput] handleSubmit - loggedIn:",
-      loggedIn,
-      "message:",
-      message.substring(0, 20),
-      "guestName:",
-      guestName
-    );
-
     try {
+      if (editingMessage) {
+        await onSaveEdit(message.trim());
+        setMessage("");
+        return;
+      }
+
       // If logged in, send message without guest name
       if (loggedIn) {
         await onSend(message, null, replyingTo?.id || null);
@@ -173,6 +198,7 @@ export default function MessageInput({ onSend, onSendFile, sending, loggedIn, re
 
   return (
     <div className="space-y-2">
+      <EditComposerBar editingMessage={editingMessage} onCancel={onCancelEdit} />
       <ReplyComposerBar replyingTo={replyingTo} onCancel={onCancelReply} />
       {/* Guest Name Input (shown if not logged in and no saved name) */}
       {!loggedIn && showGuestNameInput && (
