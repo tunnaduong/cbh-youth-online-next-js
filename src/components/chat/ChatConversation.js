@@ -498,6 +498,7 @@ export default function ChatConversation({
             className="flex flex-col transition-colors duration-700"
             onMouseEnter={() => { if (!isSelectingTextRef.current) setHoveredMessageId(message.id); }}
             onMouseLeave={() => setHoveredMessageId(null)}
+            onContextMenu={(e) => e.stopPropagation()}
           >
             {storyReplyCaption && (
               <div className={`text-[11px] text-gray-400 dark:text-gray-500 mb-1 px-1 ${message.is_myself ? "text-right" : "text-left"}`}>
