@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useNotificationContext } from "@/contexts/Support";
 import NotificationItem from "./NotificationItem";
 import { Button } from "@/components/ui/button";
@@ -21,6 +21,7 @@ export default function NotificationDropdown({
     refresh,
   } = useNotificationContext();
   const dropdownRef = useRef(null);
+  const [dropdownStyle, setDropdownStyle] = useState({ right: "0" });
 
   // Track if dropdown was just opened to avoid infinite refresh
   const wasOpenRef = useRef(false);
@@ -62,6 +63,21 @@ export default function NotificationDropdown({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, onClose, refresh]);
 
+  // Reposition dropdown so it never overflows the left edge of the viewport
+  useEffect(() => {
+    if (!isOpen || !dropdownRef.current || !bellButtonRef?.current) return;
+    const bell = bellButtonRef.current.getBoundingClientRect();
+    const dropW = Math.min(window.innerWidth - 16, 384);
+    // right edge of dropdown = bell.right; left edge = bell.right - dropW
+    const leftEdge = bell.right - dropW;
+    if (leftEdge < 8) {
+      // shift right so left edge is at 8px from viewport
+      setDropdownStyle({ right: "auto", left: `${8 - bell.left}px`, width: `${dropW}px` });
+    } else {
+      setDropdownStyle({ right: "0", width: `${dropW}px` });
+    }
+  }, [isOpen, bellButtonRef]);
+
   const handleMarkAllAsRead = async () => {
     try {
       await markAllAsRead();
@@ -76,11 +92,7 @@ export default function NotificationDropdown({
       className={`absolute top-full mt-2 bg-white dark:bg-neutral-700 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 z-[60] ${
         isOpen ? "block" : "hidden"
       }`}
-      style={{
-        right: "0",
-        width: "min(calc(100vw - 2rem), 384px)",
-        maxWidth: "384px",
-      }}
+      style={{ maxWidth: "384px", ...dropdownStyle }}
     >
       <div className="p-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
         <h3 className="font-semibold text-gray-900 dark:text-gray-100">
