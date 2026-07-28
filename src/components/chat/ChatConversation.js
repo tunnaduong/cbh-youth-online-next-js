@@ -11,6 +11,7 @@ import MessageReactions from "./MessageReactions";
 import ReplyPreviewBubble from "./ReplyPreviewBubble";
 import ChatMediaLightbox from "./ChatMediaLightbox";
 import { CornerUpLeft, FileText, Download, PlayCircle } from "lucide-react";
+import { recallMessage } from "@/app/Api";
 
 const LONG_PRESS_MS = 450;
 
@@ -90,6 +91,7 @@ export default function ChatConversation({
     removeMessageReaction,
     highlightMessageId,
     setHighlightMessageId,
+    updateMessageLocally,
   } = useChatContext();
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
@@ -330,6 +332,22 @@ export default function ChatConversation({
     }
   };
 
+  const handleRecall = async (messageId) => {
+    try {
+      await recallMessage(messageId);
+      if (conversationId) {
+        updateMessageLocally(conversationId, messageId, {
+          is_recalled: true,
+          content: null,
+          file_url: null,
+          metadata: null,
+        });
+      }
+    } catch (error) {
+      console.error("[ChatConversation] Error recalling message:", error);
+    }
+  };
+
   const clearLongPressTimer = () => {
     if (longPressTimerRef.current) {
       clearTimeout(longPressTimerRef.current);
@@ -507,7 +525,15 @@ export default function ChatConversation({
                     onClick={() => handleScrollToMessage(message.reply_to.id)}
                   />
                 )}
-                {message.type === "image" ||
+                {message.is_recalled ? (
+                  <div className={`rounded-lg px-3 py-2 text-sm italic ${
+                    message.is_myself
+                      ? "bg-[#319527]/60 text-white/70"
+                      : "bg-gray-200 dark:bg-neutral-600 text-gray-500 dark:text-gray-400"
+                  }`}>
+                    Tin nhắn đã bị thu hồi
+                  </div>
+                ) : message.type === "image" ||
                 (message.type === "file" && looksLikeImage(message)) ? (
                   <div
                     className="relative rounded-lg overflow-hidden max-w-[240px] cursor-pointer"
@@ -631,7 +657,7 @@ export default function ChatConversation({
                     {linkifyText(message.content)}
                   </div>
                 )}
-                {!message.is_sending && (
+                {!message.is_sending && !message.is_recalled && (
                   <MessageReactions
                     reactions={message.reactions}
                     isOwn={message.is_myself}
@@ -642,6 +668,7 @@ export default function ChatConversation({
                     onReact={(type) => handleReact(message.id, type)}
                     onRemove={() => handleRemoveReaction(message.id)}
                     onReply={() => handleStartReply(message)}
+                    onRecall={message.is_myself ? () => handleRecall(message.id) : undefined}
                   />
                 )}
               </div>

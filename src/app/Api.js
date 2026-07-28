@@ -207,6 +207,10 @@ export const removeMessageReaction = (messageId) => {
   return Api.deleteRequest(`/v1.0/chat/messages/${messageId}/reactions`);
 };
 
+export const recallMessage = (messageId) => {
+  return Api.postRequest(`/v1.0/chat/messages/${messageId}/recall`);
+};
+
 export const searchUserForChat = (params) => {
   return Api.getRequest("/v1.0/chat/search/users", params);
 };

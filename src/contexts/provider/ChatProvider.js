@@ -1110,6 +1110,14 @@ const ChatProvider = ({ children }) => {
     reactToMessage,
     removeMessageReaction,
     setHighlightMessageId,
+    updateMessageLocally: (conversationId, messageId, patch) => {
+      setMessages((prev) => ({
+        ...prev,
+        [conversationId]: (prev[conversationId] || []).map((m) =>
+          m.id === messageId ? { ...m, ...patch } : m
+        ),
+      }));
+    },
   };
 
   return <ChatContext.Provider value={value}>{children}</ChatContext.Provider>;

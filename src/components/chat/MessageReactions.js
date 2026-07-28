@@ -11,7 +11,7 @@ import {
   BsEmojiFrownFill,
   BsEmojiAngryFill,
 } from "react-icons/bs";
-import { CornerUpLeft } from "lucide-react";
+import { CornerUpLeft, Undo2 } from "lucide-react";
 
 export const REACTION_TYPES = [
   { type: "like", Icon: BsHandThumbsUpFill, color: "#2078f4" },
@@ -35,6 +35,7 @@ export default function MessageReactions({
   onReact,
   onRemove,
   onReply,
+  onRecall,
 }) {
   const summary = reactions?.summary || [];
   const total = reactions?.total || 0;
@@ -77,6 +78,16 @@ export default function MessageReactions({
         >
           <CornerUpLeft className="w-4 h-4" />
           Trả lời
+        </button>
+      )}
+      {isOwn && onRecall && (
+        <button
+          type="button"
+          onClick={() => { onRecall(); onOpenChange(false); }}
+          className="flex items-center gap-2 w-full px-2 py-1.5 rounded hover:bg-red-50 dark:hover:bg-red-900/30 text-sm text-red-600 dark:text-red-400"
+        >
+          <Undo2 className="w-4 h-4" />
+          Thu hồi
         </button>
       )}
     </div>
