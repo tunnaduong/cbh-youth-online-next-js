@@ -548,9 +548,11 @@ export default function ProfileClient({ initialProfile, activeTab, username }) {
       <div>
         <div className="flex-1">
           <div className="relative h-min lg:h-96 overflow-hidden">
-            <div
-              style={{ backgroundImage: `url(${coverImageUrl})` }}
-              className="cover-photo-bg bg-gray-300 absolute inset-0"
+            <img
+              src={coverImageUrl}
+              alt=""
+              aria-hidden="true"
+              className="cover-photo-bg absolute inset-0 w-full h-full object-cover"
             />
             <img
               src={coverImageUrl}

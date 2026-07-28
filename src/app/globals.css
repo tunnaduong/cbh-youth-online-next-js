@@ -350,18 +350,16 @@ hr {
 }
 
 .blur-effect {
-  -webkit-filter: blur(24px);
-  filter: blur(24px);
-  opacity: 0.35;
-  transform: scale(1.12) translateZ(0);
+  -webkit-filter: blur(20px);
+  filter: blur(20px);
+  opacity: 1;
+  transform: scale(1.1) translateZ(0);
   will-change: transform;
   pointer-events: none;
 }
 
 .cover-photo-bg {
-  background-repeat: no-repeat;
-  background-position: center center;
-  background-size: cover;
+  /* base sharp layer, now used as <img> */
 }
 
 .border-right {
