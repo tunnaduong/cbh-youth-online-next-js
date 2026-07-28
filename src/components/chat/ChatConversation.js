@@ -472,7 +472,7 @@ export default function ChatConversation({
                     formatTimestamp(message.created_at)}
                 </span>
               </div>
-              <div className="relative mb-2 min-w-0">
+              <div className="relative mb-2 min-w-0 w-full">
                 {message.reply_to && (
                   <ReplyPreviewBubble
                     replyTo={message.reply_to}
