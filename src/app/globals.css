@@ -1032,8 +1032,14 @@ body.has-email-verification-alert [class*="mt-\\[4\\.3rem\\]"] {
   overflow: hidden !important;
 }
 
-/* Chat message highlight (from reaction notification) */
+/* Chat message highlight (from reaction notification / reply scroll) */
+@keyframes chatHighlightFade {
+  0%   { background-color: rgba(234, 179, 8, 0.35); }
+  60%  { background-color: rgba(234, 179, 8, 0.25); }
+  100% { background-color: transparent; }
+}
+
 .chat-message-highlight {
-  background-color: rgba(234, 179, 8, 0.15) !important;
   border-radius: 8px;
+  animation: chatHighlightFade 2s ease-out forwards !important;
 }
