@@ -383,10 +383,20 @@ export default function Comment({
                       </span>
                     </div>
                   )}
-                  <div
-                    className="text-gray-700 dark:text-gray-300 text-sm mb-1 prose custom-prose markdown-preview dark:prose-invert flex flex-col"
-                    dangerouslySetInnerHTML={{ __html: comment.comment }}
-                  />
+                  {comment.comment && (
+                    <div
+                      className="text-gray-700 dark:text-gray-300 text-sm mb-1 prose custom-prose markdown-preview dark:prose-invert flex flex-col"
+                      dangerouslySetInnerHTML={{ __html: comment.comment }}
+                    />
+                  )}
+                  {comment.image_url && (
+                    <img
+                      src={comment.image_url}
+                      alt="Ảnh đính kèm"
+                      className="mt-1 mb-2 max-h-64 max-w-full rounded-lg border object-cover cursor-pointer"
+                      onClick={() => window.open(comment.image_url, "_blank")}
+                    />
+                  )}
                   {/* Show optimistic update indicator */}
                   {comment.isOptimistic && (
                     <div className="absolute top-0 right-0 bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-300 text-xs px-2 py-1 rounded-full">

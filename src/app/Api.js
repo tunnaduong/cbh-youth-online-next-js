@@ -314,6 +314,9 @@ export const getComments = (id) => {
 };
 
 export const addComment = (id, params) => {
+  if (params instanceof FormData) {
+    return Api.postFormDataRequest(`/v1.0/topics/${id}/comments`, params);
+  }
   return Api.postRequest(`/v1.0/topics/${id}/comments`, params);
 };
 

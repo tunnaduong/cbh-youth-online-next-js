@@ -2,8 +2,8 @@
 
 import { useEffect, useRef, useState, useContext } from "react";
 import { Button, Popover, Dropdown } from "antd";
-import { LuType, LuArrowUp, LuChevronDown } from "react-icons/lu";
-import { RiEmojiStickerLine, RiAttachment2 } from "react-icons/ri";
+import { LuType, LuArrowUp, LuChevronDown, LuX } from "react-icons/lu";
+import { RiEmojiStickerLine, RiImageAddLine } from "react-icons/ri";
 import { useAuthContext } from "@/contexts/Support";
 import Picker from "@emoji-mart/react";
 import { useTheme } from "@/contexts/themeContext";
@@ -23,17 +23,22 @@ export function CommentInput({
   const [showMarkdownToolbarState, setShowMarkdownToolbarState] =
     useState(false);
   const [isPreviewMode, setIsPreviewMode] = useState(false);
+  const [selectedImage, setSelectedImage] = useState(null);
+  const [imagePreviewUrl, setImagePreviewUrl] = useState(null);
   const wrapperRef = useRef(null);
   const textareaRef = useRef(null);
+  const imageInputRef = useRef(null);
   const { currentUser } = useAuthContext();
   const { theme } = useTheme();
 
   const handleSubmit = () => {
-    if (comment.trim()) {
-      onSubmit?.(comment.trim(), isAnonymous);
+    if (comment.trim() || selectedImage) {
+      onSubmit?.(comment.trim(), isAnonymous, selectedImage);
       setComment("");
       setIsAnonymous(false);
       setIsPreviewMode(false);
+      setSelectedImage(null);
+      setImagePreviewUrl(null);
     }
   };
 
@@ -42,7 +47,24 @@ export function CommentInput({
     setIsFocused(false);
     setIsAnonymous(false);
     setIsPreviewMode(false);
+    setSelectedImage(null);
+    setImagePreviewUrl(null);
     onCancel?.();
+  };
+
+  const handleImageSelect = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setSelectedImage(file);
+    setImagePreviewUrl(URL.createObjectURL(file));
+    setIsFocused(true);
+    e.target.value = "";
+  };
+
+  const handleRemoveImage = () => {
+    if (imagePreviewUrl) URL.revokeObjectURL(imagePreviewUrl);
+    setSelectedImage(null);
+    setImagePreviewUrl(null);
   };
 
   const handleTogglePreview = () => {
@@ -212,6 +234,22 @@ export function CommentInput({
                 }}
               />
             )}
+            {imagePreviewUrl && (
+              <div className="relative mt-2 mb-1 inline-block">
+                <img
+                  src={imagePreviewUrl}
+                  alt="Ảnh đính kèm"
+                  className="max-h-40 max-w-full rounded-lg border object-cover"
+                />
+                <button
+                  type="button"
+                  onClick={handleRemoveImage}
+                  className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-gray-800/80 text-white flex items-center justify-center hover:bg-gray-900"
+                >
+                  <LuX className="w-3 h-3" />
+                </button>
+              </div>
+            )}
           </div>
         </div>
 
@@ -254,12 +292,20 @@ export function CommentInput({
                 <RiEmojiStickerLine className="h-5 w-5 text-muted-foreground" />
               </Button>
             </Popover>
+            <input
+              ref={imageInputRef}
+              type="file"
+              accept="image/jpeg,image/png,image/gif,image/webp"
+              className="hidden"
+              onChange={handleImageSelect}
+            />
             <Button
               variant="ghost"
               size="sm"
               className="h-8 w-8 p-0 rounded-full hover:bg-muted"
+              onClick={() => imageInputRef.current?.click()}
             >
-              <RiAttachment2 className="h-4 w-4 text-muted-foreground" />
+              <RiImageAddLine className="h-4 w-4 text-muted-foreground" />
             </Button>
             <Button
               variant="ghost"
@@ -278,7 +324,7 @@ export function CommentInput({
             <Button
               size="sm"
               onClick={handleSubmit}
-              disabled={!comment.trim()}
+              disabled={!comment.trim() && !selectedImage}
               className="!bg-primary-500 hover:!bg-primary-600 disabled:!bg-primary-200 disabled:!text-gray-400 text-white rounded-full h-8 w-8 p-0"
             >
               <LuArrowUp className="h-4 w-4" />
