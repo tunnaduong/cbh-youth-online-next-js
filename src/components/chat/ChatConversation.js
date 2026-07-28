@@ -479,7 +479,7 @@ export default function ChatConversation({
               )}
 
               {/* Bubble column */}
-              <div className={`flex flex-col min-w-0 max-w-[75%] ${message.is_myself ? "items-end" : "items-start"}`}>
+              <div className={`flex flex-col w-full max-w-[75%] ${message.is_myself ? "items-end" : "items-start"}`}>
               <div className="flex items-center gap-2 mb-1 min-w-0 max-w-full overflow-hidden">
                 {!message.is_myself &&
                   (message.sender?.username ? (
