@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, useContext } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Button, Popover, Dropdown } from "antd";
 import { LuType, LuArrowUp, LuChevronDown, LuX } from "react-icons/lu";
 import { RiEmojiStickerLine, RiImageAddLine } from "react-icons/ri";
@@ -9,6 +9,8 @@ import Picker from "@emoji-mart/react";
 import { useTheme } from "@/contexts/themeContext";
 import MarkdownToolbar from "@/components/ui/MarkdownToolbar";
 import MarkdownRenderer from "@/components/ui/MarkdownRenderer";
+
+const MAX_IMAGES = 10;
 
 export function CommentInput({
   placeholder = "Nhập bình luận của bạn...",
@@ -20,11 +22,10 @@ export function CommentInput({
   const [isFocused, setIsFocused] = useState(false);
   const [showEmoji, setShowEmoji] = useState(false);
   const [isAnonymous, setIsAnonymous] = useState(false);
-  const [showMarkdownToolbarState, setShowMarkdownToolbarState] =
-    useState(false);
+  const [showMarkdownToolbarState, setShowMarkdownToolbarState] = useState(false);
   const [isPreviewMode, setIsPreviewMode] = useState(false);
-  const [selectedImage, setSelectedImage] = useState(null);
-  const [imagePreviewUrl, setImagePreviewUrl] = useState(null);
+  // Array of { file, previewUrl }
+  const [selectedImages, setSelectedImages] = useState([]);
   const wrapperRef = useRef(null);
   const textareaRef = useRef(null);
   const imageInputRef = useRef(null);
@@ -32,13 +33,13 @@ export function CommentInput({
   const { theme } = useTheme();
 
   const handleSubmit = () => {
-    if (comment.trim() || selectedImage) {
-      onSubmit?.(comment.trim(), isAnonymous, selectedImage);
+    if (comment.trim() || selectedImages.length > 0) {
+      onSubmit?.(comment.trim(), isAnonymous, selectedImages.map((i) => i.file));
       setComment("");
       setIsAnonymous(false);
       setIsPreviewMode(false);
-      setSelectedImage(null);
-      setImagePreviewUrl(null);
+      selectedImages.forEach((i) => URL.revokeObjectURL(i.previewUrl));
+      setSelectedImages([]);
     }
   };
 
@@ -47,29 +48,34 @@ export function CommentInput({
     setIsFocused(false);
     setIsAnonymous(false);
     setIsPreviewMode(false);
-    setSelectedImage(null);
-    setImagePreviewUrl(null);
+    selectedImages.forEach((i) => URL.revokeObjectURL(i.previewUrl));
+    setSelectedImages([]);
     onCancel?.();
   };
 
   const handleImageSelect = (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setSelectedImage(file);
-    setImagePreviewUrl(URL.createObjectURL(file));
+    const files = Array.from(e.target.files || []);
+    if (!files.length) return;
+    setSelectedImages((prev) => {
+      const remaining = MAX_IMAGES - prev.length;
+      const toAdd = files.slice(0, remaining).map((file) => ({
+        file,
+        previewUrl: URL.createObjectURL(file),
+      }));
+      return [...prev, ...toAdd];
+    });
     setIsFocused(true);
     e.target.value = "";
   };
 
-  const handleRemoveImage = () => {
-    if (imagePreviewUrl) URL.revokeObjectURL(imagePreviewUrl);
-    setSelectedImage(null);
-    setImagePreviewUrl(null);
+  const handleRemoveImage = (index) => {
+    setSelectedImages((prev) => {
+      URL.revokeObjectURL(prev[index].previewUrl);
+      return prev.filter((_, i) => i !== index);
+    });
   };
 
-  const handleTogglePreview = () => {
-    setIsPreviewMode(!isPreviewMode);
-  };
+  const handleTogglePreview = () => setIsPreviewMode((p) => !p);
 
   const identityMenuItems = [
     {
@@ -101,12 +107,8 @@ export function CommentInput({
   ];
 
   const handleKeyDown = (e) => {
-    if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
-      handleSubmit();
-    }
-    if (e.key === "Escape") {
-      handleCancel();
-    }
+    if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) handleSubmit();
+    if (e.key === "Escape") handleCancel();
   };
 
   const insertEmojiAtCursor = (emojiNative) => {
@@ -115,15 +117,10 @@ export function CommentInput({
       setComment((prev) => prev + emojiNative);
       return;
     }
-
     const start = textarea.selectionStart ?? comment.length;
     const end = textarea.selectionEnd ?? comment.length;
-    const before = comment.substring(0, start);
-    const after = comment.substring(end);
-    const next = before + emojiNative + after;
+    const next = comment.substring(0, start) + emojiNative + comment.substring(end);
     setComment(next);
-
-    // Restore cursor after emoji
     requestAnimationFrame(() => {
       textarea.focus();
       const cursor = start + emojiNative.length;
@@ -133,9 +130,7 @@ export function CommentInput({
 
   useEffect(() => {
     function handleClickOutside(event) {
-      // If preview mode is on, ignore all clicks outside and keep focus
       if (isPreviewMode) return;
-
       if (
         wrapperRef.current &&
         !wrapperRef.current.contains(event.target) &&
@@ -148,7 +143,6 @@ export function CommentInput({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [isPreviewMode]);
 
-  // Auto-focus textarea when focus prop is true
   useEffect(() => {
     if (focus && textareaRef.current) {
       setIsFocused(true);
@@ -156,7 +150,6 @@ export function CommentInput({
     }
   }, [focus]);
 
-  // Adjust textarea height when switching from preview mode
   useEffect(() => {
     if (!isPreviewMode && textareaRef.current) {
       const target = textareaRef.current;
@@ -188,11 +181,7 @@ export function CommentInput({
                 className="w-8 h-8 rounded-full flex-shrink-0"
               />
             )}
-            <Dropdown
-              menu={{ items: identityMenuItems }}
-              trigger={["click"]}
-              placement="bottomLeft"
-            >
+            <Dropdown menu={{ items: identityMenuItems }} trigger={["click"]} placement="bottomLeft">
               <Button
                 size="small"
                 className="absolute -bottom-1 -right-1 w-4 h-4 p-0 rounded-full !bg-white border border-gray-300 hover:bg-gray-50 flex items-center justify-center"
@@ -221,12 +210,7 @@ export function CommentInput({
                   text-sm min-h-[24px] leading-6 ring-transparent focus:ring-transparent focus:border-transparent
                   pl-0 pt-0 mt-1
                 "
-                style={{
-                  height: "auto",
-                  minHeight: "24px",
-                  maxHeight: "120px",
-                  overflowY: "auto",
-                }}
+                style={{ height: "auto", minHeight: "24px", maxHeight: "120px", overflowY: "auto" }}
                 onInput={(e) => {
                   const target = e.target;
                   target.style.height = "auto";
@@ -234,20 +218,35 @@ export function CommentInput({
                 }}
               />
             )}
-            {imagePreviewUrl && (
-              <div className="relative mt-2 mb-1 inline-block">
-                <img
-                  src={imagePreviewUrl}
-                  alt="Ảnh đính kèm"
-                  className="max-h-40 max-w-full rounded-lg border object-cover"
-                />
-                <button
-                  type="button"
-                  onClick={handleRemoveImage}
-                  className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-gray-800/80 text-white flex items-center justify-center hover:bg-gray-900"
-                >
-                  <LuX className="w-3 h-3" />
-                </button>
+
+            {/* Image previews */}
+            {selectedImages.length > 0 && (
+              <div className="flex flex-wrap gap-2 mt-2 mb-1">
+                {selectedImages.map((img, index) => (
+                  <div key={index} className="relative inline-block">
+                    <img
+                      src={img.previewUrl}
+                      alt={`Ảnh ${index + 1}`}
+                      className="h-20 w-20 rounded-lg border object-cover"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveImage(index)}
+                      className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-gray-800/80 text-white flex items-center justify-center hover:bg-gray-900"
+                    >
+                      <LuX className="w-3 h-3" />
+                    </button>
+                  </div>
+                ))}
+                {selectedImages.length < MAX_IMAGES && (
+                  <button
+                    type="button"
+                    onClick={() => imageInputRef.current?.click()}
+                    className="h-20 w-20 rounded-lg border-2 border-dashed border-gray-300 dark:border-gray-600 flex items-center justify-center text-gray-400 hover:border-gray-400 hover:text-gray-500 transition-colors"
+                  >
+                    <RiImageAddLine className="w-5 h-5" />
+                  </button>
+                )}
               </div>
             )}
           </div>
@@ -269,9 +268,7 @@ export function CommentInput({
                 <div>
                   <Picker
                     data={async () => (await import("@emoji-mart/data")).default}
-                    onEmojiSelect={(emoji) => {
-                      insertEmojiAtCursor(emoji.native);
-                    }}
+                    onEmojiSelect={(emoji) => insertEmojiAtCursor(emoji.native)}
                     previewPosition="none"
                     searchPosition="none"
                     navPosition="top"
@@ -295,7 +292,8 @@ export function CommentInput({
             <input
               ref={imageInputRef}
               type="file"
-              accept="image/jpeg,image/png,image/gif,image/webp"
+              accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
+              multiple
               className="hidden"
               onChange={handleImageSelect}
             />
@@ -304,6 +302,7 @@ export function CommentInput({
               size="sm"
               className="h-8 w-8 p-0 rounded-full hover:bg-muted"
               onClick={() => imageInputRef.current?.click()}
+              disabled={selectedImages.length >= MAX_IMAGES}
             >
               <RiImageAddLine className="h-4 w-4 text-muted-foreground" />
             </Button>
@@ -311,9 +310,7 @@ export function CommentInput({
               variant="ghost"
               size="sm"
               className="h-8 w-8 p-0 rounded-full hover:bg-muted"
-              onClick={() =>
-                setShowMarkdownToolbarState(!showMarkdownToolbarState)
-              }
+              onClick={() => setShowMarkdownToolbarState(!showMarkdownToolbarState)}
             >
               <LuType className="h-4 w-4 text-muted-foreground" />
             </Button>
@@ -324,7 +321,7 @@ export function CommentInput({
             <Button
               size="sm"
               onClick={handleSubmit}
-              disabled={!comment.trim() && !selectedImage}
+              disabled={!comment.trim() && selectedImages.length === 0}
               className="!bg-primary-500 hover:!bg-primary-600 disabled:!bg-primary-200 disabled:!text-gray-400 text-white rounded-full h-8 w-8 p-0"
             >
               <LuArrowUp className="h-4 w-4" />
@@ -334,11 +331,7 @@ export function CommentInput({
 
         {/* Markdown Toolbar */}
         {isFocused && (
-          <div
-            className={`ml-11 ${
-              showMarkdownToolbarState ? "fade-in-bottom" : "hidden"
-            }`}
-          >
+          <div className={`ml-11 ${showMarkdownToolbarState ? "fade-in-bottom" : "hidden"}`}>
             <MarkdownToolbar
               textareaRef={textareaRef}
               onTextChange={setComment}

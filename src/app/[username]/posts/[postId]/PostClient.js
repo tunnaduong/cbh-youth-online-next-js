@@ -453,7 +453,7 @@ export default function PostClient({ params, initialPost = null }) {
     }
   };
 
-  const handleSubmitComment = async (content, isAnonymous = false, image = null) => {
+  const handleSubmitComment = async (content, isAnonymous = false, images = []) => {
     if (!currentUser) {
       message.error("Bạn cần đăng nhập để bình luận");
       router.push(
@@ -467,7 +467,7 @@ export default function PostClient({ params, initialPost = null }) {
     const placeholderComment = {
       id: placeholderId,
       content: content,
-      image_url: image ? URL.createObjectURL(image) : null,
+      image_urls: images.map((f) => URL.createObjectURL(f)),
       topic_id: extractNumericId(params.postId),
       is_anonymous: isAnonymous,
       author: isAnonymous
@@ -490,24 +490,18 @@ export default function PostClient({ params, initialPost = null }) {
 
     try {
       const topicId = extractNumericId(params.postId);
-      let requestPayload;
-      if (image) {
-        const fd = new FormData();
-        if (content) fd.append("comment", content);
-        fd.append("image", image);
-        fd.append("topic_id", topicId);
-        fd.append("is_anonymous", isAnonymous ? "1" : "0");
-        requestPayload = fd;
-      } else {
-        requestPayload = { comment: content, topic_id: topicId, is_anonymous: isAnonymous };
-      }
-      const response = await commentPost(topicId, requestPayload);
+      const fd = new FormData();
+      if (content) fd.append("comment", content);
+      fd.append("topic_id", topicId);
+      fd.append("is_anonymous", isAnonymous ? "1" : "0");
+      images.forEach((file, i) => fd.append(`images[${i}]`, file));
+      const response = await commentPost(topicId, fd);
 
       const realComment = {
         id: response.data?.id ?? Date.now(),
         comment: response.data?.comment ?? "", // HTML for display
         content: response.data?.content ?? "", // Raw markdown for editing
-        image_url: response.data?.image_url ?? null,
+        image_urls: response.data?.image_urls ?? [],
         topic_id: extractNumericId(params.postId),
         is_anonymous: response.data?.is_anonymous ?? false,
         is_owner: response.data?.is_owner ?? true, // New comment is always owned by creator

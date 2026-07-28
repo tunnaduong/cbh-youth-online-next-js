@@ -389,13 +389,18 @@ export default function Comment({
                       dangerouslySetInnerHTML={{ __html: comment.comment }}
                     />
                   )}
-                  {comment.image_url && (
-                    <img
-                      src={comment.image_url}
-                      alt="Ảnh đính kèm"
-                      className="mt-1 mb-2 max-h-64 max-w-full rounded-lg border object-cover cursor-pointer"
-                      onClick={() => window.open(comment.image_url, "_blank")}
-                    />
+                  {comment.image_urls?.length > 0 && (
+                    <div className="flex flex-wrap gap-2 mt-1 mb-2">
+                      {comment.image_urls.map((url, idx) => (
+                        <img
+                          key={idx}
+                          src={url}
+                          alt={`Ảnh ${idx + 1}`}
+                          className="max-h-48 max-w-[200px] rounded-lg border object-cover cursor-pointer"
+                          onClick={() => window.open(url, "_blank")}
+                        />
+                      ))}
+                    </div>
                   )}
                   {/* Show optimistic update indicator */}
                   {comment.isOptimistic && (
