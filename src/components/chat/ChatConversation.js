@@ -99,6 +99,7 @@ export default function ChatConversation({
   const [lightboxMedia, setLightboxMedia] = useState(null);
   const [replyingTo, setReplyingTo] = useState(null);
   const [hoveredMessageId, setHoveredMessageId] = useState(null);
+  const isSelectingTextRef = useRef(false);
   const messagesContainerRef = useRef(null);
   const longPressTimerRef = useRef(null);
   const conversationMessages = conversationId
@@ -113,6 +114,18 @@ export default function ChatConversation({
       setIsInitialLoad(true);
     }
   }, [conversationId]);
+
+  // Hide hover buttons while the user is selecting text
+  useEffect(() => {
+    const onSelectionChange = () => {
+      const sel = window.getSelection();
+      const hasSelection = sel && sel.toString().length > 0;
+      isSelectingTextRef.current = hasSelection;
+      if (hasSelection) setHoveredMessageId(null);
+    };
+    document.addEventListener("selectionchange", onSelectionChange);
+    return () => document.removeEventListener("selectionchange", onSelectionChange);
+  }, []);
 
   // Scroll to and highlight the target message when highlightMessageId is set
   useEffect(() => {
@@ -430,7 +443,7 @@ export default function ChatConversation({
             key={message.id}
             id={`chat-message-${message.id}`}
             className="flex flex-col transition-colors duration-700"
-            onMouseEnter={() => setHoveredMessageId(message.id)}
+            onMouseEnter={() => { if (!isSelectingTextRef.current) setHoveredMessageId(message.id); }}
             onMouseLeave={() => setHoveredMessageId(null)}
           >
             {storyReplyCaption && (
