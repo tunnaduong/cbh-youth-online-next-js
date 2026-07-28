@@ -472,7 +472,7 @@ export default function ChatConversation({
                     formatTimestamp(message.created_at)}
                 </span>
               </div>
-              <div className="relative mb-2 min-w-0 w-full">
+              <div className="relative mb-2 min-w-0">
                 {message.reply_to && (
                   <ReplyPreviewBubble
                     replyTo={message.reply_to}
@@ -584,7 +584,7 @@ export default function ChatConversation({
                   </a>
                 ) : (
                   <div
-                    className={`rounded-lg px-3 py-2 text-sm whitespace-pre-wrap break-words min-w-0 w-full ${
+                    className={`rounded-lg px-3 py-2 text-sm whitespace-pre-wrap break-words min-w-0 ${
                       message.is_myself
                         ? "bg-[#319527] text-white"
                         : "bg-gray-200 dark:bg-neutral-600 dark:text-white"
