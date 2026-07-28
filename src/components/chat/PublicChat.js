@@ -21,6 +21,7 @@ const URL_RE = /(https?:\/\/[^\s]+)/g;
 
 const IMAGE_EXTENSION_RE = /\.(png|jpe?g|gif|webp|bmp|svg|heic|heif)$/i;
 const VIDEO_EXTENSION_RE = /\.(mp4|mov|avi|webm|mkv)$/i;
+const LONG_PRESS_MS = 450;
 
 function resolveFileUrl(url) {
   if (!url) return url;
@@ -87,6 +88,21 @@ export default function PublicChat() {
   const [editingMessage, setEditingMessage] = useState(null);
   const [hoveredMessageId, setHoveredMessageId] = useState(null);
   const messagesContainerRef = useRef(null);
+  const longPressTimerRef = useRef(null);
+
+  const clearLongPressTimer = () => {
+    if (longPressTimerRef.current) {
+      clearTimeout(longPressTimerRef.current);
+      longPressTimerRef.current = null;
+    }
+  };
+
+  const startLongPress = (messageId) => {
+    clearLongPressTimer();
+    longPressTimerRef.current = setTimeout(() => {
+      setOpenReactionMessageId(messageId);
+    }, LONG_PRESS_MS);
+  };
 
   // Initialize showParticipants based on screen size (desktop: true, mobile: false)
   useEffect(() => {
@@ -666,6 +682,8 @@ export default function PublicChat() {
                 const avatarInitial = getAvatarInitial(senderName);
                 const avatarColor = getAvatarColor(senderName);
 
+                const isOwn = !!(message.is_myself || (currentUser?.username && message.sender?.username === currentUser.username));
+
                 return (
                   <div
                     key={message.id}
@@ -673,6 +691,7 @@ export default function PublicChat() {
                     className="group relative flex items-start gap-3 hover:bg-gray-50 dark:hover:bg-neutral-800 px-2 py-1 -mx-2 rounded transition"
                     onMouseEnter={() => setHoveredMessageId(message.id)}
                     onMouseLeave={() => setHoveredMessageId(null)}
+                    onContextMenu={(e) => e.stopPropagation()}
                   >
                     {/* Avatar */}
                     <div
@@ -712,13 +731,13 @@ export default function PublicChat() {
                                 type: message.type,
                                 file_url: message.file_url || null,
                                 sender: message.sender,
-                                isSelf: message.sender?.username === currentUser?.username,
+                                isSelf: isOwn,
                               })}
                               className={`p-1 rounded-full hover:bg-gray-200 dark:hover:bg-neutral-600 text-gray-400 transition-opacity ${hoveredMessageId === message.id ? "opacity-100" : "opacity-0 pointer-events-none"}`}
                             >
                               <CornerUpLeft className="w-3 h-3" />
                             </button>
-                            {message.sender?.username === currentUser?.username && message.type === "text" && (
+                            {isOwn && message.type === "text" && (
                               <button
                                 type="button"
                                 title="Sửa tin nhắn"
@@ -728,7 +747,7 @@ export default function PublicChat() {
                                 <Pencil className="w-3 h-3" />
                               </button>
                             )}
-                            {message.sender?.username === currentUser?.username && (
+                            {isOwn && (
                               <button
                                 type="button"
                                 title="Thu hồi"
@@ -760,6 +779,14 @@ export default function PublicChat() {
                               url: resolveFileUrl(message.file_url),
                             })
                           }
+                          onMouseDown={(e) => { if (e.button === 0) startLongPress(message.id); }}
+                          onMouseMove={clearLongPressTimer}
+                          onMouseUp={clearLongPressTimer}
+                          onMouseLeave={clearLongPressTimer}
+                          onTouchStart={() => startLongPress(message.id)}
+                          onTouchEnd={clearLongPressTimer}
+                          onTouchMove={clearLongPressTimer}
+                          onContextMenu={(e) => e.preventDefault()}
                         >
                           <img
                             src={resolveFileUrl(message.file_url)}
@@ -779,6 +806,14 @@ export default function PublicChat() {
                               ),
                             })
                           }
+                          onMouseDown={(e) => { if (e.button === 0) startLongPress(message.id); }}
+                          onMouseMove={clearLongPressTimer}
+                          onMouseUp={clearLongPressTimer}
+                          onMouseLeave={clearLongPressTimer}
+                          onTouchStart={() => startLongPress(message.id)}
+                          onTouchEnd={clearLongPressTimer}
+                          onTouchMove={clearLongPressTimer}
+                          onContextMenu={(e) => e.preventDefault()}
                         >
                           <video
                             src={resolveFileUrl(message.file_url)}
@@ -800,6 +835,14 @@ export default function PublicChat() {
                           target="_blank"
                           rel="noopener noreferrer"
                           className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm max-w-[240px] bg-gray-200 dark:bg-neutral-600 dark:text-white"
+                          onMouseDown={(e) => { if (e.button === 0) startLongPress(message.id); }}
+                          onMouseMove={clearLongPressTimer}
+                          onMouseUp={clearLongPressTimer}
+                          onMouseLeave={clearLongPressTimer}
+                          onTouchStart={() => startLongPress(message.id)}
+                          onTouchEnd={clearLongPressTimer}
+                          onTouchMove={clearLongPressTimer}
+                          onContextMenu={(e) => e.preventDefault()}
                         >
                           <FileText className="w-6 h-6 flex-shrink-0" />
                           <div className="flex flex-col min-w-0">
@@ -820,7 +863,17 @@ export default function PublicChat() {
                           </div>
                         </a>
                       ) : (
-                        <div className="text-gray-700 dark:text-gray-300 text-sm whitespace-pre-wrap">
+                        <div
+                          className="text-gray-700 dark:text-gray-300 text-sm whitespace-pre-wrap"
+                          onMouseDown={(e) => { if (e.button === 0) startLongPress(message.id); }}
+                          onMouseMove={clearLongPressTimer}
+                          onMouseUp={clearLongPressTimer}
+                          onMouseLeave={clearLongPressTimer}
+                          onTouchStart={() => startLongPress(message.id)}
+                          onTouchEnd={clearLongPressTimer}
+                          onTouchMove={clearLongPressTimer}
+                          onContextMenu={(e) => e.preventDefault()}
+                        >
                           {linkifyText(message.content)}
                         </div>
                       )}
@@ -831,14 +884,21 @@ export default function PublicChat() {
                         return (
                           <MessageReactions
                             reactions={rxns}
-                            isOwn={message.is_myself}
+                            isOwn={isOwn}
                             open={openReactionMessageId === message.id}
                             onOpenChange={(v) => setOpenReactionMessageId(v ? message.id : null)}
                             onReact={(type) => handleReact(message.id, type, rxns)}
                             onRemove={() => handleRemovePublicReaction(message.id, rxns)}
-                            onReply={() => setReplyingTo(message)}
-                            onRecall={message.is_myself && !message.is_recalled ? () => handleRecallPublic(message.id) : undefined}
-                            onEdit={message.is_myself && message.type === "text" && !message.is_recalled ? () => setEditingMessage({ id: message.id, content: message.content || "" }) : undefined}
+                            onReply={() => setReplyingTo({
+                              id: message.id,
+                              content: message.content,
+                              type: message.type,
+                              file_url: message.file_url || null,
+                              sender: message.sender,
+                              isSelf: isOwn,
+                            })}
+                            onRecall={isOwn && !message.is_recalled ? () => handleRecallPublic(message.id) : undefined}
+                            onEdit={isOwn && message.type === "text" && !message.is_recalled ? () => setEditingMessage({ id: message.id, content: message.content || "" }) : undefined}
                             inline
                           />
                         );
