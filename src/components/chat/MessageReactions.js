@@ -1,7 +1,6 @@
 "use client";
 
-import { useState } from "react";
-import { Popover, Modal } from "antd";
+import { Popover } from "antd";
 import { X, MoreHorizontal, CornerUpLeft, Undo2, Pencil } from "lucide-react";
 import {
   BsHandThumbsUpFill,
@@ -35,6 +34,44 @@ const REACTION_LABELS = {
   angry: "Phẫn nộ",
 };
 
+// Who-reacted popover content
+function WhoReactedContent({ summary }) {
+  if (!summary?.length) {
+    return <p className="text-sm text-gray-400 text-center py-2">Chưa có cảm xúc nào.</p>;
+  }
+  return (
+    <div className="flex flex-col gap-3 max-h-72 overflow-y-auto" style={{ minWidth: 200, maxWidth: 280 }}>
+      {summary.map((s) => {
+        const r = REACTION_MAP[s.type];
+        if (!r) return null;
+        const { Icon, color } = r;
+        return (
+          <div key={s.type}>
+            <div className="flex items-center gap-1.5 mb-1.5">
+              <Icon className="w-3.5 h-3.5" style={{ color }} />
+              <span className="text-xs font-semibold text-gray-700 dark:text-gray-200">
+                {REACTION_LABELS[s.type]}
+              </span>
+              <span className="text-xs text-gray-400 dark:text-gray-500">• {s.count} lượt</span>
+            </div>
+            <div className="flex flex-col gap-0.5 pl-1">
+              {(s.users || []).map((u) => (
+                <span key={u.id} className="text-sm text-gray-800 dark:text-gray-200 py-0.5">
+                  {u.profile_name || u.username}
+                </span>
+              ))}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+/**
+ * @param {object} props
+ * @param {boolean} [props.inline] - render as a flex row instead of absolutely positioned (for public chat)
+ */
 export default function MessageReactions({
   reactions,
   isOwn,
@@ -45,9 +82,8 @@ export default function MessageReactions({
   onReply,
   onRecall,
   onEdit,
+  inline = false,
 }) {
-  const [modalOpen, setModalOpen] = useState(false);
-
   const summary = reactions?.summary || [];
   const total = reactions?.total || 0;
   const myReactions = reactions?.my_reactions || [];
@@ -114,23 +150,30 @@ export default function MessageReactions({
   );
 
   const reactionBadge = total > 0 ? (
-    <button
-      type="button"
-      onClick={() => setModalOpen(true)}
-      className="flex items-center gap-0.5 bg-white dark:bg-neutral-700 rounded-full shadow px-1.5 py-0.5 border border-gray-200 dark:border-neutral-600 hover:border-gray-400 dark:hover:border-neutral-400 transition"
+    <Popover
+      trigger="click"
+      placement={isOwn ? "topRight" : "topLeft"}
+      title="Cảm xúc tin nhắn"
+      content={<WhoReactedContent summary={summary} />}
+      styles={{ body: { padding: "8px 4px" } }}
     >
-      {topTwo.map((s) => {
-        const r = REACTION_MAP[s.type];
-        if (!r) return null;
-        const { Icon, color } = r;
-        return (
-          <span key={s.type} className="w-3.5 h-3.5 flex items-center justify-center">
-            <Icon className="w-3 h-3" style={{ color }} />
-          </span>
-        );
-      })}
-      <span className="text-[11px] text-gray-600 dark:text-gray-300 ml-0.5">{total}</span>
-    </button>
+      <button
+        type="button"
+        className="flex items-center gap-0.5 bg-white dark:bg-neutral-700 rounded-full shadow px-1.5 py-0.5 border border-gray-200 dark:border-neutral-600 hover:border-gray-400 dark:hover:border-neutral-400 transition"
+      >
+        {topTwo.map((s) => {
+          const r = REACTION_MAP[s.type];
+          if (!r) return null;
+          const { Icon, color } = r;
+          return (
+            <span key={s.type} className="w-3.5 h-3.5 flex items-center justify-center">
+              <Icon className="w-3 h-3" style={{ color }} />
+            </span>
+          );
+        })}
+        <span className="text-[11px] text-gray-600 dark:text-gray-300 ml-0.5">{total}</span>
+      </button>
+    </Popover>
   ) : null;
 
   const threeDotButton = (
@@ -152,68 +195,27 @@ export default function MessageReactions({
     </Popover>
   );
 
-  return (
-    <>
-      <div
-        className={`absolute -bottom-2 z-10 flex items-center gap-1 ${
-          isOwn ? "-left-2" : "-right-2"
-        }`}
-      >
-        {isOwn ? (
-          <>
-            {threeDotButton}
-            {reactionBadge}
-          </>
-        ) : (
-          <>
-            {reactionBadge}
-            {threeDotButton}
-          </>
-        )}
-      </div>
+  const buttons = isOwn ? (
+    <>{threeDotButton}{reactionBadge}</>
+  ) : (
+    <>{reactionBadge}{threeDotButton}</>
+  );
 
-      <Modal
-        open={modalOpen}
-        onCancel={() => setModalOpen(false)}
-        footer={null}
-        title="Cảm xúc tin nhắn"
-        width={320}
-        styles={{ body: { maxHeight: 360, overflowY: "auto" } }}
-      >
-        {summary.length === 0 ? (
-          <p className="text-sm text-gray-400 text-center py-4">Chưa có cảm xúc nào.</p>
-        ) : (
-          <div className="flex flex-col gap-4">
-            {summary.map((s) => {
-              const r = REACTION_MAP[s.type];
-              if (!r) return null;
-              const { Icon, color } = r;
-              return (
-                <div key={s.type}>
-                  <div className="flex items-center gap-1.5 mb-2">
-                    <Icon className="w-4 h-4" style={{ color }} />
-                    <span className="text-sm font-medium text-gray-700 dark:text-gray-200">
-                      {REACTION_LABELS[s.type]}
-                    </span>
-                    <span className="text-xs text-gray-400 dark:text-gray-500">
-                      • {s.count} lượt
-                    </span>
-                  </div>
-                  <div className="flex flex-col gap-1 pl-1">
-                    {(s.users || []).map((u) => (
-                      <div key={u.id} className="flex items-center justify-between py-0.5">
-                        <span className="text-sm text-gray-800 dark:text-gray-200">
-                          {u.profile_name || u.username}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </Modal>
-    </>
+  if (inline) {
+    return (
+      <div className={`flex items-center gap-1 mt-1 ${isOwn ? "justify-end" : "justify-start"}`}>
+        {buttons}
+      </div>
+    );
+  }
+
+  return (
+    <div
+      className={`absolute -bottom-2 z-10 flex items-center gap-1 ${
+        isOwn ? "-left-2" : "-right-2"
+      }`}
+    >
+      {buttons}
+    </div>
   );
 }
