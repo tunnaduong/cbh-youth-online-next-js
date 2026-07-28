@@ -504,10 +504,8 @@ export default function ChatConversation({
                 {storyReplyCaption}
               </div>
             )}
-            {/* Row: reply-btn (left) + avatar + bubble + reply-btn (right) */}
-            <div className={`flex items-center gap-1 ${message.is_myself ? "justify-end" : "justify-start"}`}>
-              {/* Own message: reply btn on LEFT of bubble */}
-              {message.is_myself && replyBtn}
+            {/* Row: avatar + bubble */}
+            <div className={`flex items-end gap-1 ${message.is_myself ? "justify-end" : "justify-start"}`}>
 
               {/* Avatar (others only) */}
               {!message.is_myself && (
@@ -540,6 +538,8 @@ export default function ChatConversation({
                   )}
                 </span>
               </div>
+              <div className="flex items-end gap-1">
+              {message.is_myself && replyBtn}
               <div className="relative mb-2 min-w-0">
                 {message.reply_to && (
                   <ReplyPreviewBubble
@@ -696,13 +696,14 @@ export default function ChatConversation({
                   />
                 )}
               </div>
+              {!message.is_myself && replyBtn}
+              </div>
               {isLastOwnMessage && (
                 <span className="text-[11px] text-gray-400 dark:text-gray-500 mt-0.5">
                   {message.read_at ? "Đã xem" : "Đã gửi"}
                 </span>
               )}
               </div>
-              {!message.is_myself && replyBtn}
             </div>
           </div>
           );
