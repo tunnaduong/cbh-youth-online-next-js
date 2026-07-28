@@ -209,7 +209,7 @@ export function CommentInput({
               <>
                 <textarea
                   value={comment}
-                  onChange={(e) => handleMentionChange(e.target.value)}
+                  onChange={(e) => handleMentionChange(e.target.value, e.target.selectionStart)}
                   onFocus={() => setIsFocused(true)}
                   onKeyDown={handleKeyDown}
                   ref={textareaRef}

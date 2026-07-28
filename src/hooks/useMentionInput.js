@@ -21,13 +21,14 @@ export function useMentionInput({ value, onChange, conversationId = null, inputR
   const debounceTimer = useRef(null);
 
   const handleChange = useCallback(
-    (newValue) => {
+    (newValue, cursorPos) => {
       onChange(newValue);
 
-      // Find the active @mention trigger before the cursor
+      // cursorPos is passed from the event handler (e.target.selectionStart)
+      // so it's always the correct position before React re-renders.
       const el =
         inputRef?.current?.resizableTextArea?.textArea || inputRef?.current;
-      const cursor = el ? el.selectionStart : newValue.length;
+      const cursor = cursorPos ?? (el ? el.selectionStart : newValue.length);
       const textBeforeCursor = newValue.slice(0, cursor);
 
       // Walk back from cursor to find an unbroken @word

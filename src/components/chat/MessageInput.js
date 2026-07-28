@@ -239,7 +239,7 @@ export default function MessageInput({ onSend, onSendFile, sending, loggedIn, re
           <TextArea
             ref={textareaRef}
             value={message}
-            onChange={(e) => handleMentionChange(e.target.value)}
+            onChange={(e) => handleMentionChange(e.target.value, e.target.selectionStart)}
             onKeyDown={handleKeyDown}
             onPaste={handlePaste}
             placeholder="Viết một tin nhắn..."

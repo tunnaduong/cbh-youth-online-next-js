@@ -216,7 +216,7 @@ export default function ChatMessageInput({
             ref={inputRef}
             value={message}
             onChange={(e) => {
-              handleMentionChange(e.target.value);
+              handleMentionChange(e.target.value, e.target.selectionStart);
               onTyping?.();
             }}
             onKeyDown={handleKeyDown}
