@@ -163,19 +163,26 @@ export default function MessageReactions({
     >
       <button
         type="button"
-        className="flex items-center gap-0.5 bg-white dark:bg-neutral-700 rounded-full shadow px-1.5 py-0.5 border border-gray-200 dark:border-neutral-600 hover:border-gray-400 dark:hover:border-neutral-400 transition"
+        className="flex items-center gap-1 bg-white dark:bg-neutral-700 rounded-full shadow px-1.5 py-0.5 border border-gray-200 dark:border-neutral-600 hover:border-gray-400 dark:hover:border-neutral-400 transition"
       >
         {topTwo.map((s) => {
           const r = REACTION_MAP[s.type];
           if (!r) return null;
           const { Icon, color } = r;
           return (
-            <span key={s.type} className="w-3.5 h-3.5 flex items-center justify-center">
-              <Icon className="w-3 h-3" style={{ color }} />
+            <span key={s.type} className="flex items-center gap-0.5">
+              <span className="w-3.5 h-3.5 flex items-center justify-center">
+                <Icon className="w-3 h-3" style={{ color }} />
+              </span>
+              {inline && s.count > 1 && (
+                <span className="text-[10px] text-gray-500 dark:text-gray-400 font-bold mr-0.5">
+                  x{s.count}
+                </span>
+              )}
             </span>
           );
         })}
-        <span className="text-[11px] text-gray-600 dark:text-gray-300 ml-0.5">{total}</span>
+        {!inline && <span className="text-[11px] text-gray-600 dark:text-gray-300 ml-0.5">{total}</span>}
       </button>
     </Popover>
   ) : null;
@@ -199,7 +206,7 @@ export default function MessageReactions({
     </Popover>
   );
 
-  const buttons = isOwn ? (
+  const buttons = (inline || isOwn) ? (
     <>{threeDotButton}{reactionBadge}</>
   ) : (
     <>{reactionBadge}{threeDotButton}</>
