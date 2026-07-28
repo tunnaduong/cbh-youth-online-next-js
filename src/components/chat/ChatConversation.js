@@ -519,6 +519,7 @@ export default function ChatConversation({
                       })
                     }
                     onMouseDown={() => startLongPress(message.id)}
+                    onMouseMove={clearLongPressTimer}
                     onMouseUp={clearLongPressTimer}
                     onMouseLeave={clearLongPressTimer}
                     onTouchStart={() => startLongPress(message.id)}
@@ -549,6 +550,7 @@ export default function ChatConversation({
                       })
                     }
                     onMouseDown={() => startLongPress(message.id)}
+                    onMouseMove={clearLongPressTimer}
                     onMouseUp={clearLongPressTimer}
                     onMouseLeave={clearLongPressTimer}
                     onTouchStart={() => startLongPress(message.id)}
@@ -584,6 +586,7 @@ export default function ChatConversation({
                         : "bg-gray-200 dark:bg-neutral-600 dark:text-white"
                     }`}
                     onMouseDown={() => startLongPress(message.id)}
+                    onMouseMove={clearLongPressTimer}
                     onMouseUp={clearLongPressTimer}
                     onMouseLeave={clearLongPressTimer}
                     onTouchStart={() => startLongPress(message.id)}
@@ -617,6 +620,7 @@ export default function ChatConversation({
                         : "bg-gray-200 dark:bg-neutral-600 dark:text-white"
                     }`}
                     onMouseDown={() => startLongPress(message.id)}
+                    onMouseMove={clearLongPressTimer}
                     onMouseUp={clearLongPressTimer}
                     onMouseLeave={clearLongPressTimer}
                     onTouchStart={() => startLongPress(message.id)}
