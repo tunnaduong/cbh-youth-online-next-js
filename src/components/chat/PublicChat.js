@@ -480,10 +480,29 @@ export default function PublicChat() {
         const myReactions = [...(cur.my_reactions || []), reactionType];
         let summary = [...(cur.summary || [])];
         const existing = summary.find((s) => s.type === reactionType);
+
+        const uId = currentUser?.id;
+        const uUsername = currentUser?.username;
+        const uProfileName = currentUser?.profile_name || currentUser?.username;
+
         if (existing) {
-          summary = summary.map((s) => s.type === reactionType ? { ...s, count: s.count + 1 } : s);
+          summary = summary.map((s) => {
+            if (s.type !== reactionType) return s;
+            let users = [...(s.users || [])];
+            const existingUser = users.find((u) => u.id === uId || u.username === uUsername);
+            if (existingUser) {
+              users = users.map((u) => (u.id === uId || u.username === uUsername) ? { ...u, count: (u.count || 1) + 1 } : u);
+            } else {
+              users = [...users, { id: uId, username: uUsername, profile_name: uProfileName, count: 1 }];
+            }
+            return { ...s, count: s.count + 1, users };
+          });
         } else {
-          summary = [...summary, { type: reactionType, count: 1 }];
+          summary = [...summary, {
+            type: reactionType,
+            count: 1,
+            users: [{ id: uId, username: uUsername, profile_name: uProfileName, count: 1 }]
+          }];
         }
         return { ...prev, [messageId]: { ...cur, summary, total: (cur.total || 0) + 1, my_reactions: myReactions } };
       });
@@ -502,9 +521,19 @@ export default function PublicChat() {
         if (!cur) return prev;
         const myReactions = cur.my_reactions || [];
         let summary = [...(cur.summary || [])];
+        const uId = currentUser?.id;
+        const uUsername = currentUser?.username;
+
         myReactions.forEach((type) => {
           summary = summary
-            .map((s) => s.type === type ? { ...s, count: s.count - 1 } : s)
+            .map((s) => {
+              if (s.type !== type) return s;
+              let users = [...(s.users || [])];
+              users = users
+                .map((u) => (u.id === uId || u.username === uUsername) ? { ...u, count: Math.max(0, (u.count || 1) - 1) } : u)
+                .filter((u) => u.count > 0);
+              return { ...s, count: s.count - 1, users };
+            })
             .filter((s) => s.count > 0);
         });
         return { ...prev, [messageId]: { ...cur, summary, total: Math.max(0, (cur.total || 0) - myReactions.length), my_reactions: [] } };
