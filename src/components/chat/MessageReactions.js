@@ -1,7 +1,8 @@
 "use client";
 
 import { Popover } from "antd";
-import { X, MoreHorizontal, CornerUpLeft, Undo2, Pencil } from "lucide-react";
+import { X, CornerUpLeft, Undo2, Pencil } from "lucide-react";
+import { BsEmojiSmile } from "react-icons/bs";
 import {
   BsHandThumbsUpFill,
   BsHeartFill,
@@ -190,7 +191,7 @@ export default function MessageReactions({
         className="w-6 h-6 flex items-center justify-center rounded-full bg-white dark:bg-neutral-700 shadow border border-gray-200 dark:border-neutral-600 text-gray-500 dark:text-gray-300 hover:text-gray-700 dark:hover:text-gray-100"
         title="Cảm xúc & tùy chọn"
       >
-        <MoreHorizontal className="w-3.5 h-3.5" />
+        <BsEmojiSmile className="w-3.5 h-3.5" />
       </button>
     </Popover>
   );

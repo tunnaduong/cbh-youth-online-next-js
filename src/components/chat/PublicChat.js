@@ -838,6 +838,7 @@ export default function PublicChat() {
                             onRemove={() => handleRemovePublicReaction(message.id, rxns)}
                             onReply={() => setReplyingTo(message)}
                             onRecall={message.is_myself && !message.is_recalled ? () => handleRecallPublic(message.id) : undefined}
+                            onEdit={message.is_myself && message.type === "text" && !message.is_recalled ? () => setEditingMessage({ id: message.id, content: message.content || "" }) : undefined}
                             inline
                           />
                         );
