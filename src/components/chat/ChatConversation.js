@@ -681,7 +681,7 @@ export default function ChatConversation({
                     {linkifyText(message.content)}
                   </div>
                 )}
-                {!message.is_sending && (
+                {!message.is_sending && !message.is_recalled && (
                   <MessageReactions
                     reactions={message.reactions}
                     isOwn={message.is_myself}
