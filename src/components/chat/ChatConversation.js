@@ -39,8 +39,13 @@ const MENTION_RE = /(@\w{2,})/g;
 // never get split mid-character. URLs have no word boundaries to wrap at, so
 // they alone get break-all — otherwise they'd overflow the bubble instead of
 // wrapping.
-function linkifyText(text, linkClassName) {
+function linkifyText(text, linkClassName, isOwn = false) {
   if (!text) return text;
+  // On own (green) bubbles use white so the mention is visible; otherwise green.
+  const mentionClass = isOwn
+    ? "font-medium underline underline-offset-2 text-white/90 hover:text-white break-words"
+    : "font-medium underline underline-offset-2 text-[#319527] dark:text-[#6bcf60] hover:opacity-75 break-words";
+
   const parts = text.split(URL_RE);
   return parts.flatMap((part, i) => {
     if (i % 2 === 1) {
@@ -66,7 +71,7 @@ function linkifyText(text, linkClassName) {
           <NextLink
             key={`${i}-${j}`}
             href={`/${username}`}
-            className="font-medium underline underline-offset-2 text-[#319527] dark:text-[#6bcf60] hover:opacity-75 break-words"
+            className={mentionClass}
             onClick={(e) => e.stopPropagation()}
           >
             {mp}
@@ -702,7 +707,7 @@ export default function ChatConversation({
                     onTouchMove={clearLongPressTimer}
                     onContextMenu={(e) => e.preventDefault()}
                   >
-                    {linkifyText(message.content)}
+                    {linkifyText(message.content, "", message.is_myself)}
                   </div>
                 )}
                 {!message.is_sending && !message.is_recalled && (
