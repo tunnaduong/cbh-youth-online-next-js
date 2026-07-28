@@ -564,5 +564,5 @@ export const getMentionSuggestions = (query) => {
 };
 
 export const getConversationMentionSuggestions = (conversationId, query) => {
-  return Api.getRequest(`/v1.0/conversations/${conversationId}/mention-suggestions?q=${encodeURIComponent(query)}`);
+  return Api.getRequest(`/v1.0/chat/conversations/${conversationId}/mention-suggestions?q=${encodeURIComponent(query)}`);
 };
