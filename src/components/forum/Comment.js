@@ -22,6 +22,7 @@ import { CommentInput } from "./CommentInput";
 import { useRouter } from "@bprogress/next/app";
 import Badges from "../ui/Badges";
 import MarkdownRenderer from "../ui/MarkdownRenderer";
+import ChatMediaLightbox from "../chat/ChatMediaLightbox";
 
 export default function Comment({
   comment,
@@ -43,6 +44,7 @@ export default function Comment({
   const [isConnectorHovered, setIsConnectorHovered] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [localVotes, setLocalVotes] = useState(comment.votes || []);
+  const [lightboxMedia, setLightboxMedia] = useState(null);
   const router = useRouter();
 
   const handleSaveEdit = async () => {
@@ -220,6 +222,7 @@ export default function Comment({
       className={`relative transition-colors duration-700 rounded ${isHighlighted ? "bg-yellow-100 dark:bg-yellow-900/30" : ""}`}
       id={commentDomId}
     >
+      <ChatMediaLightbox media={lightboxMedia} onClose={() => setLightboxMedia(null)} />
       {/* Reddit-style curved connector lines for nested comments */}
       {comment.replies?.length > 0 && !isCollapsed && (
         <div
@@ -397,7 +400,7 @@ export default function Comment({
                           src={url}
                           alt={`Ảnh ${idx + 1}`}
                           className="max-h-48 max-w-[200px] rounded-lg border object-cover cursor-pointer"
-                          onClick={() => window.open(url, "_blank")}
+                          onClick={() => setLightboxMedia({ type: "image", url })}
                         />
                       ))}
                     </div>
