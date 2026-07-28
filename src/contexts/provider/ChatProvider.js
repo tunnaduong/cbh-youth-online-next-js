@@ -1111,19 +1111,27 @@ const ChatProvider = ({ children }) => {
     removeMessageReaction,
     setHighlightMessageId,
     updateMessageLocally: (conversationId, messageId, patch) => {
-      setMessages((prev) => ({
-        ...prev,
-        [conversationId]: (prev[conversationId] || []).map((m) =>
-          m.id === messageId ? { ...m, ...patch } : m
-        ),
-      }));
-      setConversations((prev) =>
-        prev.map((c) => {
-          if (String(c.id) !== String(conversationId)) return c;
-          if (!c.latest_message || String(c.latest_message.id) !== String(messageId)) return c;
-          return { ...c, latest_message: { ...c.latest_message, ...patch } };
-        })
-      );
+      setMessages((prev) => {
+        const updated = {
+          ...prev,
+          [conversationId]: (prev[conversationId] || []).map((m) =>
+            m.id === messageId ? { ...m, ...patch } : m
+          ),
+        };
+        // If the patched message is the last in the list, update latest_message in conversations
+        const msgs = updated[conversationId] || [];
+        const lastMsg = msgs[msgs.length - 1];
+        if (lastMsg && lastMsg.id === messageId) {
+          setConversations((prevC) =>
+            prevC.map((c) =>
+              String(c.id) === String(conversationId) && c.latest_message
+                ? { ...c, latest_message: { ...c.latest_message, ...patch } }
+                : c
+            )
+          );
+        }
+        return updated;
+      });
     },
   };
 
