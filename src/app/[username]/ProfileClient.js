@@ -552,9 +552,11 @@ export default function ProfileClient({ initialProfile, activeTab, username }) {
               style={{ backgroundImage: `url(${coverImageUrl})` }}
               className="cover-photo-bg bg-gray-300 absolute inset-0"
             />
-            <div
-              style={{ backgroundImage: `url(${coverImageUrl})` }}
-              className="blur-effect absolute inset-0 lg:hidden"
+            <img
+              src={coverImageUrl}
+              alt=""
+              aria-hidden="true"
+              className="blur-effect absolute inset-0 w-full h-full object-cover"
             />
             <div className="lg:hidden flex flex-col items-center gap-y-2 relative z-10 px-2.5 py-8">
               <a
