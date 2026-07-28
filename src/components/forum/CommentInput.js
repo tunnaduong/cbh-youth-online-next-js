@@ -9,6 +9,8 @@ import Picker from "@emoji-mart/react";
 import { useTheme } from "@/contexts/themeContext";
 import MarkdownToolbar from "@/components/ui/MarkdownToolbar";
 import MarkdownRenderer from "@/components/ui/MarkdownRenderer";
+import MentionSuggestionsDropdown from "@/components/ui/MentionSuggestionsDropdown";
+import { useMentionInput } from "@/hooks/useMentionInput";
 
 const MAX_IMAGES = 10;
 
@@ -31,6 +33,14 @@ export function CommentInput({
   const imageInputRef = useRef(null);
   const { currentUser } = useAuthContext();
   const { theme } = useTheme();
+
+  const {
+    handleChange: handleMentionChange,
+    insertMention,
+    showSuggestions,
+    suggestions,
+    closeSuggestions,
+  } = useMentionInput({ value: comment, onChange: setComment, inputRef: textareaRef });
 
   const handleSubmit = () => {
     if (comment.trim() || selectedImages.length > 0) {
@@ -190,33 +200,42 @@ export function CommentInput({
               </Button>
             </Dropdown>
           </div>
-          <div className="flex-1">
+          <div className="flex-1 relative">
             {isPreviewMode ? (
               <div className="min-h-[24px] p-2 text-sm bg-gray-50 dark:bg-gray-800 rounded border mb-3">
                 <MarkdownRenderer content={comment} />
               </div>
             ) : (
-              <textarea
-                value={comment}
-                onChange={(e) => setComment(e.target.value)}
-                onFocus={() => setIsFocused(true)}
-                onKeyDown={handleKeyDown}
-                ref={textareaRef}
-                placeholder={placeholder}
-                rows={1}
-                className="
-                  w-full bg-transparent border-none outline-none resize-none
-                  text-foreground placeholder:text-muted-foreground
-                  text-sm min-h-[24px] leading-6 ring-transparent focus:ring-transparent focus:border-transparent
-                  pl-0 pt-0 mt-1
-                "
-                style={{ height: "auto", minHeight: "24px", maxHeight: "120px", overflowY: "auto" }}
-                onInput={(e) => {
-                  const target = e.target;
-                  target.style.height = "auto";
-                  target.style.height = target.scrollHeight + "px";
-                }}
-              />
+              <>
+                <textarea
+                  value={comment}
+                  onChange={(e) => handleMentionChange(e.target.value)}
+                  onFocus={() => setIsFocused(true)}
+                  onKeyDown={handleKeyDown}
+                  ref={textareaRef}
+                  placeholder={placeholder}
+                  rows={1}
+                  className="
+                    w-full bg-transparent border-none outline-none resize-none
+                    text-foreground placeholder:text-muted-foreground
+                    text-sm min-h-[24px] leading-6 ring-transparent focus:ring-transparent focus:border-transparent
+                    pl-0 pt-0 mt-1
+                  "
+                  style={{ height: "auto", minHeight: "24px", maxHeight: "120px", overflowY: "auto" }}
+                  onInput={(e) => {
+                    const target = e.target;
+                    target.style.height = "auto";
+                    target.style.height = target.scrollHeight + "px";
+                  }}
+                />
+                {showSuggestions && (
+                  <MentionSuggestionsDropdown
+                    suggestions={suggestions}
+                    onSelect={insertMention}
+                    onClose={closeSuggestions}
+                  />
+                )}
+              </>
             )}
 
             {/* Image previews */}

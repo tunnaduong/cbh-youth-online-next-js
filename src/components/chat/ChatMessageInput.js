@@ -3,6 +3,8 @@
 import { useState, useRef, useEffect } from "react";
 import Input from "@/components/ui/input";
 import { FileText, Paperclip, Pencil, Send, Video, X } from "lucide-react";
+import MentionSuggestionsDropdown from "@/components/ui/MentionSuggestionsDropdown";
+import { useMentionInput } from "@/hooks/useMentionInput";
 
 function EditComposerBar({ editingMessage, onCancel }) {
   if (!editingMessage) return null;
@@ -111,10 +113,19 @@ export default function ChatMessageInput({
   editingMessage,
   onSaveEdit,
   onCancelEdit,
+  conversationId,
 }) {
   const [message, setMessage] = useState("");
   const inputRef = useRef(null);
   const fileInputRef = useRef(null);
+
+  const {
+    handleChange: handleMentionChange,
+    insertMention,
+    showSuggestions,
+    suggestions,
+    closeSuggestions,
+  } = useMentionInput({ value: message, onChange: setMessage, conversationId, inputRef });
 
   // Pre-fill input when entering edit mode
   useEffect(() => {
@@ -200,19 +211,28 @@ export default function ChatMessageInput({
         >
           <Paperclip className="w-4 h-4 text-gray-600 dark:text-gray-300" />
         </button>
-        <Input
-          ref={inputRef}
-          value={message}
-          onChange={(e) => {
-            setMessage(e.target.value);
-            onTyping?.();
-          }}
-          onKeyDown={handleKeyDown}
-          onPaste={handlePaste}
-          placeholder="Gửi tin nhắn..."
-          disabled={sending}
-          className="flex-1"
-        />
+        <div className="flex-1 relative">
+          <Input
+            ref={inputRef}
+            value={message}
+            onChange={(e) => {
+              handleMentionChange(e.target.value);
+              onTyping?.();
+            }}
+            onKeyDown={handleKeyDown}
+            onPaste={handlePaste}
+            placeholder="Gửi tin nhắn..."
+            disabled={sending}
+            className="w-full"
+          />
+          {showSuggestions && (
+            <MentionSuggestionsDropdown
+              suggestions={suggestions}
+              onSelect={insertMention}
+              onClose={closeSuggestions}
+            />
+          )}
+        </div>
         <button
           onClick={handleSubmit}
           disabled={!message.trim() || sending}

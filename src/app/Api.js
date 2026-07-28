@@ -557,3 +557,12 @@ export const placeShopOrder = (params) => {
 export const getMyShopOrders = (params = "") => {
   return Api.getRequest(`/v1.0/shop/my-orders${params ? `?${params}` : ""}`);
 };
+
+// Mention suggestions
+export const getMentionSuggestions = (query) => {
+  return Api.getRequest(`/v1.0/mention-suggestions?q=${encodeURIComponent(query)}`);
+};
+
+export const getConversationMentionSuggestions = (conversationId, query) => {
+  return Api.getRequest(`/v1.0/conversations/${conversationId}/mention-suggestions?q=${encodeURIComponent(query)}`);
+};

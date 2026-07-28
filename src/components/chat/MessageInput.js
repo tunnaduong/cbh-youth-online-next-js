@@ -7,6 +7,8 @@ import { RiEmojiStickerLine } from "react-icons/ri";
 import Picker from "@emoji-mart/react";
 import CustomInput from "@/components/ui/input";
 import { useTheme } from "@/contexts/themeContext";
+import MentionSuggestionsDropdown from "@/components/ui/MentionSuggestionsDropdown";
+import { useMentionInput } from "@/hooks/useMentionInput";
 
 const { TextArea } = Input;
 
@@ -64,7 +66,7 @@ function ReplyComposerBar({ replyingTo, onCancel }) {
   );
 }
 
-export default function MessageInput({ onSend, onSendFile, sending, loggedIn, replyingTo, onCancelReply, editingMessage, onSaveEdit, onCancelEdit }) {
+export default function MessageInput({ onSend, onSendFile, sending, loggedIn, replyingTo, onCancelReply, editingMessage, onSaveEdit, onCancelEdit, conversationId }) {
   const [message, setMessage] = useState("");
   const [guestName, setGuestName] = useState("");
   const [showGuestNameInput, setShowGuestNameInput] = useState(false);
@@ -72,6 +74,14 @@ export default function MessageInput({ onSend, onSendFile, sending, loggedIn, re
   const textareaRef = useRef(null);
   const fileInputRef = useRef(null);
   const { theme } = useTheme();
+
+  const {
+    handleChange: handleMentionChange,
+    insertMention,
+    showSuggestions,
+    suggestions,
+    closeSuggestions,
+  } = useMentionInput({ value: message, onChange: setMessage, conversationId: loggedIn ? conversationId : null, inputRef: textareaRef });
 
   useEffect(() => {
     if (editingMessage) {
@@ -225,20 +235,28 @@ export default function MessageInput({ onSend, onSendFile, sending, loggedIn, re
 
       {/* Input row: textarea + attach + emoji + send all inline */}
       <div className="flex items-center gap-2">
-        <TextArea
-          ref={textareaRef}
-          value={message}
-          onChange={(e) => setMessage(e.target.value)}
-          onKeyDown={handleKeyDown}
-          onPaste={handlePaste}
-          placeholder="Viết một tin nhắn..."
-          autoSize={{ minRows: 1, maxRows: 6 }}
-          className="flex-1"
-          classNames={{
-            textarea:
-              "dark:!bg-neutral-600 bg-white dark:!text-gray-100 dark:!placeholder-gray-400 dark:!border-[#585857]",
-          }}
-        />
+        <div className="flex-1 relative">
+          <TextArea
+            ref={textareaRef}
+            value={message}
+            onChange={(e) => handleMentionChange(e.target.value)}
+            onKeyDown={handleKeyDown}
+            onPaste={handlePaste}
+            placeholder="Viết một tin nhắn..."
+            autoSize={{ minRows: 1, maxRows: 6 }}
+            classNames={{
+              textarea:
+                "dark:!bg-neutral-600 bg-white dark:!text-gray-100 dark:!placeholder-gray-400 dark:!border-[#585857]",
+            }}
+          />
+          {showSuggestions && (
+            <MentionSuggestionsDropdown
+              suggestions={suggestions}
+              onSelect={insertMention}
+              onClose={closeSuggestions}
+            />
+          )}
+        </div>
 
         {/* Attach file (registered users only) */}
         {loggedIn && (

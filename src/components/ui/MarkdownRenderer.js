@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import Link from "next/link";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import remarkBreaks from "remark-breaks";
@@ -41,23 +42,21 @@ const MarkdownRenderer = ({ content, className = "" }) => {
     return { processedContent, iframes };
   };
 
-  // Best-effort hashtag highlighting for the composer preview. The real
-  // clickable linking happens server-side (in content_html); this just
-  // gives visual feedback while writing. Skips fenced/inline code so
-  // "#123" inside a code sample isn't touched.
+  // Best-effort hashtag + @mention highlighting for the composer preview.
+  // Skips fenced/inline code blocks so "#123" or "@user" inside code isn't touched.
   const linkifyHashtagsInMarkdown = (markdown) => {
     const codeSplitRegex = /(```[\s\S]*?```|`[^`\n]*`)/g;
     const hashtagRegex = /(?<![\w&])#([\p{L}\p{N}_]+)/gu;
+    const mentionRegex = /(?<![[\w])@([\w]+)/g;
 
     return markdown
       .split(codeSplitRegex)
       .map((segment, index) => {
         // Odd indices are the captured code segments — leave them untouched.
         if (index % 2 === 1) return segment;
-        return segment.replace(
-          hashtagRegex,
-          (_match, tag) => `[#${tag}](##hashtag:${tag})`
-        );
+        return segment
+          .replace(hashtagRegex, (_match, tag) => `[#${tag}](##hashtag:${tag})`)
+          .replace(mentionRegex, (_match, username) => `[@${username}](##mention:${username})`);
       })
       .join("");
   };
@@ -77,6 +76,17 @@ const MarkdownRenderer = ({ content, className = "" }) => {
                 <span className="text-blue-600 dark:text-blue-400 font-medium">
                   {children}
                 </span>
+              );
+            }
+            if (typeof href === "string" && href.startsWith("##mention:")) {
+              const username = href.slice("##mention:".length);
+              return (
+                <Link
+                  href={`/${username}`}
+                  className="text-primary-600 dark:text-primary-400 font-medium underline underline-offset-2 hover:opacity-80"
+                >
+                  {children}
+                </Link>
               );
             }
             return (

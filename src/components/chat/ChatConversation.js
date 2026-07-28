@@ -11,6 +11,7 @@ import MessageReactions from "./MessageReactions";
 import ReplyPreviewBubble from "./ReplyPreviewBubble";
 import ChatMediaLightbox from "./ChatMediaLightbox";
 import { CornerUpLeft, FileText, Download, PlayCircle } from "lucide-react";
+import NextLink from "next/link";
 import { recallMessage, editMessage } from "@/app/Api";
 
 const LONG_PRESS_MS = 450;
@@ -32,6 +33,7 @@ function resolveFileUrl(url) {
 const IMAGE_EXTENSION_RE = /\.(png|jpe?g|gif|webp|bmp|svg|heic|heif)$/i;
 
 const URL_RE = /(https?:\/\/[^\s]+)/g;
+const MENTION_RE = /(@\w+)/g;
 
 // Plain text wraps at word boundaries (break-words) so Vietnamese diacritics
 // never get split mid-character. URLs have no word boundaries to wrap at, so
@@ -40,24 +42,44 @@ const URL_RE = /(https?:\/\/[^\s]+)/g;
 function linkifyText(text, linkClassName) {
   if (!text) return text;
   const parts = text.split(URL_RE);
-  return parts.map((part, i) =>
-    i % 2 === 1 ? (
-      <a
-        key={i}
-        href={part}
-        target="_blank"
-        rel="noopener noreferrer"
-        className={`underline break-all ${linkClassName || ""}`}
-        onClick={(e) => e.stopPropagation()}
-      >
-        {part}
-      </a>
-    ) : (
-      <span key={i} className="break-words">
-        {part}
-      </span>
-    )
-  );
+  return parts.flatMap((part, i) => {
+    if (i % 2 === 1) {
+      return (
+        <a
+          key={i}
+          href={part}
+          target="_blank"
+          rel="noopener noreferrer"
+          className={`underline break-all ${linkClassName || ""}`}
+          onClick={(e) => e.stopPropagation()}
+        >
+          {part}
+        </a>
+      );
+    }
+    // Within plain-text segments, also linkify @mentions
+    const mentionParts = part.split(MENTION_RE);
+    return mentionParts.map((mp, j) => {
+      if (j % 2 === 1) {
+        const username = mp.slice(1); // strip '@'
+        return (
+          <NextLink
+            key={`${i}-${j}`}
+            href={`/${username}`}
+            className="font-medium underline underline-offset-2 text-primary-600 dark:text-primary-400 hover:opacity-80 break-words"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {mp}
+          </NextLink>
+        );
+      }
+      return (
+        <span key={`${i}-${j}`} className="break-words">
+          {mp}
+        </span>
+      );
+    });
+  });
 }
 
 // Some attachments got persisted with type: "file" even though they're really
@@ -403,6 +425,7 @@ export default function ChatConversation({
           onTyping={() => sendTyping(conversationId)}
           replyingTo={replyingTo}
           onCancelReply={handleCancelReply}
+          conversationId={conversationId}
         />
       </div>
     );
@@ -435,6 +458,7 @@ export default function ChatConversation({
           onTyping={() => sendTyping(conversationId)}
           replyingTo={replyingTo}
           onCancelReply={handleCancelReply}
+          conversationId={conversationId}
         />
       </div>
     );
@@ -730,6 +754,7 @@ export default function ChatConversation({
         editingMessage={editingMessage}
         onSaveEdit={handleSaveEdit}
         onCancelEdit={() => setEditingMessage(null)}
+        conversationId={conversationId}
       />
 
       <ChatMediaLightbox
