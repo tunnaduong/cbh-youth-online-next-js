@@ -117,14 +117,28 @@ export default function ChatConversation({
 
   // Hide hover buttons while the user is selecting text
   useEffect(() => {
+    const onMouseDown = () => { isSelectingTextRef.current = true; };
+    const onMouseUp = () => {
+      const sel = window.getSelection();
+      // Keep suppressed only if text is actually selected after release
+      if (!sel || sel.toString().length === 0) {
+        isSelectingTextRef.current = false;
+      }
+    };
     const onSelectionChange = () => {
       const sel = window.getSelection();
       const hasSelection = sel && sel.toString().length > 0;
-      isSelectingTextRef.current = hasSelection;
+      if (!hasSelection) isSelectingTextRef.current = false;
       if (hasSelection) setHoveredMessageId(null);
     };
+    document.addEventListener("mousedown", onMouseDown);
+    document.addEventListener("mouseup", onMouseUp);
     document.addEventListener("selectionchange", onSelectionChange);
-    return () => document.removeEventListener("selectionchange", onSelectionChange);
+    return () => {
+      document.removeEventListener("mousedown", onMouseDown);
+      document.removeEventListener("mouseup", onMouseUp);
+      document.removeEventListener("selectionchange", onSelectionChange);
+    };
   }, []);
 
   // Scroll to and highlight the target message when highlightMessageId is set
@@ -466,7 +480,7 @@ export default function ChatConversation({
 
               {/* Bubble column */}
               <div className={`flex flex-col min-w-0 max-w-[80vw] sm:max-w-[65%] ${message.is_myself ? "items-end" : "items-start"}`}>
-              <div className="flex items-center gap-2 mb-1 min-w-0">
+              <div className="flex items-center gap-2 mb-1 min-w-0 max-w-full overflow-hidden">
                 {!message.is_myself &&
                   (message.sender?.username ? (
                     <Link
@@ -485,7 +499,7 @@ export default function ChatConversation({
                     formatTimestamp(message.created_at)}
                 </span>
               </div>
-              <div className="relative mb-2 min-w-0 w-full">
+              <div className="relative mb-2 min-w-0">
                 {message.reply_to && (
                   <ReplyPreviewBubble
                     replyTo={message.reply_to}
