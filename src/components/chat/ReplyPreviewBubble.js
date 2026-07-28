@@ -67,7 +67,7 @@ export default function ReplyPreviewBubble({ replyTo, isOwn, onClick }) {
       <p className="text-[11px] font-medium opacity-70 mb-0.5 truncate">
         {senderName}
       </p>
-      <div className="text-[12px] overflow-hidden whitespace-nowrap">
+      <div className="text-[12px] flex min-w-0 overflow-hidden">
         {renderContent()}
       </div>
     </button>
