@@ -479,7 +479,7 @@ export default function ChatConversation({
               )}
 
               {/* Bubble column */}
-              <div className={`flex flex-col w-fit max-w-[80vw] sm:max-w-[65%] ${message.is_myself ? "items-end" : "items-start"}`}>
+              <div className={`flex flex-col min-w-0 max-w-[75%] ${message.is_myself ? "items-end" : "items-start"}`}>
               <div className="flex items-center gap-2 mb-1 min-w-0 max-w-full overflow-hidden">
                 {!message.is_myself &&
                   (message.sender?.username ? (
@@ -499,7 +499,7 @@ export default function ChatConversation({
                     formatTimestamp(message.created_at)}
                 </span>
               </div>
-              <div className="relative mb-2 min-w-0 w-full">
+              <div className="relative mb-2 min-w-0">
                 {message.reply_to && (
                   <ReplyPreviewBubble
                     replyTo={message.reply_to}
@@ -614,7 +614,7 @@ export default function ChatConversation({
                   </a>
                 ) : (
                   <div
-                    className={`rounded-lg px-3 py-2 text-sm whitespace-pre-wrap break-words min-w-0 max-w-full ${
+                    className={`rounded-lg px-3 py-2 text-sm whitespace-pre-wrap break-words w-fit max-w-full min-w-0 ${
                       message.is_myself
                         ? "bg-[#319527] text-white"
                         : "bg-gray-200 dark:bg-neutral-600 dark:text-white"
