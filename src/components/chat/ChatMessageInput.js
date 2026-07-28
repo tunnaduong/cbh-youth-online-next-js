@@ -56,7 +56,7 @@ function ReplyComposerBar({ replyingTo, onCancel }) {
   };
 
   return (
-    <div className="flex items-center gap-2 px-4 py-2 border-t dark:border-neutral-600 bg-gray-50 dark:bg-neutral-750">
+    <div className="flex items-center gap-2 px-4 py-2 border-t border-gray-200 dark:border-neutral-600 bg-gray-50 dark:bg-neutral-700">
       <div className="flex-1 min-w-0 border-l-[3px] border-[#319527] pl-2">
         <p className="text-[11px] font-semibold text-[#319527] truncate">
           Đang trả lời{" "}
