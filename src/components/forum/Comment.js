@@ -28,7 +28,7 @@ import ChatMediaLightbox from "../chat/ChatMediaLightbox";
 // Alternates between HTML tags (preserved) and text segments (processed).
 function linkifyMentionsInHtml(html) {
   if (!html) return html;
-  return html.replace(/(<[^>]+>)|(@(\w+))/g, (match, tag, _mention, username) => {
+  return html.replace(/(<[^>]+>)|(@(\w{2,}))/g, (match, tag, _mention, username) => {
     if (tag) return tag;
     return `<a href="/${username}" class="mention-tag">@${username}</a>`;
   });
