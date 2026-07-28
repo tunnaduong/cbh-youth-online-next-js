@@ -58,7 +58,7 @@ export default function ReplyPreviewBubble({ replyTo, isOwn, onClick }) {
     <button
       type="button"
       onClick={onClick}
-      className={`w-full text-left mb-1.5 rounded px-2 py-1 border-l-[3px] opacity-80 hover:opacity-100 transition-opacity ${
+      className={`w-0 min-w-full text-left mb-1.5 rounded px-2 py-1 border-l-[3px] opacity-80 hover:opacity-100 transition-opacity ${
         isOwn
           ? "bg-[#267a1e] border-white/60 text-white"
           : "bg-black/10 dark:bg-white/10 border-[#319527] text-gray-700 dark:text-gray-200"
