@@ -1,38 +1,72 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 
 /**
- * Floating dropdown that lists mention suggestions. Appears below the
- * textarea; the caller is responsible for positioning via a wrapper div.
+ * Floating dropdown that lists mention suggestions.
+ * Rendered via a portal so parent overflow:hidden containers never clip it.
+ *
+ * @param {object}  props
+ * @param {Array}   props.suggestions
+ * @param {function} props.onSelect
+ * @param {function} props.onClose
+ * @param {React.RefObject} props.anchorRef - ref to the input/textarea to position relative to
  */
-export default function MentionSuggestionsDropdown({ suggestions, onSelect, onClose }) {
-  const listRef = useRef(null);
-  const [activeIndex, setActiveIndex] = [0, () => {}]; // kept simple — keyboard nav below
+export default function MentionSuggestionsDropdown({ suggestions, onSelect, onClose, anchorRef }) {
+  const [coords, setCoords] = useState(null);
+
+  // Recompute position when suggestions appear or window scrolls/resizes
+  useEffect(() => {
+    if (!suggestions || suggestions.length === 0) return;
+
+    const updateCoords = () => {
+      const el = anchorRef?.current?.resizableTextArea?.textArea
+        || anchorRef?.current?.input
+        || anchorRef?.current;
+      if (!el) return;
+      const rect = el.getBoundingClientRect();
+      setCoords({ top: rect.top + window.scrollY, left: rect.left, width: rect.width, height: rect.height });
+    };
+
+    updateCoords();
+    window.addEventListener("scroll", updateCoords, true);
+    window.addEventListener("resize", updateCoords);
+    return () => {
+      window.removeEventListener("scroll", updateCoords, true);
+      window.removeEventListener("resize", updateCoords);
+    };
+  }, [suggestions, anchorRef]);
 
   // Close on Escape
   useEffect(() => {
-    const handler = (e) => {
-      if (e.key === "Escape") onClose();
-    };
+    const handler = (e) => { if (e.key === "Escape") onClose(); };
     document.addEventListener("keydown", handler);
     return () => document.removeEventListener("keydown", handler);
   }, [onClose]);
 
-  if (!suggestions || suggestions.length === 0) return null;
+  if (!suggestions || suggestions.length === 0 || !coords) return null;
 
-  return (
+  const DROPDOWN_MAX_H = 320; // max-h-80
+
+  // Place above the input; if not enough space above, place below
+  const spaceAbove = coords.top;
+  const placeBelow = spaceAbove < DROPDOWN_MAX_H + 8;
+
+  const style = placeBelow
+    ? { position: "absolute", top: coords.top + coords.height + 4, left: coords.left, width: Math.max(coords.width, 256), zIndex: 9999 }
+    : { position: "absolute", top: coords.top - 4, left: coords.left, width: Math.max(coords.width, 256), zIndex: 9999, transform: "translateY(-100%)" };
+
+  const content = (
     <div
-      ref={listRef}
-      className="absolute z-50 bottom-full mb-1 left-0 w-64 max-h-80 overflow-y-auto bg-white dark:bg-neutral-800 border border-gray-200 dark:border-neutral-600 rounded-xl shadow-lg"
+      style={style}
+      className="max-h-80 overflow-y-auto bg-white dark:bg-neutral-800 border border-gray-200 dark:border-neutral-600 rounded-xl shadow-xl"
     >
       {suggestions.map((user) => (
         <button
           key={user.id}
           type="button"
           onMouseDown={(e) => {
-            // mousedown fires before textarea blur — prevent the textarea from
-            // losing focus so selection cursor position stays accurate.
             e.preventDefault();
             onSelect(user);
           }}
@@ -55,4 +89,7 @@ export default function MentionSuggestionsDropdown({ suggestions, onSelect, onCl
       ))}
     </div>
   );
+
+  if (typeof document === "undefined") return null;
+  return createPortal(content, document.body);
 }

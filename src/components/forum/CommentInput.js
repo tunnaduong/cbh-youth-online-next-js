@@ -200,7 +200,7 @@ export function CommentInput({
               </Button>
             </Dropdown>
           </div>
-          <div className="flex-1 relative">
+          <div className="flex-1">
             {isPreviewMode ? (
               <div className="min-h-[24px] p-2 text-sm bg-gray-50 dark:bg-gray-800 rounded border mb-3">
                 <MarkdownRenderer content={comment} />
@@ -233,6 +233,7 @@ export function CommentInput({
                     suggestions={suggestions}
                     onSelect={insertMention}
                     onClose={closeSuggestions}
+                    anchorRef={textareaRef}
                   />
                 )}
               </>

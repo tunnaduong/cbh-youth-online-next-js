@@ -196,7 +196,7 @@ export default function ChatMessageInput({
     <div className="flex flex-col">
       <EditComposerBar editingMessage={editingMessage} onCancel={onCancelEdit} />
       <ReplyComposerBar replyingTo={replyingTo} onCancel={onCancelReply} />
-      <div className="flex items-center gap-2 px-4 py-3 border-t dark:border-neutral-600 bg-white dark:bg-neutral-700 rounded-b-lg overflow-hidden">
+      <div className="flex items-center gap-2 px-4 py-3 border-t dark:border-neutral-600 bg-white dark:bg-neutral-700 rounded-b-lg">
         <input
           ref={fileInputRef}
           type="file"
@@ -211,7 +211,7 @@ export default function ChatMessageInput({
         >
           <Paperclip className="w-4 h-4 text-gray-600 dark:text-gray-300" />
         </button>
-        <div className="flex-1 relative">
+        <div className="flex-1">
           <Input
             ref={inputRef}
             value={message}
@@ -230,6 +230,7 @@ export default function ChatMessageInput({
               suggestions={suggestions}
               onSelect={insertMention}
               onClose={closeSuggestions}
+              anchorRef={inputRef}
             />
           )}
         </div>

@@ -235,7 +235,7 @@ export default function MessageInput({ onSend, onSendFile, sending, loggedIn, re
 
       {/* Input row: textarea + attach + emoji + send all inline */}
       <div className="flex items-center gap-2">
-        <div className="flex-1 relative">
+        <div className="flex-1">
           <TextArea
             ref={textareaRef}
             value={message}
@@ -254,6 +254,7 @@ export default function MessageInput({ onSend, onSendFile, sending, loggedIn, re
               suggestions={suggestions}
               onSelect={insertMention}
               onClose={closeSuggestions}
+              anchorRef={textareaRef}
             />
           )}
         </div>
