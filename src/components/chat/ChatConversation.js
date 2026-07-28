@@ -66,7 +66,7 @@ function linkifyText(text, linkClassName) {
           <NextLink
             key={`${i}-${j}`}
             href={`/${username}`}
-            className="font-medium underline underline-offset-2 text-primary-600 dark:text-primary-400 hover:opacity-80 break-words"
+            className="font-medium underline underline-offset-2 text-[#319527] dark:text-[#6bcf60] hover:opacity-75 break-words"
             onClick={(e) => e.stopPropagation()}
           >
             {mp}

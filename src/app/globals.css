@@ -1040,3 +1040,18 @@ body.has-email-verification-alert [class*="mt-\\[4\\.3rem\\]"] {
   border-radius: 8px;
   animation: chatHighlightFade 2s ease-out forwards !important;
 }
+
+/* @mention tags in rendered comment HTML */
+.mention-tag {
+  color: #319527;
+  font-weight: 500;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+.mention-tag:hover {
+  opacity: 0.75;
+}
+.dark .mention-tag {
+  color: #6bcf60;
+}

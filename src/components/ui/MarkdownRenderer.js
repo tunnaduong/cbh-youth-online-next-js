@@ -83,7 +83,7 @@ const MarkdownRenderer = ({ content, className = "" }) => {
               return (
                 <Link
                   href={`/${username}`}
-                  className="text-primary-600 dark:text-primary-400 font-medium underline underline-offset-2 hover:opacity-80"
+                  className="text-[#319527] dark:text-[#6bcf60] font-medium underline underline-offset-2 hover:opacity-75"
                 >
                   {children}
                 </Link>

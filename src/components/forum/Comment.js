@@ -24,6 +24,16 @@ import Badges from "../ui/Badges";
 import MarkdownRenderer from "../ui/MarkdownRenderer";
 import ChatMediaLightbox from "../chat/ChatMediaLightbox";
 
+// Replace @username in HTML text nodes with clickable profile links.
+// Alternates between HTML tags (preserved) and text segments (processed).
+function linkifyMentionsInHtml(html) {
+  if (!html) return html;
+  return html.replace(/(<[^>]+>)|(@(\w+))/g, (match, tag, _mention, username) => {
+    if (tag) return tag;
+    return `<a href="/${username}" class="mention-tag">@${username}</a>`;
+  });
+}
+
 export default function Comment({
   comment,
   level = 0,
@@ -389,7 +399,7 @@ export default function Comment({
                   {comment.comment && (
                     <div
                       className="text-gray-700 dark:text-gray-300 text-sm mb-1 prose custom-prose markdown-preview dark:prose-invert flex flex-col"
-                      dangerouslySetInnerHTML={{ __html: comment.comment }}
+                      dangerouslySetInnerHTML={{ __html: linkifyMentionsInHtml(comment.comment) }}
                     />
                   )}
                   {comment.image_urls?.length > 0 && (
