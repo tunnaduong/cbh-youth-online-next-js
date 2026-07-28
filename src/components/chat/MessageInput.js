@@ -198,7 +198,7 @@ export default function MessageInput({ onSend, onSendFile, sending, loggedIn, re
       )}
 
       {/* Input row: textarea + attach + emoji + send all inline */}
-      <div className="flex items-end gap-2">
+      <div className="flex items-center gap-2">
         <TextArea
           ref={textareaRef}
           value={message}
