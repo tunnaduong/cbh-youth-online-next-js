@@ -11,13 +11,11 @@ import {
 import MessageInput from "./MessageInput";
 import ParticipantsList from "./ParticipantsList";
 import ChatMediaLightbox from "./ChatMediaLightbox";
-import { Menu, FileText, Download, PlayCircle, CornerUpLeft, Undo2, Pencil } from "lucide-react";
+import { Menu, FileText, Download, PlayCircle, CornerUpLeft, Undo2, Pencil, MoreHorizontal, X } from "lucide-react";
 import { REACTION_TYPES } from "./MessageReactions";
 import ReplyPreviewBubble from "./ReplyPreviewBubble";
 import { reactToMessage, removeMessageReaction, recallMessage, editMessage } from "@/app/Api";
-import { Popover } from "antd";
-import { BsEmojiSmile } from "react-icons/bs";
-import { X } from "lucide-react";
+import { Popover, Modal } from "antd";
 
 const URL_RE = /(https?:\/\/[^\s]+)/g;
 
@@ -85,6 +83,7 @@ export default function PublicChat() {
   const [lightboxMedia, setLightboxMedia] = useState(null);
   const [openReactionMessageId, setOpenReactionMessageId] = useState(null);
   const [localReactions, setLocalReactions] = useState({});
+  const [reactionModalData, setReactionModalData] = useState(null);
   const [replyingTo, setReplyingTo] = useState(null);
   const [editingMessage, setEditingMessage] = useState(null);
   const [hoveredMessageId, setHoveredMessageId] = useState(null);
@@ -459,37 +458,45 @@ export default function PublicChat() {
   };
 
   const handleReact = async (messageId, reactionType) => {
-    if (!loggedIn) return;
+    if (!loggedIn || !reactionType) return;
     try {
       setLocalReactions((prev) => {
-        const cur = prev[messageId] || { summary: [], total: 0, my_reaction: null };
-        const prev_type = cur.my_reaction;
-        if (reactionType === null || reactionType === prev_type) {
-          const summary = cur.summary
-            .map((s) => s.type === prev_type ? { ...s, count: s.count - 1 } : s)
-            .filter((s) => s.count > 0);
-          return { ...prev, [messageId]: { summary, total: Math.max(0, cur.total - 1), my_reaction: null } };
-        }
+        const cur = prev[messageId] || { summary: [], total: 0, my_reactions: [] };
+        const myReactions = [...(cur.my_reactions || []), reactionType];
         let summary = [...cur.summary];
-        if (prev_type) {
-          summary = summary.map((s) => s.type === prev_type ? { ...s, count: s.count - 1 } : s).filter((s) => s.count > 0);
-        }
         const existing = summary.find((s) => s.type === reactionType);
         if (existing) {
           summary = summary.map((s) => s.type === reactionType ? { ...s, count: s.count + 1 } : s);
         } else {
           summary = [...summary, { type: reactionType, count: 1 }];
         }
-        const delta = prev_type ? 0 : 1;
-        return { ...prev, [messageId]: { summary, total: cur.total + delta, my_reaction: reactionType } };
+        return { ...prev, [messageId]: { ...cur, summary, total: cur.total + 1, my_reactions: myReactions } };
       });
-      if (reactionType) {
-        await reactToMessage(messageId, reactionType);
-      } else {
-        await removeMessageReaction(messageId);
-      }
+      await reactToMessage(messageId, reactionType);
     } catch (error) {
       console.error("[PublicChat] Error reacting:", error);
+    }
+    setOpenReactionMessageId(null);
+  };
+
+  const handleRemovePublicReaction = async (messageId) => {
+    if (!loggedIn) return;
+    try {
+      setLocalReactions((prev) => {
+        const cur = prev[messageId];
+        if (!cur) return prev;
+        const myReactions = cur.my_reactions || [];
+        let summary = [...cur.summary];
+        myReactions.forEach((type) => {
+          summary = summary
+            .map((s) => s.type === type ? { ...s, count: s.count - 1 } : s)
+            .filter((s) => s.count > 0);
+        });
+        return { ...prev, [messageId]: { ...cur, summary, total: Math.max(0, cur.total - myReactions.length), my_reactions: [] } };
+      });
+      await removeMessageReaction(messageId);
+    } catch (error) {
+      console.error("[PublicChat] Error removing reaction:", error);
     }
     setOpenReactionMessageId(null);
   };
@@ -824,72 +831,79 @@ export default function PublicChat() {
                         const rxns = getMessageReactions(message);
                         const summary = rxns?.summary || [];
                         const total = rxns?.total || 0;
-                        const myReaction = rxns?.my_reaction || null;
+                        const myReactions = rxns?.my_reactions || [];
                         const isOpen = openReactionMessageId === message.id;
+                        const isOwn = message.is_myself;
+                        const topTwo = [...summary].sort((a, b) => b.count - a.count).slice(0, 2);
+
                         const pickerContent = (
                           <div className="flex items-center gap-1 p-1">
                             {REACTION_TYPES.map(({ type, Icon, color }) => (
                               <button
                                 key={type}
                                 type="button"
-                                onClick={() => handleReact(message.id, type === myReaction ? null : type)}
-                                className={`w-8 h-8 flex items-center justify-center rounded-full hover:scale-125 transition-transform ${myReaction === type ? "ring-2 ring-[#319527] bg-green-50 dark:bg-neutral-700" : ""}`}
+                                onClick={() => handleReact(message.id, type)}
+                                className="w-8 h-8 flex items-center justify-center rounded-full hover:scale-125 transition-transform"
                                 title={type}
                               >
                                 <Icon className="w-5 h-5" style={{ color }} />
                               </button>
                             ))}
-                            {myReaction && (
+                            {myReactions.length > 0 && (
                               <button
                                 type="button"
-                                onClick={() => handleReact(message.id, null)}
+                                onClick={() => handleRemovePublicReaction(message.id)}
                                 className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 dark:hover:bg-neutral-700 text-gray-500 dark:text-gray-300"
-                                title="Bỏ react"
+                                title="Xóa tất cả cảm xúc"
                               >
                                 <X className="w-4 h-4" />
                               </button>
                             )}
                           </div>
                         );
-                        return (
-                          <div className="flex items-center gap-1 mt-1 flex-wrap">
-                            {/* Count badge (click to open picker) */}
-                            {total > 0 && (
-                              <button
-                                type="button"
-                                onClick={() => setOpenReactionMessageId(isOpen ? null : message.id)}
-                                className="flex items-center gap-0.5 bg-white dark:bg-neutral-700 rounded-full shadow-sm px-1.5 py-0.5 border border-gray-200 dark:border-neutral-600 hover:border-gray-400 transition"
-                              >
-                                {summary.slice(0, 3).map((s) => {
-                                  const r = REACTION_TYPES.find((x) => x.type === s.type);
-                                  if (!r) return null;
-                                  const { Icon, color } = r;
-                                  return (
-                                    <span key={s.type} className={`w-3.5 h-3.5 flex items-center justify-center ${myReaction === s.type ? "ring-1 ring-[#319527] rounded-full" : ""}`}>
-                                      <Icon className="w-3 h-3" style={{ color }} />
-                                    </span>
-                                  );
-                                })}
-                                <span className="text-[11px] text-gray-600 dark:text-gray-300 ml-0.5">{total}</span>
-                              </button>
-                            )}
-                            {/* Emoji button with picker */}
-                            <Popover
-                              trigger="click"
-                              open={isOpen}
-                              onOpenChange={(v) => setOpenReactionMessageId(v ? message.id : null)}
-                              placement="topLeft"
-                              content={pickerContent}
-                              styles={{ body: { padding: 4 } }}
+
+                        const badgeEl = total > 0 ? (
+                          <button
+                            type="button"
+                            onClick={() => setReactionModalData(rxns)}
+                            className="flex items-center gap-0.5 bg-white dark:bg-neutral-700 rounded-full shadow-sm px-1.5 py-0.5 border border-gray-200 dark:border-neutral-600 hover:border-gray-400 transition"
+                          >
+                            {topTwo.map((s) => {
+                              const r = REACTION_TYPES.find((x) => x.type === s.type);
+                              if (!r) return null;
+                              const { Icon, color } = r;
+                              return (
+                                <span key={s.type} className="w-3.5 h-3.5 flex items-center justify-center">
+                                  <Icon className="w-3 h-3" style={{ color }} />
+                                </span>
+                              );
+                            })}
+                            <span className="text-[11px] text-gray-600 dark:text-gray-300 ml-0.5">{total}</span>
+                          </button>
+                        ) : null;
+
+                        const dotBtn = (
+                          <Popover
+                            trigger="click"
+                            open={isOpen}
+                            onOpenChange={(v) => setOpenReactionMessageId(v ? message.id : null)}
+                            placement={isOwn ? "topRight" : "topLeft"}
+                            content={pickerContent}
+                            styles={{ body: { padding: 4 } }}
+                          >
+                            <button
+                              type="button"
+                              className={`w-6 h-6 flex items-center justify-center rounded-full border border-gray-200 dark:border-neutral-600 text-gray-400 hover:text-gray-600 hover:border-gray-400 transition opacity-0 group-hover:opacity-100 ${isOpen ? "!opacity-100" : ""}`}
+                              title="Cảm xúc"
                             >
-                              <button
-                                type="button"
-                                className={`w-6 h-6 flex items-center justify-center rounded-full border border-gray-200 dark:border-neutral-600 text-gray-400 hover:text-gray-600 hover:border-gray-400 transition opacity-0 group-hover:opacity-100 ${isOpen ? "!opacity-100" : ""}`}
-                                title="React"
-                              >
-                                <BsEmojiSmile className="w-3.5 h-3.5" />
-                              </button>
-                            </Popover>
+                              <MoreHorizontal className="w-3.5 h-3.5" />
+                            </button>
+                          </Popover>
+                        );
+
+                        return (
+                          <div className={`flex items-center gap-1 mt-1 flex-wrap ${isOwn ? "justify-end" : "justify-start"}`}>
+                            {isOwn ? <>{dotBtn}{badgeEl}</> : <>{badgeEl}{dotBtn}</>}
                           </div>
                         );
                       })()}
@@ -948,6 +962,45 @@ export default function PublicChat() {
         media={lightboxMedia}
         onClose={() => setLightboxMedia(null)}
       />
+
+      <Modal
+        open={!!reactionModalData}
+        onCancel={() => setReactionModalData(null)}
+        footer={null}
+        title="Cảm xúc tin nhắn"
+        width={320}
+        styles={{ body: { maxHeight: 360, overflowY: "auto" } }}
+      >
+        {(() => {
+          const summary = reactionModalData?.summary || [];
+          if (summary.length === 0) return <p className="text-sm text-gray-400 text-center py-4">Chưa có cảm xúc nào.</p>;
+          return (
+            <div className="flex flex-col gap-4">
+              {summary.map((s) => {
+                const r = REACTION_TYPES.find((x) => x.type === s.type);
+                if (!r) return null;
+                const { Icon, color } = r;
+                return (
+                  <div key={s.type}>
+                    <div className="flex items-center gap-1.5 mb-2">
+                      <Icon className="w-4 h-4" style={{ color }} />
+                      <span className="text-sm font-medium text-gray-700 dark:text-gray-200 capitalize">{s.type}</span>
+                      <span className="text-xs text-gray-400 dark:text-gray-500">• {s.count} lượt</span>
+                    </div>
+                    <div className="flex flex-col gap-1 pl-1">
+                      {(s.users || []).map((u) => (
+                        <div key={u.id} className="py-0.5">
+                          <span className="text-sm text-gray-800 dark:text-gray-200">{u.profile_name || u.username}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          );
+        })()}
+      </Modal>
     </div>
   );
 }

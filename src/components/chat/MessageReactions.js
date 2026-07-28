@@ -1,9 +1,9 @@
 "use client";
 
-import { Popover } from "antd";
-import { X } from "lucide-react";
+import { useState } from "react";
+import { Popover, Modal } from "antd";
+import { X, MoreHorizontal, CornerUpLeft, Undo2, Pencil } from "lucide-react";
 import {
-  BsEmojiSmile,
   BsHandThumbsUpFill,
   BsHeartFill,
   BsEmojiLaughingFill,
@@ -11,7 +11,6 @@ import {
   BsEmojiFrownFill,
   BsEmojiAngryFill,
 } from "react-icons/bs";
-import { CornerUpLeft, Undo2, Pencil } from "lucide-react";
 
 export const REACTION_TYPES = [
   { type: "like", Icon: BsHandThumbsUpFill, color: "#2078f4" },
@@ -27,6 +26,15 @@ const REACTION_MAP = REACTION_TYPES.reduce((acc, r) => {
   return acc;
 }, {});
 
+const REACTION_LABELS = {
+  like: "Thích",
+  love: "Yêu thích",
+  haha: "Haha",
+  wow: "Wow",
+  sad: "Buồn",
+  angry: "Phẫn nộ",
+};
+
 export default function MessageReactions({
   reactions,
   isOwn,
@@ -38,9 +46,14 @@ export default function MessageReactions({
   onRecall,
   onEdit,
 }) {
+  const [modalOpen, setModalOpen] = useState(false);
+
   const summary = reactions?.summary || [];
   const total = reactions?.total || 0;
-  const myReaction = reactions?.my_reaction || null;
+  const myReactions = reactions?.my_reactions || [];
+
+  // Top 2 most frequent reaction types for badge
+  const topTwo = [...summary].sort((a, b) => b.count - a.count).slice(0, 2);
 
   const pickerContent = (
     <div className="flex flex-col gap-1 p-1">
@@ -49,23 +62,19 @@ export default function MessageReactions({
           <button
             key={type}
             type="button"
-            onClick={() => onReact(type === myReaction ? null : type)}
-            className={`w-8 h-8 flex items-center justify-center rounded-full hover:scale-125 transition-transform ${
-              myReaction === type
-                ? "ring-2 ring-[#319527] bg-green-50 dark:bg-neutral-700"
-                : ""
-            }`}
-            title={type}
+            onClick={() => { onReact(type); onOpenChange(false); }}
+            className="w-8 h-8 flex items-center justify-center rounded-full hover:scale-125 transition-transform"
+            title={REACTION_LABELS[type]}
           >
             <Icon className="w-5 h-5" style={{ color }} />
           </button>
         ))}
-        {myReaction && (
+        {myReactions.length > 0 && (
           <button
             type="button"
-            onClick={onRemove}
+            onClick={() => { onRemove(); onOpenChange(false); }}
             className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 dark:hover:bg-neutral-700 text-gray-500 dark:text-gray-300"
-            title="Bỏ react"
+            title="Xóa tất cả cảm xúc"
           >
             <X className="w-4 h-4" />
           </button>
@@ -104,7 +113,27 @@ export default function MessageReactions({
     </div>
   );
 
-  return (
+  const reactionBadge = total > 0 ? (
+    <button
+      type="button"
+      onClick={() => setModalOpen(true)}
+      className="flex items-center gap-0.5 bg-white dark:bg-neutral-700 rounded-full shadow px-1.5 py-0.5 border border-gray-200 dark:border-neutral-600 hover:border-gray-400 dark:hover:border-neutral-400 transition"
+    >
+      {topTwo.map((s) => {
+        const r = REACTION_MAP[s.type];
+        if (!r) return null;
+        const { Icon, color } = r;
+        return (
+          <span key={s.type} className="w-3.5 h-3.5 flex items-center justify-center">
+            <Icon className="w-3 h-3" style={{ color }} />
+          </span>
+        );
+      })}
+      <span className="text-[11px] text-gray-600 dark:text-gray-300 ml-0.5">{total}</span>
+    </button>
+  ) : null;
+
+  const threeDotButton = (
     <Popover
       trigger="click"
       open={open}
@@ -113,45 +142,78 @@ export default function MessageReactions({
       content={pickerContent}
       styles={{ body: { padding: 4 } }}
     >
+      <button
+        type="button"
+        className="w-6 h-6 flex items-center justify-center rounded-full bg-white dark:bg-neutral-700 shadow border border-gray-200 dark:border-neutral-600 text-gray-500 dark:text-gray-300 hover:text-gray-700 dark:hover:text-gray-100"
+        title="Cảm xúc & tùy chọn"
+      >
+        <MoreHorizontal className="w-3.5 h-3.5" />
+      </button>
+    </Popover>
+  );
+
+  return (
+    <>
       <div
-        className={`absolute -bottom-2 z-10 ${
+        className={`absolute -bottom-2 z-10 flex items-center gap-1 ${
           isOwn ? "-left-2" : "-right-2"
         }`}
       >
-        {total > 0 ? (
-          <button
-            type="button"
-            className="flex items-center gap-0.5 bg-white dark:bg-neutral-700 rounded-full shadow px-1.5 py-0.5 border border-gray-200 dark:border-neutral-600"
-          >
-            {summary.slice(0, 3).map((s) => {
+        {isOwn ? (
+          <>
+            {threeDotButton}
+            {reactionBadge}
+          </>
+        ) : (
+          <>
+            {reactionBadge}
+            {threeDotButton}
+          </>
+        )}
+      </div>
+
+      <Modal
+        open={modalOpen}
+        onCancel={() => setModalOpen(false)}
+        footer={null}
+        title="Cảm xúc tin nhắn"
+        width={320}
+        styles={{ body: { maxHeight: 360, overflowY: "auto" } }}
+      >
+        {summary.length === 0 ? (
+          <p className="text-sm text-gray-400 text-center py-4">Chưa có cảm xúc nào.</p>
+        ) : (
+          <div className="flex flex-col gap-4">
+            {summary.map((s) => {
               const r = REACTION_MAP[s.type];
               if (!r) return null;
               const { Icon, color } = r;
               return (
-                <span
-                  key={s.type}
-                  className={`w-3.5 h-3.5 flex items-center justify-center rounded-full ${
-                    myReaction === s.type ? "ring-1 ring-[#319527]" : ""
-                  }`}
-                >
-                  <Icon className="w-3 h-3" style={{ color }} />
-                </span>
+                <div key={s.type}>
+                  <div className="flex items-center gap-1.5 mb-2">
+                    <Icon className="w-4 h-4" style={{ color }} />
+                    <span className="text-sm font-medium text-gray-700 dark:text-gray-200">
+                      {REACTION_LABELS[s.type]}
+                    </span>
+                    <span className="text-xs text-gray-400 dark:text-gray-500">
+                      • {s.count} lượt
+                    </span>
+                  </div>
+                  <div className="flex flex-col gap-1 pl-1">
+                    {(s.users || []).map((u) => (
+                      <div key={u.id} className="flex items-center justify-between py-0.5">
+                        <span className="text-sm text-gray-800 dark:text-gray-200">
+                          {u.profile_name || u.username}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
               );
             })}
-            <span className="text-[11px] text-gray-600 dark:text-gray-300 ml-0.5">
-              {total}
-            </span>
-          </button>
-        ) : (
-          <button
-            type="button"
-            className="w-6 h-6 flex items-center justify-center rounded-full bg-white dark:bg-neutral-700 shadow border border-gray-200 dark:border-neutral-600 text-gray-500 dark:text-gray-300"
-            title="React"
-          >
-            <BsEmojiSmile className="w-3.5 h-3.5" />
-          </button>
+          </div>
         )}
-      </div>
-    </Popover>
+      </Modal>
+    </>
   );
 }

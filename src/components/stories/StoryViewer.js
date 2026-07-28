@@ -413,7 +413,7 @@ const StoryFooter = ({
         onClick={(e) => e.stopPropagation()}
       >
         {/* Reaction row */}
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3">
           {REACTIONS.map(({ type, emoji }) => {
             const isSelected = currentReaction === type;
             return (
@@ -435,6 +435,15 @@ const StoryFooter = ({
               </button>
             );
           })}
+          {currentReaction && (
+            <button
+              onClick={() => onReact(currentReaction)}
+              className="flex items-center justify-center w-7 h-7 rounded-full bg-white/20 hover:bg-white/30 text-white transition-colors"
+              title="Xóa reaction"
+            >
+              <X size={14} />
+            </button>
+          )}
         </div>
 
         {/* Reply input row */}
