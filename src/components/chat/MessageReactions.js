@@ -57,9 +57,12 @@ function WhoReactedContent({ summary }) {
             </div>
             <div className="flex flex-col gap-0.5 pl-1">
               {(s.users || []).map((u) => (
-                <span key={u.id} className="text-sm text-gray-800 dark:text-gray-200 py-0.5">
-                  {u.profile_name || u.username}
-                </span>
+                <div key={u.id} className="flex items-center justify-between py-0.5">
+                  <span className="text-sm text-gray-800 dark:text-gray-200">{u.profile_name || u.username}</span>
+                  {u.count > 1 && (
+                    <span className="text-xs text-gray-400 dark:text-gray-500 ml-3">×{u.count}</span>
+                  )}
+                </div>
               ))}
             </div>
           </div>
