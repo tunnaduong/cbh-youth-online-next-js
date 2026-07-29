@@ -20,6 +20,33 @@ import { Popover } from "antd";
 const URL_RE = /(https?:\/\/[^\s]+)/g;
 const MENTION_RE = /(@[\w-]+)/g;
 
+// Fallback: resolve @mentions in freshly-sent/edited content against the known
+// participants list, in case the server response doesn't include a resolved
+// `mentions` array yet (it would otherwise only appear after the next poll/refresh).
+function resolveMentionsFromParticipants(content, participants) {
+  if (!content || !Array.isArray(participants) || participants.length === 0) {
+    return [];
+  }
+  const byUsername = new Map(
+    participants
+      .filter((p) => p?.username)
+      .map((p) => [p.username.toLowerCase(), p])
+  );
+  const seen = new Set();
+  const resolved = [];
+  const tokens = content.match(MENTION_RE) || [];
+  for (const token of tokens) {
+    const username = token.slice(1).toLowerCase();
+    if (seen.has(username)) continue;
+    const participant = byUsername.get(username);
+    if (participant) {
+      seen.add(username);
+      resolved.push(participant);
+    }
+  }
+  return resolved;
+}
+
 const IMAGE_EXTENSION_RE = /\.(png|jpe?g|gif|webp|bmp|svg|heic|heif)$/i;
 const VIDEO_EXTENSION_RE = /\.(mp4|mov|avi|webm|mkv)$/i;
 const LONG_PRESS_MS = 450;
@@ -389,6 +416,19 @@ export default function PublicChat() {
       console.log("[PublicChat] Message sent successfully:", newMessage);
       console.log("[PublicChat] newMessage.sender:", newMessage.sender);
 
+      // Server response may not include resolved mentions yet (would otherwise
+      // only appear after a poll/refresh). Resolve them locally so @tags render
+      // as links immediately.
+      if (!Array.isArray(newMessage.mentions) || newMessage.mentions.length === 0) {
+        const resolved = resolveMentionsFromParticipants(
+          newMessage.content,
+          participants
+        );
+        if (resolved.length > 0) {
+          newMessage = { ...newMessage, mentions: resolved };
+        }
+      }
+
       // Validate sender info before adding to state
       if (!newMessage.sender || !newMessage.sender.username) {
         console.error(
@@ -585,13 +625,21 @@ export default function PublicChat() {
   const handleSaveEditPublic = async (newContent) => {
     if (!editingMessage || !newContent.trim()) return;
     try {
-      await editMessage(editingMessage.id, { content: newContent.trim() });
+      const response = await editMessage(editingMessage.id, { content: newContent.trim() });
+      const serverMentions = response?.data?.mentions;
       setMessages((prev) =>
-        prev.map((m) =>
-          m.id === editingMessage.id
-            ? { ...m, content: newContent.trim(), is_edited: true }
-            : m
-        )
+        prev.map((m) => {
+          if (m.id !== editingMessage.id) return m;
+          const mentions = Array.isArray(serverMentions)
+            ? serverMentions
+            : resolveMentionsFromParticipants(newContent.trim(), participants);
+          return {
+            ...m,
+            content: newContent.trim(),
+            is_edited: true,
+            mentions: mentions.length > 0 ? mentions : m.mentions,
+          };
+        })
       );
     } catch (error) {
       console.error("[PublicChat] Error editing message:", error);
