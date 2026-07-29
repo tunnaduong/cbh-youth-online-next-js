@@ -26,11 +26,11 @@ import MarkdownRenderer from "../ui/MarkdownRenderer";
 import ChatMediaLightbox from "../chat/ChatMediaLightbox";
 
 // Replace @username in HTML text nodes with clickable profile links.
-// Alternates between HTML tags (preserved) and text segments (processed).
-function linkifyMentionsInHtml(html) {
+// validMentions: Set of lowercase usernames confirmed valid by the server.
+// When null, falls back to linking all @username patterns (backward compat).
+function linkifyMentionsInHtml(html, validMentions = null) {
   if (!html) return html;
   // New format: server already rendered [@Profile Name](/username) as <a href="/username">@Profile Name</a>
-  // Add mention-tag class to those links so they get the green style.
   let result = html.replace(
     /<a href="(\/\w{2,})">(@[^<]+)<\/a>/g,
     '<a href="$1" class="mention-tag">$2</a>'
@@ -38,6 +38,7 @@ function linkifyMentionsInHtml(html) {
   // Old plain format: @username in text nodes
   result = result.replace(/(<[^>]+>)|(@(\w{2,}))/g, (match, tag, _mention, username) => {
     if (tag) return tag;
+    if (validMentions && !validMentions.has(username.toLowerCase())) return match;
     return `<a href="/${username}" class="mention-tag">@${username}</a>`;
   });
   return result;
@@ -420,7 +421,12 @@ export default function Comment({
                   {comment.comment && (
                     <div
                       className="text-gray-700 dark:text-gray-300 text-sm mb-1 prose custom-prose markdown-preview dark:prose-invert flex flex-col"
-                      dangerouslySetInnerHTML={{ __html: linkifyMentionsInHtml(comment.comment) }}
+                      dangerouslySetInnerHTML={{ __html: linkifyMentionsInHtml(
+                        comment.comment,
+                        comment.mentions?.length
+                          ? new Set(comment.mentions.map((m) => m.username.toLowerCase()))
+                          : null
+                      ) }}
                     />
                   )}
                   {comment.image_urls?.length > 0 && (

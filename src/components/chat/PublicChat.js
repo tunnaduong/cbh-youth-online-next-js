@@ -18,6 +18,7 @@ import { reactToMessage, removeMessageReaction, recallMessage, editMessage } fro
 import { Popover } from "antd";
 
 const URL_RE = /(https?:\/\/[^\s]+)/g;
+const MENTION_RE = /(@\w+)/g;
 
 const IMAGE_EXTENSION_RE = /\.(png|jpe?g|gif|webp|bmp|svg|heic|heif)$/i;
 const VIDEO_EXTENSION_RE = /\.(mp4|mov|avi|webm|mkv)$/i;
@@ -48,27 +49,48 @@ function formatFileSize(bytes) {
 // never get split mid-character. URLs have no word boundaries to wrap at, so
 // they alone get break-all — otherwise they'd overflow the bubble instead of
 // wrapping.
-function linkifyText(text) {
+function linkifyText(text, validMentions = null) {
   if (!text) return text;
   const parts = text.split(URL_RE);
-  return parts.map((part, i) =>
-    i % 2 === 1 ? (
-      <a
-        key={i}
-        href={part}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="underline break-all"
-        onClick={(e) => e.stopPropagation()}
-      >
-        {part}
-      </a>
-    ) : (
-      <span key={i} className="break-words">
-        {part}
-      </span>
-    )
-  );
+  return parts.flatMap((part, i) => {
+    if (i % 2 === 1) {
+      return (
+        <a
+          key={i}
+          href={part}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="underline break-all"
+          onClick={(e) => e.stopPropagation()}
+        >
+          {part}
+        </a>
+      );
+    }
+    const mentionParts = part.split(MENTION_RE);
+    return mentionParts.map((mp, j) => {
+      if (j % 2 === 1) {
+        const username = mp.slice(1);
+        const isValid = validMentions
+          ? validMentions.has(username.toLowerCase())
+          : true;
+        if (isValid) {
+          return (
+            <a
+              key={`${i}-${j}`}
+              href={`/${username}`}
+              className="font-medium underline underline-offset-2 text-[#319527] dark:text-[#6bcf60] hover:opacity-75 break-words"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {mp}
+            </a>
+          );
+        }
+        return <span key={`${i}-${j}`} className="break-words">{mp}</span>;
+      }
+      return <span key={`${i}-${j}`} className="break-words">{mp}</span>;
+    });
+  });
 }
 
 export default function PublicChat() {
@@ -903,7 +925,12 @@ export default function PublicChat() {
                           onTouchMove={clearLongPressTimer}
                           onContextMenu={(e) => e.preventDefault()}
                         >
-                          {linkifyText(message.content)}
+                          {linkifyText(
+                            message.content,
+                            message.mentions?.length
+                              ? new Set(message.mentions.map((m) => m.username.toLowerCase()))
+                              : null
+                          )}
                         </div>
                       )}
 

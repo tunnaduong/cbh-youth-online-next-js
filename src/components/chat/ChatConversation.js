@@ -33,13 +33,14 @@ function resolveFileUrl(url) {
 const IMAGE_EXTENSION_RE = /\.(png|jpe?g|gif|webp|bmp|svg|heic|heif)$/i;
 
 const URL_RE = /(https?:\/\/[^\s]+)/g;
-const MENTION_RE = /(@\w{2,})/g;
+const MENTION_RE = /(@\w+)/g;
 
 // Plain text wraps at word boundaries (break-words) so Vietnamese diacritics
 // never get split mid-character. URLs have no word boundaries to wrap at, so
 // they alone get break-all — otherwise they'd overflow the bubble instead of
 // wrapping.
-function linkifyText(text, linkClassName, isOwn = false) {
+// validMentions: Set of lowercase usernames confirmed by the server.
+function linkifyText(text, linkClassName, isOwn = false, validMentions = null) {
   if (!text) return text;
   // On own (green) bubbles use white so the mention is visible; otherwise green.
   const mentionClass = isOwn
@@ -62,20 +63,30 @@ function linkifyText(text, linkClassName, isOwn = false) {
         </a>
       );
     }
-    // Within plain-text segments, also linkify @mentions
+    // Within plain-text segments, also linkify @mentions if they are valid
     const mentionParts = part.split(MENTION_RE);
     return mentionParts.map((mp, j) => {
       if (j % 2 === 1) {
         const username = mp.slice(1); // strip '@'
+        const isValid = validMentions
+          ? validMentions.has(username.toLowerCase())
+          : true; // fallback: treat all as valid when no server data
+        if (isValid) {
+          return (
+            <NextLink
+              key={`${i}-${j}`}
+              href={`/${username}`}
+              className={mentionClass}
+              onClick={(e) => e.stopPropagation()}
+            >
+              {mp}
+            </NextLink>
+          );
+        }
         return (
-          <NextLink
-            key={`${i}-${j}`}
-            href={`/${username}`}
-            className={mentionClass}
-            onClick={(e) => e.stopPropagation()}
-          >
+          <span key={`${i}-${j}`} className="break-words">
             {mp}
-          </NextLink>
+          </span>
         );
       }
       return (
@@ -707,7 +718,14 @@ export default function ChatConversation({
                     onTouchMove={clearLongPressTimer}
                     onContextMenu={(e) => e.preventDefault()}
                   >
-                    {linkifyText(message.content, "", message.is_myself)}
+                    {linkifyText(
+                      message.content,
+                      "",
+                      message.is_myself,
+                      message.mentions?.length
+                        ? new Set(message.mentions.map((m) => m.username.toLowerCase()))
+                        : null
+                    )}
                   </div>
                 )}
                 {!message.is_sending && !message.is_recalled && (
