@@ -19,6 +19,7 @@ import {
 import { FaEdit, FaEye } from "react-icons/fa";
 import { IoArrowUpSharp, IoArrowDownSharp } from "react-icons/io5";
 import { CommentInput } from "./CommentInput";
+import CommentVotesModal from "./CommentVotesModal";
 import { useRouter } from "@bprogress/next/app";
 import Badges from "../ui/Badges";
 import MarkdownRenderer from "../ui/MarkdownRenderer";
@@ -28,10 +29,18 @@ import ChatMediaLightbox from "../chat/ChatMediaLightbox";
 // Alternates between HTML tags (preserved) and text segments (processed).
 function linkifyMentionsInHtml(html) {
   if (!html) return html;
-  return html.replace(/(<[^>]+>)|(@(\w{2,}))/g, (match, tag, _mention, username) => {
+  // New format: server already rendered [@Profile Name](/username) as <a href="/username">@Profile Name</a>
+  // Add mention-tag class to those links so they get the green style.
+  let result = html.replace(
+    /<a href="(\/\w{2,})">(@[^<]+)<\/a>/g,
+    '<a href="$1" class="mention-tag">$2</a>'
+  );
+  // Old plain format: @username in text nodes
+  result = result.replace(/(<[^>]+>)|(@(\w{2,}))/g, (match, tag, _mention, username) => {
     if (tag) return tag;
     return `<a href="/${username}" class="mention-tag">@${username}</a>`;
   });
+  return result;
 }
 
 export default function Comment({
@@ -55,6 +64,13 @@ export default function Comment({
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [localVotes, setLocalVotes] = useState(comment.votes || []);
   const [lightboxMedia, setLightboxMedia] = useState(null);
+  const [votesModalOpen, setVotesModalOpen] = useState(false);
+
+  const handleOpenVotesModal = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setVotesModalOpen(true);
+  };
   const router = useRouter();
 
   const handleSaveEdit = async () => {
@@ -233,6 +249,11 @@ export default function Comment({
       id={commentDomId}
     >
       <ChatMediaLightbox media={lightboxMedia} onClose={() => setLightboxMedia(null)} />
+      <CommentVotesModal
+        open={votesModalOpen}
+        commentId={comment.id}
+        onClose={() => setVotesModalOpen(false)}
+      />
       {/* Reddit-style curved connector lines for nested comments */}
       {comment.replies?.length > 0 && !isCollapsed && (
         <div
@@ -454,16 +475,20 @@ export default function Comment({
                 >
                   <UpvoteIcon />
                 </Button>
-                <span
-                  className={`text-xs font-medium min-w-[1rem] text-center ${userVoteValue === 1
+                <button
+                  type="button"
+                  className={`text-xs font-medium min-w-[1rem] text-center cursor-pointer rounded px-1 hover:underline focus:outline-none ${userVoteValue === 1
                       ? "text-primary-500"
                       : userVoteValue === -1
                         ? "text-red-600"
                         : "text-gray-500 dark:!text-gray-400"
                     }`}
+                  onClick={handleOpenVotesModal}
+                  aria-label="Xem danh sách người đã vote"
+                  title="Xem danh sách người đã vote"
                 >
                   {voteCount}
-                </span>
+                </button>
                 <ConfigProvider
                   theme={{
                     components: {
