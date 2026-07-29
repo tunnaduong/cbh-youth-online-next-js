@@ -415,6 +415,7 @@ export default function PostClient({ params, initialPost = null }) {
         id: response.data.id,
         comment: response.data?.comment ?? "", // HTML for display
         content: response.data?.content ?? "", // Raw markdown for editing
+        mentions: response.data?.mentions ?? [], // Needed for mention-tag rendering
         created_at: response.data.created_at,
         isPending: false,
         is_owner: response.data?.is_owner ?? true, // New reply is always owned by creator
@@ -501,6 +502,7 @@ export default function PostClient({ params, initialPost = null }) {
         id: response.data?.id ?? Date.now(),
         comment: response.data?.comment ?? "", // HTML for display
         content: response.data?.content ?? "", // Raw markdown for editing
+        mentions: response.data?.mentions ?? [], // Needed for mention-tag rendering
         image_urls: response.data?.image_urls ?? [],
         topic_id: extractNumericId(params.postId),
         is_anonymous: response.data?.is_anonymous ?? false,
