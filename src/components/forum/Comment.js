@@ -32,11 +32,11 @@ function linkifyMentionsInHtml(html, validMentions = null) {
   if (!html) return html;
   // New format: server already rendered [@Profile Name](/username) as <a href="/username">@Profile Name</a>
   let result = html.replace(
-    /<a href="(\/\w{2,})">(@[^<]+)<\/a>/g,
+    /<a href="(\/[\w-]{2,})">(@[^<]+)<\/a>/g,
     '<a href="$1" class="mention-tag">$2</a>'
   );
   // Old plain format: @username in text nodes
-  result = result.replace(/(<[^>]+>)|(@(\w{2,}))/g, (match, tag, _mention, username) => {
+  result = result.replace(/(<[^>]+>)|(@([\w-]{2,}))/g, (match, tag, _mention, username) => {
     if (tag) return tag;
     if (validMentions == null || !validMentions.has(username.toLowerCase())) return match;
     return `<a href="/${username}" class="mention-tag">@${username}</a>`;

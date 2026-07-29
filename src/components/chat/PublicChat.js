@@ -18,7 +18,7 @@ import { reactToMessage, removeMessageReaction, recallMessage, editMessage } fro
 import { Popover } from "antd";
 
 const URL_RE = /(https?:\/\/[^\s]+)/g;
-const MENTION_RE = /(@\w+)/g;
+const MENTION_RE = /(@[\w-]+)/g;
 
 const IMAGE_EXTENSION_RE = /\.(png|jpe?g|gif|webp|bmp|svg|heic|heif)$/i;
 const VIDEO_EXTENSION_RE = /\.(mp4|mov|avi|webm|mkv)$/i;
