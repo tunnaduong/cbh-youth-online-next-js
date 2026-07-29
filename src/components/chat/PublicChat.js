@@ -71,9 +71,9 @@ function linkifyText(text, validMentions = null) {
     return mentionParts.map((mp, j) => {
       if (j % 2 === 1) {
         const username = mp.slice(1);
-        const isValid = validMentions
+        const isValid = validMentions != null
           ? validMentions.has(username.toLowerCase())
-          : true;
+          : false;
         if (isValid) {
           return (
             <a
@@ -927,7 +927,7 @@ export default function PublicChat() {
                         >
                           {linkifyText(
                             message.content,
-                            message.mentions?.length
+                            Array.isArray(message.mentions)
                               ? new Set(message.mentions.map((m) => m.username.toLowerCase()))
                               : null
                           )}

@@ -38,7 +38,7 @@ function linkifyMentionsInHtml(html, validMentions = null) {
   // Old plain format: @username in text nodes
   result = result.replace(/(<[^>]+>)|(@(\w{2,}))/g, (match, tag, _mention, username) => {
     if (tag) return tag;
-    if (validMentions && !validMentions.has(username.toLowerCase())) return match;
+    if (validMentions == null || !validMentions.has(username.toLowerCase())) return match;
     return `<a href="/${username}" class="mention-tag">@${username}</a>`;
   });
   return result;
@@ -423,7 +423,7 @@ export default function Comment({
                       className="text-gray-700 dark:text-gray-300 text-sm mb-1 prose custom-prose markdown-preview dark:prose-invert flex flex-col"
                       dangerouslySetInnerHTML={{ __html: linkifyMentionsInHtml(
                         comment.comment,
-                        comment.mentions?.length
+                        Array.isArray(comment.mentions)
                           ? new Set(comment.mentions.map((m) => m.username.toLowerCase()))
                           : null
                       ) }}

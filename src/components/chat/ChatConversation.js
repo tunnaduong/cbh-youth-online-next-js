@@ -68,9 +68,9 @@ function linkifyText(text, linkClassName, isOwn = false, validMentions = null) {
     return mentionParts.map((mp, j) => {
       if (j % 2 === 1) {
         const username = mp.slice(1); // strip '@'
-        const isValid = validMentions
+        const isValid = validMentions != null
           ? validMentions.has(username.toLowerCase())
-          : true; // fallback: treat all as valid when no server data
+          : false; // no server data → treat as plain text
         if (isValid) {
           return (
             <NextLink
@@ -722,7 +722,7 @@ export default function ChatConversation({
                       message.content,
                       "",
                       message.is_myself,
-                      message.mentions?.length
+                      Array.isArray(message.mentions)
                         ? new Set(message.mentions.map((m) => m.username.toLowerCase()))
                         : null
                     )}
