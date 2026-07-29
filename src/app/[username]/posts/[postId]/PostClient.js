@@ -260,6 +260,7 @@ export default function PostClient({ params, initialPost = null }) {
                 ...comment,
                 comment: response.data.comment, // Server's processed HTML for display
                 content: response.data.content, // Server's raw markdown for editing
+                mentions: response.data?.mentions ?? comment.mentions ?? [], // Keep mentions up-to-date
                 updated_at: response.data.created_at,
                 isOptimistic: false, // Remove optimistic flag
               };
