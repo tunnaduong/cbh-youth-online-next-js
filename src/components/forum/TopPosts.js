@@ -268,7 +268,7 @@ export default function TopPosts({ initialLatestPosts = {} }) {
                 </Link>
               </div>
               <div className="sm:flex items-center justify-end hidden text-right text-gray-500 text-[11px] whitespace-nowrap w-[100px] max-w-[100px]">
-                {timeAgoInVietnamese(post.created_at)}
+                {post.time || timeAgoInVietnamese(post.created_at)}
               </div>
               <div className="sm:flex items-center pl-2 hidden text-right text-[11px] whitespace-nowrap w-[150px] max-w-[150px]">
                 <div className="flex items-center justify-end">
