@@ -212,7 +212,7 @@ export default function ChatMessageInput({
         >
           <Paperclip className="w-4 h-4 text-gray-600 dark:text-gray-300" />
         </button>
-        <div className="flex-1 relative">
+        <div className="flex-1 relative overflow-x-hidden">
           <Input
             ref={inputRef}
             value={message}
