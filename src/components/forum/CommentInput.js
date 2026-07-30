@@ -1,15 +1,19 @@
 "use client";
 
-import { useEffect, useRef, useState, useContext } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Button, Popover, Dropdown } from "antd";
-import { LuType, LuArrowUp, LuChevronDown } from "react-icons/lu";
-import { RiEmojiStickerLine, RiAttachment2 } from "react-icons/ri";
+import { LuType, LuArrowUp, LuChevronDown, LuX } from "react-icons/lu";
+import { RiEmojiStickerLine, RiImageAddLine } from "react-icons/ri";
 import { useAuthContext } from "@/contexts/Support";
-import data from "@emoji-mart/data";
 import Picker from "@emoji-mart/react";
 import { useTheme } from "@/contexts/themeContext";
 import MarkdownToolbar from "@/components/ui/MarkdownToolbar";
 import MarkdownRenderer from "@/components/ui/MarkdownRenderer";
+import MentionSuggestionsDropdown from "@/components/ui/MentionSuggestionsDropdown";
+import { useMentionInput } from "@/hooks/useMentionInput";
+import { buildHtml, getCaretOffset, setCaretOffset, getContentText, makeProxyRef } from "@/utils/richInput";
+
+const MAX_IMAGES = 10;
 
 export function CommentInput({
   placeholder = "Nhập bình luận của bạn...",
@@ -21,20 +25,35 @@ export function CommentInput({
   const [isFocused, setIsFocused] = useState(false);
   const [showEmoji, setShowEmoji] = useState(false);
   const [isAnonymous, setIsAnonymous] = useState(false);
-  const [showMarkdownToolbarState, setShowMarkdownToolbarState] =
-    useState(false);
+  const [showMarkdownToolbarState, setShowMarkdownToolbarState] = useState(false);
   const [isPreviewMode, setIsPreviewMode] = useState(false);
+  // Array of { file, previewUrl }
+  const [selectedImages, setSelectedImages] = useState([]);
   const wrapperRef = useRef(null);
-  const textareaRef = useRef(null);
+  const divRef = useRef(null);
+  const imageInputRef = useRef(null);
+
+  // Proxy ref compatible with useMentionInput AND MarkdownToolbar
+  const textareaRef = useRef(makeProxyRef(() => divRef.current, setComment));
   const { currentUser } = useAuthContext();
   const { theme } = useTheme();
 
+  const {
+    handleChange: handleMentionChange,
+    insertMention,
+    showSuggestions,
+    suggestions,
+    closeSuggestions,
+  } = useMentionInput({ value: comment, onChange: setComment, inputRef: textareaRef });
+
   const handleSubmit = () => {
-    if (comment.trim()) {
-      onSubmit?.(comment.trim(), isAnonymous);
+    if (comment.trim() || selectedImages.length > 0) {
+      onSubmit?.(comment.trim(), isAnonymous, selectedImages.map((i) => i.file));
       setComment("");
       setIsAnonymous(false);
       setIsPreviewMode(false);
+      selectedImages.forEach((i) => URL.revokeObjectURL(i.previewUrl));
+      setSelectedImages([]);
     }
   };
 
@@ -43,12 +62,34 @@ export function CommentInput({
     setIsFocused(false);
     setIsAnonymous(false);
     setIsPreviewMode(false);
+    selectedImages.forEach((i) => URL.revokeObjectURL(i.previewUrl));
+    setSelectedImages([]);
     onCancel?.();
   };
 
-  const handleTogglePreview = () => {
-    setIsPreviewMode(!isPreviewMode);
+  const handleImageSelect = (e) => {
+    const files = Array.from(e.target.files || []);
+    if (!files.length) return;
+    setSelectedImages((prev) => {
+      const remaining = MAX_IMAGES - prev.length;
+      const toAdd = files.slice(0, remaining).map((file) => ({
+        file,
+        previewUrl: URL.createObjectURL(file),
+      }));
+      return [...prev, ...toAdd];
+    });
+    setIsFocused(true);
+    e.target.value = "";
   };
+
+  const handleRemoveImage = (index) => {
+    setSelectedImages((prev) => {
+      URL.revokeObjectURL(prev[index].previewUrl);
+      return prev.filter((_, i) => i !== index);
+    });
+  };
+
+  const handleTogglePreview = () => setIsPreviewMode((p) => !p);
 
   const identityMenuItems = [
     {
@@ -80,41 +121,29 @@ export function CommentInput({
   ];
 
   const handleKeyDown = (e) => {
-    if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
-      handleSubmit();
-    }
-    if (e.key === "Escape") {
-      handleCancel();
-    }
+    if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) handleSubmit();
+    if (e.key === "Escape") handleCancel();
   };
 
   const insertEmojiAtCursor = (emojiNative) => {
-    const textarea = textareaRef.current;
-    if (!textarea) {
+    const el = divRef.current;
+    if (!el) {
       setComment((prev) => prev + emojiNative);
       return;
     }
-
-    const start = textarea.selectionStart ?? comment.length;
-    const end = textarea.selectionEnd ?? comment.length;
-    const before = comment.substring(0, start);
-    const after = comment.substring(end);
-    const next = before + emojiNative + after;
-    setComment(next);
-
-    // Restore cursor after emoji
-    requestAnimationFrame(() => {
-      textarea.focus();
-      const cursor = start + emojiNative.length;
-      textarea.setSelectionRange(cursor, cursor);
-    });
+    el.focus();
+    const offset = getCaretOffset(el);
+    const text = getContentText(el);
+    const newText = text.slice(0, offset) + emojiNative + text.slice(offset);
+    el.innerHTML = buildHtml(newText);
+    const newOffset = offset + emojiNative.length;
+    setCaretOffset(el, newOffset);
+    setComment(newText);
   };
 
   useEffect(() => {
     function handleClickOutside(event) {
-      // If preview mode is on, ignore all clicks outside and keep focus
       if (isPreviewMode) return;
-
       if (
         wrapperRef.current &&
         !wrapperRef.current.contains(event.target) &&
@@ -127,22 +156,22 @@ export function CommentInput({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [isPreviewMode]);
 
-  // Auto-focus textarea when focus prop is true
   useEffect(() => {
-    if (focus && textareaRef.current) {
+    if (focus && divRef.current) {
       setIsFocused(true);
-      textareaRef.current.focus();
+      divRef.current.focus();
     }
   }, [focus]);
 
-  // Adjust textarea height when switching from preview mode
+  // Sync div when comment changes externally
   useEffect(() => {
-    if (!isPreviewMode && textareaRef.current) {
-      const target = textareaRef.current;
-      target.style.height = "auto";
-      target.style.height = target.scrollHeight + "px";
+    const el = divRef.current;
+    if (!el) return;
+    const current = getContentText(el);
+    if (current !== comment) {
+      el.innerHTML = buildHtml(comment);
     }
-  }, [isPreviewMode]);
+  }, [comment]);
 
   return (
     <div className="w-full max-w-4xl mx-auto" ref={wrapperRef}>
@@ -167,11 +196,7 @@ export function CommentInput({
                 className="w-8 h-8 rounded-full flex-shrink-0"
               />
             )}
-            <Dropdown
-              menu={{ items: identityMenuItems }}
-              trigger={["click"]}
-              placement="bottomLeft"
-            >
+            <Dropdown menu={{ items: identityMenuItems }} trigger={["click"]} placement="bottomLeft">
               <Button
                 size="small"
                 className="absolute -bottom-1 -right-1 w-4 h-4 p-0 rounded-full !bg-white border border-gray-300 hover:bg-gray-50 flex items-center justify-center"
@@ -186,32 +211,72 @@ export function CommentInput({
                 <MarkdownRenderer content={comment} />
               </div>
             ) : (
-              <textarea
-                value={comment}
-                onChange={(e) => setComment(e.target.value)}
-                onFocus={() => setIsFocused(true)}
-                onKeyDown={handleKeyDown}
-                ref={textareaRef}
-                placeholder={placeholder}
-                rows={1}
-                className="
-                  w-full bg-transparent border-none outline-none resize-none
-                  text-foreground placeholder:text-muted-foreground
-                  text-sm min-h-[24px] leading-6 ring-transparent focus:ring-transparent focus:border-transparent
-                  pl-0 pt-0 mt-1
-                "
-                style={{
-                  height: "auto",
-                  minHeight: "24px",
-                  maxHeight: "120px",
-                  overflowY: "auto",
-                }}
-                onInput={(e) => {
-                  const target = e.target;
-                  target.style.height = "auto";
-                  target.style.height = target.scrollHeight + "px";
-                }}
-              />
+              <div className="relative mt-1">
+                <div
+                  ref={divRef}
+                  contentEditable
+                  suppressContentEditableWarning
+                  onInput={(e) => {
+                    const el = e.currentTarget;
+                    const offset = getCaretOffset(el);
+                    const text = getContentText(el);
+                    el.innerHTML = buildHtml(text);
+                    setCaretOffset(el, offset);
+                    setComment(text);
+                    handleMentionChange(text, offset);
+                  }}
+                  onFocus={() => setIsFocused(true)}
+                  onKeyDown={handleKeyDown}
+                  data-placeholder={placeholder}
+                  className="
+                    ce-input
+                    w-full bg-transparent border-none outline-none resize-none
+                    text-sm min-h-[24px] leading-6
+                    focus:outline-none focus:ring-0
+                    whitespace-pre-wrap break-words overflow-y-auto
+                  "
+                  style={{ maxHeight: "120px" }}
+                />
+                {showSuggestions && (
+                  <MentionSuggestionsDropdown
+                    suggestions={suggestions}
+                    onSelect={insertMention}
+                    onClose={closeSuggestions}
+                    anchorRef={divRef}
+                  />
+                )}
+              </div>
+            )}
+
+            {/* Image previews */}
+            {selectedImages.length > 0 && (
+              <div className="flex flex-wrap gap-2 mt-2 mb-1">
+                {selectedImages.map((img, index) => (
+                  <div key={index} className="relative inline-block">
+                    <img
+                      src={img.previewUrl}
+                      alt={`Ảnh ${index + 1}`}
+                      className="h-20 w-20 rounded-lg border object-cover"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveImage(index)}
+                      className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-gray-800/80 text-white flex items-center justify-center hover:bg-gray-900"
+                    >
+                      <LuX className="w-3 h-3" />
+                    </button>
+                  </div>
+                ))}
+                {selectedImages.length < MAX_IMAGES && (
+                  <button
+                    type="button"
+                    onClick={() => imageInputRef.current?.click()}
+                    className="h-20 w-20 rounded-lg border-2 border-dashed border-gray-300 dark:border-gray-600 flex items-center justify-center text-gray-400 hover:border-gray-400 hover:text-gray-500 transition-colors"
+                  >
+                    <RiImageAddLine className="w-5 h-5" />
+                  </button>
+                )}
+              </div>
             )}
           </div>
         </div>
@@ -231,10 +296,8 @@ export function CommentInput({
               content={
                 <div>
                   <Picker
-                    data={data}
-                    onEmojiSelect={(emoji) => {
-                      insertEmojiAtCursor(emoji.native);
-                    }}
+                    data={async () => (await import("@emoji-mart/data")).default}
+                    onEmojiSelect={(emoji) => insertEmojiAtCursor(emoji.native)}
                     previewPosition="none"
                     searchPosition="none"
                     navPosition="top"
@@ -255,20 +318,28 @@ export function CommentInput({
                 <RiEmojiStickerLine className="h-5 w-5 text-muted-foreground" />
               </Button>
             </Popover>
+            <input
+              ref={imageInputRef}
+              type="file"
+              accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
+              multiple
+              className="hidden"
+              onChange={handleImageSelect}
+            />
             <Button
               variant="ghost"
               size="sm"
               className="h-8 w-8 p-0 rounded-full hover:bg-muted"
+              onClick={() => imageInputRef.current?.click()}
+              disabled={selectedImages.length >= MAX_IMAGES}
             >
-              <RiAttachment2 className="h-4 w-4 text-muted-foreground" />
+              <RiImageAddLine className="h-4 w-4 text-muted-foreground" />
             </Button>
             <Button
               variant="ghost"
               size="sm"
               className="h-8 w-8 p-0 rounded-full hover:bg-muted"
-              onClick={() =>
-                setShowMarkdownToolbarState(!showMarkdownToolbarState)
-              }
+              onClick={() => setShowMarkdownToolbarState(!showMarkdownToolbarState)}
             >
               <LuType className="h-4 w-4 text-muted-foreground" />
             </Button>
@@ -279,7 +350,7 @@ export function CommentInput({
             <Button
               size="sm"
               onClick={handleSubmit}
-              disabled={!comment.trim()}
+              disabled={!comment.trim() && selectedImages.length === 0}
               className="!bg-primary-500 hover:!bg-primary-600 disabled:!bg-primary-200 disabled:!text-gray-400 text-white rounded-full h-8 w-8 p-0"
             >
               <LuArrowUp className="h-4 w-4" />
@@ -289,11 +360,7 @@ export function CommentInput({
 
         {/* Markdown Toolbar */}
         {isFocused && (
-          <div
-            className={`ml-11 ${
-              showMarkdownToolbarState ? "fade-in-bottom" : "hidden"
-            }`}
-          >
+          <div className={`ml-11 ${showMarkdownToolbarState ? "fade-in-bottom" : "hidden"}`}>
             <MarkdownToolbar
               textareaRef={textareaRef}
               onTextChange={setComment}

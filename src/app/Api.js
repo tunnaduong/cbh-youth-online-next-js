@@ -17,6 +17,14 @@ export const getFeedPosts = (page = 1) => {
   return Api.getRequest("/v1.0/topics?page=" + page);
 };
 
+export const getPersonalizedFeedPosts = (page = 1) => {
+  return Api.getRequest("/v1.0/topics/feed?page=" + page);
+};
+
+export const getLatestFeedPosts = (page = 1) => {
+  return Api.getRequest("/v1.0/topics/feed?mode=latest&page=" + page);
+};
+
 export const incrementPostView = (id) => {
   return Api.postRequest("/v1.0/topics/" + id + "/views");
 };
@@ -37,16 +45,16 @@ export const unsavePost = (id) => {
   return Api.deleteRequest("/v1.0/user/saved-topics/" + id);
 };
 
-export const createPost = (params) => {
-  return Api.postRequest("/v1.0/topics", params);
+export const createPost = (params, config = {}) => {
+  return Api.postRequest("/v1.0/topics", params, config);
 };
 
 export const deletePost = (id) => {
   return Api.deleteRequest("/v1.0/topics/" + id);
 };
 
-export const updatePost = (id, params) => {
-  return Api.postFormDataRequest("/v1.0/topics/" + id, params);
+export const updatePost = (id, params, config = {}) => {
+  return Api.postFormDataRequest("/v1.0/topics/" + id, params, config);
 };
 
 export const verifyEmail = (token) => {
@@ -153,6 +161,13 @@ export const sendMessage = (conversationId, params) => {
   );
 };
 
+export const sendMessageWithFile = (conversationId, formData) => {
+  return Api.postFormDataRequest(
+    `/v1.0/chat/conversations/${conversationId}/messages`,
+    formData
+  );
+};
+
 export const markAsRead = (conversationId) => {
   return Api.postRequest(`/v1.0/chat/conversations/${conversationId}/read`);
 };
@@ -186,6 +201,20 @@ export const editMessage = (messageId, params) => {
   return Api.putRequest(`/v1.0/chat/messages/${messageId}`, params);
 };
 
+export const reactToMessage = (messageId, reactionType) => {
+  return Api.postRequest(`/v1.0/chat/messages/${messageId}/reactions`, {
+    reaction_type: reactionType,
+  });
+};
+
+export const removeMessageReaction = (messageId) => {
+  return Api.deleteRequest(`/v1.0/chat/messages/${messageId}/reactions`);
+};
+
+export const recallMessage = (messageId) => {
+  return Api.postRequest(`/v1.0/chat/messages/${messageId}/recall`);
+};
+
 export const searchUserForChat = (params) => {
   return Api.getRequest("/v1.0/chat/search/users", params);
 };
@@ -197,6 +226,10 @@ export const getPublicChatMessages = (page = 1) => {
 
 export const sendPublicMessage = (params) => {
   return Api.postRequest("/v1.0/chat/public/messages", params);
+};
+
+export const sendPublicMessageWithFile = (formData) => {
+  return Api.postFormDataRequest("/v1.0/chat/public/messages", formData);
 };
 
 export const getPublicChatParticipants = () => {
@@ -275,12 +308,19 @@ export const markStoryAsViewed = (storyId) => {
   return Api.postRequest(`/v1.0/stories/${storyId}/view`);
 };
 
+export const replyToStory = (storyId, params) => {
+  return Api.postRequest(`/v1.0/stories/${storyId}/reply`, params);
+};
+
 // Topics
 export const getComments = (id) => {
   return Api.getRequest(`/v1.0/topics/${id}/comments`);
 };
 
 export const addComment = (id, params) => {
+  if (params instanceof FormData) {
+    return Api.postFormDataRequest(`/v1.0/topics/${id}/comments`, params);
+  }
   return Api.postRequest(`/v1.0/topics/${id}/comments`, params);
 };
 
@@ -323,6 +363,14 @@ export const getAvatar = (username) => {
 
 export const updateAvatar = (username, params) => {
   return Api.postFormDataRequest(`/v1.0/users/${username}/avatar`, params);
+};
+
+export const getCover = (username) => {
+  return Api.getRequest(`/v1.0/users/${username}/cover`);
+};
+
+export const updateCover = (username, params) => {
+  return Api.postFormDataRequest(`/v1.0/users/${username}/cover`, params);
 };
 
 export const followUser = (username) => {
@@ -512,4 +560,13 @@ export const placeShopOrder = (params) => {
 
 export const getMyShopOrders = (params = "") => {
   return Api.getRequest(`/v1.0/shop/my-orders${params ? `?${params}` : ""}`);
+};
+
+// Mention suggestions
+export const getMentionSuggestions = (query) => {
+  return Api.getRequest(`/v1.0/mention-suggestions?q=${encodeURIComponent(query)}`);
+};
+
+export const getConversationMentionSuggestions = (conversationId, query) => {
+  return Api.getRequest(`/v1.0/chat/conversations/${conversationId}/mention-suggestions?q=${encodeURIComponent(query)}`);
 };

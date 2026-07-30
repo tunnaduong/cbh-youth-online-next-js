@@ -260,6 +260,7 @@ export default function PostClient({ params, initialPost = null }) {
                 ...comment,
                 comment: response.data.comment, // Server's processed HTML for display
                 content: response.data.content, // Server's raw markdown for editing
+                mentions: response.data?.mentions ?? comment.mentions ?? [], // Keep mentions up-to-date
                 updated_at: response.data.created_at,
                 isOptimistic: false, // Remove optimistic flag
               };
@@ -415,6 +416,7 @@ export default function PostClient({ params, initialPost = null }) {
         id: response.data.id,
         comment: response.data?.comment ?? "", // HTML for display
         content: response.data?.content ?? "", // Raw markdown for editing
+        mentions: response.data?.mentions ?? [], // Needed for mention-tag rendering
         created_at: response.data.created_at,
         isPending: false,
         is_owner: response.data?.is_owner ?? true, // New reply is always owned by creator
@@ -453,7 +455,7 @@ export default function PostClient({ params, initialPost = null }) {
     }
   };
 
-  const handleSubmitComment = async (content, isAnonymous = false) => {
+  const handleSubmitComment = async (content, isAnonymous = false, images = []) => {
     if (!currentUser) {
       message.error("Bạn cần đăng nhập để bình luận");
       router.push(
@@ -467,6 +469,7 @@ export default function PostClient({ params, initialPost = null }) {
     const placeholderComment = {
       id: placeholderId,
       content: content,
+      image_urls: images.map((f) => URL.createObjectURL(f)),
       topic_id: extractNumericId(params.postId),
       is_anonymous: isAnonymous,
       author: isAnonymous
@@ -488,16 +491,20 @@ export default function PostClient({ params, initialPost = null }) {
     setComments((prev) => [placeholderComment, ...prev]);
 
     try {
-      const response = await commentPost(extractNumericId(params.postId), {
-        comment: content,
-        topic_id: extractNumericId(params.postId),
-        is_anonymous: isAnonymous,
-      });
+      const topicId = extractNumericId(params.postId);
+      const fd = new FormData();
+      if (content) fd.append("comment", content);
+      fd.append("topic_id", topicId);
+      fd.append("is_anonymous", isAnonymous ? "1" : "0");
+      images.forEach((file, i) => fd.append(`images[${i}]`, file));
+      const response = await commentPost(topicId, fd);
 
       const realComment = {
         id: response.data?.id ?? Date.now(),
         comment: response.data?.comment ?? "", // HTML for display
         content: response.data?.content ?? "", // Raw markdown for editing
+        mentions: response.data?.mentions ?? [], // Needed for mention-tag rendering
+        image_urls: response.data?.image_urls ?? [],
         topic_id: extractNumericId(params.postId),
         is_anonymous: response.data?.is_anonymous ?? false,
         is_owner: response.data?.is_owner ?? true, // New comment is always owned by creator

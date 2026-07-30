@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import Link from "next/link";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import remarkBreaks from "remark-breaks";
@@ -41,16 +42,64 @@ const MarkdownRenderer = ({ content, className = "" }) => {
     return { processedContent, iframes };
   };
 
-  const { processedContent, iframes } = processContent(content);
+  // Best-effort hashtag + @mention highlighting for the composer preview.
+  // Skips fenced/inline code blocks so "#123" or "@user" inside code isn't touched.
+  const linkifyHashtagsInMarkdown = (markdown) => {
+    const codeSplitRegex = /(```[\s\S]*?```|`[^`\n]*`)/g;
+    const hashtagRegex = /(?<![\w&])#([\p{L}\p{N}_]+)/gu;
+    const mentionRegex = /(?<![[\w])@([\w]{2,})/g;
+
+    return markdown
+      .split(codeSplitRegex)
+      .map((segment, index) => {
+        // Odd indices are the captured code segments — leave them untouched.
+        if (index % 2 === 1) return segment;
+        return segment
+          .replace(hashtagRegex, (_match, tag) => `[#${tag}](##hashtag:${tag})`)
+          .replace(mentionRegex, (_match, username) => `[@${username}](##mention:${username})`);
+      })
+      .join("");
+  };
+
+  const { processedContent: iframeStrippedContent, iframes } =
+    processContent(content);
+  const processedContent = linkifyHashtagsInMarkdown(iframeStrippedContent);
 
   return (
     <div className={`markdown-preview prose dark:prose-invert ${className}`}>
       <ReactMarkdown
         remarkPlugins={[remarkGfm, remarkBreaks]}
         components={{
-          a: ({ node, ...props }) => (
-            <a {...props} target="_blank" rel="noopener noreferrer" />
-          ),
+          a: ({ node, href, children, ...props }) => {
+            if (typeof href === "string" && href.startsWith("##hashtag:")) {
+              return (
+                <span className="text-blue-600 dark:text-blue-400 font-medium">
+                  {children}
+                </span>
+              );
+            }
+            if (typeof href === "string" && href.startsWith("##mention:")) {
+              const username = href.slice("##mention:".length);
+              return (
+                <Link
+                  href={`/${username}`}
+                  className="text-[#319527] dark:text-[#6bcf60] font-medium underline underline-offset-2 hover:opacity-75"
+                >
+                  {children}
+                </Link>
+              );
+            }
+            return (
+              <a
+                {...props}
+                href={href}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                {children}
+              </a>
+            );
+          },
           code: ({
             node,
             inline,

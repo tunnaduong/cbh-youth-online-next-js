@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useAuthContext, useTopUsersContext } from "@/contexts/Support";
 // // import { usePage, router } from "@inertiajs/react"; // TODO: Replace with Next.js equivalent // TODO: Replace with Next.js equivalent
@@ -19,9 +19,30 @@ import {
 import { FaEdit, FaEye } from "react-icons/fa";
 import { IoArrowUpSharp, IoArrowDownSharp } from "react-icons/io5";
 import { CommentInput } from "./CommentInput";
+import CommentVotesModal from "./CommentVotesModal";
 import { useRouter } from "@bprogress/next/app";
 import Badges from "../ui/Badges";
 import MarkdownRenderer from "../ui/MarkdownRenderer";
+import ChatMediaLightbox from "../chat/ChatMediaLightbox";
+
+// Replace @username in HTML text nodes with clickable profile links.
+// validMentions: Set of lowercase usernames confirmed valid by the server.
+// When null, falls back to linking all @username patterns (backward compat).
+function linkifyMentionsInHtml(html, validMentions = null) {
+  if (!html) return html;
+  // New format: server already rendered [@Profile Name](/username) as <a href="/username">@Profile Name</a>
+  let result = html.replace(
+    /<a href="(\/[\w-]{2,})">(@[^<]+)<\/a>/g,
+    '<a href="$1" class="mention-tag">$2</a>'
+  );
+  // Old plain format: @username in text nodes
+  result = result.replace(/(<[^>]+>)|(@([\w-]{2,}))/g, (match, tag, _mention, username) => {
+    if (tag) return tag;
+    if (validMentions == null || !validMentions.has(username.toLowerCase())) return match;
+    return `<a href="/${username}" class="mention-tag">@${username}</a>`;
+  });
+  return result;
+}
 
 export default function Comment({
   comment,
@@ -43,6 +64,14 @@ export default function Comment({
   const [isConnectorHovered, setIsConnectorHovered] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [localVotes, setLocalVotes] = useState(comment.votes || []);
+  const [lightboxMedia, setLightboxMedia] = useState(null);
+  const [votesModalOpen, setVotesModalOpen] = useState(false);
+
+  const handleOpenVotesModal = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setVotesModalOpen(true);
+  };
   const router = useRouter();
 
   const handleSaveEdit = async () => {
@@ -198,8 +227,34 @@ export default function Comment({
 
   const commentDomId = comment?.id ? `comment-${comment.id}` : undefined;
 
+  const [isHighlighted, setIsHighlighted] = useState(false);
+
+  useEffect(() => {
+    if (typeof window === "undefined" || !commentDomId) return;
+
+    const tryHighlight = () => {
+      if (window.location.hash === `#${commentDomId}`) {
+        setIsHighlighted(true);
+        setTimeout(() => setIsHighlighted(false), 2500);
+      }
+    };
+
+    tryHighlight();
+    window.addEventListener("hashchange", tryHighlight);
+    return () => window.removeEventListener("hashchange", tryHighlight);
+  }, [commentDomId]);
+
   return (
-    <div className="relative" id={commentDomId}>
+    <div
+      className={`relative transition-colors duration-700 rounded ${isHighlighted ? "bg-yellow-100 dark:bg-yellow-900/30" : ""}`}
+      id={commentDomId}
+    >
+      <ChatMediaLightbox media={lightboxMedia} onClose={() => setLightboxMedia(null)} />
+      <CommentVotesModal
+        open={votesModalOpen}
+        commentId={comment.id}
+        onClose={() => setVotesModalOpen(false)}
+      />
       {/* Reddit-style curved connector lines for nested comments */}
       {comment.replies?.length > 0 && !isCollapsed && (
         <div
@@ -363,10 +418,30 @@ export default function Comment({
                       </span>
                     </div>
                   )}
-                  <div
-                    className="text-gray-700 dark:text-gray-300 text-sm mb-1 prose custom-prose markdown-preview dark:prose-invert flex flex-col"
-                    dangerouslySetInnerHTML={{ __html: comment.comment }}
-                  />
+                  {comment.comment && (
+                    <div
+                      className="text-gray-700 dark:text-gray-300 text-sm mb-1 prose custom-prose markdown-preview dark:prose-invert flex flex-col"
+                      dangerouslySetInnerHTML={{ __html: linkifyMentionsInHtml(
+                        comment.comment,
+                        Array.isArray(comment.mentions)
+                          ? new Set(comment.mentions.map((m) => m.username.toLowerCase()))
+                          : null
+                      ) }}
+                    />
+                  )}
+                  {comment.image_urls?.length > 0 && (
+                    <div className="flex flex-wrap gap-2 mt-1 mb-2">
+                      {comment.image_urls.map((url, idx) => (
+                        <img
+                          key={idx}
+                          src={url}
+                          alt={`Ảnh ${idx + 1}`}
+                          className="max-h-48 max-w-[200px] rounded-lg border object-cover cursor-pointer"
+                          onClick={() => setLightboxMedia({ type: "image", url })}
+                        />
+                      ))}
+                    </div>
+                  )}
                   {/* Show optimistic update indicator */}
                   {comment.isOptimistic && (
                     <div className="absolute top-0 right-0 bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-300 text-xs px-2 py-1 rounded-full">
@@ -406,16 +481,20 @@ export default function Comment({
                 >
                   <UpvoteIcon />
                 </Button>
-                <span
-                  className={`text-xs font-medium min-w-[1rem] text-center ${userVoteValue === 1
+                <button
+                  type="button"
+                  className={`text-xs font-medium min-w-[1rem] text-center cursor-pointer rounded px-1 hover:underline focus:outline-none ${userVoteValue === 1
                       ? "text-primary-500"
                       : userVoteValue === -1
                         ? "text-red-600"
                         : "text-gray-500 dark:!text-gray-400"
                     }`}
+                  onClick={handleOpenVotesModal}
+                  aria-label="Xem danh sách người đã vote"
+                  title="Xem danh sách người đã vote"
                 >
                   {voteCount}
-                </span>
+                </button>
                 <ConfigProvider
                   theme={{
                     components: {

@@ -12,6 +12,7 @@ const ChatContext = createContext({
   loading: false,
   sending: false,
   typingUsers: {},
+  highlightMessageId: null,
 
   // Actions
   openChat: () => {},
@@ -23,9 +24,13 @@ const ChatContext = createContext({
   selectConversation: () => {},
   loadMessages: () => {},
   sendMessage: () => {},
+  sendFileMessage: () => {},
   markAsRead: () => {},
   createConversation: () => {},
   sendTyping: () => {},
+  reactToMessage: () => {},
+  removeMessageReaction: () => {},
+  setHighlightMessageId: () => {},
 });
 
 export default ChatContext;

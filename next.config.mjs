@@ -21,6 +21,14 @@ const nextConfig = {
     ignoreDuringBuilds: false,
     dirs: ['src', 'pages', 'components', 'lib', 'app'],
   },
+  async rewrites() {
+    return [
+      {
+        source: "/egg",
+        destination: "/egg.html",
+      },
+    ];
+  },
 };
 
 export default nextConfig;

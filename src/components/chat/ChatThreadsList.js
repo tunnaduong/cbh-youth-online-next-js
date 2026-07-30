@@ -5,6 +5,7 @@ import { useChatContext } from "@/contexts/Support";
 import Image from "next/image";
 import moment from "moment";
 import "moment/locale/vi";
+import { Image as ImageIcon, Video as VideoIcon, FileText } from "lucide-react";
 
 export default function ChatThreadsList({ onSelectConversation }) {
   const { conversations } = useChatContext();
@@ -58,13 +59,62 @@ export default function ChatThreadsList({ onSelectConversation }) {
   const getLatestMessagePreview = (conversation) => {
     if (!conversation.latest_message) return "Không có tin nhắn";
 
-    const prefix = conversation.latest_message.is_myself ? "Bạn: " : "";
-    const content = conversation.latest_message.content || "";
+    const { is_myself, type } = conversation.latest_message;
 
-    if (content.length > 50) {
-      return prefix + content.substring(0, 50) + "...";
+    if (type === "story_reply") {
+      const partnerName = getThreadDisplayName(conversation);
+      return is_myself
+        ? `Bạn đã bình luận về tin của ${partnerName}`
+        : `${partnerName} đã bình luận về tin của bạn`;
     }
-    return prefix + content;
+
+    if (conversation.latest_message.is_recalled) {
+      return (
+        <span className="italic text-gray-400">Tin nhắn đã bị thu hồi</span>
+      );
+    }
+
+    const prefix = is_myself ? "Bạn: " : "";
+
+    if (type === "image") {
+      return (
+        <span className="inline-flex items-center gap-1">
+          {prefix}
+          <ImageIcon className="w-3.5 h-3.5 flex-shrink-0" />
+          Hình ảnh
+        </span>
+      );
+    }
+
+    if (type === "video") {
+      return (
+        <span className="inline-flex items-center gap-1">
+          {prefix}
+          <VideoIcon className="w-3.5 h-3.5 flex-shrink-0" />
+          Video
+        </span>
+      );
+    }
+
+    if (type === "file") {
+      const fileName =
+        conversation.latest_message.file_name ||
+        conversation.latest_message.content ||
+        "Tệp đính kèm";
+      return (
+        <span className="inline-flex items-center gap-1 min-w-0">
+          {prefix}
+          <FileText className="w-3.5 h-3.5 flex-shrink-0" />
+          <span className="truncate">{fileName}</span>
+        </span>
+      );
+    }
+
+    const content = conversation.latest_message.content || "";
+    const editedSuffix = conversation.latest_message.is_edited ? " (Đã sửa)" : "";
+    const truncated = content.length > 50 ? content.substring(0, 50) + "..." : content;
+
+    return prefix + truncated + editedSuffix;
   };
 
   if (filteredConversations.length === 0) {
@@ -134,7 +184,7 @@ export default function ChatThreadsList({ onSelectConversation }) {
                 </span>
               )}
             </div>
-            <p className="text-xs text-gray-600 dark:text-gray-400 truncate">
+            <p className="text-xs text-gray-600 dark:text-gray-400 truncate flex items-center min-w-0">
               {getLatestMessagePreview(conversation)}
             </p>
           </div>

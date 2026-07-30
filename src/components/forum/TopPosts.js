@@ -37,8 +37,8 @@ export default function TopPosts({ initialLatestPosts = {} }) {
 
   // Handle tab loading state and data fetching
   useEffect(() => {
-    const hasContextData = contextLatestPosts[currentSort];
-    const hasInitialData = initialLatestPosts[currentSort];
+    const hasContextData = contextLatestPosts[currentSort]?.length > 0;
+    const hasInitialData = initialLatestPosts[currentSort]?.length > 0;
 
     // If we have data, stop loading immediately
     if (hasContextData || hasInitialData) {
@@ -53,11 +53,12 @@ export default function TopPosts({ initialLatestPosts = {} }) {
     });
   }, [currentSort, fetchHomeData, contextLatestPosts, initialLatestPosts]);
 
-  // Listen for refresh triggers and update local state
+  // Listen for refresh triggers (e.g. a new post was just created) and
+  // force-refetch so the newest post shows up instead of the stale
+  // initial/context data.
   useEffect(() => {
     if (refreshTrigger > 0) {
-      // The ForumDataProvider will handle the actual fetch
-      // We just need to re-render when the context data updates
+      fetchHomeData(currentSort, true);
     }
   }, [refreshTrigger]);
 
@@ -267,7 +268,7 @@ export default function TopPosts({ initialLatestPosts = {} }) {
                 </Link>
               </div>
               <div className="sm:flex items-center justify-end hidden text-right text-gray-500 text-[11px] whitespace-nowrap w-[100px] max-w-[100px]">
-                {timeAgoInVietnamese(post.created_at)}
+                {post.time || timeAgoInVietnamese(post.created_at)}
               </div>
               <div className="sm:flex items-center pl-2 hidden text-right text-[11px] whitespace-nowrap w-[150px] max-w-[150px]">
                 <div className="flex items-center justify-end">

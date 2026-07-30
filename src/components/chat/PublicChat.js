@@ -5,11 +5,120 @@ import { useAuthContext } from "@/contexts/Support";
 import {
   getPublicChatMessages,
   sendPublicMessage,
+  sendPublicMessageWithFile,
   getPublicChatParticipants,
 } from "@/app/Api";
 import MessageInput from "./MessageInput";
 import ParticipantsList from "./ParticipantsList";
-import { Menu } from "lucide-react";
+import ChatMediaLightbox from "./ChatMediaLightbox";
+import { Menu, FileText, Download, PlayCircle, CornerUpLeft, Undo2, Pencil } from "lucide-react";
+import MessageReactions from "./MessageReactions";
+import ReplyPreviewBubble from "./ReplyPreviewBubble";
+import { reactToMessage, removeMessageReaction, recallMessage, editMessage } from "@/app/Api";
+import { Popover } from "antd";
+
+const URL_RE = /(https?:\/\/[^\s]+)/g;
+const MENTION_RE = /(@[\w-]+)/g;
+
+// Fallback: resolve @mentions in freshly-sent/edited content against the known
+// participants list, in case the server response doesn't include a resolved
+// `mentions` array yet (it would otherwise only appear after the next poll/refresh).
+function resolveMentionsFromParticipants(content, participants) {
+  if (!content || !Array.isArray(participants) || participants.length === 0) {
+    return [];
+  }
+  const byUsername = new Map(
+    participants
+      .filter((p) => p?.username)
+      .map((p) => [p.username.toLowerCase(), p])
+  );
+  const seen = new Set();
+  const resolved = [];
+  const tokens = content.match(MENTION_RE) || [];
+  for (const token of tokens) {
+    const username = token.slice(1).toLowerCase();
+    if (seen.has(username)) continue;
+    const participant = byUsername.get(username);
+    if (participant) {
+      seen.add(username);
+      resolved.push(participant);
+    }
+  }
+  return resolved;
+}
+
+const IMAGE_EXTENSION_RE = /\.(png|jpe?g|gif|webp|bmp|svg|heic|heif)$/i;
+const VIDEO_EXTENSION_RE = /\.(mp4|mov|avi|webm|mkv)$/i;
+const LONG_PRESS_MS = 450;
+
+function resolveFileUrl(url) {
+  if (!url) return url;
+  return url.startsWith("http") || url.startsWith("blob:")
+    ? url
+    : `${process.env.NEXT_PUBLIC_API_URL}${url}`;
+}
+
+function looksLikeImage(message) {
+  return (
+    IMAGE_EXTENSION_RE.test(message.file_name || message.content || "") ||
+    IMAGE_EXTENSION_RE.test(message.file_url || "")
+  );
+}
+
+function formatFileSize(bytes) {
+  if (!bytes && bytes !== 0) return "";
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+// Plain text wraps at word boundaries (break-words) so Vietnamese diacritics
+// never get split mid-character. URLs have no word boundaries to wrap at, so
+// they alone get break-all — otherwise they'd overflow the bubble instead of
+// wrapping.
+function linkifyText(text, validMentions = null) {
+  if (!text) return text;
+  const parts = text.split(URL_RE);
+  return parts.flatMap((part, i) => {
+    if (i % 2 === 1) {
+      return (
+        <a
+          key={i}
+          href={part}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="underline break-all"
+          onClick={(e) => e.stopPropagation()}
+        >
+          {part}
+        </a>
+      );
+    }
+    const mentionParts = part.split(MENTION_RE);
+    return mentionParts.map((mp, j) => {
+      if (j % 2 === 1) {
+        const username = mp.slice(1);
+        const isValid = validMentions != null
+          ? validMentions.has(username.toLowerCase())
+          : false;
+        if (isValid) {
+          return (
+            <a
+              key={`${i}-${j}`}
+              href={`/${username}`}
+              className="font-medium underline underline-offset-2 text-[#319527] dark:text-[#6bcf60] hover:opacity-75 break-words"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {mp}
+            </a>
+          );
+        }
+        return <span key={`${i}-${j}`} className="break-words">{mp}</span>;
+      }
+      return <span key={`${i}-${j}`} className="break-words">{mp}</span>;
+    });
+  });
+}
 
 export default function PublicChat() {
   const { currentUser, loggedIn } = useAuthContext();
@@ -21,7 +130,28 @@ export default function PublicChat() {
   const [hasMorePages, setHasMorePages] = useState(false);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
   const [showParticipants, setShowParticipants] = useState(false); // Default: hide on mobile, can toggle on desktop
+  const [lightboxMedia, setLightboxMedia] = useState(null);
+  const [openReactionMessageId, setOpenReactionMessageId] = useState(null);
+  const [localReactions, setLocalReactions] = useState({});
+  const [replyingTo, setReplyingTo] = useState(null);
+  const [editingMessage, setEditingMessage] = useState(null);
+  const [hoveredMessageId, setHoveredMessageId] = useState(null);
   const messagesContainerRef = useRef(null);
+  const longPressTimerRef = useRef(null);
+
+  const clearLongPressTimer = () => {
+    if (longPressTimerRef.current) {
+      clearTimeout(longPressTimerRef.current);
+      longPressTimerRef.current = null;
+    }
+  };
+
+  const startLongPress = (messageId) => {
+    clearLongPressTimer();
+    longPressTimerRef.current = setTimeout(() => {
+      setOpenReactionMessageId(messageId);
+    }, LONG_PRESS_MS);
+  };
 
   // Initialize showParticipants based on screen size (desktop: true, mobile: false)
   useEffect(() => {
@@ -216,7 +346,15 @@ export default function PublicChat() {
     }
   };
 
-  const handleSendMessage = async (content, guestName = null) => {
+  const handleScrollToMessage = (messageId) => {
+    const el = document.getElementById(`public-msg-${messageId}`);
+    if (!el) return;
+    el.scrollIntoView({ behavior: "smooth", block: "center" });
+    el.classList.add("chat-message-highlight");
+    setTimeout(() => el.classList.remove("chat-message-highlight"), 2000);
+  };
+
+  const handleSendMessage = async (content, guestName = null, replyToId = null) => {
     if (!content.trim()) return;
 
     console.log(
@@ -249,6 +387,11 @@ export default function PublicChat() {
         params.guest_name = guestName.trim();
       }
 
+      if (replyToId) {
+        params.reply_to_message_id = replyToId;
+      }
+      setReplyingTo(null);
+
       console.log("[PublicChat] Sending message with params:", params);
       const response = await sendPublicMessage(params);
       console.log("[PublicChat] sendPublicMessage response:", response);
@@ -272,6 +415,19 @@ export default function PublicChat() {
 
       console.log("[PublicChat] Message sent successfully:", newMessage);
       console.log("[PublicChat] newMessage.sender:", newMessage.sender);
+
+      // Server response may not include resolved mentions yet (would otherwise
+      // only appear after a poll/refresh). Resolve them locally so @tags render
+      // as links immediately.
+      if (!Array.isArray(newMessage.mentions) || newMessage.mentions.length === 0) {
+        const resolved = resolveMentionsFromParticipants(
+          newMessage.content,
+          participants
+        );
+        if (resolved.length > 0) {
+          newMessage = { ...newMessage, mentions: resolved };
+        }
+      }
 
       // Validate sender info before adding to state
       if (!newMessage.sender || !newMessage.sender.username) {
@@ -313,6 +469,182 @@ export default function PublicChat() {
       throw error; // Re-throw to prevent clearing message in MessageInput
     } finally {
       setSending(false);
+    }
+  };
+
+  const handleSendFile = async (file) => {
+    // Only registered users may send attachments; guests are text-only.
+    if (!loggedIn || !file) return;
+
+    const isImage =
+      file.type?.startsWith("image/") ||
+      (!file.type && IMAGE_EXTENSION_RE.test(file.name || ""));
+    const isVideo =
+      !isImage &&
+      (file.type?.startsWith("video/") ||
+        (!file.type && VIDEO_EXTENSION_RE.test(file.name || "")));
+    const type = isImage ? "image" : isVideo ? "video" : "file";
+
+    setSending(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("type", type);
+      formData.append("content", file.name);
+
+      const response = await sendPublicMessageWithFile(formData);
+
+      let newMessage = null;
+      if (response.data) {
+        if (response.data.id && response.data.content !== undefined) {
+          newMessage = response.data;
+        } else if (response.data.data && response.data.data.id) {
+          newMessage = response.data.data;
+        }
+      }
+
+      if (newMessage && newMessage.sender && newMessage.sender.username) {
+        setMessages((prev) => {
+          const prevArray = Array.isArray(prev) ? prev : [];
+          const exists = prevArray.some((m) => m.id === newMessage.id);
+          if (exists) return prevArray;
+          return [...prevArray, newMessage];
+        });
+      }
+
+      loadParticipants();
+
+      setTimeout(() => {
+        scrollToBottom();
+      }, 100);
+    } catch (error) {
+      console.error("Error sending file message:", error);
+      const errorMessage =
+        error?.response?.data?.message ||
+        error?.message ||
+        "Không thể gửi tệp đính kèm";
+      alert(errorMessage);
+      throw error;
+    } finally {
+      setSending(false);
+    }
+  };
+
+  const getMessageReactions = (message) => {
+    return localReactions[message.id] ?? message.reactions ?? null;
+  };
+
+  const handleReact = async (messageId, reactionType, currentRxns) => {
+    if (!loggedIn || !reactionType) return;
+    try {
+      setLocalReactions((prev) => {
+        const cur = prev[messageId] ?? currentRxns ?? { summary: [], total: 0, my_reactions: [] };
+        const myReactions = [...(cur.my_reactions || []), reactionType];
+        let summary = [...(cur.summary || [])];
+        const existing = summary.find((s) => s.type === reactionType);
+
+        const uId = currentUser?.id;
+        const uUsername = currentUser?.username;
+        const uProfileName = currentUser?.profile_name || currentUser?.username;
+
+        if (existing) {
+          summary = summary.map((s) => {
+            if (s.type !== reactionType) return s;
+            let users = [...(s.users || [])];
+            const existingUser = users.find((u) => u.id === uId || u.username === uUsername);
+            if (existingUser) {
+              users = users.map((u) => (u.id === uId || u.username === uUsername) ? { ...u, count: (u.count || 1) + 1 } : u);
+            } else {
+              users = [...users, { id: uId, username: uUsername, profile_name: uProfileName, count: 1 }];
+            }
+            return { ...s, count: s.count + 1, users };
+          });
+        } else {
+          summary = [...summary, {
+            type: reactionType,
+            count: 1,
+            users: [{ id: uId, username: uUsername, profile_name: uProfileName, count: 1 }]
+          }];
+        }
+        return { ...prev, [messageId]: { ...cur, summary, total: (cur.total || 0) + 1, my_reactions: myReactions } };
+      });
+      await reactToMessage(messageId, reactionType);
+    } catch (error) {
+      console.error("[PublicChat] Error reacting:", error);
+    }
+    setOpenReactionMessageId(null);
+  };
+
+  const handleRemovePublicReaction = async (messageId, currentRxns) => {
+    if (!loggedIn) return;
+    try {
+      setLocalReactions((prev) => {
+        const cur = prev[messageId] ?? currentRxns ?? null;
+        if (!cur) return prev;
+        const myReactions = cur.my_reactions || [];
+        let summary = [...(cur.summary || [])];
+        const uId = currentUser?.id;
+        const uUsername = currentUser?.username;
+
+        myReactions.forEach((type) => {
+          summary = summary
+            .map((s) => {
+              if (s.type !== type) return s;
+              let users = [...(s.users || [])];
+              users = users
+                .map((u) => (u.id === uId || u.username === uUsername) ? { ...u, count: Math.max(0, (u.count || 1) - 1) } : u)
+                .filter((u) => u.count > 0);
+              return { ...s, count: s.count - 1, users };
+            })
+            .filter((s) => s.count > 0);
+        });
+        return { ...prev, [messageId]: { ...cur, summary, total: Math.max(0, (cur.total || 0) - myReactions.length), my_reactions: [] } };
+      });
+      await removeMessageReaction(messageId);
+    } catch (error) {
+      console.error("[PublicChat] Error removing reaction:", error);
+    }
+    setOpenReactionMessageId(null);
+  };
+
+  const handleRecallPublic = async (messageId) => {
+    try {
+      await recallMessage(messageId);
+      setMessages((prev) =>
+        prev.map((m) =>
+          m.id === messageId
+            ? { ...m, is_recalled: true, content: null, file_url: null, metadata: null }
+            : m
+        )
+      );
+    } catch (error) {
+      console.error("[PublicChat] Error recalling message:", error);
+    }
+  };
+
+  const handleSaveEditPublic = async (newContent) => {
+    if (!editingMessage || !newContent.trim()) return;
+    try {
+      const response = await editMessage(editingMessage.id, { content: newContent.trim() });
+      const serverMentions = response?.data?.mentions;
+      setMessages((prev) =>
+        prev.map((m) => {
+          if (m.id !== editingMessage.id) return m;
+          const mentions = Array.isArray(serverMentions)
+            ? serverMentions
+            : resolveMentionsFromParticipants(newContent.trim(), participants);
+          return {
+            ...m,
+            content: newContent.trim(),
+            is_edited: true,
+            mentions: mentions.length > 0 ? mentions : m.mentions,
+          };
+        })
+      );
+    } catch (error) {
+      console.error("[PublicChat] Error editing message:", error);
+    } finally {
+      setEditingMessage(null);
     }
   };
 
@@ -449,10 +781,16 @@ export default function PublicChat() {
                 const avatarInitial = getAvatarInitial(senderName);
                 const avatarColor = getAvatarColor(senderName);
 
+                const isOwn = !!(message.is_myself || (currentUser?.username && message.sender?.username === currentUser.username));
+
                 return (
                   <div
                     key={message.id}
-                    className="flex items-start gap-3 hover:bg-gray-50 dark:hover:bg-neutral-800 px-2 py-1 -mx-2 rounded transition"
+                    id={`public-msg-${message.id}`}
+                    className="group relative flex items-start gap-3 hover:bg-gray-50 dark:hover:bg-neutral-800 px-2 py-1 -mx-2 rounded transition"
+                    onMouseEnter={() => setHoveredMessageId(message.id)}
+                    onMouseLeave={() => setHoveredMessageId(null)}
+                    onContextMenu={(e) => e.stopPropagation()}
                   >
                     {/* Avatar */}
                     <div
@@ -476,14 +814,201 @@ export default function PublicChat() {
                         <span className="font-medium text-gray-900 dark:text-gray-100 text-sm">
                           @{senderName}
                         </span>
-                        <span className="text-xs text-gray-500 dark:text-gray-400">
+                        <span className="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1">
                           {formatTime(message.created_at)}
+                          {message.is_edited && !message.is_recalled && <span className="italic">(Đã sửa)</span>}
                         </span>
+                        {/* Action buttons — visible on hover, registered users only */}
+                        {loggedIn && !message.is_recalled && (
+                          <>
+                            <button
+                              type="button"
+                              title="Trả lời"
+                              onClick={() => setReplyingTo({
+                                id: message.id,
+                                content: message.content,
+                                type: message.type,
+                                file_url: message.file_url || null,
+                                sender: message.sender,
+                                isSelf: isOwn,
+                              })}
+                              className={`p-1 rounded-full hover:bg-gray-200 dark:hover:bg-neutral-600 text-gray-400 transition-opacity ${hoveredMessageId === message.id ? "opacity-100" : "opacity-0 pointer-events-none"}`}
+                            >
+                              <CornerUpLeft className="w-3 h-3" />
+                            </button>
+                            {isOwn && message.type === "text" && (
+                              <button
+                                type="button"
+                                title="Sửa tin nhắn"
+                                onClick={() => setEditingMessage({ id: message.id, content: message.content || "" })}
+                                className={`p-1 rounded-full hover:bg-gray-200 dark:hover:bg-neutral-600 text-gray-400 transition-opacity ${hoveredMessageId === message.id ? "opacity-100" : "opacity-0 pointer-events-none"}`}
+                              >
+                                <Pencil className="w-3 h-3" />
+                              </button>
+                            )}
+                            {isOwn && (
+                              <button
+                                type="button"
+                                title="Thu hồi"
+                                onClick={() => handleRecallPublic(message.id)}
+                                className={`p-1 rounded-full hover:bg-red-100 dark:hover:bg-red-900/30 text-red-400 transition-opacity ${hoveredMessageId === message.id ? "opacity-100" : "opacity-0 pointer-events-none"}`}
+                              >
+                                <Undo2 className="w-3 h-3" />
+                              </button>
+                            )}
+                          </>
+                        )}
                       </div>
-                      <div className="text-gray-700 dark:text-gray-300 text-sm whitespace-pre-wrap break-words break-all">
-                        {message.content}
-                      </div>
+                      {message.reply_to && (
+                        <ReplyPreviewBubble
+                          replyTo={message.reply_to}
+                          isOwn={false}
+                          onClick={() => handleScrollToMessage(message.reply_to.id)}
+                        />
+                      )}
+                      {message.is_recalled ? (
+                        <p className="text-sm italic text-gray-400 dark:text-gray-500">Tin nhắn đã bị thu hồi</p>
+                      ) : message.type === "image" ||
+                      (message.type === "file" && looksLikeImage(message)) ? (
+                        <div
+                          className="relative rounded-lg overflow-hidden max-w-[240px] cursor-pointer"
+                          onClick={() =>
+                            setLightboxMedia({
+                              type: "image",
+                              url: resolveFileUrl(message.file_url),
+                            })
+                          }
+                          onMouseDown={(e) => { if (e.button === 0) startLongPress(message.id); }}
+                          onMouseMove={clearLongPressTimer}
+                          onMouseUp={clearLongPressTimer}
+                          onMouseLeave={clearLongPressTimer}
+                          onTouchStart={() => startLongPress(message.id)}
+                          onTouchEnd={clearLongPressTimer}
+                          onTouchMove={clearLongPressTimer}
+                          onContextMenu={(e) => e.preventDefault()}
+                        >
+                          <img
+                            src={resolveFileUrl(message.file_url)}
+                            alt={message.content || "image"}
+                            className="w-full h-auto max-h-[300px] object-cover"
+                          />
+                        </div>
+                      ) : message.type === "video" ? (
+                        <div
+                          className="relative rounded-lg overflow-hidden max-w-[240px] cursor-pointer"
+                          onClick={() =>
+                            setLightboxMedia({
+                              type: "video",
+                              url: resolveFileUrl(message.file_url),
+                              poster: resolveFileUrl(
+                                message.metadata?.thumbnail_url
+                              ),
+                            })
+                          }
+                          onMouseDown={(e) => { if (e.button === 0) startLongPress(message.id); }}
+                          onMouseMove={clearLongPressTimer}
+                          onMouseUp={clearLongPressTimer}
+                          onMouseLeave={clearLongPressTimer}
+                          onTouchStart={() => startLongPress(message.id)}
+                          onTouchEnd={clearLongPressTimer}
+                          onTouchMove={clearLongPressTimer}
+                          onContextMenu={(e) => e.preventDefault()}
+                        >
+                          <video
+                            src={resolveFileUrl(message.file_url)}
+                            poster={resolveFileUrl(
+                              message.metadata?.thumbnail_url
+                            )}
+                            preload="metadata"
+                            muted
+                            playsInline
+                            className="w-full h-auto max-h-[300px] object-cover"
+                          />
+                          <div className="absolute inset-0 flex items-center justify-center bg-black/20 pointer-events-none">
+                            <PlayCircle className="w-10 h-10 text-white drop-shadow" />
+                          </div>
+                        </div>
+                      ) : message.type === "file" ? (
+                        <a
+                          href={resolveFileUrl(message.file_url)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm max-w-[240px] bg-gray-200 dark:bg-neutral-600 dark:text-white"
+                          onMouseDown={(e) => { if (e.button === 0) startLongPress(message.id); }}
+                          onMouseMove={clearLongPressTimer}
+                          onMouseUp={clearLongPressTimer}
+                          onMouseLeave={clearLongPressTimer}
+                          onTouchStart={() => startLongPress(message.id)}
+                          onTouchEnd={clearLongPressTimer}
+                          onTouchMove={clearLongPressTimer}
+                          onContextMenu={(e) => e.preventDefault()}
+                        >
+                          <FileText className="w-6 h-6 flex-shrink-0" />
+                          <div className="flex flex-col min-w-0">
+                            <span className="truncate font-medium">
+                              {message.content ||
+                                message.file_name ||
+                                "Tệp đính kèm"}
+                            </span>
+                            {message.file_size ? (
+                              <span className="text-xs opacity-80">
+                                {formatFileSize(message.file_size)}
+                              </span>
+                            ) : (
+                              <span className="text-xs opacity-80 flex items-center gap-1">
+                                <Download className="w-3 h-3" /> Tải xuống
+                              </span>
+                            )}
+                          </div>
+                        </a>
+                      ) : (
+                        <div
+                          className="text-gray-700 dark:text-gray-300 text-sm whitespace-pre-wrap"
+                          onMouseDown={(e) => { if (e.button === 0) startLongPress(message.id); }}
+                          onMouseMove={clearLongPressTimer}
+                          onMouseUp={clearLongPressTimer}
+                          onMouseLeave={clearLongPressTimer}
+                          onTouchStart={() => startLongPress(message.id)}
+                          onTouchEnd={clearLongPressTimer}
+                          onTouchMove={clearLongPressTimer}
+                          onContextMenu={(e) => e.preventDefault()}
+                        >
+                          {linkifyText(
+                            message.content,
+                            Array.isArray(message.mentions)
+                              ? new Set(message.mentions.map((m) => m.username.toLowerCase()))
+                              : null
+                          )}
+                        </div>
+                      )}
+
+                      {/* Reactions */}
+                      {loggedIn && (() => {
+                        const rxns = getMessageReactions(message);
+                        return (
+                          <MessageReactions
+                            reactions={rxns}
+                            isOwn={isOwn}
+                            open={openReactionMessageId === message.id}
+                            onOpenChange={(v) => setOpenReactionMessageId(v ? message.id : null)}
+                            onReact={(type) => handleReact(message.id, type, rxns)}
+                            onRemove={() => handleRemovePublicReaction(message.id, rxns)}
+                            onReply={() => setReplyingTo({
+                              id: message.id,
+                              content: message.content,
+                              type: message.type,
+                              file_url: message.file_url || null,
+                              sender: message.sender,
+                              isSelf: isOwn,
+                            })}
+                            onRecall={isOwn && !message.is_recalled ? () => handleRecallPublic(message.id) : undefined}
+                            onEdit={isOwn && message.type === "text" && !message.is_recalled ? () => setEditingMessage({ id: message.id, content: message.content || "" }) : undefined}
+                            inline
+                          />
+                        );
+                      })()}
                     </div>
+
                   </div>
                 );
               })
@@ -522,10 +1047,22 @@ export default function PublicChat() {
       <div className="border-t dark:!border-[#585857] p-4 bg-gray-50 dark:!bg-[var(--main-white)]">
         <MessageInput
           onSend={handleSendMessage}
+          onSendFile={handleSendFile}
           sending={sending}
           loggedIn={loggedIn}
+          replyingTo={replyingTo}
+          onCancelReply={() => setReplyingTo(null)}
+          editingMessage={editingMessage}
+          onSaveEdit={handleSaveEditPublic}
+          onCancelEdit={() => setEditingMessage(null)}
         />
       </div>
+
+      <ChatMediaLightbox
+        media={lightboxMedia}
+        onClose={() => setLightboxMedia(null)}
+      />
+
     </div>
   );
 }

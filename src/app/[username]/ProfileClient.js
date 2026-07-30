@@ -56,6 +56,7 @@ export default function ProfileClient({ initialProfile, activeTab, username }) {
       avatar_url:
         user.profile?.profile_picture ||
         `${process.env.NEXT_PUBLIC_API_URL}/v1.0/users/${user.username}/avatar`,
+      cover_photo_url: user.profile?.cover_photo_url || null,
       stats: {
         posts: user.stats?.posts_count || user.stats?.posts || 0,
         followers: user.stats?.followers || 0,
@@ -538,18 +539,28 @@ export default function ProfileClient({ initialProfile, activeTab, username }) {
     );
   }
 
+  const coverImageUrl =
+    profile.cover_photo_url ||
+    `${process.env.NEXT_PUBLIC_API_URL}/v1.0/users/${profile.username}/avatar`;
+
   return (
     <DefaultLayout activeNav="home">
       <div>
         <div className="flex-1">
-          <div className="relative h-min lg:h-56 overflow-hidden px-2.5 py-8">
-            <div
-              style={{
-                backgroundImage: `url(${process.env.NEXT_PUBLIC_API_URL}/v1.0/users/${profile.username}/avatar)`,
-              }}
-              className="bg-gray-300 w-full h-[450px] lg:h-56 blur-effect"
+          <div className="relative h-min lg:h-96 overflow-hidden">
+            <img
+              src={coverImageUrl}
+              alt=""
+              aria-hidden="true"
+              className="cover-photo-bg absolute inset-0 w-full h-full object-cover"
             />
-            <div className="lg:hidden flex flex-col items-center gap-y-2 relative z-10">
+            <img
+              src={coverImageUrl}
+              alt=""
+              aria-hidden="true"
+              className="blur-effect absolute inset-0 w-full h-full object-cover"
+            />
+            <div className="lg:hidden flex flex-col items-center gap-y-2 relative z-10 px-2.5 py-8">
               <a
                 href={`${process.env.NEXT_PUBLIC_API_URL}/v1.0/users/${profile.username}/avatar`}
               >
@@ -723,7 +734,7 @@ export default function ProfileClient({ initialProfile, activeTab, username }) {
                   }}
                 >
                   <p className="font-semibold text-sm text-slate-600 dark:text-neutral-400">
-                    Người theo dõi
+                    Người t.dõi
                   </p>
                   <p className="font-bold text-xl text-primary-500 follower_count">
                     {profile.stats.followers}
@@ -740,7 +751,7 @@ export default function ProfileClient({ initialProfile, activeTab, username }) {
                   }}
                 >
                   <p className="font-semibold text-sm text-slate-600 dark:text-neutral-400">
-                    Đang theo dõi
+                    Đang t.dõi
                   </p>
                   <p className="font-bold text-xl text-primary-500">
                     {profile.stats.following}

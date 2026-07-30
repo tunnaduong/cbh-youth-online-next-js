@@ -26,9 +26,12 @@ const CreatePostModal = ({ open, onClose, isEditMode = false, postData = null, o
   const [imageFiles, setImageFiles] = useState([]);
   const [imagePreviews, setImagePreviews] = useState([]);
   const [documentFiles, setDocumentFiles] = useState([]);
+  const [videoFiles, setVideoFiles] = useState([]);
+  const [videoPreviews, setVideoPreviews] = useState([]);
   const [selectedVisibility, setSelectedVisibility] = useState("public");
   const [forumData, setForumData] = useState({ main_categories: [] });
   const [loading, setLoading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
 
   // Fetch forum data when modal opens
   useEffect(() => {
@@ -63,12 +66,14 @@ const CreatePostModal = ({ open, onClose, isEditMode = false, postData = null, o
             subforum_id: fetchedPost.subforum_id || null,
             image_files: [],
             document_files: [],
+            video_files: [],
             visibility: fetchedPost.visibility || 0,
             privacy: fetchedPost.privacy || "public",
             anonymous: fetchedPost.anonymous || false,
           });
           setExistingImages(fetchedPost.images || []);
           setExistingDocuments(fetchedPost.documents || []);
+          setExistingVideos(fetchedPost.videos || []);
           setSelectedSubforum(fetchedPost.subforum_id || null);
           setSelectedVisibility(fetchedPost.privacy || "public");
           setLoading(false);
@@ -91,12 +96,14 @@ const CreatePostModal = ({ open, onClose, isEditMode = false, postData = null, o
     subforum_id: null,
     image_files: [],
     document_files: [],
+    video_files: [],
     visibility: 0, // 0: not hidden from feed, 1: hidden from feed
     privacy: "public", // public, followers, private
     anonymous: false, // false: normal post, true: anonymous post
   });
   const [existingImages, setExistingImages] = useState([]);
   const [existingDocuments, setExistingDocuments] = useState([]);
+  const [existingVideos, setExistingVideos] = useState([]);
   const [processing, setProcessing] = useState(false);
   const [errors, setErrors] = useState({});
   const [isPreviewMode, setIsPreviewMode] = useState(false);
@@ -104,6 +111,7 @@ const CreatePostModal = ({ open, onClose, isEditMode = false, postData = null, o
   const textareaRef = useRef(null);
   const imageInputRef = useRef(null);
   const documentInputRef = useRef(null);
+  const videoInputRef = useRef(null);
   const dragCounterRef = useRef(0);
 
   // Handle auto-continuation for lists
@@ -171,16 +179,21 @@ const CreatePostModal = ({ open, onClose, isEditMode = false, postData = null, o
       subforum_id: null,
       image_files: [],
       document_files: [],
+      video_files: [],
       visibility: 0,
       privacy: "public",
       anonymous: false,
     });
     setExistingImages([]);
     setExistingDocuments([]);
+    setExistingVideos([]);
     setErrors({});
     setImageFiles([]);
     setImagePreviews([]);
     setDocumentFiles([]);
+    setVideoFiles([]);
+    setVideoPreviews([]);
+    setUploadProgress(0);
   };
 
   const handleSubmit = async (e) => {
@@ -228,6 +241,7 @@ const CreatePostModal = ({ open, onClose, isEditMode = false, postData = null, o
         // Pass the list of IDs we want to KEEP
         formData.append("kept_image_ids", existingImages.map(img => img.id).join(','));
         formData.append("kept_document_ids", existingDocuments.map(doc => doc.id).join(','));
+        formData.append("kept_video_ids", existingVideos.map(vid => vid.id).join(','));
 
         // For updates, often we need to specify method if backend requires it for FormData
         formData.append("_method", "PUT");
@@ -243,12 +257,25 @@ const CreatePostModal = ({ open, onClose, isEditMode = false, postData = null, o
         formData.append(`document_files[${index}]`, file);
       });
 
+      // Add video files
+      videoFiles.forEach((file, index) => {
+        formData.append(`video_files[${index}]`, file);
+      });
+
+      setUploadProgress(0);
+      const config = {
+        onUploadProgress: (progressEvent) => {
+          if (!progressEvent.total) return;
+          setUploadProgress(Math.round((progressEvent.loaded * 100) / progressEvent.total));
+        },
+      };
+
       // Make API call
       let response;
       if (isEditMode && postData && postData.id) {
-        response = await updatePost(postData.id, formData);
+        response = await updatePost(postData.id, formData, config);
       } else {
-        response = await createPost(formData);
+        response = await createPost(formData, config);
       }
 
       if (response.status === 201 || (isEditMode && response.status === 200)) {
@@ -259,6 +286,8 @@ const CreatePostModal = ({ open, onClose, isEditMode = false, postData = null, o
         setImageFiles([]);
         setImagePreviews([]);
         setDocumentFiles([]);
+        setVideoFiles([]);
+        setVideoPreviews([]);
         setProcessing(false);
 
         // Trigger refresh of posts after successful creation
@@ -362,6 +391,45 @@ const CreatePostModal = ({ open, onClose, isEditMode = false, postData = null, o
     setData((prev) => ({ ...prev, document_files: newFiles }));
   };
 
+  const handleVideoFiles = (files) => {
+    if (files.length === 0) return;
+
+    const validTypes = [
+      "video/mp4",
+      "video/quicktime", // .mov
+      "video/x-msvideo", // .avi
+      "video/webm",
+      "video/x-matroska", // .mkv
+    ];
+
+    for (const file of files) {
+      if (!validTypes.includes(file.type) && !file.type.startsWith("video/")) {
+        message.error("Vui lòng chọn file video hợp lệ (mp4, mov, avi, webm, mkv)");
+        return;
+      }
+
+      if (file.size > 100 * 1024 * 1024) {
+        message.error("Kích thước video không được vượt quá 100MB");
+        return;
+      }
+    }
+
+    const newFiles = [...videoFiles, ...files];
+    setVideoFiles(newFiles);
+    setData((prev) => ({ ...prev, video_files: newFiles }));
+
+    files.forEach((file) => {
+      setVideoPreviews((prev) => [
+        ...prev,
+        {
+          id: Date.now() + Math.random(),
+          file: file,
+          preview: URL.createObjectURL(file),
+        },
+      ]);
+    });
+  };
+
   const handleImageChange = (e) => {
     handleImageFiles(Array.from(e.target.files));
     e.target.value = "";
@@ -372,22 +440,91 @@ const CreatePostModal = ({ open, onClose, isEditMode = false, postData = null, o
     e.target.value = "";
   };
 
+  const handleVideoChange = (e) => {
+    handleVideoFiles(Array.from(e.target.files));
+    e.target.value = "";
+  };
+
+  // A drag originating from another tab/page (e.g. dragging an <img> from a website)
+  // never exposes "Files" — it shows up as a URL/HTML payload instead.
+  const isDraggableImageSource = (dataTransfer) =>
+    dataTransfer.types.includes("Files") ||
+    dataTransfer.types.includes("text/uri-list") ||
+    dataTransfer.types.includes("text/html");
+
+  const extractImageUrlFromDataTransfer = (dataTransfer) => {
+    const uriList = dataTransfer.getData("text/uri-list");
+    if (uriList) {
+      const url = uriList.split("\n").find((line) => line && !line.startsWith("#"));
+      if (url) return url.trim();
+    }
+
+    const html = dataTransfer.getData("text/html");
+    if (html) {
+      const match = html.match(/<img[^>]+src=["']([^"']+)["']/i);
+      if (match) return match[1];
+    }
+
+    const plainText = dataTransfer.getData("text/plain");
+    if (plainText && /^https?:\/\//i.test(plainText.trim())) {
+      return plainText.trim();
+    }
+
+    return null;
+  };
+
+  const handleRemoteImageDrop = async (url) => {
+    try {
+      const response = await fetch(url);
+      if (!response.ok) throw new Error("Fetch failed");
+
+      const blob = await response.blob();
+      if (!blob.type.startsWith("image/")) {
+        message.error("Đường dẫn kéo thả không phải là ảnh hợp lệ");
+        return;
+      }
+
+      const extension = blob.type.split("/")[1] || "png";
+      const fileName = `image-${Date.now()}.${extension}`;
+      const file = new File([blob], fileName, { type: blob.type });
+      handleImageFiles([file]);
+    } catch (error) {
+      console.error("Error fetching dropped image URL:", error);
+      message.error(
+        "Không thể tải ảnh từ đường dẫn này (có thể do giới hạn CORS của trang nguồn)"
+      );
+    }
+  };
+
   const handleFilesDrop = (e) => {
     e.preventDefault();
     dragCounterRef.current = 0;
     setIsDraggingFiles(false);
 
     const files = Array.from(e.dataTransfer.files);
-    const imageFilesToAdd = files.filter((file) => file.type.startsWith("image/"));
-    const documentFilesToAdd = files.filter((file) => !file.type.startsWith("image/"));
+    if (files.length > 0) {
+      const imageFilesToAdd = files.filter((file) => file.type.startsWith("image/"));
+      const videoFilesToAdd = files.filter((file) => file.type.startsWith("video/"));
+      const documentFilesToAdd = files.filter(
+        (file) => !file.type.startsWith("image/") && !file.type.startsWith("video/")
+      );
 
-    if (imageFilesToAdd.length > 0) handleImageFiles(imageFilesToAdd);
-    if (documentFilesToAdd.length > 0) handleDocumentFiles(documentFilesToAdd);
+      if (imageFilesToAdd.length > 0) handleImageFiles(imageFilesToAdd);
+      if (videoFilesToAdd.length > 0) handleVideoFiles(videoFilesToAdd);
+      if (documentFilesToAdd.length > 0) handleDocumentFiles(documentFilesToAdd);
+      return;
+    }
+
+    // No local files were dropped — this is likely an image dragged from another tab.
+    const imageUrl = extractImageUrlFromDataTransfer(e.dataTransfer);
+    if (imageUrl) {
+      handleRemoteImageDrop(imageUrl);
+    }
   };
 
   const handleFilesDragEnter = (e) => {
     e.preventDefault();
-    if (!e.dataTransfer.types.includes("Files")) return;
+    if (!isDraggableImageSource(e.dataTransfer)) return;
 
     dragCounterRef.current += 1;
     setIsDraggingFiles(true);
@@ -395,7 +532,7 @@ const CreatePostModal = ({ open, onClose, isEditMode = false, postData = null, o
 
   const handleFilesDragLeave = (e) => {
     e.preventDefault();
-    if (!e.dataTransfer.types.includes("Files")) return;
+    if (!isDraggableImageSource(e.dataTransfer)) return;
 
     dragCounterRef.current = Math.max(0, dragCounterRef.current - 1);
     if (dragCounterRef.current === 0) setIsDraggingFiles(false);
@@ -414,6 +551,18 @@ const CreatePostModal = ({ open, onClose, isEditMode = false, postData = null, o
     const newFiles = documentFiles.filter((_, i) => i !== index);
     setDocumentFiles(newFiles);
     setData((prev) => ({ ...prev, document_files: newFiles }));
+  };
+
+  const removeVideo = (index) => {
+    const removed = videoPreviews[index];
+    if (removed) URL.revokeObjectURL(removed.preview);
+
+    const newFiles = videoFiles.filter((_, i) => i !== index);
+    const newPreviews = videoPreviews.filter((_, i) => i !== index);
+
+    setVideoFiles(newFiles);
+    setVideoPreviews(newPreviews);
+    setData((prev) => ({ ...prev, video_files: newFiles }));
   };
 
   const handleSubforumChange = (value) => {
@@ -500,7 +649,7 @@ const CreatePostModal = ({ open, onClose, isEditMode = false, postData = null, o
           onDragEnter={handleFilesDragEnter}
           onDragOver={(e) => {
             e.preventDefault();
-            if (e.dataTransfer.types.includes("Files")) {
+            if (isDraggableImageSource(e.dataTransfer)) {
               e.dataTransfer.dropEffect = "copy";
             }
           }}
@@ -770,6 +919,48 @@ const CreatePostModal = ({ open, onClose, isEditMode = false, postData = null, o
               </div>
             )}
 
+            {/* Videos: New and Existing */}
+            {(videoPreviews.length > 0 || existingVideos.length > 0) && (
+              <div className="grid grid-cols-4 gap-2 mb-4">
+                {videoPreviews.map((preview, index) => (
+                  <div key={preview.id} className="relative">
+                    <video
+                      src={preview.preview}
+                      controls
+                      className="border rounded-md dark:!border-neutral-500 w-full h-24 object-cover bg-black"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => removeVideo(index)}
+                      className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center hover:bg-red-600 transition-colors"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
+                        <path d="M18 6 6 18" /><path d="m6 6 12 12" />
+                      </svg>
+                    </button>
+                  </div>
+                ))}
+                {existingVideos.map((vid) => (
+                  <div key={`existing-video-${vid.id}`} className="relative">
+                    <video
+                      src={vid.url}
+                      controls
+                      className="border rounded-md dark:!border-neutral-500 w-full h-24 object-cover bg-black"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setExistingVideos(prev => prev.filter(item => item.id !== vid.id))}
+                      className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center hover:bg-red-600 transition-colors"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
+                        <path d="M18 6 6 18" /><path d="m6 6 12 12" />
+                      </svg>
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+
             {/* Documents: New and Existing */}
             {(documentFiles.length > 0 || existingDocuments.length > 0) && (
               <div className="flex flex-col gap-2 mt-2 mb-4">
@@ -808,9 +999,9 @@ const CreatePostModal = ({ open, onClose, isEditMode = false, postData = null, o
               <div className="flex flex-row items-center rounded-lg border dark:!border-neutral-500 bg-gray-50 dark:bg-neutral-700 p-3 shadow-sm">
                 <p className="text-sm font-medium flex-1">
                   Thêm vào bài viết của bạn
-                  {(imageFiles.length > 0 || documentFiles.length > 0) && (
+                  {(imageFiles.length > 0 || documentFiles.length > 0 || videoFiles.length > 0) && (
                     <span className="ml-2 text-primary-500 font-semibold">
-                      ({imageFiles.length + documentFiles.length} đã chọn)
+                      ({imageFiles.length + documentFiles.length + videoFiles.length} đã chọn)
                     </span>
                   )}
                 </p>
@@ -830,6 +1021,15 @@ const CreatePostModal = ({ open, onClose, isEditMode = false, postData = null, o
                   type="file"
                   multiple
                   onChange={handleDocumentChange}
+                  style={{ display: "none" }}
+                />
+                <input
+                  ref={videoInputRef}
+                  id="videoInput"
+                  accept="video/mp4,video/quicktime,video/x-msvideo,video/webm,video/x-matroska,.mp4,.mov,.avi,.webm,.mkv"
+                  type="file"
+                  multiple
+                  onChange={handleVideoChange}
                   style={{ display: "none" }}
                 />
                 <div className="flex gap-1">
@@ -879,6 +1079,25 @@ const CreatePostModal = ({ open, onClose, isEditMode = false, postData = null, o
                       <polyline points="14 2 14 8 20 8" />
                     </svg>
                   </Button>
+                  <Button
+                    size="small"
+                    className="h-8 px-2 rounded-full border-0"
+                    onClick={() => videoInputRef.current?.click()}
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth={2}
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      className="h-4 w-4 text-purple-500"
+                    >
+                      <path d="m22 8-6 4 6 4V8Z" />
+                      <rect width={14} height={12} x={2} y={6} rx={2} ry={2} />
+                    </svg>
+                  </Button>
                 </div>
               </div>
               {isDraggingFiles && (
@@ -895,14 +1114,28 @@ const CreatePostModal = ({ open, onClose, isEditMode = false, postData = null, o
                   className="rounded-lg border-2 border-dashed border-emerald-500 bg-emerald-50 p-4 text-center transition-colors dark:bg-emerald-950/30"
                 >
                   <p className="text-sm font-medium">
-                    Kéo và thả ảnh hoặc tài liệu vào đây
+                    Kéo và thả ảnh, video hoặc tài liệu vào đây
                   </p>
                   <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                    Ảnh tối đa 10MB, tài liệu PDF/DOC/DOCX/TXT tối đa 25MB
+                    Ảnh tối đa 10MB, video tối đa 100MB, tài liệu PDF/DOC/DOCX/TXT tối đa 25MB
                   </p>
                 </div>
               )}
             </div>
+            {processing && videoFiles.length > 0 && (
+              <div className="w-full">
+                <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400 mb-1">
+                  <span>Đang tải lên...</span>
+                  <span>{uploadProgress}%</span>
+                </div>
+                <div className="w-full h-2 bg-gray-200 dark:bg-neutral-600 rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-primary-500 transition-all duration-200"
+                    style={{ width: `${uploadProgress}%` }}
+                  />
+                </div>
+              </div>
+            )}
             <CustomColorButton
               block
               bgColor="#318527"

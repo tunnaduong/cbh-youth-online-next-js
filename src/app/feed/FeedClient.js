@@ -7,7 +7,7 @@ import Lottie from "lottie-react";
 import refresh from "@/assets/refresh.json";
 import { message } from "antd";
 import { useAuthContext, useTopUsersContext } from "@/contexts/Support";
-import { getFeedPosts, votePost } from "@/app/Api";
+import { getLatestFeedPosts, votePost } from "@/app/Api";
 import { useRouter } from "next/navigation";
 import SkeletonPost from "@/components/home/skeletonPost";
 import { useViewTracking } from "@/hooks/useViewTracking";
@@ -32,7 +32,7 @@ export default function FeedClient() {
     setError(null);
 
     try {
-      const response = await getFeedPosts(1);
+      const response = await getLatestFeedPosts(1);
 
       // Laravel pagination format: { data: [...], current_page: 1, last_page: 5, total: 50, ... }
       const { data: newPosts, current_page, last_page, total } = response.data;
@@ -70,7 +70,7 @@ export default function FeedClient() {
     setError(null);
 
     try {
-      const response = await getFeedPosts(pagination.current_page + 1);
+      const response = await getLatestFeedPosts(pagination.current_page + 1);
 
       // Laravel pagination format: { data: [...], current_page: 1, last_page: 5, total: 50, ... }
       const { data: newPosts, current_page, last_page, total } = response.data;

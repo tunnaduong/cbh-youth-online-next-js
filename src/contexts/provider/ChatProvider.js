@@ -7,8 +7,11 @@ import {
   getConversations,
   getMessages,
   sendMessage as sendMessageApi,
+  sendMessageWithFile as sendMessageWithFileApi,
   markAsRead as markAsReadApi,
   createPrivateConversation,
+  reactToMessage as reactToMessageApi,
+  removeMessageReaction as removeMessageReactionApi,
 } from "@/app/Api";
 import { useAuthContext } from "../Support";
 import {
@@ -36,6 +39,7 @@ const ChatProvider = ({ children }) => {
   const [loading, setLoading] = useState(false);
   const [sending, setSending] = useState(false);
   const [typingUsers, setTypingUsers] = useState({}); // { conversationId: { userId, name } }
+  const [highlightMessageId, setHighlightMessageId] = useState(null);
 
   const previousConversationsRef = useRef([]); // Track previous conversations to detect new messages
   const notificationPermissionRequestedRef = useRef(false);
@@ -325,15 +329,14 @@ const ChatProvider = ({ children }) => {
 
   // Send message
   const sendMessage = useCallback(
-    async (conversationId, content, type = "text") => {
+    async (conversationId, content, type = "text", replyToMessageId = null) => {
       if (!loggedIn || !conversationId || !content?.trim()) return;
 
       setSending(true);
       try {
-        const response = await sendMessageApi(conversationId, {
-          content: content.trim(),
-          type,
-        });
+        const payload = { content: content.trim(), type };
+        if (replyToMessageId) payload.reply_to_message_id = replyToMessageId;
+        const response = await sendMessageApi(conversationId, payload);
 
         const messageData = response?.data || response;
 
@@ -361,6 +364,136 @@ const ChatProvider = ({ children }) => {
       }
     },
     [loggedIn, loadMessages]
+  );
+
+  // Send an image/file attachment message
+  const sendFileMessage = useCallback(
+    async (conversationId, file) => {
+      if (!loggedIn || !conversationId || !file) return;
+
+      // Some file pickers (mobile "Files" providers, certain Windows dialogs) leave
+      // file.type blank or generic instead of a proper image/* or video/* MIME, which
+      // would otherwise mislabel real images/videos as generic files forever (the
+      // server just persists whatever type we tell it). Fall back to the filename
+      // extension in that case.
+      const IMAGE_EXTENSION_RE = /\.(png|jpe?g|gif|webp|bmp|svg|heic|heif)$/i;
+      const VIDEO_EXTENSION_RE = /\.(mp4|mov|avi|webm|mkv)$/i;
+      const isImage =
+        file.type?.startsWith("image/") ||
+        (!file.type && IMAGE_EXTENSION_RE.test(file.name || ""));
+      const isVideo =
+        !isImage &&
+        (file.type?.startsWith("video/") ||
+          (!file.type && VIDEO_EXTENSION_RE.test(file.name || "")));
+      const type = isImage ? "image" : isVideo ? "video" : "file";
+      const tempId = `temp-${Date.now()}`;
+      const localUrl = isImage || isVideo ? URL.createObjectURL(file) : null;
+
+      const optimisticMessage = {
+        id: tempId,
+        content: file.name,
+        type,
+        file_url: localUrl,
+        file_name: file.name,
+        file_size: file.size,
+        is_myself: true,
+        is_sending: true,
+        created_at: new Date().toISOString(),
+        read_at: null,
+      };
+
+      setMessages((prev) => ({
+        ...prev,
+        [conversationId]: [...(prev[conversationId] || []), optimisticMessage],
+      }));
+
+      setSending(true);
+      try {
+        const formData = new FormData();
+        formData.append("file", file);
+        formData.append("type", type);
+        formData.append("content", file.name);
+
+        const response = await sendMessageWithFileApi(conversationId, formData);
+        const messageData = response?.data || response;
+
+        setMessages((prev) => ({
+          ...prev,
+          [conversationId]: (prev[conversationId] || []).map((m) =>
+            m.id === tempId ? messageData : m
+          ),
+        }));
+
+        return messageData;
+      } catch (error) {
+        console.error("[ChatProvider] Error sending file message:", error);
+        setMessages((prev) => ({
+          ...prev,
+          [conversationId]: (prev[conversationId] || []).filter(
+            (m) => m.id !== tempId
+          ),
+        }));
+        throw error;
+      } finally {
+        if (localUrl) URL.revokeObjectURL(localUrl);
+        setSending(false);
+      }
+    },
+    [loggedIn]
+  );
+
+  // Patch a single message's reactions summary in local state.
+  const patchMessageReactions = useCallback((conversationId, messageId, reactions) => {
+    setMessages((prev) => {
+      const list = prev[conversationId];
+      if (!list) return prev;
+      return {
+        ...prev,
+        [conversationId]: list.map((m) =>
+          String(m.id) === String(messageId) ? { ...m, reactions } : m
+        ),
+      };
+    });
+  }, []);
+
+  // React to a message with one of the fixed reaction types (like/love/haha/wow/sad/angry).
+  const reactToMessage = useCallback(
+    async (conversationId, messageId, reactionType) => {
+      if (!loggedIn || !conversationId || !messageId || !reactionType) return;
+
+      try {
+        const response = await reactToMessageApi(messageId, reactionType);
+        const data = response?.data || response;
+        if (data?.reactions) {
+          patchMessageReactions(conversationId, messageId, data.reactions);
+        }
+        return data;
+      } catch (error) {
+        console.error("[ChatProvider] Error reacting to message:", error);
+        throw error;
+      }
+    },
+    [loggedIn, patchMessageReactions]
+  );
+
+  // Remove the current user's reaction from a message.
+  const removeMessageReaction = useCallback(
+    async (conversationId, messageId) => {
+      if (!loggedIn || !conversationId || !messageId) return;
+
+      try {
+        const response = await removeMessageReactionApi(messageId);
+        const data = response?.data || response;
+        if (data?.reactions) {
+          patchMessageReactions(conversationId, messageId, data.reactions);
+        }
+        return data;
+      } catch (error) {
+        console.error("[ChatProvider] Error removing message reaction:", error);
+        throw error;
+      }
+    },
+    [loggedIn, patchMessageReactions]
   );
 
   // Mark conversation as read
@@ -447,6 +580,13 @@ const ChatProvider = ({ children }) => {
     }, TYPING_EXPIRY_MS);
   }, [currentUser?.id]);
 
+  // Realtime: someone reacted (or unreacted) to a message in `conversationId` -
+  // patch that message's reaction summary directly, no need to refetch.
+  const handleMessageReacted = useCallback((conversationId, data) => {
+    if (!data?.message_id || !data?.reactions) return;
+    patchMessageReactions(conversationId, data.message_id, data.reactions);
+  }, [patchMessageReactions]);
+
   const subscribeToConversation = useCallback(
     (conversationId) => {
       if (channelsRef.current[conversationId]) return;
@@ -459,13 +599,16 @@ const ChatProvider = ({ children }) => {
         .listen(".message.sent", () => handleMessageSent(conversationId))
         .listen(".message.read", () => handleMessageMutated(conversationId))
         .listen(".message.deleted", () => handleMessageMutated(conversationId))
+        .listen(".message.reacted", (data) =>
+          handleMessageReacted(conversationId, data)
+        )
         .listenForWhisper("typing", (data) =>
           handleTypingWhisper(conversationId, data)
         );
 
       channelsRef.current[conversationId] = channel;
     },
-    [handleMessageSent, handleMessageMutated, handleTypingWhisper]
+    [handleMessageSent, handleMessageMutated, handleMessageReacted, handleTypingWhisper]
   );
 
   const unsubscribeFromConversation = useCallback((conversationId) => {
@@ -940,6 +1083,7 @@ const ChatProvider = ({ children }) => {
     loading,
     sending,
     typingUsers,
+    highlightMessageId,
 
     // Actions
     openChat,
@@ -951,9 +1095,36 @@ const ChatProvider = ({ children }) => {
     selectConversation,
     loadMessages,
     sendMessage,
+    sendFileMessage,
     markAsRead,
     createConversation,
     sendTyping,
+    reactToMessage,
+    removeMessageReaction,
+    setHighlightMessageId,
+    updateMessageLocally: (conversationId, messageId, patch) => {
+      setMessages((prev) => {
+        const updated = {
+          ...prev,
+          [conversationId]: (prev[conversationId] || []).map((m) =>
+            m.id === messageId ? { ...m, ...patch } : m
+          ),
+        };
+        // If the patched message is the last in the list, update latest_message in conversations
+        const msgs = updated[conversationId] || [];
+        const lastMsg = msgs[msgs.length - 1];
+        if (lastMsg && lastMsg.id === messageId) {
+          setConversations((prevC) =>
+            prevC.map((c) =>
+              String(c.id) === String(conversationId) && c.latest_message
+                ? { ...c, latest_message: { ...c.latest_message, ...patch } }
+                : c
+            )
+          );
+        }
+        return updated;
+      });
+    },
   };
 
   return <ChatContext.Provider value={value}>{children}</ChatContext.Provider>;

@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import {
   getHomeData,
+  getLatestFeedPosts,
   getForumCategories,
   getPostDetail,
   getSubforumPosts,
@@ -136,13 +137,33 @@ export const ForumDataProvider = ({ children }) => {
         const response = await getHomeData(sort);
         const data = response.data;
         if (data) {
-          setLatestPosts((prev) => ({
-            ...prev,
-            [sort]: data.latestPosts || [],
-          }));
           setMainCategories(data.mainCategories || []);
           setStats(data.stats || null);
           lastFetchRef.current.home[sort] = now;
+
+          if (sort === "latest") {
+            // "Bài mới" panel: use the live ?mode=latest feed (uncached,
+            // strictly ordered by created_at desc) instead of /home's
+            // latestPosts, so a newly created post always shows up here.
+            const latestFeedRes = await getLatestFeedPosts(1);
+            const latestTopics = latestFeedRes.data?.data || [];
+            setLatestPosts((prev) => ({
+              ...prev,
+              latest: latestTopics.map((topic) => ({
+                id: topic.id,
+                title: topic.title,
+                anonymous: topic.anonymous,
+                username: topic.author?.username,
+                author_name: topic.author?.profile_name || topic.author?.username,
+                time: topic.time,
+              })),
+            }));
+          } else {
+            setLatestPosts((prev) => ({
+              ...prev,
+              [sort]: data.latestPosts || [],
+            }));
+          }
         }
       } catch (err) {
         setError((prev) => ({

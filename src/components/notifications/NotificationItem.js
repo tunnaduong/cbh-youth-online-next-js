@@ -6,9 +6,22 @@ import { useAuthContext, useNotificationContext } from "@/contexts/Support";
 import { useRouter } from "@bprogress/next/app";
 import { generatePostSlug } from "@/utils/slugify";
 
+// Only these notification types mean the actor authored the anonymous
+// content themselves (their own anonymous reply/comment). Voters/likers are
+// never anonymous, even when they vote/like someone else's anonymous
+// comment/post, so `data.is_anonymous` must not hide them for other types.
+const ANONYMOUS_ACTOR_TYPES = ["comment_replied", "topic_commented"];
+
+const isActorAnonymous = (notification) =>
+  ANONYMOUS_ACTOR_TYPES.includes(notification?.type) &&
+  notification?.data?.is_anonymous === true;
+
 const getNotificationMessage = (notification) => {
   const { type, actor, data } = notification;
-  const actorName = actor?.profile_name || actor?.username || "Ai đó";
+  const isCommentAnonymous = isActorAnonymous(notification);
+  const actorName = isCommentAnonymous
+    ? "Người dùng ẩn danh"
+    : actor?.profile_name || actor?.username || "Ai đó";
 
   switch (type) {
     case "topic_liked":
@@ -21,8 +34,13 @@ const getNotificationMessage = (notification) => {
       return `${actorName} đã bình luận bài viết của bạn`;
     case "mentioned":
       return `${actorName} đã nhắc đến bạn`;
+    case "message_reacted":
+      return `${actorName} đã bày tỏ cảm xúc ${data?.reaction_emoji || "👍"} với tin nhắn của bạn`;
     case "story_reacted":
-      return `${actorName} đã bày tỏ cảm xúc về tin của bạn`
+      return `${actorName} đã bày tỏ cảm xúc về tin của bạn`;
+    case "story_replied":
+    case "story_commented":
+      return `${actorName} đã bình luận về tin của bạn`;
     case "topic_pinned":
       return "Bài viết của bạn đã được ghim";
     case "topic_moved":
@@ -159,6 +177,18 @@ export default function NotificationItem({ notification }) {
       await markAsRead(notification.id);
     }
 
+    if (notification.type === "message_reacted") {
+      const data = notification.data || {};
+      const conversationId = data.conversation_id;
+      const messageId = data.message_id;
+      if (conversationId) {
+        const params = new URLSearchParams({ conversation: conversationId });
+        if (messageId) params.set("message", messageId);
+        router.push(`/chat?${params.toString()}`);
+        return;
+      }
+    }
+
     const targetUrl = buildNotificationTargetUrl(
       notification,
       currentUser?.username
@@ -178,6 +208,8 @@ export default function NotificationItem({ notification }) {
     }
   };
 
+  const isCommentAnonymous = isActorAnonymous(notification);
+
   // Determine avatar URL
   const getAvatarUrl = () => {
     // System notification (no actor)
@@ -185,8 +217,13 @@ export default function NotificationItem({ notification }) {
       return `${process.env.NEXT_PUBLIC_API_URL}/v1.0/users/Admin/avatar`;
     }
 
-    // Anonymous notification
-    if (notification.actor && !notification.actor.id) {
+    // Anonymous comment — hide actor identity
+    if (isCommentAnonymous) {
+      return null;
+    }
+
+    // Actor with no id (legacy anonymous)
+    if (!notification.actor.id) {
       return null;
     }
 
@@ -205,8 +242,10 @@ export default function NotificationItem({ notification }) {
   };
 
   const avatarUrl = getAvatarUrl();
-  const avatarAlt = notification.actor?.username || "Hệ thống";
-  const isAnonymous = notification.actor && !notification.actor.id;
+  const avatarAlt = isCommentAnonymous
+    ? "Người dùng ẩn danh"
+    : notification.actor?.username || "Hệ thống";
+  const isAnonymous = isCommentAnonymous || (notification.actor && !notification.actor.id);
 
   return (
     <div
@@ -240,6 +279,11 @@ export default function NotificationItem({ notification }) {
         {notification.data?.comment_excerpt && (
           <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 line-clamp-2">
             {notification.data.comment_excerpt}
+          </p>
+        )}
+        {notification.type === "message_reacted" && notification.data?.message_content && (
+          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 line-clamp-2">
+            {notification.data.message_content}
           </p>
         )}
         <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
