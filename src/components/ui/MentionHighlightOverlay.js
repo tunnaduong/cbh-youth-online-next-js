@@ -26,6 +26,10 @@ const MIRRORED_PROPS = [
   "borderLeftWidth",
   "boxSizing",
   "wordSpacing",
+  "whiteSpace",
+  "wordBreak",
+  "overflowWrap",
+  "tabSize",
 ];
 
 function resolveInputEl(ref) {
@@ -60,6 +64,13 @@ export default function MentionHighlightOverlay({ text, targetRef, singleLine = 
       MIRRORED_PROPS.forEach((prop) => {
         overlay.style[prop] = cs[prop];
       });
+      // Mirrored border-*-width only occupies layout space if border-style
+      // isn't "none" (the CSS default, and Tailwind's default for this div).
+      // Force a transparent solid style so the copied widths actually take
+      // effect and the overlay's content box lines up with the real input's
+      // (whose computed width is already 0 here if it has no visible border).
+      overlay.style.borderStyle = "solid";
+      overlay.style.borderColor = "transparent";
     };
     const syncScroll = () => {
       overlay.scrollTop = source.scrollTop;
