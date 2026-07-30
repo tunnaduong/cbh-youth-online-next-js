@@ -10,8 +10,8 @@ import { useTheme } from "@/contexts/themeContext";
 import MarkdownToolbar from "@/components/ui/MarkdownToolbar";
 import MarkdownRenderer from "@/components/ui/MarkdownRenderer";
 import MentionSuggestionsDropdown from "@/components/ui/MentionSuggestionsDropdown";
-import MentionHighlightOverlay from "@/components/ui/MentionHighlightOverlay";
 import { useMentionInput } from "@/hooks/useMentionInput";
+import { buildHtml, getCaretOffset, setCaretOffset, getContentText, makeProxyRef } from "@/utils/richInput";
 
 const MAX_IMAGES = 10;
 
@@ -30,8 +30,11 @@ export function CommentInput({
   // Array of { file, previewUrl }
   const [selectedImages, setSelectedImages] = useState([]);
   const wrapperRef = useRef(null);
-  const textareaRef = useRef(null);
+  const divRef = useRef(null);
   const imageInputRef = useRef(null);
+
+  // Proxy ref compatible with useMentionInput AND MarkdownToolbar
+  const textareaRef = useRef(makeProxyRef(() => divRef.current, setComment));
   const { currentUser } = useAuthContext();
   const { theme } = useTheme();
 
@@ -123,20 +126,19 @@ export function CommentInput({
   };
 
   const insertEmojiAtCursor = (emojiNative) => {
-    const textarea = textareaRef.current;
-    if (!textarea) {
+    const el = divRef.current;
+    if (!el) {
       setComment((prev) => prev + emojiNative);
       return;
     }
-    const start = textarea.selectionStart ?? comment.length;
-    const end = textarea.selectionEnd ?? comment.length;
-    const next = comment.substring(0, start) + emojiNative + comment.substring(end);
-    setComment(next);
-    requestAnimationFrame(() => {
-      textarea.focus();
-      const cursor = start + emojiNative.length;
-      textarea.setSelectionRange(cursor, cursor);
-    });
+    el.focus();
+    const offset = getCaretOffset(el);
+    const text = getContentText(el);
+    const newText = text.slice(0, offset) + emojiNative + text.slice(offset);
+    el.innerHTML = buildHtml(newText);
+    const newOffset = offset + emojiNative.length;
+    setCaretOffset(el, newOffset);
+    setComment(newText);
   };
 
   useEffect(() => {
@@ -155,19 +157,21 @@ export function CommentInput({
   }, [isPreviewMode]);
 
   useEffect(() => {
-    if (focus && textareaRef.current) {
+    if (focus && divRef.current) {
       setIsFocused(true);
-      textareaRef.current.focus();
+      divRef.current.focus();
     }
   }, [focus]);
 
+  // Sync div when comment changes externally
   useEffect(() => {
-    if (!isPreviewMode && textareaRef.current) {
-      const target = textareaRef.current;
-      target.style.height = "auto";
-      target.style.height = target.scrollHeight + "px";
+    const el = divRef.current;
+    if (!el) return;
+    const current = getContentText(el);
+    if (current !== comment) {
+      el.innerHTML = buildHtml(comment);
     }
-  }, [isPreviewMode]);
+  }, [comment]);
 
   return (
     <div className="w-full max-w-4xl mx-auto" ref={wrapperRef}>
@@ -208,34 +212,37 @@ export function CommentInput({
               </div>
             ) : (
               <div className="relative mt-1">
-                <textarea
-                  value={comment}
-                  onChange={(e) => handleMentionChange(e.target.value, e.target.selectionStart)}
+                <div
+                  ref={divRef}
+                  contentEditable
+                  suppressContentEditableWarning
+                  onInput={(e) => {
+                    const el = e.currentTarget;
+                    const offset = getCaretOffset(el);
+                    const text = getContentText(el);
+                    el.innerHTML = buildHtml(text);
+                    setCaretOffset(el, offset);
+                    setComment(text);
+                    handleMentionChange(text, offset);
+                  }}
                   onFocus={() => setIsFocused(true)}
                   onKeyDown={handleKeyDown}
-                  ref={textareaRef}
-                  placeholder={placeholder}
-                  rows={1}
+                  data-placeholder={placeholder}
                   className="
-                    w-full bg-transparent border-none outline-none resize-none relative
-                    text-transparent caret-gray-900 dark:caret-gray-100 placeholder:text-muted-foreground
-                    text-sm min-h-[24px] leading-6 ring-transparent focus:ring-transparent focus:border-transparent
-                    pl-0 pt-0
+                    ce-input
+                    w-full bg-transparent border-none outline-none resize-none
+                    text-sm min-h-[24px] leading-6
+                    focus:outline-none focus:ring-0
+                    whitespace-pre-wrap break-words overflow-y-auto
                   "
-                  style={{ height: "auto", minHeight: "24px", maxHeight: "120px", overflowY: "auto" }}
-                  onInput={(e) => {
-                    const target = e.target;
-                    target.style.height = "auto";
-                    target.style.height = target.scrollHeight + "px";
-                  }}
+                  style={{ maxHeight: "120px" }}
                 />
-                <MentionHighlightOverlay text={comment} targetRef={textareaRef} />
                 {showSuggestions && (
                   <MentionSuggestionsDropdown
                     suggestions={suggestions}
                     onSelect={insertMention}
                     onClose={closeSuggestions}
-                    anchorRef={textareaRef}
+                    anchorRef={divRef}
                   />
                 )}
               </div>

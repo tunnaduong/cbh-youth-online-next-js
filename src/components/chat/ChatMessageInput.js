@@ -4,60 +4,7 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import { FileText, Paperclip, Pencil, Send, Video, X } from "lucide-react";
 import MentionSuggestionsDropdown from "@/components/ui/MentionSuggestionsDropdown";
 import { useMentionInput } from "@/hooks/useMentionInput";
-
-const MENTION_RE = /(@[\w\-À-ɏ]+)/gu;
-
-function esc(s) {
-  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-}
-
-function buildHtml(text) {
-  if (!text) return "";
-  return (text)
-    .split(MENTION_RE)
-    .map((part, i) =>
-      i % 2 === 1 ? `<span class="ce-mention">${esc(part)}</span>` : esc(part)
-    )
-    .join("");
-}
-
-function getCaretOffset(el) {
-  const sel = window.getSelection();
-  if (!sel?.rangeCount) return 0;
-  const pre = sel.getRangeAt(0).cloneRange();
-  pre.selectNodeContents(el);
-  pre.setEnd(sel.getRangeAt(0).endContainer, sel.getRangeAt(0).endOffset);
-  return pre.toString().length;
-}
-
-function setCaretOffset(el, offset) {
-  const tw = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
-  let rem = offset;
-  let node;
-  while ((node = tw.nextNode())) {
-    if (rem <= node.textContent.length) {
-      const r = document.createRange();
-      r.setStart(node, rem);
-      r.collapse(true);
-      const sel = window.getSelection();
-      sel.removeAllRanges();
-      sel.addRange(r);
-      return;
-    }
-    rem -= node.textContent.length;
-  }
-  const r = document.createRange();
-  r.selectNodeContents(el);
-  r.collapse(false);
-  window.getSelection().removeAllRanges();
-  window.getSelection().addRange(r);
-}
-
-function getContentText(el) {
-  let t = el.textContent ?? "";
-  if (t.endsWith("\n")) t = t.slice(0, -1);
-  return t;
-}
+import { buildHtml, getCaretOffset, setCaretOffset, getContentText, makeProxyRef } from "@/utils/richInput";
 
 function EditComposerBar({ editingMessage, onCancel }) {
   if (!editingMessage) return null;
@@ -173,18 +120,7 @@ export default function ChatMessageInput({
   const fileInputRef = useRef(null);
 
   // Proxy ref that useMentionInput uses for focus/setSelectionRange
-  const inputRef = useRef({
-    get selectionStart() {
-      return divRef.current ? getCaretOffset(divRef.current) : 0;
-    },
-    focus() { divRef.current?.focus(); },
-    setSelectionRange(pos) {
-      if (divRef.current) {
-        divRef.current.focus();
-        setCaretOffset(divRef.current, pos);
-      }
-    },
-  });
+  const inputRef = useRef(makeProxyRef(() => divRef.current, setMessage));
 
   const {
     handleChange: handleMentionChange,

@@ -1,17 +1,14 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
-import { Button, Popover, Input } from "antd";
+import { useState, useRef, useEffect, useCallback } from "react";
+import { Button, Popover } from "antd";
 import { Send, Paperclip, Pencil, X, FileText, Video } from "lucide-react";
 import { RiEmojiStickerLine } from "react-icons/ri";
 import Picker from "@emoji-mart/react";
-import CustomInput from "@/components/ui/input";
 import { useTheme } from "@/contexts/themeContext";
 import MentionSuggestionsDropdown from "@/components/ui/MentionSuggestionsDropdown";
-import MentionHighlightOverlay from "@/components/ui/MentionHighlightOverlay";
 import { useMentionInput } from "@/hooks/useMentionInput";
-
-const { TextArea } = Input;
+import { buildHtml, getCaretOffset, setCaretOffset, getContentText, makeProxyRef } from "@/utils/richInput";
 
 function EditComposerBar({ editingMessage, onCancel }) {
   if (!editingMessage) return null;
@@ -67,14 +64,22 @@ function ReplyComposerBar({ replyingTo, onCancel }) {
   );
 }
 
-export default function MessageInput({ onSend, onSendFile, sending, loggedIn, replyingTo, onCancelReply, editingMessage, onSaveEdit, onCancelEdit, conversationId }) {
+export default function MessageInput({
+  onSend, onSendFile, sending, loggedIn,
+  replyingTo, onCancelReply,
+  editingMessage, onSaveEdit, onCancelEdit,
+  conversationId,
+}) {
   const [message, setMessage] = useState("");
   const [guestName, setGuestName] = useState("");
   const [showGuestNameInput, setShowGuestNameInput] = useState(false);
   const [showEmoji, setShowEmoji] = useState(false);
-  const textareaRef = useRef(null);
+  const divRef = useRef(null);
   const fileInputRef = useRef(null);
   const { theme } = useTheme();
+
+  // Proxy ref compatible with useMentionInput
+  const textareaRef = useRef(makeProxyRef(() => divRef.current, setMessage));
 
   const {
     handleChange: handleMentionChange,
@@ -82,18 +87,33 @@ export default function MessageInput({ onSend, onSendFile, sending, loggedIn, re
     showSuggestions,
     suggestions,
     closeSuggestions,
-  } = useMentionInput({ value: message, onChange: setMessage, conversationId: loggedIn ? conversationId : null, inputRef: textareaRef });
+  } = useMentionInput({
+    value: message,
+    onChange: setMessage,
+    conversationId: loggedIn ? conversationId : null,
+    inputRef: textareaRef,
+  });
+
+  // Sync div when message changes externally (edit mode, submit clear)
+  useEffect(() => {
+    const el = divRef.current;
+    if (!el) return;
+    const current = getContentText(el);
+    if (current !== message) {
+      el.innerHTML = buildHtml(message);
+      if (message) setCaretOffset(el, message.length);
+    }
+  }, [message]);
 
   useEffect(() => {
     if (editingMessage) {
       setMessage(editingMessage.content || "");
-      setTimeout(() => textareaRef.current?.focus(), 0);
+      setTimeout(() => divRef.current?.focus(), 0);
     } else {
       setMessage("");
     }
   }, [editingMessage?.id]);
 
-  // Load guest name from localStorage and update showGuestNameInput based on loggedIn
   useEffect(() => {
     console.log("[MessageInput] loggedIn:", loggedIn);
     if (!loggedIn) {
@@ -110,111 +130,99 @@ export default function MessageInput({ onSend, onSendFile, sending, loggedIn, re
     }
   }, [loggedIn]);
 
-  const handleSubmit = async () => {
+  const handleSubmit = useCallback(async () => {
     if (!message.trim()) return;
-
     try {
       if (editingMessage) {
         await onSaveEdit(message.trim());
         setMessage("");
         return;
       }
-
-      // If logged in, send message without guest name
       if (loggedIn) {
         await onSend(message, null, replyingTo?.id || null);
         onCancelReply?.();
       } else {
-        // If not logged in, must have guest name
-        if (!guestName || !guestName.trim()) {
+        if (!guestName?.trim()) {
           setShowGuestNameInput(true);
           alert("Vui lòng nhập tên hiển thị");
           return;
         }
-
-        // Save guest name to localStorage
         localStorage.setItem("chat_guest_name", guestName.trim());
         await onSend(message, guestName.trim());
       }
-
-      // Only clear message if send was successful
       setMessage("");
-
-      // Hide guest name input after successfully sending message
-      if (!loggedIn && guestName) {
-        setShowGuestNameInput(false);
-      }
+      if (!loggedIn && guestName) setShowGuestNameInput(false);
     } catch (error) {
-      // Error is already handled in PublicChat.handleSendMessage
-      // Don't clear message on error
       console.error("[MessageInput] Error in handleSubmit:", error);
     }
-  };
+  }, [message, editingMessage, loggedIn, replyingTo, guestName, onSend, onSaveEdit, onCancelReply]);
 
-  const handleKeyDown = (e) => {
+  const handleInput = useCallback((e) => {
+    const el = e.currentTarget;
+    const offset = getCaretOffset(el);
+    const text = getContentText(el);
+    el.innerHTML = buildHtml(text);
+    setCaretOffset(el, offset);
+    setMessage(text);
+    handleMentionChange(text, offset);
+  }, [handleMentionChange]);
+
+  const handleKeyDown = useCallback((e) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       handleSubmit();
     }
-  };
+  }, [handleSubmit]);
 
-  const handleFileChange = async (e) => {
-    const file = e.target.files?.[0];
-    e.target.value = "";
-    if (!file || !onSendFile || !loggedIn) return;
-
-    try {
-      await onSendFile(file);
-    } catch (error) {
-      console.error("[MessageInput] Error sending file:", error);
-    }
-  };
-
-  const handlePaste = async (e) => {
+  const handlePaste = useCallback(async (e) => {
     if (!onSendFile || !loggedIn) return;
-
     const items = Array.from(e.clipboardData?.items || []);
     const fileItem = items.find((item) => item.kind === "file");
-    if (!fileItem) return; // Let normal text paste proceed
-
+    if (!fileItem) return;
     e.preventDefault();
     const file = fileItem.getAsFile();
     if (!file) return;
-
     try {
       await onSendFile(file);
     } catch (error) {
       console.error("[MessageInput] Error sending pasted file:", error);
     }
+  }, [onSendFile, loggedIn]);
+
+  const handleFileChange = async (e) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file || !onSendFile || !loggedIn) return;
+    try { await onSendFile(file); } catch (error) {
+      console.error("[MessageInput] Error sending file:", error);
+    }
   };
 
-  const insertEmoji = (emoji) => {
-    const textarea = textareaRef.current?.resizableTextArea?.textArea;
-    if (!textarea) {
+  const insertEmoji = useCallback((emoji) => {
+    const el = divRef.current;
+    if (!el) {
       setMessage((prev) => prev + emoji);
       return;
     }
-
-    const start = textarea.selectionStart || message.length;
-    const before = message.substring(0, start);
-    const after = message.substring(start);
-    setMessage(before + emoji + after);
-
-    setTimeout(() => {
-      textarea.focus();
-      const newCursorPos = start + emoji.length;
-      textarea.setSelectionRange(newCursorPos, newCursorPos);
-    }, 0);
-  };
+    el.focus();
+    const offset = getCaretOffset(el);
+    const text = getContentText(el);
+    const newText = text.slice(0, offset) + emoji + text.slice(offset);
+    el.innerHTML = buildHtml(newText);
+    const newOffset = offset + emoji.length;
+    setCaretOffset(el, newOffset);
+    setMessage(newText);
+    handleMentionChange(newText, newOffset);
+  }, [handleMentionChange]);
 
   return (
     <div className="space-y-2">
       <EditComposerBar editingMessage={editingMessage} onCancel={onCancelEdit} />
       <ReplyComposerBar replyingTo={replyingTo} onCancel={onCancelReply} />
-      {/* Guest Name Input (shown if not logged in and no saved name) */}
+
       {!loggedIn && showGuestNameInput && (
         <div className="mb-2">
-          <CustomInput
+          <input
             type="text"
             placeholder="Nhập tên hiển thị của bạn..."
             value={guestName}
@@ -223,10 +231,9 @@ export default function MessageInput({ onSend, onSendFile, sending, loggedIn, re
               if (e.key === "Enter" && guestName.trim()) {
                 setShowGuestNameInput(false);
                 localStorage.setItem("chat_guest_name", guestName.trim());
-                // Don't auto-focus to avoid scrolling
               }
             }}
-            className="w-full max-w-[calc(100%-60px)] md:max-w-[calc(733px*0.5)] bg-white dark:!bg-neutral-600"
+            className="border border-gray-300 dark:border-neutral-600 rounded px-3 py-1.5 text-sm w-full max-w-[calc(100%-60px)] bg-white dark:bg-neutral-600 text-gray-900 dark:text-gray-100 focus:outline-none"
           />
           <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
             Tên này sẽ được hiển thị khi bạn gửi tin nhắn
@@ -234,42 +241,43 @@ export default function MessageInput({ onSend, onSendFile, sending, loggedIn, re
         </div>
       )}
 
-      {/* Input row: textarea + attach + emoji + send all inline */}
-      <div className="flex items-center gap-2">
+      <div className="flex items-end gap-2">
         <div className="flex-1 relative">
-          <TextArea
-            ref={textareaRef}
-            value={message}
-            onChange={(e) => handleMentionChange(e.target.value, e.target.selectionStart)}
+          <div
+            ref={divRef}
+            contentEditable={!sending}
+            suppressContentEditableWarning
+            onInput={handleInput}
             onKeyDown={handleKeyDown}
             onPaste={handlePaste}
-            placeholder="Viết một tin nhắn..."
-            autoSize={{ minRows: 1, maxRows: 6 }}
-            classNames={{
-              textarea:
-                "dark:!bg-neutral-600 bg-white !text-transparent caret-gray-900 dark:caret-gray-100 dark:!placeholder-gray-400 dark:!border-[#585857]",
-            }}
+            data-placeholder="Viết một tin nhắn..."
+            className="
+              ce-input
+              w-full min-h-[38px]
+              px-3 py-2
+              text-sm leading-[1.375rem]
+              text-gray-900 dark:text-gray-100
+              bg-white dark:bg-neutral-600
+              border border-gray-300 dark:border-[#585857]
+              rounded-lg
+              focus:outline-none focus:border-[#4096ff] focus:shadow-[0_0_0_2px_rgba(5,145,255,0.1)]
+              whitespace-pre-wrap break-words overflow-y-auto
+            "
+            style={{ maxHeight: "144px" }}
           />
-          <MentionHighlightOverlay text={message} targetRef={textareaRef} />
           {showSuggestions && (
             <MentionSuggestionsDropdown
               suggestions={suggestions}
               onSelect={insertMention}
               onClose={closeSuggestions}
-              anchorRef={textareaRef}
+              anchorRef={divRef}
             />
           )}
         </div>
 
-        {/* Attach file (registered users only) */}
         {loggedIn && (
           <>
-            <input
-              ref={fileInputRef}
-              type="file"
-              onChange={handleFileChange}
-              style={{ display: "none" }}
-            />
+            <input ref={fileInputRef} type="file" onChange={handleFileChange} style={{ display: "none" }} />
             <button
               className="p-2 hover:bg-gray-200 dark:hover:bg-neutral-700 rounded transition flex items-center justify-center flex-shrink-0"
               title="Đính kèm ảnh, video hoặc tệp"
@@ -281,7 +289,6 @@ export default function MessageInput({ onSend, onSendFile, sending, loggedIn, re
           </>
         )}
 
-        {/* Emoji picker */}
         <Popover
           trigger="click"
           placement="topLeft"
@@ -291,9 +298,7 @@ export default function MessageInput({ onSend, onSendFile, sending, loggedIn, re
             <div>
               <Picker
                 data={async () => (await import("@emoji-mart/data")).default}
-                onEmojiSelect={(emoji) => {
-                  insertEmoji(emoji.native);
-                }}
+                onEmojiSelect={(emoji) => insertEmoji(emoji.native)}
                 previewPosition="none"
                 searchPosition="none"
                 navPosition="top"

@@ -1064,6 +1064,9 @@ body.has-email-verification-alert [class*="mt-\\[4\\.3rem\\]"] {
 .ce-mention {
   font-weight: 600;
   color: #319527;
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 2px;
 }
 .dark .ce-mention { color: #6bcf60; }
 
