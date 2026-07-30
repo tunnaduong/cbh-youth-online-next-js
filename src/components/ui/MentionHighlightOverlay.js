@@ -64,13 +64,35 @@ export default function MentionHighlightOverlay({ text, targetRef, singleLine = 
       MIRRORED_PROPS.forEach((prop) => {
         overlay.style[prop] = cs[prop];
       });
-      // Mirrored border-*-width only occupies layout space if border-style
-      // isn't "none" (the CSS default, and Tailwind's default for this div).
-      // Force a transparent solid style so the copied widths actually take
-      // effect and the overlay's content box lines up with the real input's
-      // (whose computed width is already 0 here if it has no visible border).
       overlay.style.borderStyle = "solid";
       overlay.style.borderColor = "transparent";
+
+      // If the source element is nested inside a wrapper (e.g. AntD's
+      // affix-wrapper span), the overlay's inset-0 parent may be larger than
+      // the source itself. Reposition the overlay to match the source's exact
+      // bounding box relative to its offset parent so text aligns perfectly.
+      const container = overlay.parentElement;
+      if (container) {
+        const sr = source.getBoundingClientRect();
+        const cr = container.getBoundingClientRect();
+        const offsetTop = sr.top - cr.top;
+        const offsetLeft = sr.left - cr.left;
+        if (Math.abs(offsetTop) > 0.5 || Math.abs(offsetLeft) > 0.5) {
+          overlay.style.top = offsetTop + "px";
+          overlay.style.left = offsetLeft + "px";
+          overlay.style.right = "auto";
+          overlay.style.bottom = "auto";
+          overlay.style.width = sr.width + "px";
+          overlay.style.height = sr.height + "px";
+        } else {
+          overlay.style.top = "";
+          overlay.style.left = "";
+          overlay.style.right = "";
+          overlay.style.bottom = "";
+          overlay.style.width = "";
+          overlay.style.height = "";
+        }
+      }
     };
     const syncScroll = () => {
       overlay.scrollTop = source.scrollTop;
@@ -88,6 +110,7 @@ export default function MentionHighlightOverlay({ text, targetRef, singleLine = 
         syncScroll();
       });
       ro.observe(source);
+      ro.observe(overlay.parentElement);
     }
 
     return () => {
