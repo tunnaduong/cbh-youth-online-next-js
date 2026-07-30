@@ -18,6 +18,7 @@ export function useMentionInput({ value, onChange, conversationId = null, inputR
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [mentionQuery, setMentionQuery] = useState("");
   const [mentionStart, setMentionStart] = useState(-1); // index of '@' in value
+  const mentionEndRef = useRef(-1); // cursor position at last change — saved so blur can't corrupt it
   const debounceTimer = useRef(null);
 
   const handleChange = useCallback(
@@ -38,6 +39,7 @@ export function useMentionInput({ value, onChange, conversationId = null, inputR
         const query = match[1];
         const atIndex = cursor - query.length - 1;
         setMentionStart(atIndex);
+        mentionEndRef.current = cursor;
         setMentionQuery(query);
 
         clearTimeout(debounceTimer.current);
@@ -68,7 +70,9 @@ export function useMentionInput({ value, onChange, conversationId = null, inputR
       if (mentionStart < 0) return;
       const el =
         inputRef?.current?.resizableTextArea?.textArea || inputRef?.current;
-      const cursor = el ? el.selectionStart : value.length;
+      // Use the saved cursor position — el.selectionStart resets to 0 on blur
+      // for single-line <input> elements (private chat), corrupting the slice.
+      const cursor = mentionEndRef.current >= 0 ? mentionEndRef.current : (el ? el.selectionStart : value.length);
       // Replace from '@' up to cursor with '@username '
       const before = value.slice(0, mentionStart);
       const after = value.slice(cursor);
