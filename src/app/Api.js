@@ -17,8 +17,12 @@ export const getFeedPosts = (page = 1) => {
   return Api.getRequest("/v1.0/topics?page=" + page);
 };
 
-export const getPersonalizedFeedPosts = (page = 1) => {
-  return Api.getRequest("/v1.0/topics/feed?page=" + page);
+// `seed` re-deals the ranked feed into a different order on every visit
+// ("slot machine"): pass a fresh random seed per page load, and keep the same
+// seed while paginating so pages don't overlap.
+export const getPersonalizedFeedPosts = (page = 1, seed = null) => {
+  const seedParam = seed == null ? "" : "&seed=" + seed;
+  return Api.getRequest("/v1.0/topics/feed?page=" + page + seedParam);
 };
 
 export const getLatestFeedPosts = (page = 1) => {
