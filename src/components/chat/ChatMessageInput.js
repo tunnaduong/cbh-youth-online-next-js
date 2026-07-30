@@ -224,7 +224,8 @@ export default function ChatMessageInput({
             onPaste={handlePaste}
             placeholder="Gửi tin nhắn..."
             disabled={sending}
-            className="w-full !text-transparent caret-gray-900 dark:caret-gray-100"
+            className="w-full"
+            classNames={{ input: "!text-transparent !caret-gray-900 dark:!caret-gray-100" }}
           />
           <MentionHighlightOverlay text={message} targetRef={inputRef} singleLine />
           {showSuggestions && (
