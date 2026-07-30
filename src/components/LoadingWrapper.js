@@ -1,11 +1,14 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { usePathname } from "next/navigation";
 import LoadingScreen from "./ui/LoadingScreen";
 
 export default function LoadingWrapper({ children }) {
-  // Check if loading should be hidden via environment variable
-  const hideLoading = process.env.NEXT_PUBLIC_HIDE_LOADING === "true";
+  const pathname = usePathname();
+
+  // Check if loading should be hidden via environment variable or on /egg
+  const hideLoading = process.env.NEXT_PUBLIC_HIDE_LOADING === "true" || pathname === "/egg";
 
   // Initialize state based on environment variable to prevent flash
   const [isInitialLoading, setIsInitialLoading] = useState(!hideLoading);
