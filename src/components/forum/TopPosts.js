@@ -53,11 +53,12 @@ export default function TopPosts({ initialLatestPosts = {} }) {
     });
   }, [currentSort, fetchHomeData, contextLatestPosts, initialLatestPosts]);
 
-  // Listen for refresh triggers and update local state
+  // Listen for refresh triggers (e.g. a new post was just created) and
+  // force-refetch so the newest post shows up instead of the stale
+  // initial/context data.
   useEffect(() => {
     if (refreshTrigger > 0) {
-      // The ForumDataProvider will handle the actual fetch
-      // We just need to re-render when the context data updates
+      fetchHomeData(currentSort, true);
     }
   }, [refreshTrigger]);
 
