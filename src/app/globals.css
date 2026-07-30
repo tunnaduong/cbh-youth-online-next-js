@@ -1052,6 +1052,21 @@ body.has-email-verification-alert [class*="mt-\\[4\\.3rem\\]"] {
 .mention-tag:hover {
   opacity: 0.75;
 }
+/* contenteditable chat input */
+.ce-input { scrollbar-width: none; }
+.ce-input::-webkit-scrollbar { display: none; }
+.ce-input:empty::before {
+  content: attr(data-placeholder);
+  color: #9ca3af;
+  pointer-events: none;
+}
+.dark .ce-input:empty::before { color: #6b7280; }
+.ce-mention {
+  font-weight: 600;
+  color: #319527;
+}
+.dark .ce-mention { color: #6bcf60; }
+
 .dark .mention-tag {
   color: #6bcf60;
 }

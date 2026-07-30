@@ -1,11 +1,63 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
-import Input from "@/components/ui/input";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { FileText, Paperclip, Pencil, Send, Video, X } from "lucide-react";
 import MentionSuggestionsDropdown from "@/components/ui/MentionSuggestionsDropdown";
-import MentionHighlightOverlay from "@/components/ui/MentionHighlightOverlay";
 import { useMentionInput } from "@/hooks/useMentionInput";
+
+const MENTION_RE = /(@[\w\-À-ɏ]+)/gu;
+
+function esc(s) {
+  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+
+function buildHtml(text) {
+  if (!text) return "";
+  return (text)
+    .split(MENTION_RE)
+    .map((part, i) =>
+      i % 2 === 1 ? `<span class="ce-mention">${esc(part)}</span>` : esc(part)
+    )
+    .join("");
+}
+
+function getCaretOffset(el) {
+  const sel = window.getSelection();
+  if (!sel?.rangeCount) return 0;
+  const pre = sel.getRangeAt(0).cloneRange();
+  pre.selectNodeContents(el);
+  pre.setEnd(sel.getRangeAt(0).endContainer, sel.getRangeAt(0).endOffset);
+  return pre.toString().length;
+}
+
+function setCaretOffset(el, offset) {
+  const tw = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
+  let rem = offset;
+  let node;
+  while ((node = tw.nextNode())) {
+    if (rem <= node.textContent.length) {
+      const r = document.createRange();
+      r.setStart(node, rem);
+      r.collapse(true);
+      const sel = window.getSelection();
+      sel.removeAllRanges();
+      sel.addRange(r);
+      return;
+    }
+    rem -= node.textContent.length;
+  }
+  const r = document.createRange();
+  r.selectNodeContents(el);
+  r.collapse(false);
+  window.getSelection().removeAllRanges();
+  window.getSelection().addRange(r);
+}
+
+function getContentText(el) {
+  let t = el.textContent ?? "";
+  if (t.endsWith("\n")) t = t.slice(0, -1);
+  return t;
+}
 
 function EditComposerBar({ editingMessage, onCancel }) {
   if (!editingMessage) return null;
@@ -117,8 +169,22 @@ export default function ChatMessageInput({
   conversationId,
 }) {
   const [message, setMessage] = useState("");
-  const inputRef = useRef(null);
+  const divRef = useRef(null);
   const fileInputRef = useRef(null);
+
+  // Proxy ref that useMentionInput uses for focus/setSelectionRange
+  const inputRef = useRef({
+    get selectionStart() {
+      return divRef.current ? getCaretOffset(divRef.current) : 0;
+    },
+    focus() { divRef.current?.focus(); },
+    setSelectionRange(pos) {
+      if (divRef.current) {
+        divRef.current.focus();
+        setCaretOffset(divRef.current, pos);
+      }
+    },
+  });
 
   const {
     handleChange: handleMentionChange,
@@ -128,19 +194,29 @@ export default function ChatMessageInput({
     closeSuggestions,
   } = useMentionInput({ value: message, onChange: setMessage, conversationId, inputRef });
 
-  // Pre-fill input when entering edit mode
+  // Sync div content when message changes from outside (edit mode, submit clear)
+  useEffect(() => {
+    const el = divRef.current;
+    if (!el) return;
+    const current = getContentText(el);
+    if (current !== message) {
+      el.innerHTML = buildHtml(message);
+      if (message) setCaretOffset(el, message.length);
+    }
+  }, [message]);
+
+  // Pre-fill when entering edit mode
   useEffect(() => {
     if (editingMessage) {
       setMessage(editingMessage.content || "");
-      setTimeout(() => inputRef.current?.focus(), 0);
+      setTimeout(() => divRef.current?.focus(), 0);
     } else {
       setMessage("");
     }
   }, [editingMessage?.id]);
 
-  const handleSubmit = async () => {
+  const handleSubmit = useCallback(async () => {
     if (!message.trim() || sending) return;
-
     try {
       if (editingMessage) {
         await onSaveEdit(message.trim());
@@ -148,48 +224,79 @@ export default function ChatMessageInput({
         await onSend(message.trim());
       }
       setMessage("");
-      if (inputRef.current) {
-        inputRef.current.focus();
-      }
     } catch (error) {
       console.error("[ChatMessageInput] Error:", error);
     }
-  };
+  }, [message, sending, editingMessage, onSaveEdit, onSend]);
 
-  const handleKeyDown = (e) => {
-    if (e.key === "Enter" && !e.shiftKey) {
+  const handleInput = useCallback(
+    (e) => {
+      const el = e.currentTarget;
+      const offset = getCaretOffset(el);
+      const text = getContentText(el);
+
+      el.innerHTML = buildHtml(text);
+      setCaretOffset(el, offset);
+
+      setMessage(text);
+      handleMentionChange(text, offset);
+      onTyping?.();
+    },
+    [handleMentionChange, onTyping]
+  );
+
+  const handleKeyDown = useCallback(
+    (e) => {
+      if (e.key === "Enter" && !e.shiftKey) {
+        e.preventDefault();
+        handleSubmit();
+      }
+    },
+    [handleSubmit]
+  );
+
+  const handlePaste = useCallback(
+    async (e) => {
+      // File paste
+      const items = Array.from(e.clipboardData?.items || []);
+      const fileItem = items.find((item) => item.kind === "file");
+      if (fileItem) {
+        e.preventDefault();
+        const file = fileItem.getAsFile();
+        if (file && onSendFile) {
+          try { await onSendFile(file); } catch (err) {
+            console.error("[ChatMessageInput] Error sending pasted file:", err);
+          }
+        }
+        return;
+      }
+
+      // Plain-text paste
       e.preventDefault();
-      handleSubmit();
-    }
-  };
+      const text = e.clipboardData.getData("text/plain");
+      if (!text) return;
+      const el = divRef.current;
+      if (!el) return;
+      const offset = getCaretOffset(el);
+      const current = getContentText(el);
+      const newText = current.slice(0, offset) + text + current.slice(offset);
+      el.innerHTML = buildHtml(newText);
+      const newOffset = offset + text.length;
+      setCaretOffset(el, newOffset);
+      setMessage(newText);
+      handleMentionChange(newText, newOffset);
+    },
+    [onSendFile, handleMentionChange]
+  );
 
   const handleFileChange = async (e) => {
     const file = e.target.files?.[0];
     e.target.value = "";
     if (!file || !onSendFile) return;
-
     try {
       await onSendFile(file);
     } catch (error) {
       console.error("[ChatMessageInput] Error sending file:", error);
-    }
-  };
-
-  const handlePaste = async (e) => {
-    if (!onSendFile) return;
-
-    const items = Array.from(e.clipboardData?.items || []);
-    const fileItem = items.find((item) => item.kind === "file");
-    if (!fileItem) return;
-
-    e.preventDefault();
-    const file = fileItem.getAsFile();
-    if (!file) return;
-
-    try {
-      await onSendFile(file);
-    } catch (error) {
-      console.error("[ChatMessageInput] Error sending pasted file:", error);
     }
   };
 
@@ -212,29 +319,40 @@ export default function ChatMessageInput({
         >
           <Paperclip className="w-4 h-4 text-gray-600 dark:text-gray-300" />
         </button>
+
         <div className="flex-1 relative">
-          <Input
-            ref={inputRef}
-            value={message}
-            onChange={(e) => {
-              handleMentionChange(e.target.value, e.target.selectionStart);
-              onTyping?.();
-            }}
+          <div
+            ref={divRef}
+            contentEditable={!sending}
+            suppressContentEditableWarning
+            onInput={handleInput}
             onKeyDown={handleKeyDown}
             onPaste={handlePaste}
-            placeholder="Gửi tin nhắn..."
-            disabled={sending}
-            className="w-full"
+            data-placeholder="Gửi tin nhắn..."
+            className="
+              ce-input
+              w-full min-h-[32px] max-h-[32px]
+              px-3 py-[5px]
+              text-sm leading-[1.375rem]
+              text-gray-900 dark:text-gray-100
+              bg-white dark:bg-neutral-600
+              border border-gray-300 dark:border-[#585857]
+              rounded-md
+              shadow-sm
+              focus:outline-none focus:border-[#4096ff] focus:shadow-[0_0_0_2px_rgba(5,145,255,0.1)]
+              whitespace-nowrap overflow-x-auto overflow-y-hidden
+            "
           />
           {showSuggestions && (
             <MentionSuggestionsDropdown
               suggestions={suggestions}
               onSelect={insertMention}
               onClose={closeSuggestions}
-              anchorRef={inputRef}
+              anchorRef={divRef}
             />
           )}
         </div>
+
         <button
           onClick={handleSubmit}
           disabled={!message.trim() || sending}
