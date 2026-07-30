@@ -110,7 +110,7 @@ export default function MentionHighlightOverlay({ text, targetRef, singleLine = 
         i % 2 === 1 ? (
           <span
             key={i}
-            className="font-bold underline decoration-2 underline-offset-2 text-[#319527] dark:text-[#6bcf60]"
+            className="underline decoration-2 underline-offset-2 text-[#319527] dark:text-[#6bcf60]"
           >
             {part}
           </span>
