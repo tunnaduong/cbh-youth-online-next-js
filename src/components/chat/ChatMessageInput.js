@@ -212,7 +212,7 @@ export default function ChatMessageInput({
         >
           <Paperclip className="w-4 h-4 text-gray-600 dark:text-gray-300" />
         </button>
-        <div className="flex-1 relative overflow-x-hidden">
+        <div className="flex-1 relative">
           <Input
             ref={inputRef}
             value={message}
@@ -225,9 +225,7 @@ export default function ChatMessageInput({
             placeholder="Gửi tin nhắn..."
             disabled={sending}
             className="w-full"
-            classNames={{ input: "!text-transparent !caret-gray-900 dark:!caret-gray-100" }}
           />
-          <MentionHighlightOverlay text={message} targetRef={inputRef} singleLine />
           {showSuggestions && (
             <MentionSuggestionsDropdown
               suggestions={suggestions}
