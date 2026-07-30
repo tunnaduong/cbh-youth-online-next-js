@@ -77,12 +77,19 @@ export default function MentionHighlightOverlay({ text, targetRef, singleLine = 
         const cr = container.getBoundingClientRect();
         const offsetTop = sr.top - cr.top;
         const offsetLeft = sr.left - cr.left;
-        overlay.style.top = offsetTop + "px";
-        overlay.style.left = offsetLeft + "px";
-        overlay.style.right = "auto";
-        overlay.style.bottom = "auto";
         overlay.style.width = sr.width + "px";
         overlay.style.height = sr.height + "px";
+        if (Math.abs(offsetTop) > 0.5 || Math.abs(offsetLeft) > 0.5) {
+          overlay.style.top = offsetTop + "px";
+          overlay.style.left = offsetLeft + "px";
+          overlay.style.right = "auto";
+          overlay.style.bottom = "auto";
+        } else {
+          overlay.style.top = "";
+          overlay.style.left = "";
+          overlay.style.right = "";
+          overlay.style.bottom = "";
+        }
       }
     };
     const syncScroll = () => {
