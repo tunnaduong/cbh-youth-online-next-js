@@ -10,6 +10,7 @@ import { useTheme } from "@/contexts/themeContext";
 import MarkdownToolbar from "@/components/ui/MarkdownToolbar";
 import MarkdownRenderer from "@/components/ui/MarkdownRenderer";
 import MentionSuggestionsDropdown from "@/components/ui/MentionSuggestionsDropdown";
+import MentionHighlightOverlay from "@/components/ui/MentionHighlightOverlay";
 import { useMentionInput } from "@/hooks/useMentionInput";
 
 const MAX_IMAGES = 10;
@@ -206,7 +207,7 @@ export function CommentInput({
                 <MarkdownRenderer content={comment} />
               </div>
             ) : (
-              <>
+              <div className="relative mt-1">
                 <textarea
                   value={comment}
                   onChange={(e) => handleMentionChange(e.target.value, e.target.selectionStart)}
@@ -216,10 +217,10 @@ export function CommentInput({
                   placeholder={placeholder}
                   rows={1}
                   className="
-                    w-full bg-transparent border-none outline-none resize-none
-                    text-foreground placeholder:text-muted-foreground
+                    w-full bg-transparent border-none outline-none resize-none relative
+                    text-transparent caret-gray-900 dark:caret-gray-100 placeholder:text-muted-foreground
                     text-sm min-h-[24px] leading-6 ring-transparent focus:ring-transparent focus:border-transparent
-                    pl-0 pt-0 mt-1
+                    pl-0 pt-0
                   "
                   style={{ height: "auto", minHeight: "24px", maxHeight: "120px", overflowY: "auto" }}
                   onInput={(e) => {
@@ -228,6 +229,7 @@ export function CommentInput({
                     target.style.height = target.scrollHeight + "px";
                   }}
                 />
+                <MentionHighlightOverlay text={comment} targetRef={textareaRef} />
                 {showSuggestions && (
                   <MentionSuggestionsDropdown
                     suggestions={suggestions}
@@ -236,7 +238,7 @@ export function CommentInput({
                     anchorRef={textareaRef}
                   />
                 )}
-              </>
+              </div>
             )}
 
             {/* Image previews */}

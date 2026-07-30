@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from "react";
 import Input from "@/components/ui/input";
 import { FileText, Paperclip, Pencil, Send, Video, X } from "lucide-react";
 import MentionSuggestionsDropdown from "@/components/ui/MentionSuggestionsDropdown";
+import MentionHighlightOverlay from "@/components/ui/MentionHighlightOverlay";
 import { useMentionInput } from "@/hooks/useMentionInput";
 
 function EditComposerBar({ editingMessage, onCancel }) {
@@ -211,7 +212,7 @@ export default function ChatMessageInput({
         >
           <Paperclip className="w-4 h-4 text-gray-600 dark:text-gray-300" />
         </button>
-        <div className="flex-1">
+        <div className="flex-1 relative">
           <Input
             ref={inputRef}
             value={message}
@@ -223,8 +224,9 @@ export default function ChatMessageInput({
             onPaste={handlePaste}
             placeholder="Gửi tin nhắn..."
             disabled={sending}
-            className="w-full"
+            className="w-full !text-transparent caret-gray-900 dark:caret-gray-100"
           />
+          <MentionHighlightOverlay text={message} targetRef={inputRef} singleLine />
           {showSuggestions && (
             <MentionSuggestionsDropdown
               suggestions={suggestions}

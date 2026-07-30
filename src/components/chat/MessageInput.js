@@ -8,6 +8,7 @@ import Picker from "@emoji-mart/react";
 import CustomInput from "@/components/ui/input";
 import { useTheme } from "@/contexts/themeContext";
 import MentionSuggestionsDropdown from "@/components/ui/MentionSuggestionsDropdown";
+import MentionHighlightOverlay from "@/components/ui/MentionHighlightOverlay";
 import { useMentionInput } from "@/hooks/useMentionInput";
 
 const { TextArea } = Input;
@@ -235,7 +236,7 @@ export default function MessageInput({ onSend, onSendFile, sending, loggedIn, re
 
       {/* Input row: textarea + attach + emoji + send all inline */}
       <div className="flex items-center gap-2">
-        <div className="flex-1">
+        <div className="flex-1 relative">
           <TextArea
             ref={textareaRef}
             value={message}
@@ -246,9 +247,10 @@ export default function MessageInput({ onSend, onSendFile, sending, loggedIn, re
             autoSize={{ minRows: 1, maxRows: 6 }}
             classNames={{
               textarea:
-                "dark:!bg-neutral-600 bg-white dark:!text-gray-100 dark:!placeholder-gray-400 dark:!border-[#585857]",
+                "dark:!bg-neutral-600 bg-white !text-transparent caret-gray-900 dark:caret-gray-100 dark:!placeholder-gray-400 dark:!border-[#585857]",
             }}
           />
+          <MentionHighlightOverlay text={message} targetRef={textareaRef} />
           {showSuggestions && (
             <MentionSuggestionsDropdown
               suggestions={suggestions}
