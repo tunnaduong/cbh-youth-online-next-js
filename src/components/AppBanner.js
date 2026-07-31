@@ -24,6 +24,12 @@ export default function AppBanner() {
         return;
       }
 
+      // Don't show on easter egg page
+      if (pathname === "/egg") {
+        setVisible(false);
+        return;
+      }
+
       // If user already closed it, never show again
       if (localStorage.getItem("app_banner_closed")) {
         setVisible(false);

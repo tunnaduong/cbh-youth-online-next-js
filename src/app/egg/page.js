@@ -66,9 +66,74 @@ export default function EggPage() {
       <style
         dangerouslySetInnerHTML={{
           __html: `
+        :root {
+          --egg-bg: #f3f7f4;
+          --egg-header-bg: #ffffff;
+          --egg-header-border: #e5e9e6;
+          --egg-header-text: #1a1a1a;
+          --egg-banner-gradient: linear-gradient(135deg, #1f8a4c, #14653a);
+          --egg-section-title: #14653a;
+          --egg-team-box-bg: #f8fbf9;
+          --egg-team-box-border: #d7e6da;
+          --egg-team-header: #1a1a1a;
+          --egg-gen-tag-bg: #fff3d6;
+          --egg-gen-tag-color: #b8860b;
+          --egg-card-bg: #ffffff;
+          --egg-card-border: #e5e9e6;
+          --egg-avatar-fallback-bg: #dff2e6;
+          --egg-avatar-fallback-color: #14653a;
+          --egg-name: #1a1a1a;
+          --egg-role: #6b7a70;
+          --egg-quote: #14653a;
+          --egg-footer: #6b7a70;
+        }
+        @media (prefers-color-scheme: dark) {
+          :root {
+            --egg-bg: #1a1a1a;
+            --egg-header-bg: #242424;
+            --egg-header-border: #333333;
+            --egg-header-text: #f0f0f0;
+            --egg-banner-gradient: linear-gradient(135deg, #1a6e3c, #0f4a28);
+            --egg-section-title: #4caf77;
+            --egg-team-box-bg: #242424;
+            --egg-team-box-border: #333333;
+            --egg-team-header: #f0f0f0;
+            --egg-gen-tag-bg: #3a2e00;
+            --egg-gen-tag-color: #f0c050;
+            --egg-card-bg: #2a2a2a;
+            --egg-card-border: #3a3a3a;
+            --egg-avatar-fallback-bg: #1a3a28;
+            --egg-avatar-fallback-color: #4caf77;
+            --egg-name: #f0f0f0;
+            --egg-role: #9aaa9f;
+            --egg-quote: #4caf77;
+            --egg-footer: #9aaa9f;
+          }
+        }
+        .dark {
+          --egg-bg: #1a1a1a;
+          --egg-header-bg: #242424;
+          --egg-header-border: #333333;
+          --egg-header-text: #f0f0f0;
+          --egg-banner-gradient: linear-gradient(135deg, #1a6e3c, #0f4a28);
+          --egg-section-title: #4caf77;
+          --egg-team-box-bg: #242424;
+          --egg-team-box-border: #333333;
+          --egg-team-header: #f0f0f0;
+          --egg-gen-tag-bg: #3a2e00;
+          --egg-gen-tag-color: #f0c050;
+          --egg-card-bg: #2a2a2a;
+          --egg-card-border: #3a3a3a;
+          --egg-avatar-fallback-bg: #1a3a28;
+          --egg-avatar-fallback-color: #4caf77;
+          --egg-name: #f0f0f0;
+          --egg-role: #9aaa9f;
+          --egg-quote: #4caf77;
+          --egg-footer: #9aaa9f;
+        }
         .egg-page {
           min-height: 100vh;
-          background: #f3f7f4;
+          background: var(--egg-bg);
           font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
           padding-bottom: 48px;
           text-align: center;
@@ -79,17 +144,20 @@ export default function EggPage() {
           justify-content: center;
           gap: 10px;
           padding: 16px 20px;
-          background: #ffffff;
-          border-bottom: 1px solid #e5e9e6;
+          background: var(--egg-header-bg);
+          border-bottom: 1px solid var(--egg-header-border);
         }
         .egg-header img { width: 28px; height: 28px; border-radius: 6px; }
-        .egg-header span { font-weight: 700; font-size: 15px; color: #1a1a1a; }
+        .egg-header span { font-weight: 700; font-size: 15px; color: var(--egg-header-text); }
         .egg-banner {
           margin: 16px;
           padding: 22px 20px;
           border-radius: 18px;
-          background: linear-gradient(135deg, #1f8a4c, #14653a);
+          background: var(--egg-banner-gradient);
           color: #fff;
+          max-width: 720px;
+          margin-left: auto;
+          margin-right: auto;
         }
         .egg-banner h1 {
           font-size: 20px;
@@ -111,7 +179,7 @@ export default function EggPage() {
           gap: 8px;
           font-size: 18px;
           font-weight: 800;
-          color: #14653a;
+          color: var(--egg-section-title);
           margin-bottom: 14px;
         }
         .egg-grid {
@@ -122,10 +190,10 @@ export default function EggPage() {
         }
         .egg-grid-2 { grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
         .egg-team-box {
-          border: 1px solid #d7e6da;
+          border: 1px solid var(--egg-team-box-border);
           border-radius: 16px;
           padding: 14px;
-          background: #f8fbf9;
+          background: var(--egg-team-box-bg);
           margin-bottom: 18px;
         }
         .egg-team-header {
@@ -133,23 +201,23 @@ export default function EggPage() {
           font-weight: 800;
           font-size: 15px;
           margin-bottom: 6px;
-          color: #1a1a1a;
+          color: var(--egg-team-header);
         }
         .egg-gen-tag {
           display: block;
           text-align: center;
           font-size: 11px;
           font-weight: 700;
-          color: #b8860b;
-          background: #fff3d6;
+          color: var(--egg-gen-tag-color);
+          background: var(--egg-gen-tag-bg);
           border-radius: 20px;
           padding: 2px 10px;
           width: fit-content;
           margin: 0 auto 10px;
         }
         .egg-card {
-          background: #fff;
-          border: 1px solid #e5e9e6;
+          background: var(--egg-card-bg);
+          border: 1px solid var(--egg-card-border);
           border-radius: 14px;
           padding: 12px 10px;
           text-align: center;
@@ -165,27 +233,26 @@ export default function EggPage() {
           justify-content: center;
         }
         .egg-avatar-fallback {
-          background: #dff2e6;
-          color: #14653a;
+          background: var(--egg-avatar-fallback-bg);
+          color: var(--egg-avatar-fallback-color);
           font-weight: 800;
           font-size: 20px;
         }
         .egg-avatar-img { object-fit: cover; }
-        .egg-name { font-weight: 700; font-size: 13.5px; color: #1a1a1a; }
-        .egg-role { font-size: 11.5px; color: #6b7a70; margin-top: 2px; }
-        .egg-quote { font-size: 11px; color: #14653a; font-style: italic; margin-top: 6px; }
+        .egg-name { font-weight: 700; font-size: 13.5px; color: var(--egg-name); }
+        .egg-role { font-size: 11.5px; color: var(--egg-role); margin-top: 2px; }
+        .egg-quote { font-size: 11px; color: var(--egg-quote); font-style: italic; margin-top: 6px; }
         .egg-founders-grid {
           display: grid;
           grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
           gap: 12px;
           justify-content: center;
         }
-        .egg-banner { max-width: 720px; margin-left: auto; margin-right: auto; }
         .egg-footer {
           text-align: center;
           margin-top: 40px;
           padding: 0 20px;
-          color: #6b7a70;
+          color: var(--egg-footer);
           font-size: 12.5px;
         }
       `,
