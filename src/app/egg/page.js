@@ -110,7 +110,7 @@ export default function EggPage() {
             --egg-footer: #9aaa9f;
           }
         }
-        .dark {
+        body.dark {
           --egg-bg: #1a1a1a;
           --egg-header-bg: #242424;
           --egg-header-border: #333333;
