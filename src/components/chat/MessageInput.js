@@ -260,7 +260,7 @@ export default function MessageInput({
               bg-white dark:bg-neutral-600
               border border-gray-300 dark:border-[#585857]
               rounded-lg
-              focus:outline-none focus:border-[#4096ff] focus:shadow-[0_0_0_2px_rgba(5,145,255,0.1)]
+              focus:outline-none focus:border-[#319527] focus:shadow-[0_0_0_2px_rgba(49,149,39,0.1)]
               whitespace-pre-wrap break-words overflow-y-auto
             "
             style={{ maxHeight: "144px" }}
