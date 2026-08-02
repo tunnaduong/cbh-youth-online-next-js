@@ -15,7 +15,7 @@ import { Menu, FileText, Download, PlayCircle, CornerUpLeft, Undo2, Pencil } fro
 import MessageReactions from "./MessageReactions";
 import ReplyPreviewBubble from "./ReplyPreviewBubble";
 import { reactToMessage, removeMessageReaction, recallMessage, editMessage } from "@/app/Api";
-import { Popover } from "antd";
+import { Popover, message as antdMessage } from "antd";
 
 const URL_RE = /(https?:\/\/[^\s]+)/g;
 const MENTION_RE = /(@[\w-]+)/g;
@@ -1001,6 +1001,10 @@ export default function PublicChat() {
                               sender: message.sender,
                               isSelf: isOwn,
                             })}
+                            onCopy={message.type === "text" && !message.is_recalled ? () => {
+                              navigator.clipboard.writeText(message.content);
+                              antdMessage.success("Đã sao chép tin nhắn");
+                            } : undefined}
                             onRecall={isOwn && !message.is_recalled ? () => handleRecallPublic(message.id) : undefined}
                             onEdit={isOwn && message.type === "text" && !message.is_recalled ? () => setEditingMessage({ id: message.id, content: message.content || "" }) : undefined}
                             inline

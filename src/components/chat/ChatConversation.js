@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { message as antdMessage } from "antd";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useChatContext } from "@/contexts/Support";
 import moment from "moment";
@@ -739,6 +740,10 @@ export default function ChatConversation({
                     onReact={(type) => handleReact(message.id, type)}
                     onRemove={() => handleRemoveReaction(message.id)}
                     onReply={!message.is_recalled ? () => handleStartReply(message) : undefined}
+                    onCopy={message.type === "text" && !message.is_recalled ? () => {
+                      navigator.clipboard.writeText(message.content);
+                      antdMessage.success("Đã sao chép tin nhắn");
+                    } : undefined}
                     onRecall={message.is_myself && !message.is_recalled ? () => handleRecall(message.id) : undefined}
                     onEdit={message.is_myself && message.type === "text" && !message.is_recalled ? () => handleStartEdit(message) : undefined}
                   />

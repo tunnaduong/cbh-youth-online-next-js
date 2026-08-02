@@ -275,7 +275,7 @@ export default function ChatMessageInput({
               border border-gray-300 dark:border-[#585857]
               rounded-md
               shadow-sm
-              focus:outline-none focus:border-[#4096ff] focus:shadow-[0_0_0_2px_rgba(5,145,255,0.1)]
+              focus:outline-none focus:border-[#319527] focus:shadow-[0_0_0_2px_rgba(49,149,39,0.1)]
               whitespace-nowrap overflow-x-auto overflow-y-hidden
             "
           />

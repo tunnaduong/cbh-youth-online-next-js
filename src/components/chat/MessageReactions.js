@@ -1,7 +1,7 @@
 "use client";
 
 import { Popover } from "antd";
-import { X, CornerUpLeft, Undo2, Pencil } from "lucide-react";
+import { X, CornerUpLeft, Undo2, Pencil, Copy } from "lucide-react";
 import { BsEmojiSmile } from "react-icons/bs";
 import {
   BsHandThumbsUpFill,
@@ -86,6 +86,7 @@ export default function MessageReactions({
   onReply,
   onRecall,
   onEdit,
+  onCopy,
   inline = false,
 }) {
   const summary = reactions?.summary || [];
@@ -128,6 +129,16 @@ export default function MessageReactions({
         >
           <CornerUpLeft className="w-4 h-4" />
           Trả lời
+        </button>
+      )}
+      {onCopy && (
+        <button
+          type="button"
+          onClick={() => { onCopy(); onOpenChange(false); }}
+          className="flex items-center gap-2 w-full px-2 py-1.5 rounded hover:bg-gray-100 dark:hover:bg-neutral-700 text-sm text-gray-700 dark:text-gray-200"
+        >
+          <Copy className="w-4 h-4" />
+          Sao chép
         </button>
       )}
       {isOwn && onEdit && (
