@@ -10,8 +10,16 @@ import FollowButton from "@/components/profile/FollowButton";
 import { BsFillGearFill } from "react-icons/bs";
 import { IoChatbubbleEllipsesOutline } from "react-icons/io5";
 import { IoCalendarOutline, IoLocationOutline } from "react-icons/io5";
+import { Edit2Icon } from "lucide-react";
 import { useAuthContext, useChatContext } from "@/contexts/Support";
-import { followUser, unfollowUser, registerVote, getProfile } from "@/app/Api";
+import {
+  followUser,
+  unfollowUser,
+  registerVote,
+  getProfile,
+  updateAvatar,
+  updateCover,
+} from "@/app/Api";
 
 export default function ProfileClient({ initialProfile, activeTab, username }) {
   const { currentUser } = useAuthContext();
@@ -124,6 +132,8 @@ export default function ProfileClient({ initialProfile, activeTab, username }) {
   const [followingList, setFollowingList] = useState(profile?.following || []);
   const [followersList, setFollowersList] = useState(profile?.followers || []);
   const [posts, setPosts] = useState(profile?.posts || []);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const [uploadingCover, setUploadingCover] = useState(false);
 
   const handleMessage = async () => {
     if (!currentUser) {
@@ -148,6 +158,82 @@ export default function ProfileClient({ initialProfile, activeTab, username }) {
       message.error("Không thể mở cuộc trò chuyện. Vui lòng thử lại.");
     } finally {
       setMessaging(false);
+    }
+  };
+
+  const handleAvatarUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      message.error("Vui lòng chọn file ảnh hợp lệ");
+      return;
+    }
+
+    if (file.size > 10 * 1024 * 1024) {
+      message.error("Kích thước file không được vượt quá 10MB");
+      return;
+    }
+
+    try {
+      setUploadingAvatar(true);
+      const formData = new FormData();
+      formData.append("avatar", file);
+
+      const response = await updateAvatar(currentUser.username, formData);
+      const responseData = response?.data || response;
+
+      message.success(responseData?.message || "Cập nhật avatar thành công!");
+      setTimeout(() => {
+        window.location.reload();
+      }, 1000);
+    } catch (error) {
+      console.error("Error uploading avatar:", error);
+      message.error(
+        error.response?.data?.message || "Có lỗi xảy ra khi cập nhật avatar"
+      );
+    } finally {
+      setUploadingAvatar(false);
+      e.target.value = "";
+    }
+  };
+
+  const handleCoverUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      message.error("Vui lòng chọn file ảnh hợp lệ");
+      return;
+    }
+
+    if (file.size > 10 * 1024 * 1024) {
+      message.error("Kích thước file không được vượt quá 10MB");
+      return;
+    }
+
+    try {
+      setUploadingCover(true);
+      const formData = new FormData();
+      formData.append("cover_photo", file);
+
+      const response = await updateCover(currentUser.username, formData);
+      const responseData = response?.data || response;
+
+      message.success(
+        responseData?.message || "Cập nhật ảnh bìa thành công!"
+      );
+      setTimeout(() => {
+        window.location.reload();
+      }, 1000);
+    } catch (error) {
+      console.error("Error uploading cover photo:", error);
+      message.error(
+        error.response?.data?.message || "Có lỗi xảy ra khi cập nhật ảnh bìa"
+      );
+    } finally {
+      setUploadingCover(false);
+      e.target.value = "";
     }
   };
 
@@ -543,11 +629,13 @@ export default function ProfileClient({ initialProfile, activeTab, username }) {
     profile.cover_photo_url ||
     `${process.env.NEXT_PUBLIC_API_URL}/v1.0/users/${profile.username}/avatar`;
 
+  const isOwnProfile = currentUser && currentUser.username == profile.username;
+
   return (
     <DefaultLayout activeNav="home">
       <div>
         <div className="flex-1">
-          <div className="relative h-min lg:h-96 overflow-hidden">
+          <div className="relative h-min lg:h-96 overflow-hidden group/cover">
             <img
               src={coverImageUrl}
               alt=""
@@ -560,17 +648,65 @@ export default function ProfileClient({ initialProfile, activeTab, username }) {
               aria-hidden="true"
               className="blur-effect absolute inset-0 w-full h-full object-cover"
             />
-            <div className="lg:hidden flex flex-col items-center gap-y-2 relative z-10 px-2.5 py-8">
-              <a
-                href={`${process.env.NEXT_PUBLIC_API_URL}/v1.0/users/${profile.username}/avatar`}
-              >
-                <img
-                  className="w-32 h-32 rounded-full bg-white"
-                  style={{ border: "4px solid #eeeeee" }}
-                  src={`${process.env.NEXT_PUBLIC_API_URL}/v1.0/users/${profile.username}/avatar`}
-                  alt="avatar"
+            {isOwnProfile && (
+              <>
+                <input
+                  type="file"
+                  id="cover-upload"
+                  accept="image/*"
+                  onChange={handleCoverUpload}
+                  style={{ display: "none" }}
                 />
-              </a>
+                <button
+                  type="button"
+                  aria-label="Sửa ảnh bìa"
+                  title="Sửa ảnh bìa"
+                  onClick={() =>
+                    document.getElementById("cover-upload").click()
+                  }
+                  disabled={uploadingCover}
+                  className="absolute right-3 bottom-3 z-10 flex items-center justify-center w-9 h-9 rounded-full bg-black/60 text-white opacity-0 group-hover/cover:opacity-100 focus:opacity-100 transition-opacity duration-150 hover:bg-black/80"
+                >
+                  <Edit2Icon className="w-4 h-4" />
+                </button>
+              </>
+            )}
+            <div className="lg:hidden flex flex-col items-center gap-y-2 relative z-10 px-2.5 py-8">
+              <div className="relative group/avatar w-32 h-32">
+                <a
+                  href={`${process.env.NEXT_PUBLIC_API_URL}/v1.0/users/${profile.username}/avatar`}
+                >
+                  <img
+                    className="w-32 h-32 rounded-full bg-white"
+                    style={{ border: "4px solid #eeeeee" }}
+                    src={`${process.env.NEXT_PUBLIC_API_URL}/v1.0/users/${profile.username}/avatar`}
+                    alt="avatar"
+                  />
+                </a>
+                {isOwnProfile && (
+                  <>
+                    <input
+                      type="file"
+                      id="avatar-upload-mobile"
+                      accept="image/*"
+                      onChange={handleAvatarUpload}
+                      style={{ display: "none" }}
+                    />
+                    <button
+                      type="button"
+                      aria-label="Sửa ảnh đại diện"
+                      title="Sửa ảnh đại diện"
+                      onClick={() =>
+                        document.getElementById("avatar-upload-mobile").click()
+                      }
+                      disabled={uploadingAvatar}
+                      className="absolute right-0 bottom-0 flex items-center justify-center w-9 h-9 rounded-full bg-black/60 text-white opacity-0 group-hover/avatar:opacity-100 focus:opacity-100 transition-opacity duration-150 hover:bg-black/80"
+                    >
+                      <Edit2Icon className="w-4 h-4" />
+                    </button>
+                  </>
+                )}
+              </div>
               <div className="flex flex-col items-center">
                 <h1 className="font-bold text-xl mt-2 text-center">
                   <span className="dark:text-neutral-300">
@@ -691,19 +827,46 @@ export default function ProfileClient({ initialProfile, activeTab, username }) {
           </div>
           <div className="lg:bg-white dark:!bg-neutral-700 h-16 lg:shadow-md">
             <div className="mx-auto max-w-[959px] h-full lg:flex hidden">
-              <a
-                href={`${process.env.NEXT_PUBLIC_API_URL}/v1.0/users/${profile.username}/avatar`}
+              <div
+                className="relative group/avatar-desktop w-[170px] h-[170px]"
+                style={{ transform: "translateY(-45%)" }}
               >
-                <img
-                  className="w-[170px] h-[170px] rounded-full absolute bg-white"
-                  style={{
-                    border: "4px solid #eeeeee",
-                    transform: "translateY(-45%)",
-                  }}
-                  src={`${process.env.NEXT_PUBLIC_API_URL}/v1.0/users/${profile.username}/avatar`}
-                  alt="avatar"
-                />
-              </a>
+                <a
+                  href={`${process.env.NEXT_PUBLIC_API_URL}/v1.0/users/${profile.username}/avatar`}
+                >
+                  <img
+                    className="w-[170px] h-[170px] rounded-full absolute bg-white"
+                    style={{ border: "4px solid #eeeeee" }}
+                    src={`${process.env.NEXT_PUBLIC_API_URL}/v1.0/users/${profile.username}/avatar`}
+                    alt="avatar"
+                  />
+                </a>
+                {isOwnProfile && (
+                  <>
+                    <input
+                      type="file"
+                      id="avatar-upload-desktop"
+                      accept="image/*"
+                      onChange={handleAvatarUpload}
+                      style={{ display: "none" }}
+                    />
+                    <button
+                      type="button"
+                      aria-label="Sửa ảnh đại diện"
+                      title="Sửa ảnh đại diện"
+                      onClick={() =>
+                        document
+                          .getElementById("avatar-upload-desktop")
+                          .click()
+                      }
+                      disabled={uploadingAvatar}
+                      className="absolute right-2 bottom-2 flex items-center justify-center w-9 h-9 rounded-full bg-black/60 text-white opacity-0 group-hover/avatar-desktop:opacity-100 focus:opacity-100 transition-opacity duration-150 hover:bg-black/80"
+                    >
+                      <Edit2Icon className="w-4 h-4" />
+                    </button>
+                  </>
+                )}
+              </div>
               <div className="flex-1 min-w-[280px]" />
               <div className="flex flex-row">
                 <Link
