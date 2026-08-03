@@ -443,6 +443,7 @@ export default function ChatConversation({
           replyingTo={replyingTo}
           onCancelReply={handleCancelReply}
           conversationId={conversationId}
+          allowAllMention={isGroupChat}
         />
       </div>
     );
@@ -476,6 +477,7 @@ export default function ChatConversation({
           replyingTo={replyingTo}
           onCancelReply={handleCancelReply}
           conversationId={conversationId}
+          allowAllMention={isGroupChat}
         />
       </div>
     );
@@ -783,6 +785,7 @@ export default function ChatConversation({
         onSaveEdit={handleSaveEdit}
         onCancelEdit={() => setEditingMessage(null)}
         conversationId={conversationId}
+        allowAllMention={isGroupChat}
       />
 
       <ChatMediaLightbox

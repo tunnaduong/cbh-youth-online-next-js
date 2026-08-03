@@ -12,8 +12,9 @@ import { getMentionSuggestions, getConversationMentionSuggestions } from "@/app/
  * @param {function} opts.onChange - called with new text after insertion
  * @param {string|null} opts.conversationId - if set, uses conversation-scoped endpoint
  * @param {React.RefObject} opts.inputRef - ref to the textarea/input DOM element
+ * @param {boolean} opts.allowAllMention - whether "@all" is a valid suggestion (false for 1-on-1 private chats, which have no "everyone" to mention)
  */
-export function useMentionInput({ value, onChange, conversationId = null, inputRef }) {
+export function useMentionInput({ value, onChange, conversationId = null, inputRef, allowAllMention = true }) {
   const [suggestions, setSuggestions] = useState([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [mentionQuery, setMentionQuery] = useState("");
@@ -49,7 +50,12 @@ export function useMentionInput({ value, onChange, conversationId = null, inputR
               ? getConversationMentionSuggestions(conversationId, query)
               : getMentionSuggestions(query);
             const res = await fetcher;
-            setSuggestions(res?.data?.suggestions || []);
+            const results = res?.data?.suggestions || [];
+            setSuggestions(
+              allowAllMention
+                ? results
+                : results.filter((u) => u.username?.toLowerCase() !== "all")
+            );
             setShowSuggestions(true);
           } catch {
             setSuggestions([]);
@@ -62,7 +68,7 @@ export function useMentionInput({ value, onChange, conversationId = null, inputR
         setMentionStart(-1);
       }
     },
-    [onChange, conversationId, inputRef]
+    [onChange, conversationId, inputRef, allowAllMention]
   );
 
   const insertMention = useCallback(

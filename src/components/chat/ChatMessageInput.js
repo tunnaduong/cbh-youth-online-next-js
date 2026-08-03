@@ -114,6 +114,7 @@ export default function ChatMessageInput({
   onSaveEdit,
   onCancelEdit,
   conversationId,
+  allowAllMention = true,
 }) {
   const [message, setMessage] = useState("");
   const divRef = useRef(null);
@@ -128,7 +129,7 @@ export default function ChatMessageInput({
     showSuggestions,
     suggestions,
     closeSuggestions,
-  } = useMentionInput({ value: message, onChange: setMessage, conversationId, inputRef });
+  } = useMentionInput({ value: message, onChange: setMessage, conversationId, inputRef, allowAllMention });
 
   // Sync div content when message changes from outside (edit mode, submit clear)
   useEffect(() => {
