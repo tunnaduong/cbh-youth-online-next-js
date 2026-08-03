@@ -591,7 +591,7 @@ export default function ChatConversation({
                   )}
                 </span>
               </div>
-              <div className="flex items-center gap-1">
+              <div className="flex items-center gap-1 min-w-0">
               {message.is_myself && replyBtn}
               <div className="relative mb-2 min-w-0">
                 {message.reply_to && (

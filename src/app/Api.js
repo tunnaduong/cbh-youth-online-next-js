@@ -227,6 +227,10 @@ export const searchUserForChat = (params) => {
   return Api.getRequest("/v1.0/chat/search/users", params);
 };
 
+export const forwardMessage = (messageId, params) => {
+  return Api.postRequest(`/v1.0/chat/messages/${messageId}/forward`, params);
+};
+
 // Public Chat (accessible to everyone, no auth required)
 export const getPublicChatMessages = (page = 1) => {
   return Api.getRequest(`/v1.0/chat/public/messages?page=${page}`);

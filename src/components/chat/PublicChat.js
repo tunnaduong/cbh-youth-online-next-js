@@ -11,7 +11,8 @@ import {
 import MessageInput from "./MessageInput";
 import ParticipantsList from "./ParticipantsList";
 import ChatMediaLightbox from "./ChatMediaLightbox";
-import { Menu, FileText, Download, PlayCircle, CornerUpLeft, Undo2, Pencil } from "lucide-react";
+import ForwardMessageModal from "./ForwardMessageModal";
+import { Menu, FileText, Download, PlayCircle, Forward, Undo2, Pencil } from "lucide-react";
 import MessageReactions from "./MessageReactions";
 import ReplyPreviewBubble from "./ReplyPreviewBubble";
 import { reactToMessage, removeMessageReaction, recallMessage, editMessage } from "@/app/Api";
@@ -148,6 +149,7 @@ export default function PublicChat() {
   const [replyingTo, setReplyingTo] = useState(null);
   const [editingMessage, setEditingMessage] = useState(null);
   const [hoveredMessageId, setHoveredMessageId] = useState(null);
+  const [forwardingMessage, setForwardingMessage] = useState(null);
   const messagesContainerRef = useRef(null);
   const longPressTimerRef = useRef(null);
 
@@ -761,7 +763,7 @@ export default function PublicChat() {
         <div
           className={`${
             showParticipants ? "hidden" : "flex"
-          } lg:flex flex-1 flex-col`}
+          } lg:flex flex-1 flex-col min-w-0`}
           style={{ minHeight: "300px", maxHeight: "400px" }}
         >
           <div
@@ -835,18 +837,11 @@ export default function PublicChat() {
                           <>
                             <button
                               type="button"
-                              title="Trả lời"
-                              onClick={() => setReplyingTo({
-                                id: message.id,
-                                content: message.content,
-                                type: message.type,
-                                file_url: message.file_url || null,
-                                sender: message.sender,
-                                isSelf: isOwn,
-                              })}
+                              title="Chuyển tiếp"
+                              onClick={() => setForwardingMessage(message)}
                               className={`p-1 rounded-full hover:bg-gray-200 dark:hover:bg-neutral-600 text-gray-400 transition-opacity ${hoveredMessageId === message.id ? "opacity-100" : "opacity-0 pointer-events-none"}`}
                             >
-                              <CornerUpLeft className="w-3 h-3" />
+                              <Forward className="w-3 h-3" />
                             </button>
                             {isOwn && message.type === "text" && (
                               <button
@@ -1005,14 +1000,7 @@ export default function PublicChat() {
                             onOpenChange={(v) => setOpenReactionMessageId(v ? message.id : null)}
                             onReact={(type) => handleReact(message.id, type, rxns)}
                             onRemove={() => handleRemovePublicReaction(message.id, rxns)}
-                            onReply={() => setReplyingTo({
-                              id: message.id,
-                              content: message.content,
-                              type: message.type,
-                              file_url: message.file_url || null,
-                              sender: message.sender,
-                              isSelf: isOwn,
-                            })}
+                            onForward={!message.is_recalled ? () => setForwardingMessage(message) : undefined}
                             onCopy={message.type === "text" && !message.is_recalled ? () => {
                               navigator.clipboard.writeText(message.content);
                               antdMessage.success("Đã sao chép tin nhắn");
@@ -1077,6 +1065,11 @@ export default function PublicChat() {
       <ChatMediaLightbox
         media={lightboxMedia}
         onClose={() => setLightboxMedia(null)}
+      />
+
+      <ForwardMessageModal
+        message={forwardingMessage}
+        onClose={() => setForwardingMessage(null)}
       />
 
     </div>
