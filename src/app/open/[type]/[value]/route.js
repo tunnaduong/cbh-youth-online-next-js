@@ -10,6 +10,8 @@ export async function GET(request, { params }) {
     targetPath = `/?storyId=${encodeURIComponent(decodedValue)}`;
   } else if (type === "post") {
     targetPath = `/?postSlug=${encodeURIComponent(decodedValue)}`;
+  } else if (type === "group") {
+    targetPath = `/invite/${encodeURIComponent(decodedValue)}`;
   }
 
   return NextResponse.redirect(new URL(targetPath, request.url));

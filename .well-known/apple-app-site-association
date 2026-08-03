@@ -8,7 +8,8 @@
           "/story/*",
           "/post/*",
           "/open/story/*",
-          "/open/post/*"
+          "/open/post/*",
+          "/open/group/*"
         ]
       }
     ]

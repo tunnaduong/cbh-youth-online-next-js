@@ -209,6 +209,54 @@ export const removeGroupParticipant = (conversationId, userId) => {
   );
 };
 
+export const deleteGroupConversation = (conversationId) => {
+  return Api.deleteRequest(`/v1.0/chat/groups/${conversationId}`);
+};
+
+export const updateGroupAvatar = (conversationId, formData) => {
+  return Api.postFormDataRequest(
+    `/v1.0/chat/groups/${conversationId}/avatar`,
+    formData
+  );
+};
+
+export const addGroupDeputy = (conversationId, userId) => {
+  return Api.postRequest(`/v1.0/chat/groups/${conversationId}/deputies`, {
+    user_id: userId,
+  });
+};
+
+export const removeGroupDeputy = (conversationId, userId) => {
+  return Api.deleteRequest(
+    `/v1.0/chat/groups/${conversationId}/deputies/${userId}`
+  );
+};
+
+export const transferGroupOwnership = (conversationId, userId) => {
+  return Api.postRequest(
+    `/v1.0/chat/groups/${conversationId}/transfer-ownership`,
+    { user_id: userId }
+  );
+};
+
+export const getGroupInviteLink = (conversationId) => {
+  return Api.getRequest(`/v1.0/chat/groups/${conversationId}/invite-link`);
+};
+
+export const regenerateGroupInviteLink = (conversationId) => {
+  return Api.postRequest(
+    `/v1.0/chat/groups/${conversationId}/invite-link/regenerate`
+  );
+};
+
+export const getGroupInvitePreview = (token) => {
+  return Api.getRequest(`/v1.0/chat/groups/invite/${token}`);
+};
+
+export const joinGroupViaInvite = (token) => {
+  return Api.postRequest(`/v1.0/chat/groups/invite/${token}/join`);
+};
+
 export const deleteMessage = (messageId) => {
   return Api.deleteRequest(`/v1.0/chat/messages/${messageId}`);
 };
