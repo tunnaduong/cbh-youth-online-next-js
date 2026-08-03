@@ -121,7 +121,7 @@ export default function ChatMessageInput({
   const fileInputRef = useRef(null);
 
   // Proxy ref that useMentionInput uses for focus/setSelectionRange
-  const inputRef = useRef(makeProxyRef(() => divRef.current, setMessage));
+  const inputRef = useRef(makeProxyRef(() => divRef.current, setMessage, allowAllMention));
 
   const {
     handleChange: handleMentionChange,
@@ -137,7 +137,7 @@ export default function ChatMessageInput({
     if (!el) return;
     const current = getContentText(el);
     if (current !== message) {
-      el.innerHTML = buildHtml(message);
+      el.innerHTML = buildHtml(message, allowAllMention);
       if (message) setCaretOffset(el, message.length);
     }
   }, [message]);
@@ -172,14 +172,14 @@ export default function ChatMessageInput({
       const offset = getCaretOffset(el);
       const text = getContentText(el);
 
-      el.innerHTML = buildHtml(text);
+      el.innerHTML = buildHtml(text, allowAllMention);
       setCaretOffset(el, offset);
 
       setMessage(text);
       handleMentionChange(text, offset);
       onTyping?.();
     },
-    [handleMentionChange, onTyping]
+    [handleMentionChange, onTyping, allowAllMention]
   );
 
   const handleKeyDown = useCallback(
@@ -217,13 +217,13 @@ export default function ChatMessageInput({
       const offset = getCaretOffset(el);
       const current = getContentText(el);
       const newText = current.slice(0, offset) + text + current.slice(offset);
-      el.innerHTML = buildHtml(newText);
+      el.innerHTML = buildHtml(newText, allowAllMention);
       const newOffset = offset + text.length;
       setCaretOffset(el, newOffset);
       setMessage(newText);
       handleMentionChange(newText, newOffset);
     },
-    [onSendFile, handleMentionChange]
+    [onSendFile, handleMentionChange, allowAllMention]
   );
 
   const handleFileChange = async (e) => {

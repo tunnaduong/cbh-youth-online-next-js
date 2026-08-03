@@ -9,13 +9,15 @@ function esc(s) {
   return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
 
-export function buildHtml(text) {
+export function buildHtml(text, allowAllMention = true) {
   if (!text) return "";
   return text
     .split(MENTION_RE)
-    .map((part, i) =>
-      i % 2 === 1 ? `<span class="ce-mention">${esc(part)}</span>` : esc(part)
-    )
+    .map((part, i) => {
+      if (i % 2 !== 1) return esc(part);
+      if (!allowAllMention && part.slice(1).toLowerCase() === "all") return esc(part);
+      return `<span class="ce-mention">${esc(part)}</span>`;
+    })
     .join("");
 }
 
@@ -61,7 +63,7 @@ export function getContentText(el) {
  * Creates a proxy ref object compatible with useMentionInput and MarkdownToolbar.
  * Pass a getter for divRef so the proxy always references the current DOM element.
  */
-export function makeProxyRef(getDivEl, onValueSet) {
+export function makeProxyRef(getDivEl, onValueSet, allowAllMention = true) {
   return {
     get selectionStart() {
       const el = getDivEl();
@@ -77,7 +79,7 @@ export function makeProxyRef(getDivEl, onValueSet) {
     set value(newText) {
       const el = getDivEl();
       if (el) {
-        el.innerHTML = buildHtml(newText);
+        el.innerHTML = buildHtml(newText, allowAllMention);
         onValueSet?.(newText);
       }
     },
