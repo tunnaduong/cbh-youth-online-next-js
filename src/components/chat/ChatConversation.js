@@ -69,9 +69,9 @@ function linkifyText(text, linkClassName, isOwn = false, validMentions = null) {
     return mentionParts.map((mp, j) => {
       if (j % 2 === 1) {
         const username = mp.slice(1); // strip '@'
-        const isValid = validMentions != null
+        const isValid = validMentions != null && username.toLowerCase() !== "all"
           ? validMentions.has(username.toLowerCase())
-          : false; // no server data → treat as plain text
+          : false; // no server data, or "@all", → treat as plain text
         if (isValid) {
           return (
             <NextLink

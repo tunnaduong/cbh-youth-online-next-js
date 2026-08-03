@@ -80,6 +80,13 @@ const MarkdownRenderer = ({ content, className = "" }) => {
             }
             if (typeof href === "string" && href.startsWith("##mention:")) {
               const username = href.slice("##mention:".length);
+              if (username.toLowerCase() === "all") {
+                return (
+                  <span className="text-[#319527] dark:text-[#6bcf60] font-medium">
+                    {children}
+                  </span>
+                );
+              }
               return (
                 <Link
                   href={`/${username}`}

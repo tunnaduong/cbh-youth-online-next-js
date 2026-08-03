@@ -98,7 +98,7 @@ function linkifyText(text, validMentions = null) {
     return mentionParts.map((mp, j) => {
       if (j % 2 === 1) {
         const username = mp.slice(1);
-        const isValid = validMentions != null
+        const isValid = validMentions != null && username.toLowerCase() !== "all"
           ? validMentions.has(username.toLowerCase())
           : false;
         if (isValid) {
