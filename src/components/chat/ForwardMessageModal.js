@@ -2,19 +2,16 @@
 
 import { useState } from "react";
 import Modal from "@/components/ui/Modal";
-import Input from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button, message as antdMessage } from "antd";
-import { X, Search } from "lucide-react";
+import { X } from "lucide-react";
 import { useChatContext } from "@/contexts/Support";
-import { forwardMessage, searchUserForChat } from "@/app/Api";
+import { forwardMessage } from "@/app/Api";
+import UserMultiSelect from "./UserMultiSelect";
 
 export default function ForwardMessageModal({ message, onClose }) {
   const { conversations } = useChatContext();
   const [selectedConversationIds, setSelectedConversationIds] = useState([]);
-  const [searchUsername, setSearchUsername] = useState("");
-  const [searching, setSearching] = useState(false);
-  const [foundUsers, setFoundUsers] = useState([]);
   const [selectedUserIds, setSelectedUserIds] = useState([]);
   const [sending, setSending] = useState(false);
 
@@ -40,47 +37,22 @@ export default function ForwardMessageModal({ message, onClose }) {
     );
   };
 
-  const toggleUser = (id) => {
-    setSelectedUserIds((prev) =>
-      prev.includes(id) ? prev.filter((u) => u !== id) : [...prev, id]
-    );
-  };
-
-  const handleSearchUser = async () => {
-    if (!searchUsername.trim()) return;
-    setSearching(true);
-    try {
-      const response = await searchUserForChat({ username: searchUsername.trim() });
-      const data = response?.data || response;
-      if (data?.user) {
-        setFoundUsers((prev) => {
-          if (prev.some((u) => u.id === data.user.id)) return prev;
-          return [...prev, data.user];
-        });
-      } else {
-        antdMessage.error("Không tìm thấy người dùng với username này");
-      }
-    } catch (error) {
-      antdMessage.error(
-        error?.response?.data?.message || "Không tìm thấy người dùng với username này"
-      );
-    } finally {
-      setSearching(false);
-    }
-  };
+  const totalSelected = selectedConversationIds.length + selectedUserIds.length;
 
   const handleClose = () => {
     setSelectedConversationIds([]);
     setSelectedUserIds([]);
-    setFoundUsers([]);
-    setSearchUsername("");
     onClose();
   };
 
   const handleForward = async () => {
     if (!message) return;
-    if (selectedConversationIds.length === 0 && selectedUserIds.length === 0) {
+    if (totalSelected === 0) {
       antdMessage.warning("Vui lòng chọn ít nhất một nơi để chuyển tiếp");
+      return;
+    }
+    if (totalSelected > 20) {
+      antdMessage.warning("Chỉ có thể chuyển tiếp tới tối đa 20 nơi");
       return;
     }
 
@@ -95,17 +67,20 @@ export default function ForwardMessageModal({ message, onClose }) {
       }
 
       const response = await forwardMessage(message.id, params);
-      const results = response?.data?.results;
+      const results = response?.data?.results || response?.results;
 
       if (Array.isArray(results)) {
-        const failed = results.filter((r) => !r.success);
+        const failed = results.filter((r) => r.status !== "sent");
         if (failed.length === 0) {
           antdMessage.success("Đã chuyển tiếp tin nhắn");
         } else if (failed.length === results.length) {
-          antdMessage.error("Chuyển tiếp tin nhắn thất bại");
+          antdMessage.error(failed[0]?.error || "Chuyển tiếp tin nhắn thất bại");
         } else {
           antdMessage.warning(
-            `Đã chuyển tiếp tới ${results.length - failed.length}/${results.length} nơi`
+            `Đã chuyển tiếp tới ${results.length - failed.length}/${results.length} nơi. ${failed
+              .map((f) => f.error)
+              .filter(Boolean)
+              .join(", ")}`
           );
         }
       } else {
@@ -137,49 +112,10 @@ export default function ForwardMessageModal({ message, onClose }) {
         </div>
 
         <div className="px-4 py-3 border-b dark:border-neutral-600">
-          <div className="flex gap-2">
-            <Input
-              value={searchUsername}
-              onChange={(e) => setSearchUsername(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  e.preventDefault();
-                  handleSearchUser();
-                }
-              }}
-              placeholder="Tìm người dùng theo username"
-              className="flex-1"
-            />
-            <Button
-              onClick={handleSearchUser}
-              loading={searching}
-              disabled={!searchUsername.trim() || searching}
-              icon={<Search className="w-4 h-4" />}
-            />
-          </div>
-          {foundUsers.length > 0 && (
-            <div className="flex flex-col mt-2 gap-1">
-              {foundUsers.map((user) => (
-                <label
-                  key={user.id}
-                  className="flex items-center gap-2 p-2 rounded hover:bg-gray-50 dark:hover:bg-neutral-600 cursor-pointer"
-                >
-                  <input
-                    type="checkbox"
-                    checked={selectedUserIds.includes(user.id)}
-                    onChange={() => toggleUser(user.id)}
-                  />
-                  <Avatar className="w-8 h-8 flex-shrink-0">
-                    <AvatarImage src={user.avatar_url} alt={user.username} />
-                    <AvatarFallback>{user.username?.[0]?.toUpperCase() || "?"}</AvatarFallback>
-                  </Avatar>
-                  <span className="text-sm dark:text-white truncate">
-                    {user.profile_name || user.username}
-                  </span>
-                </label>
-              ))}
-            </div>
-          )}
+          <UserMultiSelect
+            selectedUserIds={selectedUserIds}
+            onChange={setSelectedUserIds}
+          />
         </div>
 
         <div className="flex-1 overflow-y-auto">
@@ -225,7 +161,7 @@ export default function ForwardMessageModal({ message, onClose }) {
             loading={sending}
             className="flex-1 bg-[#319527] hover:bg-[#3dbb31]"
           >
-            Chuyển tiếp
+            Chuyển tiếp{totalSelected > 0 ? ` (${totalSelected})` : ""}
           </Button>
         </div>
       </div>

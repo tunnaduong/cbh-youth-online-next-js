@@ -11,7 +11,8 @@ import ChatMessageInput from "./ChatMessageInput";
 import MessageReactions from "./MessageReactions";
 import ReplyPreviewBubble from "./ReplyPreviewBubble";
 import ChatMediaLightbox from "./ChatMediaLightbox";
-import { CornerUpLeft, FileText, Download, PlayCircle } from "lucide-react";
+import ForwardMessageModal from "./ForwardMessageModal";
+import { CornerUpLeft, FileText, Download, PlayCircle, Forward } from "lucide-react";
 import NextLink from "next/link";
 import { recallMessage, editMessage } from "@/app/Api";
 
@@ -150,6 +151,7 @@ export default function ChatConversation({
   const [replyingTo, setReplyingTo] = useState(null);
   const [editingMessage, setEditingMessage] = useState(null); // { id, content }
   const [hoveredMessageId, setHoveredMessageId] = useState(null);
+  const [forwardingMessage, setForwardingMessage] = useState(null);
   const isSelectingTextRef = useRef(false);
   const messagesContainerRef = useRef(null);
   const longPressTimerRef = useRef(null);
@@ -509,6 +511,16 @@ export default function ChatConversation({
         )}
 
         {conversationMessages.map((message, index) => {
+          if (message.type === "system") {
+            return (
+              <div key={message.id} className="flex justify-center my-2">
+                <span className="text-xs text-gray-400 dark:text-gray-500 bg-gray-100 dark:bg-neutral-800 rounded-full px-3 py-1">
+                  {message.content}
+                </span>
+              </div>
+            );
+          }
+
           const isLastOwnMessage =
             message.is_myself &&
             !conversationMessages
@@ -591,6 +603,15 @@ export default function ChatConversation({
                   )}
                 </span>
               </div>
+              {message.is_forwarded && (
+                <div className="flex items-center gap-1 text-[11px] italic text-gray-400 dark:text-gray-500 mb-0.5">
+                  <Forward className="w-3 h-3" />
+                  Đã chuyển tiếp
+                  {message.metadata?.forwarded_from?.sender_name && (
+                    <span> từ {message.metadata.forwarded_from.sender_name}</span>
+                  )}
+                </div>
+              )}
               <div className="flex items-center gap-1 min-w-0">
               {message.is_myself && replyBtn}
               <div className="relative mb-2 min-w-0">
@@ -751,6 +772,7 @@ export default function ChatConversation({
                     onReact={(type) => handleReact(message.id, type)}
                     onRemove={() => handleRemoveReaction(message.id)}
                     onReply={!message.is_recalled ? () => handleStartReply(message) : undefined}
+                    onForward={!message.is_recalled ? () => setForwardingMessage(message) : undefined}
                     onCopy={message.type === "text" && !message.is_recalled ? () => {
                       navigator.clipboard.writeText(message.content);
                       antdMessage.success("Đã sao chép tin nhắn");
@@ -800,6 +822,11 @@ export default function ChatConversation({
       <ChatMediaLightbox
         media={lightboxMedia}
         onClose={() => setLightboxMedia(null)}
+      />
+
+      <ForwardMessageModal
+        message={forwardingMessage}
+        onClose={() => setForwardingMessage(null)}
       />
     </div>
   );

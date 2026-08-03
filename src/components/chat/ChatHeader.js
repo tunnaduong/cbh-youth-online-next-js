@@ -2,6 +2,7 @@
 
 import {
   Plus,
+  Users,
   Settings,
   ChevronDown,
   ChevronUp,
@@ -14,12 +15,14 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 export default function ChatHeader({
   conversation,
   onNewChat,
+  onNewGroup,
   onSettings,
   onMinimize,
   onClose,
   onBack,
   isMinimized,
   showNewChatDialog,
+  showNewGroupDialog,
 }) {
   const isThreadsView = !conversation;
 
@@ -27,9 +30,9 @@ export default function ChatHeader({
     <div className="flex items-center justify-between rounded-lg px-4 py-3 bg-white dark:bg-neutral-700">
       {/* Left side - Logo/Icon and Title */}
       <div className="flex items-center gap-2 flex-1 min-w-0">
-        {showNewChatDialog ? (
+        {showNewChatDialog || showNewGroupDialog ? (
           <>
-            {/* Back button for new chat dialog */}
+            {/* Back button for new chat/group dialog */}
             {onBack && (
               <button
                 onClick={onBack}
@@ -40,7 +43,7 @@ export default function ChatHeader({
               </button>
             )}
             <h2 className="font-semibold text-sm dark:text-white flex-1">
-              Tạo cuộc trò chuyện mới
+              {showNewGroupDialog ? "Tạo nhóm mới" : "Tạo cuộc trò chuyện mới"}
             </h2>
           </>
         ) : isThreadsView ? (
@@ -132,21 +135,32 @@ export default function ChatHeader({
       {/* Right side - Action buttons */}
       <div className="flex items-center gap-1 flex-shrink-0">
         {isThreadsView && (
+          <>
+            <button
+              onClick={onNewGroup}
+              className="p-1.5 hover:bg-gray-100 dark:hover:bg-neutral-600 rounded transition-colors"
+              title="Tạo nhóm mới"
+            >
+              <Users className="w-4 h-4 text-gray-600 dark:text-gray-300" />
+            </button>
+            <button
+              onClick={onNewChat}
+              className="p-1.5 hover:bg-gray-100 dark:hover:bg-neutral-600 rounded transition-colors"
+              title="Tạo cuộc trò chuyện mới"
+            >
+              <Plus className="w-4 h-4 text-gray-600 dark:text-gray-300" />
+            </button>
+          </>
+        )}
+        {conversation?.type === "group" && (
           <button
-            onClick={onNewChat}
+            onClick={onSettings}
             className="p-1.5 hover:bg-gray-100 dark:hover:bg-neutral-600 rounded transition-colors"
-            title="Tạo cuộc trò chuyện mới"
+            title="Thông tin nhóm"
           >
-            <Plus className="w-4 h-4 text-gray-600 dark:text-gray-300" />
+            <Settings className="w-4 h-4 text-gray-600 dark:text-gray-300" />
           </button>
         )}
-        <button
-          onClick={onSettings}
-          className="p-1.5 hover:bg-gray-100 dark:hover:bg-neutral-600 rounded transition-colors"
-          title="Cài đặt"
-        >
-          <Settings className="w-4 h-4 text-gray-600 dark:text-gray-300" />
-        </button>
         <button
           onClick={onMinimize}
           className="p-1.5 hover:bg-gray-100 dark:hover:bg-neutral-600 rounded transition-colors"

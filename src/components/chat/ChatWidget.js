@@ -6,6 +6,8 @@ import ChatHeader from "./ChatHeader";
 import ChatThreadsList from "./ChatThreadsList";
 import ChatConversation from "./ChatConversation";
 import NewChatDialog from "./NewChatDialog";
+import NewGroupDialog from "./NewGroupDialog";
+import GroupInfoModal from "./GroupInfoModal";
 
 export default function ChatWidget() {
   const {
@@ -22,6 +24,8 @@ export default function ChatWidget() {
   } = useChatContext();
 
   const [showNewChatDialog, setShowNewChatDialog] = useState(false);
+  const [showNewGroupDialog, setShowNewGroupDialog] = useState(false);
+  const [showGroupInfo, setShowGroupInfo] = useState(false);
   const [previewParticipant, setPreviewParticipant] = useState(null); // For new conversation preview
 
   if (!isOpen) return null;
@@ -36,6 +40,22 @@ export default function ChatWidget() {
 
   const handleCloseNewChatDialog = () => {
     setShowNewChatDialog(false);
+  };
+
+  const handleNewGroup = () => {
+    setShowNewGroupDialog(true);
+  };
+
+  const handleCloseNewGroupDialog = () => {
+    setShowNewGroupDialog(false);
+  };
+
+  const handleGroupCreated = async (group) => {
+    await loadConversations();
+    if (group?.id) {
+      selectConversation(group.id);
+    }
+    setShowNewGroupDialog(false);
   };
 
   const handleConversationCreated = async (conversation) => {
@@ -54,8 +74,18 @@ export default function ChatWidget() {
   };
 
   const handleSettings = () => {
-    // TODO: Implement settings functionality
-    console.log("Settings clicked");
+    if (selectedConversation?.type === "group") {
+      setShowGroupInfo(true);
+    }
+  };
+
+  const handleGroupUpdated = () => {
+    loadConversations();
+  };
+
+  const handleLeftGroup = () => {
+    loadConversations();
+    selectConversation(null);
   };
 
   const handleMinimize = () => {
@@ -96,12 +126,15 @@ export default function ChatWidget() {
             : selectedConversation
         }
         onNewChat={handleNewChat}
+        onNewGroup={handleNewGroup}
         onSettings={handleSettings}
         onMinimize={handleMinimize}
         onClose={handleClose}
         onBack={
           showNewChatDialog
             ? handleCloseNewChatDialog
+            : showNewGroupDialog
+            ? handleCloseNewGroupDialog
             : previewParticipant || selectedConversationId
             ? () => {
                 setPreviewParticipant(null);
@@ -111,6 +144,7 @@ export default function ChatWidget() {
         }
         isMinimized={isMinimized}
         showNewChatDialog={showNewChatDialog}
+        showNewGroupDialog={showNewGroupDialog}
       />
 
       {/* Content */}
@@ -120,6 +154,11 @@ export default function ChatWidget() {
             <NewChatDialog
               onClose={handleCloseNewChatDialog}
               onConversationCreated={handleConversationCreated}
+            />
+          ) : showNewGroupDialog ? (
+            <NewGroupDialog
+              onClose={handleCloseNewGroupDialog}
+              onGroupCreated={handleGroupCreated}
             />
           ) : previewParticipant ? (
             <ChatConversation
@@ -140,6 +179,14 @@ export default function ChatWidget() {
           )}
         </div>
       )}
+
+      <GroupInfoModal
+        conversationId={selectedConversationId}
+        show={showGroupInfo && selectedConversation?.type === "group"}
+        onClose={() => setShowGroupInfo(false)}
+        onGroupUpdated={handleGroupUpdated}
+        onLeftGroup={handleLeftGroup}
+      />
     </div>
   );
 }

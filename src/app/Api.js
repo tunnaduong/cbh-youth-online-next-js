@@ -184,6 +184,14 @@ export const createGroupConversation = (params) => {
   return Api.postRequest("/v1.0/chat/groups", params);
 };
 
+export const getGroupDetails = (conversationId) => {
+  return Api.getRequest(`/v1.0/chat/groups/${conversationId}`);
+};
+
+export const leaveGroup = (conversationId) => {
+  return Api.postRequest(`/v1.0/chat/groups/${conversationId}/leave`);
+};
+
 export const updateGroupConversation = (conversationId, params) => {
   return Api.putRequest(`/v1.0/chat/groups/${conversationId}`, params);
 };
