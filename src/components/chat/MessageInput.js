@@ -233,7 +233,7 @@ export default function MessageInput({
                 localStorage.setItem("chat_guest_name", guestName.trim());
               }
             }}
-            className="border border-gray-300 dark:border-neutral-600 rounded px-3 py-1.5 text-sm w-full max-w-[calc(100%-60px)] bg-white dark:bg-neutral-600 text-gray-900 dark:text-gray-100 focus:outline-none"
+            className="border border-gray-300 dark:border-neutral-600 rounded px-3 py-1.5 text-sm w-full max-w-[calc(100%-60px)] bg-white dark:bg-neutral-600 text-gray-900 dark:text-gray-100 focus:outline-none focus:border-[#319527] focus:shadow-[0_0_0_2px_rgba(49,149,39,0.1)]"
           />
           <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
             Tên này sẽ được hiển thị khi bạn gửi tin nhắn
