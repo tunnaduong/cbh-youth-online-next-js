@@ -780,6 +780,16 @@ export default function PublicChat() {
               </div>
             ) : (
               messages.map((message) => {
+                if (message.type === "system") {
+                  return (
+                    <div key={message.id} className="flex justify-center my-2">
+                      <span className="text-xs text-gray-400 dark:text-gray-500 bg-gray-100 dark:bg-neutral-800 rounded-full px-3 py-1">
+                        {message.content}
+                      </span>
+                    </div>
+                  );
+                }
+
                 const isGuest = message.is_guest;
                 // Determine sender name: prioritize sender info, fallback to guest_name, then "Ẩn danh"
                 let senderName = "Ẩn danh";
