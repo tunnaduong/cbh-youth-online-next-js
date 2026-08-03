@@ -36,6 +36,20 @@ const getNotificationMessage = (notification) => {
       return `${actorName} đã nhắc đến bạn`;
     case "message_reacted":
       return `${actorName} đã bày tỏ cảm xúc ${data?.reaction_emoji || "👍"} với tin nhắn của bạn`;
+    case "message_replied":
+      return `${actorName} đã trả lời tin nhắn của bạn`;
+    case "added_to_group":
+      return `${actorName} đã thêm bạn vào nhóm ${data?.conversation_name || ""}`;
+    case "removed_from_group":
+      return `${actorName} đã xóa bạn khỏi nhóm ${data?.conversation_name || ""}`;
+    case "group_role_changed":
+      if ((data?.role || "") === "owner") {
+        return `${actorName} đã chuyển quyền trưởng nhóm ${data?.conversation_name || ""} cho bạn`;
+      }
+      if ((data?.role || "") === "member") {
+        return `${actorName} đã gỡ vai trò phó nhóm của bạn trong nhóm ${data?.conversation_name || ""}`;
+      }
+      return `${actorName} đã chỉ định bạn làm phó nhóm ${data?.conversation_name || ""}`;
     case "story_reacted":
       return `${actorName} đã bày tỏ cảm xúc về tin của bạn`;
     case "story_replied":
