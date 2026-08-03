@@ -235,6 +235,10 @@ export const searchUserForChat = (params) => {
   return Api.getRequest("/v1.0/chat/search/users", params);
 };
 
+export const searchUserSuggestions = (params) => {
+  return Api.getRequest("/v1.0/chat/search/user-suggestions", params);
+};
+
 export const forwardMessage = (messageId, params) => {
   return Api.postRequest(`/v1.0/chat/messages/${messageId}/forward`, params);
 };

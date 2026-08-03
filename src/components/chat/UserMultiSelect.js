@@ -1,88 +1,92 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Input from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Button, message as antdMessage } from "antd";
-import { Search, X } from "lucide-react";
-import { searchUserForChat } from "@/app/Api";
+import { X } from "lucide-react";
+import { searchUserSuggestions } from "@/app/Api";
+
+const DEBOUNCE_MS = 300;
 
 /**
- * Reusable "search by username, pick multiple" widget for chat features
- * (new group members, add participants, forward-to-user).
+ * Reusable "type a name/username, pick multiple" widget for chat features
+ * (new group members, add participants). Debounce-searches
+ * GET /chat/search/user-suggestions as the user types, same as @mention autocomplete.
  *
  * @param {object} props
  * @param {number[]} props.selectedUserIds
- * @param {(users: object[]) => void} props.onChange - called with the full list of selected user objects
+ * @param {(ids: number[]) => void} props.onChange
  * @param {number[]} [props.excludeUserIds] - users to hide from results (e.g. already in the group)
+ * @param {number} [props.excludeConversationId] - pass the group's id when adding to an existing group
  */
-export default function UserMultiSelect({ selectedUserIds = [], onChange, excludeUserIds = [] }) {
-  const [username, setUsername] = useState("");
+export default function UserMultiSelect({
+  selectedUserIds = [],
+  onChange,
+  excludeUserIds = [],
+  excludeConversationId,
+}) {
+  const [query, setQuery] = useState("");
+  const [suggestions, setSuggestions] = useState([]);
   const [searching, setSearching] = useState(false);
-  const [foundUsers, setFoundUsers] = useState([]);
+  const [selectedUsers, setSelectedUsers] = useState([]);
+  const debounceRef = useRef(null);
 
-  const selectedUsers = foundUsers.filter((u) => selectedUserIds.includes(u.id));
+  useEffect(() => {
+    if (!query.trim()) {
+      setSuggestions([]);
+      return;
+    }
 
-  const handleSearch = async () => {
-    if (!username.trim()) return;
-    setSearching(true);
-    try {
-      const response = await searchUserForChat({ username: username.trim() });
-      const data = response?.data || response;
-      if (data?.user) {
-        if (excludeUserIds.includes(data.user.id)) {
-          antdMessage.info("Người dùng này đã ở trong danh sách");
-        } else {
-          setFoundUsers((prev) =>
-            prev.some((u) => u.id === data.user.id) ? prev : [...prev, data.user]
-          );
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(async () => {
+      setSearching(true);
+      try {
+        const params = { q: query.trim() };
+        if (excludeConversationId) {
+          params.exclude_conversation_id = excludeConversationId;
         }
-      } else {
-        antdMessage.error("Không tìm thấy người dùng với username này");
+        const response = await searchUserSuggestions(params);
+        const data = response?.data || response;
+        setSuggestions(Array.isArray(data?.suggestions) ? data.suggestions : []);
+      } catch (error) {
+        setSuggestions([]);
+      } finally {
+        setSearching(false);
       }
-    } catch (error) {
-      antdMessage.error(
-        error?.response?.data?.message || "Không tìm thấy người dùng với username này"
-      );
-    } finally {
-      setSearching(false);
-      setUsername("");
+    }, DEBOUNCE_MS);
+
+    return () => clearTimeout(debounceRef.current);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [query, excludeConversationId]);
+
+  const toggleUser = (user) => {
+    const isSelected = selectedUserIds.includes(user.id);
+    if (isSelected) {
+      setSelectedUsers((prev) => prev.filter((u) => u.id !== user.id));
+      onChange(selectedUserIds.filter((id) => id !== user.id));
+    } else {
+      setSelectedUsers((prev) => [...prev, user]);
+      onChange([...selectedUserIds, user.id]);
     }
   };
 
-  const toggleUser = (user) => {
-    const next = selectedUserIds.includes(user.id)
-      ? selectedUserIds.filter((id) => id !== user.id)
-      : [...selectedUserIds, user.id];
-    onChange(next, foundUsers);
+  const removeSelected = (userId) => {
+    setSelectedUsers((prev) => prev.filter((u) => u.id !== userId));
+    onChange(selectedUserIds.filter((id) => id !== userId));
   };
 
-  const removeSelected = (userId) => {
-    onChange(selectedUserIds.filter((id) => id !== userId), foundUsers);
-  };
+  const visibleSuggestions = suggestions.filter(
+    (u) => !excludeUserIds.includes(u.id)
+  );
 
   return (
     <div>
-      <div className="flex gap-2">
-        <Input
-          value={username}
-          onChange={(e) => setUsername(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") {
-              e.preventDefault();
-              handleSearch();
-            }
-          }}
-          placeholder="Tìm người dùng theo username"
-          className="flex-1"
-        />
-        <Button
-          onClick={handleSearch}
-          loading={searching}
-          disabled={!username.trim() || searching}
-          icon={<Search className="w-4 h-4" />}
-        />
-      </div>
+      <Input
+        value={query}
+        onChange={(e) => setQuery(e.target.value)}
+        placeholder="Nhập tên hoặc username"
+        className="w-full"
+      />
 
       {selectedUsers.length > 0 && (
         <div className="flex flex-wrap gap-1.5 mt-2">
@@ -106,29 +110,42 @@ export default function UserMultiSelect({ selectedUserIds = [], onChange, exclud
         </div>
       )}
 
-      {foundUsers.length > 0 && (
+      {searching && (
+        <p className="text-xs text-gray-400 dark:text-gray-500 mt-2">Đang tìm kiếm...</p>
+      )}
+
+      {!searching && query.trim() && visibleSuggestions.length === 0 && (
+        <p className="text-xs text-gray-400 dark:text-gray-500 mt-2">
+          Không tìm thấy người dùng phù hợp
+        </p>
+      )}
+
+      {visibleSuggestions.length > 0 && (
         <div className="flex flex-col mt-2 gap-1 max-h-48 overflow-y-auto">
-          {foundUsers
-            .filter((u) => !excludeUserIds.includes(u.id))
-            .map((user) => (
-              <label
-                key={user.id}
-                className="flex items-center gap-2 p-2 rounded hover:bg-gray-50 dark:hover:bg-neutral-600 cursor-pointer"
-              >
-                <input
-                  type="checkbox"
-                  checked={selectedUserIds.includes(user.id)}
-                  onChange={() => toggleUser(user)}
-                />
-                <Avatar className="w-8 h-8 flex-shrink-0">
-                  <AvatarImage src={user.avatar_url} alt={user.username} />
-                  <AvatarFallback>{user.username?.[0]?.toUpperCase() || "?"}</AvatarFallback>
-                </Avatar>
-                <span className="text-sm dark:text-white truncate">
+          {visibleSuggestions.map((user) => (
+            <label
+              key={user.id}
+              className="flex items-center gap-2 p-2 rounded hover:bg-gray-50 dark:hover:bg-neutral-600 cursor-pointer"
+            >
+              <input
+                type="checkbox"
+                checked={selectedUserIds.includes(user.id)}
+                onChange={() => toggleUser(user)}
+              />
+              <Avatar className="w-8 h-8 flex-shrink-0">
+                <AvatarImage src={user.avatar_url} alt={user.username} />
+                <AvatarFallback>{user.username?.[0]?.toUpperCase() || "?"}</AvatarFallback>
+              </Avatar>
+              <div className="min-w-0">
+                <p className="text-sm dark:text-white truncate">
                   {user.profile_name || user.username}
-                </span>
-              </label>
-            ))}
+                </p>
+                <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                  @{user.username}
+                </p>
+              </div>
+            </label>
+          ))}
         </div>
       )}
     </div>

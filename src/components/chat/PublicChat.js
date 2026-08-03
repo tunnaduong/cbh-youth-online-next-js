@@ -768,7 +768,7 @@ export default function PublicChat() {
         >
           <div
             ref={messagesContainerRef}
-            className="flex-1 overflow-y-auto px-4 py-4 space-y-3"
+            className="flex-1 overflow-y-auto overflow-x-hidden px-4 py-4 space-y-3"
           >
             {loading ? (
               <div className="flex items-center justify-center py-8 text-gray-500">

@@ -240,6 +240,7 @@ export default function GroupInfoModal({ conversationId, show, onClose, onGroupU
                     selectedUserIds={newMemberIds}
                     onChange={setNewMemberIds}
                     excludeUserIds={existingMemberIds}
+                    excludeConversationId={conversationId}
                   />
                   <div className="flex gap-2 mt-3">
                     <Button
