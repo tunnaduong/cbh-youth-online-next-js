@@ -975,7 +975,7 @@ export default function PublicChat() {
                         </a>
                       ) : (
                         <div
-                          className="text-gray-700 dark:text-gray-300 text-sm whitespace-pre-wrap"
+                          className="text-gray-700 dark:text-gray-300 text-sm whitespace-pre-wrap break-words [overflow-wrap:anywhere] min-w-0"
                           onMouseDown={(e) => { if (e.button === 0) startLongPress(message.id); }}
                           onMouseMove={clearLongPressTimer}
                           onMouseUp={clearLongPressTimer}
