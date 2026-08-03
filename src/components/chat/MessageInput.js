@@ -76,6 +76,7 @@ export default function MessageInput({
   const [showEmoji, setShowEmoji] = useState(false);
   const divRef = useRef(null);
   const fileInputRef = useRef(null);
+  const isComposingRef = useRef(false);
   const { theme } = useTheme();
 
   // Proxy ref compatible with useMentionInput
@@ -96,6 +97,7 @@ export default function MessageInput({
 
   // Sync div when message changes externally (edit mode, submit clear)
   useEffect(() => {
+    if (isComposingRef.current) return;
     const el = divRef.current;
     if (!el) return;
     const current = getContentText(el);
@@ -161,14 +163,28 @@ export default function MessageInput({
     const el = e.currentTarget;
     const offset = getCaretOffset(el);
     const text = getContentText(el);
-    el.innerHTML = buildHtml(text);
-    setCaretOffset(el, offset);
     setMessage(text);
     handleMentionChange(text, offset);
+    // Don't touch the DOM while an IME composition (Vietnamese Unikey/ibus/fcitx
+    // etc.) is in progress — rebuilding innerHTML mid-composition cancels it and
+    // drops/duplicates the diacritic being typed.
+    if (isComposingRef.current) return;
+    el.innerHTML = buildHtml(text);
+    setCaretOffset(el, offset);
   }, [handleMentionChange]);
+
+  const handleCompositionStart = useCallback(() => {
+    isComposingRef.current = true;
+  }, []);
+
+  const handleCompositionEnd = useCallback((e) => {
+    isComposingRef.current = false;
+    handleInput(e);
+  }, [handleInput]);
 
   const handleKeyDown = useCallback((e) => {
     if (e.key === "Enter" && !e.shiftKey) {
+      if (e.nativeEvent.isComposing || isComposingRef.current || e.keyCode === 229) return;
       e.preventDefault();
       handleSubmit();
     }
@@ -249,6 +265,8 @@ export default function MessageInput({
             suppressContentEditableWarning
             onInput={handleInput}
             onKeyDown={handleKeyDown}
+            onCompositionStart={handleCompositionStart}
+            onCompositionEnd={handleCompositionEnd}
             onPaste={handlePaste}
             data-placeholder="Viết một tin nhắn..."
             className="

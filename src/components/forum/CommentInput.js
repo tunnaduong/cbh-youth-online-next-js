@@ -32,6 +32,7 @@ export function CommentInput({
   const wrapperRef = useRef(null);
   const divRef = useRef(null);
   const imageInputRef = useRef(null);
+  const isComposingRef = useRef(false);
 
   // Proxy ref compatible with useMentionInput AND MarkdownToolbar
   const textareaRef = useRef(makeProxyRef(() => divRef.current, setComment));
@@ -121,6 +122,7 @@ export function CommentInput({
   ];
 
   const handleKeyDown = (e) => {
+    if (e.nativeEvent.isComposing || isComposingRef.current || e.keyCode === 229) return;
     if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) handleSubmit();
     if (e.key === "Escape") handleCancel();
   };
@@ -165,6 +167,7 @@ export function CommentInput({
 
   // Sync div when comment changes externally
   useEffect(() => {
+    if (isComposingRef.current) return;
     const el = divRef.current;
     if (!el) return;
     const current = getContentText(el);
@@ -220,10 +223,28 @@ export function CommentInput({
                     const el = e.currentTarget;
                     const offset = getCaretOffset(el);
                     const text = getContentText(el);
-                    el.innerHTML = buildHtml(text);
-                    setCaretOffset(el, offset);
                     setComment(text);
                     handleMentionChange(text, offset);
+                    // Don't touch the DOM while an IME composition (Vietnamese
+                    // Unikey/ibus/fcitx etc.) is in progress — rebuilding innerHTML
+                    // mid-composition cancels it and drops/duplicates the diacritic
+                    // being typed.
+                    if (isComposingRef.current) return;
+                    el.innerHTML = buildHtml(text);
+                    setCaretOffset(el, offset);
+                  }}
+                  onCompositionStart={() => {
+                    isComposingRef.current = true;
+                  }}
+                  onCompositionEnd={(e) => {
+                    isComposingRef.current = false;
+                    const el = e.currentTarget;
+                    const offset = getCaretOffset(el);
+                    const text = getContentText(el);
+                    setComment(text);
+                    handleMentionChange(text, offset);
+                    el.innerHTML = buildHtml(text);
+                    setCaretOffset(el, offset);
                   }}
                   onFocus={() => setIsFocused(true)}
                   onKeyDown={handleKeyDown}

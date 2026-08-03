@@ -119,6 +119,7 @@ export default function ChatMessageInput({
   const [message, setMessage] = useState("");
   const divRef = useRef(null);
   const fileInputRef = useRef(null);
+  const isComposingRef = useRef(false);
 
   // Proxy ref that useMentionInput uses for focus/setSelectionRange
   const inputRef = useRef(makeProxyRef(() => divRef.current, setMessage, allowAllMention));
@@ -133,6 +134,7 @@ export default function ChatMessageInput({
 
   // Sync div content when message changes from outside (edit mode, submit clear)
   useEffect(() => {
+    if (isComposingRef.current) return;
     const el = divRef.current;
     if (!el) return;
     const current = getContentText(el);
@@ -172,19 +174,36 @@ export default function ChatMessageInput({
       const offset = getCaretOffset(el);
       const text = getContentText(el);
 
-      el.innerHTML = buildHtml(text, allowAllMention);
-      setCaretOffset(el, offset);
-
       setMessage(text);
       handleMentionChange(text, offset);
       onTyping?.();
+
+      // Don't touch the DOM while an IME composition (Vietnamese Unikey/ibus/fcitx
+      // etc.) is in progress — rebuilding innerHTML mid-composition cancels it and
+      // drops/duplicates the diacritic being typed.
+      if (isComposingRef.current) return;
+      el.innerHTML = buildHtml(text, allowAllMention);
+      setCaretOffset(el, offset);
     },
     [handleMentionChange, onTyping, allowAllMention]
+  );
+
+  const handleCompositionStart = useCallback(() => {
+    isComposingRef.current = true;
+  }, []);
+
+  const handleCompositionEnd = useCallback(
+    (e) => {
+      isComposingRef.current = false;
+      handleInput(e);
+    },
+    [handleInput]
   );
 
   const handleKeyDown = useCallback(
     (e) => {
       if (e.key === "Enter" && !e.shiftKey) {
+        if (e.nativeEvent.isComposing || isComposingRef.current || e.keyCode === 229) return;
         e.preventDefault();
         handleSubmit();
       }
@@ -264,6 +283,8 @@ export default function ChatMessageInput({
             suppressContentEditableWarning
             onInput={handleInput}
             onKeyDown={handleKeyDown}
+            onCompositionStart={handleCompositionStart}
+            onCompositionEnd={handleCompositionEnd}
             onPaste={handlePaste}
             data-placeholder="Gửi tin nhắn..."
             className="
