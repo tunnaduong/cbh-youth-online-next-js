@@ -196,6 +196,34 @@ export default function PostItem({ post, single = false, onVote, onRefresh = nul
     });
   };
 
+  // Detect plain YouTube URLs (youtube.com/watch, youtu.be, /shorts/) already present
+  // in the post body and auto-embed them below the content — even when the author
+  // didn't paste a proper <iframe>. Skips any video already embedded via an iframe.
+  const YOUTUBE_URL_RE =
+    /(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/(?:watch\?(?:[^"'\s]*&)?v=|shorts\/|embed\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/gi;
+
+  const extractYoutubeEmbedIds = (html) => {
+    if (!html) return [];
+
+    const alreadyEmbeddedIds = new Set(
+      [...html.matchAll(/<iframe[^>]+src="([^"]+)"/gi)]
+        .map((m) => m[1].match(/(?:embed\/|v=)([a-zA-Z0-9_-]{11})/))
+        .filter(Boolean)
+        .map((m) => m[1])
+    );
+
+    const ids = [];
+    const seen = new Set();
+    for (const match of html.matchAll(YOUTUBE_URL_RE)) {
+      const id = match[1];
+      if (!seen.has(id) && !alreadyEmbeddedIds.has(id)) {
+        seen.add(id);
+        ids.push(id);
+      }
+    }
+    return ids;
+  };
+
   const getContentWithReadMore = () => {
     const textContent = post.content?.replace(/<[^>]*>/g, ""); // Remove HTML tags để đếm text
     const needsTruncation = textContent?.length > maxLength;
@@ -233,6 +261,11 @@ export default function PostItem({ post, single = false, onVote, onRefresh = nul
     if (!single || !post.content) return { html: post.content, headings: [] };
     return extractHeadingsAndInjectIds(post.content);
   }, [single, post.content]);
+
+  const youtubeEmbedIds = useMemo(
+    () => extractYoutubeEmbedIds(post.content),
+    [post.content]
+  );
 
   const handleShare = () => {
     const url =
@@ -546,6 +579,21 @@ export default function PostItem({ post, single = false, onVote, onRefresh = nul
               }
             }}
           />
+
+          {youtubeEmbedIds.length > 0 && (
+            <div className="prose max-w-[600px]">
+              {youtubeEmbedIds.map((id) => (
+                <div key={id} className="iframe-wrapper">
+                  <iframe
+                    src={`https://www.youtube.com/embed/${id}`}
+                    title="YouTube video"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                    allowFullScreen
+                  />
+                </div>
+              ))}
+            </div>
+          )}
 
           {post.document_urls && post.document_urls.length > 0 && (
             <div className="flex flex-wrap gap-2 mt-3">
