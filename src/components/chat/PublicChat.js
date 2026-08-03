@@ -98,9 +98,21 @@ function linkifyText(text, validMentions = null) {
     return mentionParts.map((mp, j) => {
       if (j % 2 === 1) {
         const username = mp.slice(1);
-        const isValid = validMentions != null && username.toLowerCase() !== "all"
+        const isAll = username.toLowerCase() === "all";
+        const isValid = validMentions != null && !isAll
           ? validMentions.has(username.toLowerCase())
           : false;
+        if (isAll) {
+          // "@all" is highlighted like a mention but never links to a profile.
+          return (
+            <span
+              key={`${i}-${j}`}
+              className="font-medium text-[#319527] dark:text-[#6bcf60] break-words"
+            >
+              {mp}
+            </span>
+          );
+        }
         if (isValid) {
           return (
             <a

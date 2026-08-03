@@ -69,9 +69,18 @@ function linkifyText(text, linkClassName, isOwn = false, validMentions = null) {
     return mentionParts.map((mp, j) => {
       if (j % 2 === 1) {
         const username = mp.slice(1); // strip '@'
-        const isValid = validMentions != null && username.toLowerCase() !== "all"
+        const isAll = username.toLowerCase() === "all";
+        const isValid = validMentions != null && !isAll
           ? validMentions.has(username.toLowerCase())
-          : false; // no server data, or "@all", → treat as plain text
+          : false; // no server data → treat as plain text
+        if (isAll) {
+          // "@all" is highlighted like a mention but never links to a profile.
+          return (
+            <span key={`${i}-${j}`} className={mentionClass}>
+              {mp}
+            </span>
+          );
+        }
         if (isValid) {
           return (
             <NextLink

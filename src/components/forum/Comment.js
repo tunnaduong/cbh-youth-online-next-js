@@ -42,7 +42,7 @@ function linkifyMentionsInHtml(html, validMentions = null) {
   // Old plain format: @username in text nodes
   result = result.replace(/(<[^>]+>)|(@([\w-]{2,}))/g, (match, tag, _mention, username) => {
     if (tag) return tag;
-    if (username.toLowerCase() === "all") return match;
+    if (username.toLowerCase() === "all") return `<span class="mention-tag">@${username}</span>`;
     if (validMentions == null || !validMentions.has(username.toLowerCase())) return match;
     return `<a href="/${username}" class="mention-tag">@${username}</a>`;
   });
