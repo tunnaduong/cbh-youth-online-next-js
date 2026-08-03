@@ -49,9 +49,10 @@ export default function ChatThreadsList({ onSelectConversation }) {
     if (conversation.display_avatar_url) {
       return conversation.display_avatar_url;
     }
-    if (conversation.type === "group" && conversation.name) {
-      // Group chat - use first letter of group name
-      return null;
+    if (conversation.type === "group") {
+      // Falls back to the group name's first letter (via AvatarFallback below)
+      // when the group has no custom avatar set.
+      return conversation.avatar_url || null;
     }
     return conversation.participants?.[0]?.avatar_url;
   };

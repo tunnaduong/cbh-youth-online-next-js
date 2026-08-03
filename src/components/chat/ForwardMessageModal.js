@@ -136,7 +136,12 @@ export default function ForwardMessageModal({ message, onClose }) {
                 />
                 <Avatar className="w-9 h-9 flex-shrink-0">
                   <AvatarImage
-                    src={conversation.display_avatar_url || conversation.participants?.[0]?.avatar_url}
+                    src={
+                      conversation.display_avatar_url ||
+                      (conversation.type === "group"
+                        ? conversation.avatar_url
+                        : conversation.participants?.[0]?.avatar_url)
+                    }
                     alt={getThreadDisplayName(conversation)}
                   />
                   <AvatarFallback>

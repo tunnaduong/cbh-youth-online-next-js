@@ -543,7 +543,7 @@ export default function ChatConversation({
             : null;
 
           const replyBtn = !message.is_sending && (
-            <div className={`flex-shrink-0 transition-opacity ${hoveredMessageId === message.id ? "opacity-100" : "opacity-0 pointer-events-none"}`}>
+            <div className={`flex items-center flex-shrink-0 transition-opacity ${hoveredMessageId === message.id ? "opacity-100" : "opacity-0 pointer-events-none"}`}>
               <button
                 type="button"
                 title="Trả lời"
@@ -552,6 +552,16 @@ export default function ChatConversation({
               >
                 <CornerUpLeft className="w-3.5 h-3.5" />
               </button>
+              {!message.is_recalled && (
+                <button
+                  type="button"
+                  title="Chuyển tiếp"
+                  onClick={() => setForwardingMessage(message)}
+                  className="p-1.5 rounded-full hover:bg-gray-200 dark:hover:bg-neutral-600 text-gray-500 dark:text-gray-400"
+                >
+                  <Forward className="w-3.5 h-3.5" />
+                </button>
+              )}
             </div>
           );
 

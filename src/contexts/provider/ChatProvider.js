@@ -170,10 +170,11 @@ const ChatProvider = ({ children }) => {
               ? message.content.substring(0, 50) + "..."
               : message.content || "";
 
-          // Get avatar URL from participants for private conversations
+          // Get avatar URL: the group's own avatar for groups, otherwise the
+          // other participant's avatar for 1-on-1 conversations.
           const avatarUrl =
             conversation.type === "group"
-              ? "/images/placeholder-user.jpg"
+              ? conversation.avatar_url || "/images/placeholder-user.jpg"
               : conversation.display_avatar_url ||
                 conversation.participants?.[0]?.avatar_url ||
                 "/images/placeholder-user.jpg";
