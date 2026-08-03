@@ -29,6 +29,10 @@ export const getLatestFeedPosts = (page = 1) => {
   return Api.getRequest("/v1.0/topics/feed?mode=latest&page=" + page);
 };
 
+export const getFollowingFeedPosts = (page = 1) => {
+  return Api.getRequest("/v1.0/topics/feed?mode=following&page=" + page);
+};
+
 export const incrementPostView = (id) => {
   return Api.postRequest("/v1.0/topics/" + id + "/views");
 };

@@ -9,6 +9,7 @@ import { message } from "antd";
 import { useAuthContext, useTopUsersContext } from "@/contexts/Support";
 import {
   getLatestFeedPosts,
+  getFollowingFeedPosts,
   getPersonalizedFeedPosts,
   votePost,
 } from "@/app/Api";
@@ -19,6 +20,7 @@ import { useViewTracking } from "@/hooks/useViewTracking";
 const FEED_TABS = [
   { key: "for-you", label: "Dành cho bạn" },
   { key: "latest", label: "Mới nhất" },
+  { key: "following", label: "Đang theo dõi" },
 ];
 
 const FEED_TAB_STORAGE_KEY = "cyo_feed_tab";
@@ -79,22 +81,30 @@ export default function FeedClient() {
       if (reset) {
         if (!keepSeed || !seedRef.current) seedRef.current = makeSeed();
         pageRef.current = 1;
-        // Guests have no personalized ranking (the API falls back to the
-        // chronological feed), so never run the ranked source for them.
+        // Guests have no personalized ranking, and "following" needs an
+        // account to have anyone to follow — both fall back to "latest".
         sourceRef.current =
-          loggedIn && feedTab === "for-you" ? "for-you" : "latest";
+          loggedIn && (feedTab === "for-you" || feedTab === "following")
+            ? feedTab
+            : "latest";
         deliveredIdsRef.current = new Set();
         lastDeliveredIdRef.current = null;
         setOverflowAfterId(null);
         setHasMorePosts(true);
       }
 
+      // "latest" and "following" are both simple paged endpoints with no
+      // seed/exhaustion handling, unlike the ranked "for-you" feed.
       const usingLatest = sourceRef.current === "latest";
+      const usingFollowing = sourceRef.current === "following";
+      const usingSimplePaged = usingLatest || usingFollowing;
       const requestedPage = pageRef.current;
 
       try {
         const response = usingLatest
           ? await getLatestFeedPosts(requestedPage)
+          : usingFollowing
+          ? await getFollowingFeedPosts(requestedPage)
           : await getPersonalizedFeedPosts(requestedPage, seedRef.current);
 
         // A newer reset started while this request was in flight — drop it.
@@ -126,12 +136,12 @@ export default function FeedClient() {
         const currentPageNum = parseInt(payload.current_page) || requestedPage;
         const lastPageNum = parseInt(payload.last_page) || 1;
 
-        if (usingLatest) {
+        if (usingSimplePaged) {
           const ranOut =
             batch.length === 0 ||
             currentPageNum >= lastPageNum ||
             // Nothing new left to reveal after the ranked feed was exhausted.
-            (overflowAfterId !== null && freshPosts.length === 0);
+            (usingLatest && overflowAfterId !== null && freshPosts.length === 0);
           setHasMorePosts(!ranOut);
         } else if (payload.exhausted || batch.length === 0) {
           // Seen every ranked post: keep scrolling with the chronological feed,
