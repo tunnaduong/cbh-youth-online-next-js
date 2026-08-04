@@ -141,6 +141,7 @@ export default function PublicChat() {
   const [sending, setSending] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [hasMorePages, setHasMorePages] = useState(false);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
   const [showParticipants, setShowParticipants] = useState(false); // Default: hide on mobile, can toggle on desktop
   const [lightboxMedia, setLightboxMedia] = useState(null);
@@ -220,7 +221,7 @@ export default function PublicChat() {
     };
   }, []);
 
-  const loadMessages = async (page = 1, appendNew = false) => {
+  const loadMessages = async (page = 1, appendNew = false, prependOlder = false) => {
     try {
       const response = await getPublicChatMessages(page);
       console.log("[PublicChat] loadMessages response:", response);
@@ -298,6 +299,16 @@ export default function PublicChat() {
           return prevArray;
         });
         // Don't auto-scroll when polling - let user scroll naturally
+      } else if (prependOlder) {
+        // Loading an older page to scroll up to a not-yet-loaded reply target —
+        // prepend without disturbing already-loaded messages.
+        setMessages((prev) => {
+          const prevArray = Array.isArray(prev) ? prev : [];
+          const existingIds = new Set(prevArray.map((m) => m.id));
+          const older = newMessages.filter((m) => !existingIds.has(m.id));
+          return [...older, ...prevArray];
+        });
+        setCurrentPage(page);
       } else {
         // For initial load or page navigation, replace all messages
         // Also deduplicate to be safe
@@ -310,18 +321,23 @@ export default function PublicChat() {
           return true;
         });
         setMessages(unique);
-        setHasMorePages(
-          response.next_page_url !== null ||
-            (response.data && response.data.next_page_url !== null)
-        );
         setCurrentPage(page);
 
         // Don't auto-scroll on initial page load - let user stay at top of page
         // Only scroll when user explicitly sends a message or interacts with chat
       }
+
+      const hasMore =
+        response.next_page_url !== null ||
+        (response.data && response.data.next_page_url !== null);
+      if (!appendNew) {
+        setHasMorePages(hasMore);
+      }
+      return { hasMore };
     } catch (error) {
       console.error("Error loading messages:", error);
-      setMessages([]); // Ensure messages is always an array
+      if (!appendNew && !prependOlder) setMessages([]); // Ensure messages is always an array
+      return { hasMore: false };
     } finally {
       setLoading(false);
     }
@@ -360,12 +376,57 @@ export default function PublicChat() {
     }
   };
 
-  const handleScrollToMessage = (messageId) => {
-    const el = document.getElementById(`public-msg-${messageId}`);
-    if (!el) return;
+  const scrollToAndHighlightElement = (el) => {
     el.scrollIntoView({ behavior: "smooth", block: "center" });
     el.classList.add("chat-message-highlight");
     setTimeout(() => el.classList.remove("chat-message-highlight"), 2000);
+  };
+
+  // Scroll to a replied-to message. If it isn't in the currently loaded page
+  // of history, keep loading older pages until it's found or exhausted.
+  const handleScrollToMessage = async (messageId) => {
+    let el = document.getElementById(`public-msg-${messageId}`);
+    if (el) {
+      scrollToAndHighlightElement(el);
+      return;
+    }
+
+    if (isLoadingMore) return;
+
+    setIsLoadingMore(true);
+    try {
+      let page = currentPage;
+      let more = true;
+      const MAX_PAGES_TO_TRY = 30;
+      let attempts = 0;
+
+      while (!el && more && attempts < MAX_PAGES_TO_TRY) {
+        attempts++;
+        const nextPage = page + 1;
+        const container = messagesContainerRef.current;
+        const currentScrollHeight = container?.scrollHeight || 0;
+
+        const result = await loadMessages(nextPage, false, true);
+        page = nextPage;
+        more = !!result?.hasMore;
+
+        if (container) {
+          requestAnimationFrame(() => {
+            container.scrollTop = container.scrollHeight - currentScrollHeight;
+          });
+        }
+
+        await new Promise((resolve) => setTimeout(resolve, 50));
+        el = document.getElementById(`public-msg-${messageId}`);
+      }
+    } catch (error) {
+      console.error("[PublicChat] Error loading older messages to scroll to reply:", error);
+    } finally {
+      setIsLoadingMore(false);
+    }
+
+    if (!el) return;
+    scrollToAndHighlightElement(el);
   };
 
   const handleSendMessage = async (content, guestName = null, replyToId = null) => {
@@ -770,6 +831,13 @@ export default function PublicChat() {
             ref={messagesContainerRef}
             className="flex-1 overflow-y-auto overflow-x-hidden px-4 py-4 space-y-3"
           >
+            {isLoadingMore && !loading && (
+              <div className="text-center py-2">
+                <p className="text-xs text-gray-500 dark:text-gray-400">
+                  Đang tải thêm...
+                </p>
+              </div>
+            )}
             {loading ? (
               <div className="flex items-center justify-center py-8 text-gray-500">
                 <span>Đang tải tin nhắn...</span>

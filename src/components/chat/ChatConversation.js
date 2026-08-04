@@ -297,12 +297,61 @@ export default function ChatConversation({
 
   const handleCancelReply = () => setReplyingTo(null);
 
-  const handleScrollToMessage = (messageId) => {
-    const el = document.getElementById(`chat-message-${messageId}`);
-    if (!el) return;
+  const scrollToAndHighlightElement = (el) => {
     el.scrollIntoView({ behavior: "smooth", block: "center" });
     el.classList.add("chat-message-highlight");
     setTimeout(() => el.classList.remove("chat-message-highlight"), 2000);
+  };
+
+  // Scroll to a replied-to message. If it isn't in the currently loaded page
+  // of history, keep paginating backward (like scroll-to-top does) until it's
+  // found or there's nothing more to load.
+  const handleScrollToMessage = async (messageId) => {
+    let el = document.getElementById(`chat-message-${messageId}`);
+    if (el) {
+      scrollToAndHighlightElement(el);
+      return;
+    }
+
+    if (isLoadingMore) return;
+
+    setIsLoadingMore(true);
+    try {
+      let page = currentPage;
+      let more = hasMorePages;
+      const MAX_PAGES_TO_TRY = 30;
+      let attempts = 0;
+
+      while (!el && more && attempts < MAX_PAGES_TO_TRY) {
+        attempts++;
+        const nextPage = page + 1;
+        const container = messagesContainerRef.current;
+        const currentScrollHeight = container?.scrollHeight || 0;
+
+        const result = await loadMessages(conversationId, nextPage, true);
+        page = nextPage;
+        more = !!result?.pagination?.has_more_pages;
+        setCurrentPage(page);
+        setHasMorePages(more);
+
+        if (container) {
+          requestAnimationFrame(() => {
+            container.scrollTop = container.scrollHeight - currentScrollHeight;
+          });
+        }
+
+        // Give React a tick to flush the newly prepended messages into the DOM.
+        await new Promise((resolve) => setTimeout(resolve, 50));
+        el = document.getElementById(`chat-message-${messageId}`);
+      }
+    } catch (error) {
+      console.error("[ChatConversation] Error loading older messages to scroll to reply:", error);
+    } finally {
+      setIsLoadingMore(false);
+    }
+
+    if (!el) return;
+    scrollToAndHighlightElement(el);
   };
 
   const handleSendMessage = async (content) => {
