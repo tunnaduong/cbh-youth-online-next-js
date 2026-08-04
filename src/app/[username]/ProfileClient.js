@@ -642,12 +642,9 @@ export default function ProfileClient({ initialProfile, activeTab, username }) {
               aria-hidden="true"
               className="cover-photo-bg absolute inset-0 w-full h-full object-cover"
             />
-            <img
-              src={coverImageUrl}
-              alt=""
-              aria-hidden="true"
-              className="blur-effect absolute inset-0 w-full h-full object-cover"
-            />
+            {/* Scrim so the profile name/stats stay legible over any cover photo,
+                without blurring the photo itself. */}
+            <div className="lg:hidden absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-black/10" />
             {isOwnProfile && (
               <>
                 <input

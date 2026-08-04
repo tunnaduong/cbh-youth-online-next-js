@@ -313,17 +313,6 @@ a:hover {
     }
   } */
 
-@media (max-width: 1023px) {
-  .cover-photo-bg {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    z-index: -10;
-  }
-}
-
 @media (max-width: 1279px) {
   #bottom-sidebar {
     display: block;
@@ -349,18 +338,6 @@ hr {
   background-color: #aaaaaa;
 }
 
-.blur-effect {
-  -webkit-filter: blur(20px);
-  filter: blur(20px);
-  opacity: 1;
-  transform: scale(1.3) translateZ(0);
-  will-change: transform;
-  pointer-events: none;
-}
-
-.cover-photo-bg {
-  /* base sharp layer, now used as <img> */
-}
 
 .border-right {
   border-right: 1px solid #aaaaaa;
