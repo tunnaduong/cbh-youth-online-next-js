@@ -50,6 +50,10 @@ const getNotificationMessage = (notification) => {
         return `${actorName} đã gỡ vai trò phó nhóm của bạn trong nhóm ${data?.conversation_name || ""}`;
       }
       return `${actorName} đã chỉ định bạn làm phó nhóm ${data?.conversation_name || ""}`;
+    case "conversation_background_changed":
+      return data?.conversation_type === "group"
+        ? `${actorName} đã đổi hình nền nhóm ${data?.conversation_name || ""}`
+        : `${actorName} đã đổi hình nền cuộc trò chuyện`;
     case "story_reacted":
       return `${actorName} đã bày tỏ cảm xúc về tin của bạn`;
     case "story_replied":
