@@ -718,7 +718,7 @@ export default function ProfileClient({ initialProfile, activeTab, username }) {
               aria-label={coverBlurred ? "Bỏ làm mờ ảnh bìa" : "Làm mờ ảnh bìa"}
               title={coverBlurred ? "Bỏ làm mờ ảnh bìa" : "Làm mờ ảnh bìa"}
               onClick={toggleCoverBlur}
-              className="absolute right-3 top-3 z-10 flex items-center justify-center w-9 h-9 rounded-full bg-black/60 text-white opacity-100 lg:opacity-0 lg:group-hover/cover:opacity-100 focus:opacity-100 transition-opacity duration-150 hover:bg-black/80"
+              className="absolute right-3 top-3 z-20 flex items-center justify-center w-9 h-9 rounded-full bg-black/60 text-white opacity-100 lg:opacity-0 lg:group-hover/cover:opacity-100 focus:opacity-100 transition-opacity duration-150 hover:bg-black/80"
             >
               {coverBlurred ? (
                 <Droplets className="w-4 h-4" />
@@ -743,7 +743,7 @@ export default function ProfileClient({ initialProfile, activeTab, username }) {
                     document.getElementById("cover-upload").click()
                   }
                   disabled={uploadingCover}
-                  className="absolute right-3 bottom-3 z-10 flex items-center justify-center w-9 h-9 rounded-full bg-black/60 text-white opacity-0 group-hover/cover:opacity-100 focus:opacity-100 transition-opacity duration-150 hover:bg-black/80"
+                  className="absolute right-3 bottom-3 z-20 flex items-center justify-center w-9 h-9 rounded-full bg-black/60 text-white opacity-0 group-hover/cover:opacity-100 focus:opacity-100 transition-opacity duration-150 hover:bg-black/80"
                 >
                   <Edit2Icon className="w-4 h-4" />
                 </button>
