@@ -30,6 +30,17 @@ export function getCaretOffset(el) {
   return pre.toString().length;
 }
 
+// Same as getCaretOffset but for the *start* of the current selection - the
+// two differ when text is actually selected (not just a collapsed caret).
+export function getSelectionStartOffset(el) {
+  const sel = window.getSelection();
+  if (!sel?.rangeCount) return 0;
+  const pre = sel.getRangeAt(0).cloneRange();
+  pre.selectNodeContents(el);
+  pre.setEnd(sel.getRangeAt(0).startContainer, sel.getRangeAt(0).startOffset);
+  return pre.toString().length;
+}
+
 export function setCaretOffset(el, offset) {
   const tw = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
   let rem = offset;
@@ -67,10 +78,11 @@ export function makeProxyRef(getDivEl, onValueSet, allowAllMention = true) {
   return {
     get selectionStart() {
       const el = getDivEl();
-      return el ? getCaretOffset(el) : 0;
+      return el ? getSelectionStartOffset(el) : 0;
     },
     get selectionEnd() {
-      return this.selectionStart;
+      const el = getDivEl();
+      return el ? getCaretOffset(el) : 0;
     },
     get value() {
       const el = getDivEl();

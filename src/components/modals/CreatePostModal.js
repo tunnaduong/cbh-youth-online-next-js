@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
-import { Modal, Input, Button, Select, message, Switch, Dropdown } from "antd";
+import { Modal, Button, Select, message, Switch, Dropdown } from "antd";
 import CustomInput from "../ui/input";
 import CustomColorButton from "../ui/CustomColorButton";
 // // import { usePage, useForm } from "@inertiajs/react"; // TODO: Replace with Next.js equivalent // TODO: Replace with Next.js equivalent
@@ -17,7 +17,7 @@ import { getForumData, createPost, updatePost, getPostDetail } from "@/app/Api";
 import { useForumData } from "@/contexts/ForumDataContext";
 import { useMentionInput } from "@/hooks/useMentionInput";
 import MentionSuggestionsDropdown from "../ui/MentionSuggestionsDropdown";
-import MentionHighlightOverlay from "../ui/MentionHighlightOverlay";
+import { buildHtml, getCaretOffset, setCaretOffset, getContentText, makeProxyRef } from "@/utils/richInput";
 
 const CreatePostModal = ({ open, onClose, isEditMode = false, postData = null, onSuccess = null }) => {
   const { currentUser, refreshUser } = useAuthContext();
@@ -111,7 +111,16 @@ const CreatePostModal = ({ open, onClose, isEditMode = false, postData = null, o
   const [errors, setErrors] = useState({});
   const [isPreviewMode, setIsPreviewMode] = useState(false);
   const [isDraggingFiles, setIsDraggingFiles] = useState(false);
-  const textareaRef = useRef(null);
+  // divRef points at the real contentEditable DOM node (used for suggestion-
+  // dropdown positioning); textareaRef is a proxy exposing the same
+  // selectionStart/value/setSelectionRange/focus surface as a <textarea>, so
+  // MarkdownToolbar and useMentionInput don't need to know it's not a real
+  // textarea underneath.
+  const divRef = useRef(null);
+  const isComposingRef = useRef(false);
+  const textareaRef = useRef(
+    makeProxyRef(() => divRef.current, (value) => setData((prev) => ({ ...prev, description: value })), false)
+  );
   const imageInputRef = useRef(null);
   const documentInputRef = useRef(null);
   const videoInputRef = useRef(null);
@@ -131,6 +140,21 @@ const CreatePostModal = ({ open, onClose, isEditMode = false, postData = null, o
     inputRef: textareaRef,
     allowAllMention: false,
   });
+
+  // Sync the div when description changes from outside typing (edit-mode
+  // preload, reset on close, etc.), and also when toggling back out of
+  // preview mode - the contentEditable div unmounts while isPreviewMode is
+  // true (a different branch renders there), so it comes back empty unless
+  // re-synced even if the description text itself didn't change meanwhile.
+  useEffect(() => {
+    if (isComposingRef.current) return;
+    const el = divRef.current;
+    if (!el) return;
+    const current = getContentText(el);
+    if (current !== data.description) {
+      el.innerHTML = buildHtml(data.description, false);
+    }
+  }, [data.description, isPreviewMode]);
 
   // Handle auto-continuation for lists
   const handleTextareaKeyDown = (e) => {
@@ -786,47 +810,54 @@ const CreatePostModal = ({ open, onClose, isEditMode = false, postData = null, o
                   </div>
                 ) : (
                   <>
-                    {/* Bolds @mentions live while composing, but they're not
-                        clickable here - only rendered posts (with backend-
-                        resolved mentions) link to a profile. */}
-                    <MentionHighlightOverlay text={data.description} targetRef={textareaRef} />
-                    <Input.TextArea
-                      ref={textareaRef}
+                    {/* contentEditable instead of a textarea+overlay pair - the
+                        overlay approach kept drifting out of sync with the real
+                        textarea's own text/caret metrics (padding, selection
+                        rendering, font width rounding) across multiple attempts,
+                        so mentions are now colored directly on the real content
+                        via .ce-mention, same technique as ChatMessageInput. */}
+                    <div
+                      ref={divRef}
+                      contentEditable
+                      suppressContentEditableWarning
                       id="postDescription"
-                      name="description"
-                      // Browsers render *selected* text using their own default
-                      // ::selection colors regardless of the `color: transparent`
-                      // above (selection styling isn't affected by text-color),
-                      // so double-clicking/selecting a word made the real
-                      // (normally invisible) textarea text pop back into view -
-                      // right on top of the overlay's own copy of that text,
-                      // looking like duplicated/offset content. Force the
-                      // selection's own text color transparent too.
-                      className="!bg-white dark:!bg-[#3c3c3c] !text-transparent caret-gray-900 dark:caret-gray-100 !appearance-none selection:!text-transparent selection:bg-[#319527]/25 dark:selection:bg-[#6bcf60]/25"
-                      // Locks font-size/line-height to an exact px value instead of
-                      // antd's relative default (1.5715em) - the overlay mirrors
-                      // whatever the textarea computes to, and a relative value can
-                      // round to a slightly different px number than what the
-                      // browser actually uses to lay out the textarea's own text,
-                      // which is what made the overlay's mention highlights sit a
-                      // couple pixels above the real typing cursor/text.
-                      style={{ fontSize: 14, lineHeight: "22px", padding: "12px" }}
-                      placeholder="Nội dung bài viết"
+                      data-placeholder="Nội dung bài viết"
+                      className="ce-input min-h-[120px] p-3 text-sm leading-[22px] bg-white dark:bg-[#3c3c3c] text-gray-900 dark:text-gray-100 outline-none whitespace-pre-wrap break-words overflow-y-auto"
                       spellCheck="false"
-                      data-ms-editor="true"
-                      value={data.description}
-                      onChange={(e) =>
-                        handleDescriptionMentionChange(e.target.value, e.target.selectionStart)
-                      }
+                      onInput={(e) => {
+                        const el = e.currentTarget;
+                        const offset = getCaretOffset(el);
+                        const text = getContentText(el);
+                        setData((prev) => ({ ...prev, description: text }));
+                        handleDescriptionMentionChange(text, offset);
+                        // Don't touch the DOM mid-IME-composition (Vietnamese
+                        // Unikey/ibus/fcitx etc.) - rebuilding innerHTML cancels
+                        // the composition and drops/duplicates the diacritic.
+                        if (isComposingRef.current) return;
+                        el.innerHTML = buildHtml(text, false);
+                        setCaretOffset(el, offset);
+                      }}
+                      onCompositionStart={() => {
+                        isComposingRef.current = true;
+                      }}
+                      onCompositionEnd={(e) => {
+                        isComposingRef.current = false;
+                        const el = e.currentTarget;
+                        const offset = getCaretOffset(el);
+                        const text = getContentText(el);
+                        setData((prev) => ({ ...prev, description: text }));
+                        handleDescriptionMentionChange(text, offset);
+                        el.innerHTML = buildHtml(text, false);
+                        setCaretOffset(el, offset);
+                      }}
                       onKeyDown={handleTextareaKeyDown}
-                      rows={5}
                     />
                     {showDescriptionSuggestions && (
                       <MentionSuggestionsDropdown
                         suggestions={descriptionSuggestions}
                         onSelect={insertDescriptionMention}
                         onClose={closeDescriptionSuggestions}
-                        anchorRef={textareaRef}
+                        anchorRef={divRef}
                       />
                     )}
                   </>
