@@ -15,7 +15,7 @@ import ForwardMessageModal from "./ForwardMessageModal";
 import Modal from "@/components/ui/Modal";
 import { CornerUpLeft, FileText, Download, PlayCircle, Forward } from "lucide-react";
 import NextLink from "next/link";
-import { recallMessage, editMessage, getGroupSeenReceipts } from "@/app/Api";
+import { recallMessage, editMessage, getGroupSeenReceipts, getNotificationSettings } from "@/app/Api";
 
 // How often to refresh read receipts for the "seen by" avatars while a group
 // chat is open, to catch another participant reading without necessarily
@@ -206,6 +206,27 @@ export default function ChatConversation({
       clearInterval(interval);
     };
   }, [conversationId, isGroupChat, messageCount]);
+
+  // Let the user know why they'll never see "seen" status in this chat when
+  // they've turned their own read receipts off (backend silently skips
+  // marking messages read / returns no seen participants in that case).
+  // A one-time toast on opening the conversation, rather than a persistent
+  // banner eating space in the message list.
+  useEffect(() => {
+    if (!conversationId) return;
+    let cancelled = false;
+    getNotificationSettings()
+      .then((res) => {
+        const settings = res?.data || res;
+        if (!cancelled && settings?.chat_read_receipts === false) {
+          antdMessage.info("Trạng thái đã xem đang tắt. Bạn sẽ không thấy khi người khác đã xem tin nhắn của mình trong đoạn chat này.");
+        }
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [conversationId]);
 
   // Who has read at least up through a given message - reused both for the
   // inline "seen by" indicator (own last message only, see below) and the
