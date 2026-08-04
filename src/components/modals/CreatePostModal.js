@@ -802,7 +802,7 @@ const CreatePostModal = ({ open, onClose, isEditMode = false, postData = null, o
                       // browser actually uses to lay out the textarea's own text,
                       // which is what made the overlay's mention highlights sit a
                       // couple pixels above the real typing cursor/text.
-                      style={{ fontSize: 14, lineHeight: "22px" }}
+                      style={{ fontSize: 14, lineHeight: "22px", padding: "12px" }}
                       placeholder="Nội dung bài viết"
                       spellCheck="false"
                       data-ms-editor="true"
