@@ -12,7 +12,7 @@ import MessageInput from "./MessageInput";
 import ParticipantsList from "./ParticipantsList";
 import ChatMediaLightbox from "./ChatMediaLightbox";
 import ForwardMessageModal from "./ForwardMessageModal";
-import { Menu, FileText, Download, PlayCircle, Forward, CornerUpLeft, Undo2, Pencil, Trash2 } from "lucide-react";
+import { Menu, FileText, Download, PlayCircle, Forward, CornerUpLeft, Undo2, Pencil } from "lucide-react";
 import MessageReactions from "./MessageReactions";
 import ReplyPreviewBubble from "./ReplyPreviewBubble";
 import { reactToMessage, removeMessageReaction, recallMessage, editMessage, deleteMessage } from "@/app/Api";
@@ -923,9 +923,9 @@ export default function PublicChat() {
                           {formatTime(message.created_at)}
                           {message.is_edited && !message.is_recalled && <span className="italic">(Đã sửa)</span>}
                         </span>
-                        {/* Action buttons — visible on hover, registered users only */}
+                        {/* Action buttons — visible on hover (desktop only), registered users only */}
                         {loggedIn && !message.is_recalled && (
-                          <>
+                          <span className="hidden md:contents">
                             <button
                               type="button"
                               title="Trả lời"
@@ -969,17 +969,7 @@ export default function PublicChat() {
                                 <Undo2 className="w-3 h-3" />
                               </button>
                             )}
-                            {isOwn && (
-                              <button
-                                type="button"
-                                title="Xóa tin nhắn"
-                                onClick={() => handleDeletePublic(message.id)}
-                                className={`p-1 rounded-full hover:bg-red-100 dark:hover:bg-red-900/30 text-red-400 transition-opacity ${hoveredMessageId === message.id ? "opacity-100" : "opacity-0 pointer-events-none"}`}
-                              >
-                                <Trash2 className="w-3 h-3" />
-                              </button>
-                            )}
-                          </>
+                          </span>
                         )}
                       </div>
                       {message.reply_to && (
@@ -1131,7 +1121,6 @@ export default function PublicChat() {
                             } : undefined}
                             onRecall={isOwn && !message.is_recalled ? () => handleRecallPublic(message.id) : undefined}
                             onEdit={isOwn && message.type === "text" && !message.is_recalled ? () => setEditingMessage({ id: message.id, content: message.content || "" }) : undefined}
-                            onDelete={isOwn ? () => handleDeletePublic(message.id) : undefined}
                             inline
                           />
                         );
