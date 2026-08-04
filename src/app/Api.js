@@ -188,6 +188,10 @@ export const getGroupDetails = (conversationId) => {
   return Api.getRequest(`/v1.0/chat/groups/${conversationId}`);
 };
 
+export const getGroupSeenReceipts = (conversationId) => {
+  return Api.getRequest(`/v1.0/chat/groups/${conversationId}/seen`);
+};
+
 export const leaveGroup = (conversationId) => {
   return Api.postRequest(`/v1.0/chat/groups/${conversationId}/leave`);
 };

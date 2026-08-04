@@ -12,9 +12,15 @@ import MessageReactions from "./MessageReactions";
 import ReplyPreviewBubble from "./ReplyPreviewBubble";
 import ChatMediaLightbox from "./ChatMediaLightbox";
 import ForwardMessageModal from "./ForwardMessageModal";
+import Modal from "@/components/ui/Modal";
 import { CornerUpLeft, FileText, Download, PlayCircle, Forward } from "lucide-react";
 import NextLink from "next/link";
-import { recallMessage, editMessage } from "@/app/Api";
+import { recallMessage, editMessage, getGroupSeenReceipts } from "@/app/Api";
+
+// How often to refresh read receipts for the "seen by" avatars while a group
+// chat is open, to catch another participant reading without necessarily
+// sending a new message (which would otherwise be the only other trigger).
+const SEEN_POLL_MS = 15000;
 
 const LONG_PRESS_MS = 450;
 
@@ -152,6 +158,8 @@ export default function ChatConversation({
   const [editingMessage, setEditingMessage] = useState(null); // { id, content }
   const [hoveredMessageId, setHoveredMessageId] = useState(null);
   const [forwardingMessage, setForwardingMessage] = useState(null);
+  const [seenParticipants, setSeenParticipants] = useState([]);
+  const [seenModalMessageId, setSeenModalMessageId] = useState(null);
   const isSelectingTextRef = useRef(false);
   const messagesContainerRef = useRef(null);
   const longPressTimerRef = useRef(null);
@@ -160,6 +168,7 @@ export default function ChatConversation({
     : [];
   const isGroupChat = conversation?.type === "group";
   const typingUser = conversationId ? typingUsers[conversationId] : null;
+  const messageCount = conversationMessages.length;
 
   // Reset initial load flag when conversation changes
   useEffect(() => {
@@ -167,6 +176,67 @@ export default function ChatConversation({
       setIsInitialLoad(true);
     }
   }, [conversationId]);
+
+  // "Seen by" read receipts (group chats only). There's no per-message read
+  // table on the backend — each participant just has a single last_read_at
+  // timestamp for the conversation — so this refetches that on: opening the
+  // conversation, whenever the message count changes (covers both new
+  // messages arriving and the .message.read-triggered refresh that follows
+  // someone else opening the chat), and a light poll as a fallback for reads
+  // that happen without any message-list change.
+  useEffect(() => {
+    if (!conversationId || !isGroupChat) {
+      setSeenParticipants([]);
+      return undefined;
+    }
+
+    let cancelled = false;
+    const fetchSeen = () => {
+      getGroupSeenReceipts(conversationId)
+        .then((res) => {
+          if (!cancelled) setSeenParticipants(res?.data?.participants || []);
+        })
+        .catch(() => {});
+    };
+
+    fetchSeen();
+    const interval = setInterval(fetchSeen, SEEN_POLL_MS);
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+    };
+  }, [conversationId, isGroupChat, messageCount]);
+
+  // For each participant, find the newest message they've read (created_at
+  // <= their last_read_at) and group participants by that message's id, so
+  // the small avatar stack renders under the right bubble — same approach
+  // Messenger uses, since read state is "read up to this point in time",
+  // not tracked per message.
+  const seenByMessageId = new Map();
+  if (isGroupChat && seenParticipants.length > 0) {
+    const realMessages = conversationMessages.filter((m) => m.type !== "system");
+    seenParticipants.forEach((participant) => {
+      if (!participant.last_read_at) return;
+      const readAt = new Date(participant.last_read_at).getTime();
+      let lastSeenId = null;
+      for (const m of realMessages) {
+        if (new Date(m.created_at).getTime() <= readAt) {
+          lastSeenId = m.id;
+        } else {
+          break;
+        }
+      }
+      if (lastSeenId != null) {
+        seenByMessageId.set(lastSeenId, [
+          ...(seenByMessageId.get(lastSeenId) || []),
+          participant,
+        ]);
+      }
+    });
+  }
+  const seenModalParticipants = seenModalMessageId != null
+    ? seenByMessageId.get(seenModalMessageId) || []
+    : [];
 
   // Hide hover buttons while the user is selecting text
   useEffect(() => {
@@ -843,10 +913,32 @@ export default function ChatConversation({
               </div>
               {!message.is_myself && replyBtn}
               </div>
-              {isLastOwnMessage && (
+              {!isGroupChat && isLastOwnMessage && (
                 <span className="text-[11px] text-gray-400 dark:text-gray-500 mt-0.5">
                   {message.read_at ? "Đã xem" : "Đã gửi"}
                 </span>
+              )}
+              {isGroupChat && seenByMessageId.get(message.id)?.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => setSeenModalMessageId(message.id)}
+                  className={`flex mt-0.5 ${message.is_myself ? "justify-end" : "justify-start"}`}
+                  title="Đã xem"
+                >
+                  <div className="flex -space-x-1.5">
+                    {seenByMessageId.get(message.id).slice(0, 3).map((p) => (
+                      <Avatar
+                        key={p.id}
+                        className="w-3.5 h-3.5 border border-white dark:border-neutral-800"
+                      >
+                        <AvatarImage src={p.avatar_url} alt={p.profile_name || p.username} />
+                        <AvatarFallback className="text-[7px]">
+                          {(p.profile_name || p.username)?.[0]?.toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
+                    ))}
+                  </div>
+                </button>
               )}
               </div>
             </div>
@@ -887,6 +979,38 @@ export default function ChatConversation({
         message={forwardingMessage}
         onClose={() => setForwardingMessage(null)}
       />
+
+      <Modal
+        show={seenModalMessageId != null}
+        onClose={() => setSeenModalMessageId(null)}
+        maxWidth="sm"
+      >
+        <div className="p-4">
+          <h3 className="font-medium text-gray-900 dark:text-white mb-3">Đã xem</h3>
+          <div className="flex flex-col gap-3 max-h-72 overflow-y-auto">
+            {seenModalParticipants.length === 0 ? (
+              <p className="text-sm text-gray-500 dark:text-gray-400">Chưa có ai xem tin nhắn này.</p>
+            ) : (
+              seenModalParticipants.map((p) => (
+                <div key={p.id} className="flex items-center gap-3">
+                  <Avatar className="w-8 h-8 flex-shrink-0">
+                    <AvatarImage src={p.avatar_url} alt={p.profile_name || p.username} />
+                    <AvatarFallback>{(p.profile_name || p.username)?.[0]?.toUpperCase()}</AvatarFallback>
+                  </Avatar>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                      {p.profile_name || p.username}
+                    </p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                      {formatTimestamp(p.last_read_at)}
+                    </p>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 }
