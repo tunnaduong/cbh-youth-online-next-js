@@ -47,7 +47,7 @@ const MarkdownRenderer = ({ content, className = "" }) => {
   const linkifyHashtagsInMarkdown = (markdown) => {
     const codeSplitRegex = /(```[\s\S]*?```|`[^`\n]*`)/g;
     const hashtagRegex = /(?<![\w&])#([\p{L}\p{N}_]+)/gu;
-    const mentionRegex = /(?<![[\w])@([\w]{2,})/g;
+    const mentionRegex = /(?<![[\w])@([\w.-]{2,})/g;
 
     return markdown
       .split(codeSplitRegex)

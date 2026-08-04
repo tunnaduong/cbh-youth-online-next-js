@@ -34,7 +34,7 @@ export function useMentionInput({ value, onChange, conversationId = null, inputR
       const textBeforeCursor = newValue.slice(0, cursor);
 
       // Walk back from cursor to find an unbroken @word
-      const match = textBeforeCursor.match(/@([\w\-À-ɏ]*)$/u);
+      const match = textBeforeCursor.match(/@([\w.\-À-ɏ]*)$/u);
 
       if (match) {
         const query = match[1];

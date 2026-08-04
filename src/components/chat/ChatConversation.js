@@ -41,7 +41,7 @@ function resolveFileUrl(url) {
 const IMAGE_EXTENSION_RE = /\.(png|jpe?g|gif|webp|bmp|svg|heic|heif)$/i;
 
 const URL_RE = /(https?:\/\/[^\s]+)/g;
-const MENTION_RE = /(@[\w-]+)/g;
+const MENTION_RE = /(@[\w.-]+)/g;
 
 // Plain text wraps at word boundaries (break-words) so Vietnamese diacritics
 // never get split mid-character. URLs have no word boundaries to wrap at, so

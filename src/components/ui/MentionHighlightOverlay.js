@@ -2,7 +2,7 @@
 
 import { useLayoutEffect, useRef } from "react";
 
-const MENTION_RE = /(@[\w\-À-ɏ]+)/gu;
+const MENTION_RE = /(@[\w.\-À-ɏ]+)/gu;
 
 // Style props copied from the real input so the overlay text lines up exactly
 // on top of it (font, spacing, padding, wrapping all have to match).

@@ -19,7 +19,7 @@ import { reactToMessage, removeMessageReaction, recallMessage, editMessage, dele
 import { Popover, message as antdMessage } from "antd";
 
 const URL_RE = /(https?:\/\/[^\s]+)/g;
-const MENTION_RE = /(@[\w-]+)/g;
+const MENTION_RE = /(@[\w.-]+)/g;
 
 // Fallback: resolve @mentions in freshly-sent/edited content against the known
 // participants list, in case the server response doesn't include a resolved

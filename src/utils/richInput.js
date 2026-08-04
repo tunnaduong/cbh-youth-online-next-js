@@ -3,7 +3,7 @@
  * Used by ChatMessageInput, MessageInput, CommentInput.
  */
 
-const MENTION_RE = /(@[\w\-À-ɏ]+)/gu;
+const MENTION_RE = /(@[\w.\-À-ɏ]+)/gu;
 
 function esc(s) {
   return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
