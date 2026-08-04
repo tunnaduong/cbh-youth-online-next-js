@@ -10,7 +10,7 @@ import FollowButton from "@/components/profile/FollowButton";
 import { BsFillGearFill } from "react-icons/bs";
 import { IoChatbubbleEllipsesOutline } from "react-icons/io5";
 import { IoCalendarOutline, IoLocationOutline } from "react-icons/io5";
-import { Edit2Icon } from "lucide-react";
+import { Edit2Icon, Droplets, Image as ImageIcon } from "lucide-react";
 import { useAuthContext, useChatContext } from "@/contexts/Support";
 import {
   followUser,
@@ -134,6 +134,60 @@ export default function ProfileClient({ initialProfile, activeTab, username }) {
   const [posts, setPosts] = useState(profile?.posts || []);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [uploadingCover, setUploadingCover] = useState(false);
+  const [coverBlurred, setCoverBlurred] = useState(true);
+  const [coverIsLight, setCoverIsLight] = useState(false);
+
+  // Restore the viewer's blur preference (default: blurred).
+  useEffect(() => {
+    const saved = localStorage.getItem("cover_blur_enabled");
+    if (saved !== null) setCoverBlurred(saved === "1");
+  }, []);
+
+  const toggleCoverBlur = () => {
+    setCoverBlurred((prev) => {
+      const next = !prev;
+      localStorage.setItem("cover_blur_enabled", next ? "1" : "0");
+      return next;
+    });
+  };
+
+  // Sample the cover photo's average brightness so the overlaid mobile text
+  // can switch between white (dark photo) and dark (light photo).
+  useEffect(() => {
+    const url =
+      profile?.cover_photo_url ||
+      (profile?.username &&
+        `${process.env.NEXT_PUBLIC_API_URL}/v1.0/users/${profile.username}/avatar`);
+    if (!url) return;
+
+    let cancelled = false;
+    const img = new window.Image();
+    img.crossOrigin = "anonymous";
+    img.onload = () => {
+      try {
+        const size = 20;
+        const canvas = document.createElement("canvas");
+        canvas.width = size;
+        canvas.height = size;
+        const ctx = canvas.getContext("2d");
+        ctx.drawImage(img, 0, 0, size, size);
+        const { data } = ctx.getImageData(0, 0, size, size);
+        let total = 0;
+        for (let i = 0; i < data.length; i += 4) {
+          total += 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2];
+        }
+        const avgBrightness = total / (data.length / 4);
+        if (!cancelled) setCoverIsLight(avgBrightness > 150);
+      } catch (e) {
+        // Cross-origin image without permissive CORS headers — can't sample
+        // pixel data, keep the default (assume dark photo, white text).
+      }
+    };
+    img.src = url;
+    return () => {
+      cancelled = true;
+    };
+  }, [profile?.cover_photo_url, profile?.username]);
 
   const handleMessage = async () => {
     if (!currentUser) {
@@ -631,6 +685,12 @@ export default function ProfileClient({ initialProfile, activeTab, username }) {
 
   const isOwnProfile = currentUser && currentUser.username == profile.username;
 
+  // Mobile profile text sits on top of the cover photo, so it switches
+  // between white (dark photo) and dark (light photo) based on the sampled
+  // brightness above, instead of a single hardcoded color.
+  const mobileTextClass = coverIsLight ? "text-gray-900" : "text-white";
+  const mobileMutedTextClass = coverIsLight ? "text-gray-600" : "text-white/75";
+
   return (
     <DefaultLayout activeNav="home">
       <div>
@@ -642,9 +702,30 @@ export default function ProfileClient({ initialProfile, activeTab, username }) {
               aria-hidden="true"
               className="cover-photo-bg absolute inset-0 w-full h-full object-cover"
             />
+            {coverBlurred && (
+              <img
+                src={coverImageUrl}
+                alt=""
+                aria-hidden="true"
+                className="blur-effect absolute inset-0 w-full h-full object-cover"
+              />
+            )}
             {/* Scrim so the profile name/stats stay legible over any cover photo,
                 without blurring the photo itself. */}
             <div className="lg:hidden absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-black/10" />
+            <button
+              type="button"
+              aria-label={coverBlurred ? "Bỏ làm mờ ảnh bìa" : "Làm mờ ảnh bìa"}
+              title={coverBlurred ? "Bỏ làm mờ ảnh bìa" : "Làm mờ ảnh bìa"}
+              onClick={toggleCoverBlur}
+              className="absolute right-3 top-3 z-10 flex items-center justify-center w-9 h-9 rounded-full bg-black/60 text-white opacity-100 lg:opacity-0 lg:group-hover/cover:opacity-100 focus:opacity-100 transition-opacity duration-150 hover:bg-black/80"
+            >
+              {coverBlurred ? (
+                <Droplets className="w-4 h-4" />
+              ) : (
+                <ImageIcon className="w-4 h-4" />
+              )}
+            </button>
             {isOwnProfile && (
               <>
                 <input
@@ -705,8 +786,8 @@ export default function ProfileClient({ initialProfile, activeTab, username }) {
                 )}
               </div>
               <div className="flex flex-col items-center">
-                <h1 className="font-bold text-xl mt-2 text-center">
-                  <span className="dark:text-neutral-300">
+                <h1 className={`font-bold text-xl mt-2 text-center ${mobileTextClass}`}>
+                  <span>
                     {profile.profile_name}
                     {profile.verified == "1" && (
                       <span>
@@ -731,7 +812,7 @@ export default function ProfileClient({ initialProfile, activeTab, username }) {
                     )}
                   </span>
                 </h1>
-                <p className="text-sm text-gray-500">
+                <p className={`text-sm ${mobileMutedTextClass}`}>
                   <span>@</span>
                   {profile.username}
                 </p>
@@ -739,14 +820,14 @@ export default function ProfileClient({ initialProfile, activeTab, username }) {
               <div className="flex flex-col items-center gap-y-1 !px-6">
                 <div className="flex flex-wrap justify-center gap-y-1 px-3">
                   <Link href={`/${profile.username}`} className="px-3">
-                    <span className="text-gray-500">Bài đã đăng: </span>
-                    <span className="font-bold dark:text-neutral-300">
+                    <span className={mobileMutedTextClass}>Bài đã đăng: </span>
+                    <span className={`font-bold ${mobileTextClass}`}>
                       {profile.stats.posts}
                     </span>
                   </Link>
                   <div className="px-3">
-                    <span className="text-gray-500">Điểm: </span>
-                    <span className="font-bold dark:text-neutral-300">
+                    <span className={mobileMutedTextClass}>Điểm: </span>
+                    <span className={`font-bold ${mobileTextClass}`}>
                       {profile.stats.points}
                     </span>
                   </div>
@@ -756,8 +837,8 @@ export default function ProfileClient({ initialProfile, activeTab, username }) {
                     href={`/${profile.username}/following`}
                     className="px-3"
                   >
-                    <span className="text-gray-500">Đang theo dõi: </span>
-                    <span className="font-bold dark:text-neutral-300">
+                    <span className={mobileMutedTextClass}>Đang theo dõi: </span>
+                    <span className={`font-bold ${mobileTextClass}`}>
                       {profile.stats.following}
                     </span>
                   </Link>
@@ -765,29 +846,29 @@ export default function ProfileClient({ initialProfile, activeTab, username }) {
                     href={`/${profile.username}/followers`}
                     className="px-3"
                   >
-                    <span className="text-gray-500">Người theo dõi: </span>
-                    <span className="font-bold dark:text-neutral-300">
+                    <span className={mobileMutedTextClass}>Người theo dõi: </span>
+                    <span className={`font-bold ${mobileTextClass}`}>
                       {profile.stats.followers}
                     </span>
                   </Link>
                   <div className="px-3">
-                    <span className="text-gray-500">Lượt like: </span>
-                    <span className="font-bold dark:text-neutral-300">
+                    <span className={mobileMutedTextClass}>Lượt like: </span>
+                    <span className={`font-bold ${mobileTextClass}`}>
                       {profile.stats.likes}
                     </span>
                   </div>
                 </div>
               </div>
-              <p className="text-center dark:text-neutral-300">{profile.bio}</p>
+              <p className={`text-center ${mobileTextClass}`}>{profile.bio}</p>
               <div className="flex flex-col gap-y-2">
                 {profile.location && (
-                  <div className="flex items-center -ml-0.5 gap-x-1 text-gray-500">
+                  <div className={`flex items-center -ml-0.5 gap-x-1 ${mobileMutedTextClass}`}>
                     <IoLocationOutline className="text-lg" />
                     <span className="text-sm">{profile.location}</span>
                   </div>
                 )}
                 {profile.joined_at && (
-                  <div className="flex items-center -ml-0.5 gap-x-1 text-gray-500">
+                  <div className={`flex items-center -ml-0.5 gap-x-1 ${mobileMutedTextClass}`}>
                     <IoCalendarOutline className="text-lg" />
                     <span className="text-sm">{profile.joined_at}</span>
                   </div>
