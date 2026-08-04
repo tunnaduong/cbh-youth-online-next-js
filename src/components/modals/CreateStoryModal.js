@@ -223,7 +223,6 @@ const CreateStoryModal = ({ open, onClose, onStoryCreated }) => {
               { label: "Tin văn bản", value: "text" },
               { label: "Tin hình ảnh", value: "image" },
               { label: "Tin video", value: "video" },
-              { label: "Tin âm thanh", value: "audio" },
             ]}
           />
         </div>
