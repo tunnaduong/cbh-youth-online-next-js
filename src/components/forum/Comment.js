@@ -24,30 +24,7 @@ import { useRouter } from "@bprogress/next/app";
 import Badges from "../ui/Badges";
 import MarkdownRenderer from "../ui/MarkdownRenderer";
 import ChatMediaLightbox from "../chat/ChatMediaLightbox";
-
-// Replace @username in HTML text nodes with clickable profile links.
-// validMentions: Set of lowercase usernames confirmed valid by the server.
-// When null, falls back to linking all @username patterns (backward compat).
-function linkifyMentionsInHtml(html, validMentions = null) {
-  if (!html) return html;
-  // New format: server already rendered [@Profile Name](/username) as <a href="/username">@Profile Name</a>
-  let result = html.replace(
-    /<a href="\/all">(@[^<]+)<\/a>/g,
-    '<span class="mention-tag">$1</span>'
-  );
-  result = result.replace(
-    /<a href="(\/[\w-]{2,})">(@[^<]+)<\/a>/g,
-    '<a href="$1" class="mention-tag">$2</a>'
-  );
-  // Old plain format: @username in text nodes
-  result = result.replace(/(<[^>]+>)|(@([\w.-]{2,}))/g, (match, tag, _mention, username) => {
-    if (tag) return tag;
-    if (username.toLowerCase() === "all") return `<span class="mention-tag">@${username}</span>`;
-    if (validMentions == null || !validMentions.has(username.toLowerCase())) return match;
-    return `<a href="/${username}" class="mention-tag">@${username}</a>`;
-  });
-  return result;
-}
+import { linkifyMentionsInHtml } from "@/utils/mentionRender";
 
 export default function Comment({
   comment,
@@ -439,7 +416,8 @@ export default function Comment({
                         comment.comment,
                         Array.isArray(comment.mentions)
                           ? new Set(comment.mentions.map((m) => m.username.toLowerCase()))
-                          : null
+                          : null,
+                        { allowBroadcastMention: true }
                       ) }}
                     />
                   )}

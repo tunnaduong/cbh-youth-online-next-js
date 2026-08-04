@@ -15,6 +15,9 @@ import { useAuthContext, useTopUsersContext } from "@/contexts/Support";
 import { usePostRefresh } from "@/contexts/PostRefreshContext";
 import { getForumData, createPost, updatePost, getPostDetail } from "@/app/Api";
 import { useForumData } from "@/contexts/ForumDataContext";
+import { useMentionInput } from "@/hooks/useMentionInput";
+import MentionSuggestionsDropdown from "../ui/MentionSuggestionsDropdown";
+import MentionHighlightOverlay from "../ui/MentionHighlightOverlay";
 
 const CreatePostModal = ({ open, onClose, isEditMode = false, postData = null, onSuccess = null }) => {
   const { currentUser, refreshUser } = useAuthContext();
@@ -113,6 +116,21 @@ const CreatePostModal = ({ open, onClose, isEditMode = false, postData = null, o
   const documentInputRef = useRef(null);
   const videoInputRef = useRef(null);
   const dragCounterRef = useRef(0);
+
+  // Posts don't support "@all" broadcast mentions - that's a comment/chat
+  // -only feature - so suggestions never include it here.
+  const {
+    handleChange: handleDescriptionMentionChange,
+    insertMention: insertDescriptionMention,
+    showSuggestions: showDescriptionSuggestions,
+    suggestions: descriptionSuggestions,
+    closeSuggestions: closeDescriptionSuggestions,
+  } = useMentionInput({
+    value: data.description,
+    onChange: (value) => setData((prev) => ({ ...prev, description: value })),
+    inputRef: textareaRef,
+    allowAllMention: false,
+  });
 
   // Handle auto-continuation for lists
   const handleTextareaKeyDown = (e) => {
@@ -767,24 +785,35 @@ const CreatePostModal = ({ open, onClose, isEditMode = false, postData = null, o
                     <MarkdownRenderer content={data.description} />
                   </div>
                 ) : (
-                  <Input.TextArea
-                    ref={textareaRef}
-                    id="postDescription"
-                    name="description"
-                    className="!bg-white dark:!bg-[#3c3c3c]"
-                    placeholder="Nội dung bài viết"
-                    spellCheck="false"
-                    data-ms-editor="true"
-                    value={data.description}
-                    onChange={(e) =>
-                      setData((prev) => ({
-                        ...prev,
-                        description: e.target.value,
-                      }))
-                    }
-                    onKeyDown={handleTextareaKeyDown}
-                    rows={5}
-                  />
+                  <>
+                    {/* Bolds @mentions live while composing, but they're not
+                        clickable here - only rendered posts (with backend-
+                        resolved mentions) link to a profile. */}
+                    <MentionHighlightOverlay text={data.description} targetRef={textareaRef} />
+                    <Input.TextArea
+                      ref={textareaRef}
+                      id="postDescription"
+                      name="description"
+                      className="!bg-white dark:!bg-[#3c3c3c] !text-transparent caret-gray-900 dark:caret-gray-100"
+                      placeholder="Nội dung bài viết"
+                      spellCheck="false"
+                      data-ms-editor="true"
+                      value={data.description}
+                      onChange={(e) =>
+                        handleDescriptionMentionChange(e.target.value, e.target.selectionStart)
+                      }
+                      onKeyDown={handleTextareaKeyDown}
+                      rows={5}
+                    />
+                    {showDescriptionSuggestions && (
+                      <MentionSuggestionsDropdown
+                        suggestions={descriptionSuggestions}
+                        onSelect={insertDescriptionMention}
+                        onClose={closeDescriptionSuggestions}
+                        anchorRef={textareaRef}
+                      />
+                    )}
+                  </>
                 )}
                 {errors.description && (
                   <div className="text-red-500 text-sm mt-1">

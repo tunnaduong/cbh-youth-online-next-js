@@ -17,6 +17,7 @@ import getCollageSetting from "@/utils/getCollageSetting";
 import { useState, useEffect, useMemo } from "react";
 import { extractHeadingsAndInjectIds } from "@/utils/toc";
 import ArticleToc from "./ArticleToc";
+import { linkifyMentionsInHtml } from "@/utils/mentionRender";
 
 const ReactPhotoCollage = dynamic(
   () =>
@@ -224,6 +225,13 @@ export default function PostItem({ post, single = false, onVote, onRefresh = nul
     return ids;
   };
 
+  // Posts don't support "@all" broadcast mentions (that's a comment/chat-only
+  // feature) - a real "all" username can never exist since it's reserved, so
+  // this only lights up @mentions the backend actually resolved.
+  const validMentions = Array.isArray(post.mentions)
+    ? new Set(post.mentions.map((m) => m.username.toLowerCase()))
+    : null;
+
   const getContentWithReadMore = () => {
     const textContent = post.content?.replace(/<[^>]*>/g, ""); // Remove HTML tags để đếm text
     const needsTruncation = textContent?.length > maxLength;
@@ -237,6 +245,7 @@ export default function PostItem({ post, single = false, onVote, onRefresh = nul
 
     // Wrap iframes in responsive containers
     content = wrapIframes(content);
+    content = linkifyMentionsInHtml(content, validMentions);
 
     if (!needsTruncation) {
       return content;
@@ -259,8 +268,8 @@ export default function PostItem({ post, single = false, onVote, onRefresh = nul
   // (headings get injected once here so ids match between the ToC and the body).
   const { html: contentWithHeadingIds, headings: tocHeadings } = useMemo(() => {
     if (!single || !post.content) return { html: post.content, headings: [] };
-    return extractHeadingsAndInjectIds(post.content);
-  }, [single, post.content]);
+    return extractHeadingsAndInjectIds(linkifyMentionsInHtml(post.content, validMentions));
+  }, [single, post.content, post.mentions]);
 
   const youtubeEmbedIds = useMemo(
     () => extractYoutubeEmbedIds(post.content),
