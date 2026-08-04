@@ -181,7 +181,10 @@ export default function ChatConversation({
   useEffect(() => {
     for (let i = conversationMessages.length - 1; i >= 0; i--) {
       const m = conversationMessages[i];
-      if (m.type === "system" && m.metadata?.event === "background_changed") {
+      if (
+        m.type === "system" &&
+        (m.metadata?.event === "background_changed" || m.metadata?.event === "background_reset")
+      ) {
         setBackgroundOverride(m.metadata.background_url || null);
         break;
       }
