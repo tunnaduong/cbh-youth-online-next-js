@@ -10,7 +10,7 @@ import FollowButton from "@/components/profile/FollowButton";
 import { BsFillGearFill } from "react-icons/bs";
 import { IoChatbubbleEllipsesOutline } from "react-icons/io5";
 import { IoCalendarOutline, IoLocationOutline } from "react-icons/io5";
-import { Edit2Icon, Droplets, Image as ImageIcon } from "lucide-react";
+import { Edit2Icon } from "lucide-react";
 import { useAuthContext, useChatContext } from "@/contexts/Support";
 import {
   followUser,
@@ -134,22 +134,7 @@ export default function ProfileClient({ initialProfile, activeTab, username }) {
   const [posts, setPosts] = useState(profile?.posts || []);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [uploadingCover, setUploadingCover] = useState(false);
-  const [coverBlurred, setCoverBlurred] = useState(true);
   const [coverIsLight, setCoverIsLight] = useState(false);
-
-  // Restore the viewer's blur preference (default: blurred).
-  useEffect(() => {
-    const saved = localStorage.getItem("cover_blur_enabled");
-    if (saved !== null) setCoverBlurred(saved === "1");
-  }, []);
-
-  const toggleCoverBlur = () => {
-    setCoverBlurred((prev) => {
-      const next = !prev;
-      localStorage.setItem("cover_blur_enabled", next ? "1" : "0");
-      return next;
-    });
-  };
 
   // Sample the cover photo's average brightness so the overlaid mobile text
   // can switch between white (dark photo) and dark (light photo).
@@ -702,30 +687,8 @@ export default function ProfileClient({ initialProfile, activeTab, username }) {
               aria-hidden="true"
               className="cover-photo-bg absolute inset-0 w-full h-full object-cover"
             />
-            {coverBlurred && (
-              <img
-                src={coverImageUrl}
-                alt=""
-                aria-hidden="true"
-                className="blur-effect absolute inset-0 w-full h-full object-cover"
-              />
-            )}
-            {/* Scrim so the profile name/stats stay legible over any cover photo,
-                without blurring the photo itself. */}
+            {/* Scrim so the profile name/stats stay legible over any cover photo */}
             <div className="lg:hidden absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-black/10" />
-            <button
-              type="button"
-              aria-label={coverBlurred ? "Bỏ làm mờ ảnh bìa" : "Làm mờ ảnh bìa"}
-              title={coverBlurred ? "Bỏ làm mờ ảnh bìa" : "Làm mờ ảnh bìa"}
-              onClick={toggleCoverBlur}
-              className="absolute right-3 top-3 z-20 flex items-center justify-center w-9 h-9 rounded-full bg-black/60 text-white opacity-100 lg:opacity-0 lg:group-hover/cover:opacity-100 focus:opacity-100 transition-opacity duration-150 hover:bg-black/80"
-            >
-              {coverBlurred ? (
-                <Droplets className="w-4 h-4" />
-              ) : (
-                <ImageIcon className="w-4 h-4" />
-              )}
-            </button>
             {isOwnProfile && (
               <>
                 <input
