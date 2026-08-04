@@ -8,6 +8,7 @@ import ChatConversation from "./ChatConversation";
 import NewChatDialog from "./NewChatDialog";
 import NewGroupDialog from "./NewGroupDialog";
 import GroupInfoModal from "./GroupInfoModal";
+import ChatBackgroundModal from "./ChatBackgroundModal";
 
 export default function ChatWidget() {
   const {
@@ -26,6 +27,7 @@ export default function ChatWidget() {
   const [showNewChatDialog, setShowNewChatDialog] = useState(false);
   const [showNewGroupDialog, setShowNewGroupDialog] = useState(false);
   const [showGroupInfo, setShowGroupInfo] = useState(false);
+  const [showBackgroundModal, setShowBackgroundModal] = useState(false);
   const [previewParticipant, setPreviewParticipant] = useState(null); // For new conversation preview
 
   if (!isOpen) return null;
@@ -83,6 +85,10 @@ export default function ChatWidget() {
     loadConversations();
   };
 
+  const handleBackgroundChanged = () => {
+    loadConversations();
+  };
+
   const handleLeftGroup = () => {
     loadConversations();
     selectConversation(null);
@@ -128,6 +134,7 @@ export default function ChatWidget() {
         onNewChat={handleNewChat}
         onNewGroup={handleNewGroup}
         onSettings={handleSettings}
+        onBackground={() => setShowBackgroundModal(true)}
         onMinimize={handleMinimize}
         onClose={handleClose}
         onBack={
@@ -186,6 +193,13 @@ export default function ChatWidget() {
         onClose={() => setShowGroupInfo(false)}
         onGroupUpdated={handleGroupUpdated}
         onLeftGroup={handleLeftGroup}
+      />
+
+      <ChatBackgroundModal
+        conversationId={selectedConversationId}
+        show={showBackgroundModal && !!selectedConversationId}
+        onClose={() => setShowBackgroundModal(false)}
+        onBackgroundChanged={handleBackgroundChanged}
       />
     </div>
   );

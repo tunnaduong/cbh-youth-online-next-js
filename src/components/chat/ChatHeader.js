@@ -4,6 +4,7 @@ import {
   Plus,
   Users,
   Settings,
+  Image as ImageIcon,
   ChevronDown,
   ChevronUp,
   ChevronLeft,
@@ -17,6 +18,7 @@ export default function ChatHeader({
   onNewChat,
   onNewGroup,
   onSettings,
+  onBackground,
   onMinimize,
   onClose,
   onBack,
@@ -165,6 +167,15 @@ export default function ChatHeader({
             title="Thông tin nhóm"
           >
             <Settings className="w-4 h-4 text-gray-600 dark:text-gray-300" />
+          </button>
+        )}
+        {conversation?.id && (
+          <button
+            onClick={onBackground}
+            className="p-1.5 hover:bg-gray-100 dark:hover:bg-neutral-600 rounded transition-colors"
+            title="Đổi hình nền đoạn chat"
+          >
+            <ImageIcon className="w-4 h-4 text-gray-600 dark:text-gray-300" />
           </button>
         )}
         <button

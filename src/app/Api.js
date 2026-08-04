@@ -253,6 +253,29 @@ export const regenerateGroupInviteLink = (conversationId) => {
   );
 };
 
+// Chat background (private + group conversations, not the public chat)
+export const getConversationBackground = (conversationId) => {
+  return Api.getRequest(`/v1.0/chat/conversations/${conversationId}/background`);
+};
+
+export const uploadConversationBackground = (conversationId, formData) => {
+  return Api.postFormDataRequest(
+    `/v1.0/chat/conversations/${conversationId}/background`,
+    formData
+  );
+};
+
+export const selectConversationBackground = (conversationId, userContentId) => {
+  return Api.postRequest(
+    `/v1.0/chat/conversations/${conversationId}/background/select`,
+    { user_content_id: userContentId }
+  );
+};
+
+export const resetConversationBackground = (conversationId) => {
+  return Api.deleteRequest(`/v1.0/chat/conversations/${conversationId}/background`);
+};
+
 export const getGroupInvitePreview = (token) => {
   return Api.getRequest(`/v1.0/chat/groups/invite/${token}`);
 };

@@ -170,6 +170,26 @@ export default function ChatConversation({
   const typingUser = conversationId ? typingUsers[conversationId] : null;
   const messageCount = conversationMessages.length;
 
+  // Chat background (Messenger-style): defaults to the conversation's stored
+  // background_url, but a live "background_changed" system message (from
+  // another participant, or this tab after changing it) overrides it
+  // immediately without waiting for a conversations-list refetch.
+  const [backgroundOverride, setBackgroundOverride] = useState(undefined);
+  useEffect(() => {
+    setBackgroundOverride(undefined);
+  }, [conversationId]);
+  useEffect(() => {
+    for (let i = conversationMessages.length - 1; i >= 0; i--) {
+      const m = conversationMessages[i];
+      if (m.type === "system" && m.metadata?.event === "background_changed") {
+        setBackgroundOverride(m.metadata.background_url || null);
+        break;
+      }
+    }
+  }, [conversationMessages]);
+  const chatBackgroundUrl =
+    backgroundOverride !== undefined ? backgroundOverride : conversation?.background_url || null;
+
   // Reset initial load flag when conversation changes
   useEffect(() => {
     if (conversationId) {
@@ -603,8 +623,16 @@ export default function ChatConversation({
   if (conversationMessages.length === 0) {
     return (
       <div className="flex flex-col h-full">
-        <div className="flex-1 overflow-y-auto p-4">
-          <div className="flex items-center justify-center h-full">
+        <div
+          className="relative flex-1 overflow-y-auto p-4"
+          style={
+            chatBackgroundUrl
+              ? { backgroundImage: `url(${chatBackgroundUrl})`, backgroundSize: "cover", backgroundPosition: "center" }
+              : undefined
+          }
+        >
+          {chatBackgroundUrl && <div className="absolute inset-0 -z-10 bg-white/55 dark:bg-black/55 pointer-events-none" />}
+          <div className="relative flex items-center justify-center h-full">
             <p className="text-gray-500 dark:text-gray-400 text-sm">
               Chưa có tin nhắn nào
             </p>
@@ -630,8 +658,16 @@ export default function ChatConversation({
       <div
         ref={messagesContainerRef}
         onScroll={handleScroll}
-        className="flex-1 overflow-y-auto overflow-x-hidden p-4 space-y-4"
+        className="relative flex-1 overflow-y-auto overflow-x-hidden p-4 space-y-4"
+        style={
+          chatBackgroundUrl
+            ? { backgroundImage: `url(${chatBackgroundUrl})`, backgroundSize: "cover", backgroundPosition: "center", backgroundAttachment: "local" }
+            : undefined
+        }
       >
+        {chatBackgroundUrl && (
+          <div className="absolute inset-0 -z-10 bg-white/55 dark:bg-black/55 pointer-events-none" />
+        )}
         {isLoadingMore && (
           <div className="text-center py-2">
             <p className="text-xs text-gray-500 dark:text-gray-400">
