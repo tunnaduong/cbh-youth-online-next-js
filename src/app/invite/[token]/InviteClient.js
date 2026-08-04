@@ -56,23 +56,20 @@ const InviteClient = ({ token }) => {
     }
   };
 
-  // Joins the group right here on the web (so the membership exists immediately,
-  // regardless of whether the app is installed) and fires the deep link/universal
-  // link in the same gesture so the app opens straight into the conversation. The
-  // mobile app's own invite-link handler also calls join-via-invite when it opens -
-  // that's harmless since joining is idempotent, it's just a safety net in case the
-  // app was opened without this web call having completed first.
-  const handleOpenInApp = async () => {
-    if (authLoading) return;
-    if (!loggedIn) {
-      router.push(`/login?continue=${encodeURIComponent(`/invite/${token}`)}`);
-      return;
-    }
-
-    try {
-      await joinGroupViaInvite(token);
-    } catch (err) {
-      console.error("Failed to join group before opening app", err);
+  // Opens the app immediately - no web login required first. The mobile app's
+  // own invite-link handler (App.js's GroupJoin deep-link target) resolves
+  // login and joining itself once it opens, so forcing a web login here
+  // would just be a redundant extra step before the app even launches.
+  //
+  // If we already happen to be logged in on the web (e.g. this tab was open
+  // in a logged-in session), join right here too as a best-effort - harmless
+  // since joining is idempotent, and it means the membership exists even if
+  // the deep link fails to open the app (falls through to the store).
+  const handleOpenInApp = () => {
+    if (loggedIn) {
+      joinGroupViaInvite(token).catch((err) => {
+        console.error("Failed to join group before opening app", err);
+      });
     }
 
     openDeepLink("group", token, {
