@@ -364,7 +364,7 @@ export default function PostClient({ params, initialPost = null }) {
           );
 
           if (hasLevel3Target && level === 1) {
-            // Target is at level 3, add as sibling at level 3
+            // Target is at level 3, add as sibling at level 3 (sandwich ordering)
             return {
               ...comment,
               replies: comment.replies.map((reply) => {
@@ -372,11 +372,18 @@ export default function PostClient({ params, initialPost = null }) {
                   reply.replies &&
                   reply.replies.some((r) => r.id === parentId)
                 ) {
-                  level2ParentId = reply.id; // Store level 2 parent ID
-                  return {
-                    ...reply,
-                    replies: [...reply.replies, newReply], // Add as sibling
+                  level2ParentId = reply.id;
+                  const targetSibling = reply.replies.find((r) => r.id === parentId);
+                  const replyWithTarget = {
+                    ...newReply,
+                    target_comment_id: parentId,
+                    target_author: targetSibling?.author ?? null,
                   };
+                  // Insert right after the targeted sibling
+                  const idx = reply.replies.findIndex((r) => r.id === parentId);
+                  const newReplies = [...reply.replies];
+                  newReplies.splice(idx + 1, 0, replyWithTarget);
+                  return { ...reply, replies: newReplies };
                 }
                 return reply;
               }),
@@ -414,13 +421,15 @@ export default function PostClient({ params, initialPost = null }) {
       const realComment = {
         ...newReply,
         id: response.data.id,
-        comment: response.data?.comment ?? "", // HTML for display
-        content: response.data?.content ?? "", // Raw markdown for editing
-        mentions: response.data?.mentions ?? [], // Needed for mention-tag rendering
+        comment: response.data?.comment ?? "",
+        content: response.data?.content ?? "",
+        mentions: response.data?.mentions ?? [],
         created_at: response.data.created_at,
         isPending: false,
-        is_owner: response.data?.is_owner ?? true, // New reply is always owned by creator
-        author: response.data?.author ?? newReply.author, // Use server response for author data
+        is_owner: response.data?.is_owner ?? true,
+        author: response.data?.author ?? newReply.author,
+        target_comment_id: response.data?.target_comment_id ?? newReply.target_comment_id ?? null,
+        target_author: response.data?.target_author ?? newReply.target_author ?? null,
       };
 
       setComments((prevComments) => {

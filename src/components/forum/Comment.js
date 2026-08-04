@@ -410,6 +410,15 @@ export default function Comment({
             ) : (
               !isCollapsed && (
                 <div className="relative">
+                  {/* Sandwich indicator: show which level-3 comment this is replying to */}
+                  {comment.target_author && !isCollapsed && (
+                    <div className="mb-2 text-xs text-gray-400 dark:text-gray-500 flex items-center gap-1">
+                      <span>↩</span>
+                      <Link href={`/${comment.target_author.username}`} className="font-medium text-blue-500 hover:underline">
+                        {comment.target_author.profile_name || comment.target_author.username}
+                      </Link>
+                    </div>
+                  )}
                   {/* Show notification if parent comment was deleted - at the top of comment */}
                   {comment.deleted_parent_username && !isCollapsed && (
                     <div className="mb-2 px-3 py-2 bg-gray-100 dark:bg-gray-800 rounded-md border border-gray-200 dark:border-gray-700">
