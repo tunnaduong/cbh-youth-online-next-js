@@ -4,12 +4,13 @@ import { useEffect, useRef, useState } from "react";
 import Modal from "@/components/ui/Modal";
 import Input from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Button, message as antdMessage, Popconfirm, Dropdown } from "antd";
-import { X, Pencil, Check, UserPlus, LogOut, Trash2, Camera, Link as LinkIcon, MoreVertical } from "lucide-react";
+import { Button, message as antdMessage, Popconfirm, Dropdown, Select } from "antd";
+import { X, Pencil, Check, UserPlus, LogOut, Trash2, Camera, Link as LinkIcon, MoreVertical, Image as ImageIcon, ShieldCheck } from "lucide-react";
 import {
   getGroupDetails,
   updateGroupConversation,
   updateGroupAvatar,
+  updateGroupPermissions,
   addGroupParticipants,
   removeGroupParticipant,
   leaveGroup,
@@ -20,9 +21,26 @@ import {
   getGroupInviteLink,
 } from "@/app/Api";
 import UserMultiSelect from "./UserMultiSelect";
+import ChatBackgroundModal from "./ChatBackgroundModal";
 import { useAuthContext } from "@/contexts/Support";
 
-export default function GroupInfoModal({ conversationId, show, onClose, onGroupUpdated, onLeftGroup }) {
+const PERMISSION_FIELDS = [
+  { key: "perm_change_name", label: "Đổi tên nhóm", options: ["owner", "deputy", "member"] },
+  { key: "perm_change_avatar", label: "Đổi ảnh đại diện nhóm", options: ["owner", "deputy", "member"] },
+  { key: "perm_change_background", label: "Đổi ảnh nền cuộc trò chuyện", options: ["owner", "deputy", "member"] },
+  { key: "perm_remove_members", label: "Xóa thành viên", options: ["owner", "deputy"] },
+  { key: "perm_share_invite_link", label: "Chia sẻ liên kết mời", options: ["owner", "deputy", "member", "none"] },
+  { key: "perm_invite_members", label: "Mời thành viên", options: ["owner", "deputy", "member"] },
+];
+
+const PERMISSION_VALUE_LABELS = {
+  owner: "Chỉ trưởng nhóm",
+  deputy: "Trưởng & phó nhóm",
+  member: "Tất cả thành viên",
+  none: "Không có ai",
+};
+
+export default function GroupInfoModal({ conversationId, show, onClose, onGroupUpdated, onLeftGroup, onBackgroundChanged }) {
   const { currentUser } = useAuthContext();
   const [loading, setLoading] = useState(false);
   const [group, setGroup] = useState(null);
@@ -36,6 +54,9 @@ export default function GroupInfoModal({ conversationId, show, onClose, onGroupU
   const [deletingGroup, setDeletingGroup] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [invitingLoading, setInvitingLoading] = useState(false);
+  const [showBackgroundModal, setShowBackgroundModal] = useState(false);
+  const [showPermissions, setShowPermissions] = useState(false);
+  const [savingPermission, setSavingPermission] = useState(null);
   const avatarInputRef = useRef(null);
 
   useEffect(() => {
@@ -246,6 +267,22 @@ export default function GroupInfoModal({ conversationId, show, onClose, onGroupU
     }
   };
 
+  const handlePermissionChange = async (key, value) => {
+    setSavingPermission(key);
+    try {
+      const response = await updateGroupPermissions(conversationId, { [key]: value });
+      const permissions = response?.data?.permissions || response?.permissions;
+      setGroup((prev) => ({ ...prev, permissions: permissions || prev.permissions }));
+      antdMessage.success("Đã cập nhật cài đặt quản lý nhóm");
+    } catch (error) {
+      antdMessage.error(
+        error?.response?.data?.message || "Không thể cập nhật cài đặt"
+      );
+    } finally {
+      setSavingPermission(null);
+    }
+  };
+
   const getParticipantMenuItems = (participant) => {
     if (participant.id === currentUser?.id || participant.role === "owner") return [];
 
@@ -272,7 +309,7 @@ export default function GroupInfoModal({ conversationId, show, onClose, onGroupU
       });
     }
 
-    if (group.is_owner || (group.is_deputy && participant.role === "member")) {
+    if (group.permissions?.can?.perm_remove_members) {
       items.push({
         key: "kick",
         label: <span className="text-red-500">Xóa khỏi nhóm</span>,
@@ -309,18 +346,20 @@ export default function GroupInfoModal({ conversationId, show, onClose, onGroupU
               <div className="flex items-center gap-3 mb-3">
                 <button
                   type="button"
-                  onClick={() => avatarInputRef.current?.click()}
-                  disabled={uploadingAvatar}
-                  className="relative flex-shrink-0"
-                  title="Đổi ảnh đại diện nhóm"
+                  onClick={() => group.permissions?.can?.perm_change_avatar && avatarInputRef.current?.click()}
+                  disabled={uploadingAvatar || !group.permissions?.can?.perm_change_avatar}
+                  className="relative flex-shrink-0 disabled:cursor-not-allowed"
+                  title={group.permissions?.can?.perm_change_avatar ? "Đổi ảnh đại diện nhóm" : "Bạn không có quyền đổi ảnh đại diện nhóm"}
                 >
                   <Avatar className="w-14 h-14">
                     <AvatarImage src={group.avatar_url} alt={group.name} />
                     <AvatarFallback>{group.name?.[0]?.toUpperCase() || "?"}</AvatarFallback>
                   </Avatar>
-                  <span className="absolute -right-0.5 -bottom-0.5 w-5 h-5 rounded-full bg-[#319527] border-2 border-white dark:border-neutral-800 flex items-center justify-center">
-                    <Camera className="w-2.5 h-2.5 text-white" />
-                  </span>
+                  {group.permissions?.can?.perm_change_avatar && (
+                    <span className="absolute -right-0.5 -bottom-0.5 w-5 h-5 rounded-full bg-[#319527] border-2 border-white dark:border-neutral-800 flex items-center justify-center">
+                      <Camera className="w-2.5 h-2.5 text-white" />
+                    </span>
+                  )}
                 </button>
                 <input
                   ref={avatarInputRef}
@@ -351,14 +390,16 @@ export default function GroupInfoModal({ conversationId, show, onClose, onGroupU
                       <h4 className="font-semibold text-gray-900 dark:text-white flex-1 truncate">
                         {group.name}
                       </h4>
-                      <button
-                        type="button"
-                        onClick={() => setEditingName(true)}
-                        className="p-1 rounded-full hover:bg-gray-100 dark:hover:bg-neutral-600 text-gray-400"
-                        title="Đổi tên nhóm"
-                      >
-                        <Pencil className="w-3.5 h-3.5" />
-                      </button>
+                      {group.permissions?.can?.perm_change_name && (
+                        <button
+                          type="button"
+                          onClick={() => setEditingName(true)}
+                          className="p-1 rounded-full hover:bg-gray-100 dark:hover:bg-neutral-600 text-gray-400"
+                          title="Đổi tên nhóm"
+                        >
+                          <Pencil className="w-3.5 h-3.5" />
+                        </button>
+                      )}
                     </div>
                   )}
                   <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
@@ -366,6 +407,42 @@ export default function GroupInfoModal({ conversationId, show, onClose, onGroupU
                   </p>
                 </div>
               </div>
+              <div className="flex gap-2">
+                <Button
+                  className="flex-1 inline-flex items-center justify-center gap-1.5"
+                  onClick={() => setShowBackgroundModal(true)}
+                >
+                  <ImageIcon className="w-4 h-4" /> Đổi ảnh nền
+                </Button>
+                {group.is_owner && (
+                  <Button
+                    className="flex-1 inline-flex items-center justify-center gap-1.5"
+                    onClick={() => setShowPermissions((v) => !v)}
+                  >
+                    <ShieldCheck className="w-4 h-4" /> Quản lý nhóm
+                  </Button>
+                )}
+              </div>
+              {showPermissions && group.is_owner && (
+                <div className="mt-3 space-y-2.5 border-t dark:border-neutral-600 pt-3">
+                  {PERMISSION_FIELDS.map((field) => (
+                    <div key={field.key} className="flex items-center justify-between gap-3">
+                      <span className="text-sm text-gray-700 dark:text-gray-300">{field.label}</span>
+                      <Select
+                        size="small"
+                        className="w-[168px]"
+                        value={group.permissions?.settings?.[field.key] || field.options[field.options.length - 1]}
+                        loading={savingPermission === field.key}
+                        onChange={(value) => handlePermissionChange(field.key, value)}
+                        options={field.options.map((opt) => ({
+                          value: opt,
+                          label: PERMISSION_VALUE_LABELS[opt],
+                        }))}
+                      />
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
 
             <div className="flex-1 overflow-y-auto">
@@ -443,19 +520,23 @@ export default function GroupInfoModal({ conversationId, show, onClose, onGroupU
               ) : (
                 <div className="flex flex-col gap-2">
                   <div className="flex gap-2">
-                    <Button
-                      className="flex-1 inline-flex items-center justify-center gap-1.5"
-                      onClick={() => setAddingMembers(true)}
-                    >
-                      <UserPlus className="w-4 h-4" /> Thêm thành viên
-                    </Button>
-                    <Button
-                      className="flex-1 inline-flex items-center justify-center gap-1.5"
-                      loading={invitingLoading}
-                      onClick={handleInvite}
-                    >
-                      <LinkIcon className="w-4 h-4" /> Mời qua liên kết
-                    </Button>
+                    {group.permissions?.can?.perm_invite_members && (
+                      <Button
+                        className="flex-1 inline-flex items-center justify-center gap-1.5"
+                        onClick={() => setAddingMembers(true)}
+                      >
+                        <UserPlus className="w-4 h-4" /> Thêm thành viên
+                      </Button>
+                    )}
+                    {group.permissions?.can?.perm_share_invite_link && (
+                      <Button
+                        className="flex-1 inline-flex items-center justify-center gap-1.5"
+                        loading={invitingLoading}
+                        onClick={handleInvite}
+                      >
+                        <LinkIcon className="w-4 h-4" /> Mời qua liên kết
+                      </Button>
+                    )}
                   </div>
                   <div className="flex gap-2">
                     <Popconfirm
@@ -495,6 +576,12 @@ export default function GroupInfoModal({ conversationId, show, onClose, onGroupU
           </>
         )}
       </div>
+      <ChatBackgroundModal
+        conversationId={conversationId}
+        show={showBackgroundModal}
+        onClose={() => setShowBackgroundModal(false)}
+        onBackgroundChanged={onBackgroundChanged}
+      />
     </Modal>
   );
 }

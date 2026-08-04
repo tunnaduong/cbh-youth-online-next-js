@@ -169,7 +169,7 @@ export default function ChatHeader({
             <Settings className="w-4 h-4 text-gray-600 dark:text-gray-300" />
           </button>
         )}
-        {conversation?.id && (
+        {conversation?.id && conversation?.type !== "group" && (
           <button
             onClick={onBackground}
             className="p-1.5 hover:bg-gray-100 dark:hover:bg-neutral-600 rounded transition-colors"

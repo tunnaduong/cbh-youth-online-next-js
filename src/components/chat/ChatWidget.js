@@ -193,6 +193,7 @@ export default function ChatWidget() {
         onClose={() => setShowGroupInfo(false)}
         onGroupUpdated={handleGroupUpdated}
         onLeftGroup={handleLeftGroup}
+        onBackgroundChanged={handleBackgroundChanged}
       />
 
       <ChatBackgroundModal

@@ -200,6 +200,10 @@ export const updateGroupConversation = (conversationId, params) => {
   return Api.putRequest(`/v1.0/chat/groups/${conversationId}`, params);
 };
 
+export const updateGroupPermissions = (conversationId, params) => {
+  return Api.putRequest(`/v1.0/chat/groups/${conversationId}/permissions`, params);
+};
+
 export const addGroupParticipants = (conversationId, params) => {
   return Api.postRequest(
     `/v1.0/chat/groups/${conversationId}/participants`,

@@ -623,16 +623,17 @@ export default function ChatConversation({
   if (conversationMessages.length === 0) {
     return (
       <div className="flex flex-col h-full">
-        <div
-          className="relative flex-1 overflow-y-auto p-4"
-          style={
-            chatBackgroundUrl
-              ? { backgroundImage: `url(${chatBackgroundUrl})`, backgroundSize: "cover", backgroundPosition: "center" }
-              : undefined
-          }
-        >
-          {chatBackgroundUrl && <div className="absolute inset-0 -z-10 bg-white/55 dark:bg-black/55 pointer-events-none" />}
-          <div className="relative flex items-center justify-center h-full">
+        <div className="relative flex-1 overflow-hidden">
+          {chatBackgroundUrl && (
+            <>
+              <div
+                className="absolute inset-0 pointer-events-none"
+                style={{ backgroundImage: `url(${chatBackgroundUrl})`, backgroundSize: "cover", backgroundPosition: "center" }}
+              />
+              <div className="absolute inset-0 bg-white/55 dark:bg-black/55 pointer-events-none" />
+            </>
+          )}
+          <div className="relative h-full overflow-y-auto p-4 flex items-center justify-center">
             <p className="text-gray-500 dark:text-gray-400 text-sm">
               Chưa có tin nhắn nào
             </p>
@@ -654,20 +655,23 @@ export default function ChatConversation({
 
   return (
     <div className="flex flex-col h-full">
-      {/* Messages container */}
-      <div
-        ref={messagesContainerRef}
-        onScroll={handleScroll}
-        className="relative flex-1 overflow-y-auto overflow-x-hidden p-4 space-y-4"
-        style={
-          chatBackgroundUrl
-            ? { backgroundImage: `url(${chatBackgroundUrl})`, backgroundSize: "cover", backgroundPosition: "center", backgroundAttachment: "local" }
-            : undefined
-        }
-      >
+      {/* Messages container — the background image/overlay is a fixed sibling layer
+          behind this so it stays put while only the message list scrolls over it. */}
+      <div className="relative flex-1 overflow-hidden">
         {chatBackgroundUrl && (
-          <div className="absolute inset-0 -z-10 bg-white/55 dark:bg-black/55 pointer-events-none" />
+          <>
+            <div
+              className="absolute inset-0 pointer-events-none"
+              style={{ backgroundImage: `url(${chatBackgroundUrl})`, backgroundSize: "cover", backgroundPosition: "center" }}
+            />
+            <div className="absolute inset-0 bg-white/55 dark:bg-black/55 pointer-events-none" />
+          </>
         )}
+        <div
+          ref={messagesContainerRef}
+          onScroll={handleScroll}
+          className="relative h-full overflow-y-auto overflow-x-hidden p-4 space-y-4"
+        >
         {isLoadingMore && (
           <div className="text-center py-2">
             <p className="text-xs text-gray-500 dark:text-gray-400">
@@ -997,6 +1001,7 @@ export default function ChatConversation({
           </div>
           );
         })}
+        </div>
       </div>
 
       {typingUser && (
