@@ -227,26 +227,23 @@ export default function ChatConversation({
     };
   }, [conversationId, isGroupChat, messageCount]);
 
-  // Let the user know why they'll never see "seen" status in this chat when
-  // they've turned their own read receipts off (backend silently skips
-  // marking messages read / returns no seen participants in that case).
-  // A one-time toast on opening the conversation, rather than a persistent
-  // banner eating space in the message list.
+  // The "seen by" list is always empty while the user's own read receipts
+  // are off (backend silently skips marking messages read / returns no seen
+  // participants in that case) — track the setting so opening "Lượt xem" can
+  // explain why, instead of just showing an empty list every time.
+  const [readReceiptsOff, setReadReceiptsOff] = useState(false);
   useEffect(() => {
-    if (!conversationId) return;
     let cancelled = false;
     getNotificationSettings()
       .then((res) => {
         const settings = res?.data || res;
-        if (!cancelled && settings?.chat_read_receipts === false) {
-          antdMessage.info("Trạng thái đã xem đang tắt. Bạn sẽ không thấy khi người khác đã xem tin nhắn của mình trong đoạn chat này.");
-        }
+        if (!cancelled) setReadReceiptsOff(settings?.chat_read_receipts === false);
       })
       .catch(() => {});
     return () => {
       cancelled = true;
     };
-  }, [conversationId]);
+  }, []);
 
   // Who has read at least up through a given message - reused both for the
   // inline "seen by" indicator (own last message only, see below) and the
@@ -961,7 +958,15 @@ export default function ChatConversation({
                     onEdit={message.is_myself && message.type === "text" && !message.is_recalled ? () => handleStartEdit(message) : undefined}
                     onViewSeenBy={
                       isGroupChat && message.is_myself && !message.is_sending
-                        ? () => setSeenModalParticipants(getSeenBy(message))
+                        ? () => {
+                            if (readReceiptsOff) {
+                              antdMessage.info(
+                                "Trạng thái đã xem đang tắt. Bạn sẽ không thấy khi người khác đã xem tin nhắn của mình trong đoạn chat này."
+                              );
+                              return;
+                            }
+                            setSeenModalParticipants(getSeenBy(message));
+                          }
                         : undefined
                     }
                   />
