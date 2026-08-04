@@ -289,7 +289,7 @@ export default function ChatMessageInput({
             data-placeholder="Gửi tin nhắn..."
             className="
               ce-input
-              w-full min-h-[32px] max-h-[32px]
+              w-full min-h-[32px] max-h-[120px]
               px-3 py-[5px]
               text-sm leading-[1.375rem]
               text-gray-900 dark:text-gray-100
@@ -298,7 +298,7 @@ export default function ChatMessageInput({
               rounded-md
               shadow-sm
               focus:outline-none focus:border-[#319527] focus:shadow-[0_0_0_2px_rgba(49,149,39,0.1)]
-              whitespace-nowrap overflow-x-auto overflow-y-hidden
+              whitespace-pre-wrap break-words overflow-y-auto overflow-x-hidden
             "
           />
           {showSuggestions && (

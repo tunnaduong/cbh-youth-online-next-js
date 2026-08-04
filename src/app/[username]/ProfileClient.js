@@ -695,7 +695,7 @@ export default function ProfileClient({ initialProfile, activeTab, username }) {
     <DefaultLayout activeNav="home">
       <div>
         <div className="flex-1">
-          <div className="relative h-min lg:h-96 overflow-hidden group/cover">
+          <div className="relative h-36 lg:h-96 overflow-hidden group/cover">
             <img
               src={coverImageUrl}
               alt=""
@@ -749,7 +749,7 @@ export default function ProfileClient({ initialProfile, activeTab, username }) {
                 </button>
               </>
             )}
-            <div className="lg:hidden flex flex-col items-center gap-y-2 relative z-10 px-2.5 py-8">
+            <div className="hidden">
               <div className="relative group/avatar w-32 h-32">
                 <a
                   href={`${process.env.NEXT_PUBLIC_API_URL}/v1.0/users/${profile.username}/avatar`}
@@ -903,6 +903,75 @@ export default function ProfileClient({ initialProfile, activeTab, username }) {
               </div>
             </div>
           </div>
+
+          {/* Mobile profile info card — sits BELOW the cover photo */}
+          <div className="lg:hidden bg-white dark:bg-neutral-800 border-b border-gray-200 dark:border-neutral-700 px-4 pb-4">
+            {/* Avatar peeks above the card */}
+            <div className="flex flex-col items-center -mt-12">
+              <div className="relative group/avatar w-24 h-24">
+                <a href={`${process.env.NEXT_PUBLIC_API_URL}/v1.0/users/${profile.username}/avatar`}>
+                  <img
+                    className="w-24 h-24 rounded-full bg-white ring-4 ring-white dark:ring-neutral-800"
+                    src={`${process.env.NEXT_PUBLIC_API_URL}/v1.0/users/${profile.username}/avatar`}
+                    alt="avatar"
+                  />
+                </a>
+                {isOwnProfile && (
+                  <>
+                    <input type="file" id="avatar-upload-mobile" accept="image/*" onChange={handleAvatarUpload} style={{ display: "none" }} />
+                    <button
+                      type="button"
+                      aria-label="Sửa ảnh đại diện"
+                      onClick={() => document.getElementById("avatar-upload-mobile").click()}
+                      disabled={uploadingAvatar}
+                      className="absolute right-0 bottom-0 flex items-center justify-center w-8 h-8 rounded-full bg-black/60 text-white opacity-0 group-hover/avatar:opacity-100 focus:opacity-100 transition-opacity hover:bg-black/80"
+                    >
+                      <Edit2Icon className="w-3.5 h-3.5" />
+                    </button>
+                  </>
+                )}
+              </div>
+              <div className="flex flex-col items-center mt-2">
+                <h1 className="font-bold text-xl text-center text-gray-900 dark:text-white">
+                  {profile.profile_name}
+                  {profile.verified == "1" && (
+                    <svg stroke="currentColor" fill="currentColor" strokeWidth={0} viewBox="0 0 20 20" aria-hidden="true" className="relative inline shrink-0 text-xl leading-5 text-primary-500 ml-1" height="1em" width="1em" xmlns="http://www.w3.org/2000/svg">
+                      <path fillRule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                    </svg>
+                  )}
+                </h1>
+                <p className="text-sm text-gray-500 dark:text-gray-400">@{profile.username}</p>
+              </div>
+              <div className="flex flex-wrap justify-center gap-x-4 gap-y-1 mt-3 text-sm">
+                <Link href={`/${profile.username}`}><span className="text-gray-500 dark:text-gray-400">Bài đăng: </span><span className="font-bold text-gray-900 dark:text-white">{profile.stats.posts}</span></Link>
+                <div><span className="text-gray-500 dark:text-gray-400">Điểm: </span><span className="font-bold text-gray-900 dark:text-white">{profile.stats.points}</span></div>
+                <Link href={`/${profile.username}/following`}><span className="text-gray-500 dark:text-gray-400">Đang theo dõi: </span><span className="font-bold text-gray-900 dark:text-white">{profile.stats.following}</span></Link>
+                <Link href={`/${profile.username}/followers`}><span className="text-gray-500 dark:text-gray-400">Người theo dõi: </span><span className="font-bold text-gray-900 dark:text-white">{profile.stats.followers}</span></Link>
+                <div><span className="text-gray-500 dark:text-gray-400">Lượt like: </span><span className="font-bold text-gray-900 dark:text-white">{profile.stats.likes}</span></div>
+              </div>
+              {profile.bio && <p className="text-center text-gray-700 dark:text-gray-300 text-sm mt-2">{profile.bio}</p>}
+              <div className="flex flex-col gap-y-1 mt-2 text-sm text-gray-500 dark:text-gray-400">
+                {profile.location && <div className="flex items-center gap-x-1"><IoLocationOutline className="text-base" /><span>{profile.location}</span></div>}
+                {profile.joined_at && <div className="flex items-center gap-x-1"><IoCalendarOutline className="text-base" /><span>{profile.joined_at}</span></div>}
+              </div>
+              <div className="flex justify-center items-center mt-4 gap-2">
+                {currentUser && currentUser.username == profile.username ? (
+                  <Link href="/settings" className="flex items-center gap-x-2">
+                    <Button className="rounded-full text-[#6c757d] px-4">
+                      <BsFillGearFill className="w-4 h-4" />
+                      <span className="text-[1rem]">Sửa hồ sơ</span>
+                    </Button>
+                  </Link>
+                ) : (
+                  <>
+                    <Button shape="circle" icon={<IoChatbubbleEllipsesOutline className="w-5 h-5 mt-1" />} aria-label="Nhắn tin" title="Nhắn tin" loading={messaging} onClick={handleMessage} className="!flex !items-center !justify-center !border-[#319527]" />
+                    <FollowButton isFollowing={isFollowing} loading={loading} handleFollow={handleFollow} />
+                  </>
+                )}
+              </div>
+            </div>
+          </div>
+
           <div className="lg:bg-white dark:!bg-neutral-700 h-16 lg:shadow-md">
             <div className="mx-auto max-w-[959px] h-full lg:flex hidden">
               <div
