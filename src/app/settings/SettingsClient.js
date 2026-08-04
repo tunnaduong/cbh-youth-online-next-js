@@ -91,6 +91,7 @@ export default function SettingsClient({ initialUser, hasAuthError }) {
     email_marketing: true,
     email_social: true,
     email_security: true, // Always true, cannot be changed
+    chat_read_receipts: true,
     // Delete account
     password: "",
     confirm_text: "",
@@ -214,6 +215,7 @@ export default function SettingsClient({ initialUser, hasAuthError }) {
             email_marketing: settings.email_marketing ?? true,
             email_social: settings.email_social ?? true,
             email_security: true, // Always true, cannot be changed
+            chat_read_receipts: settings.chat_read_receipts !== false,
           }));
         }
       } catch (error) {
@@ -685,6 +687,7 @@ export default function SettingsClient({ initialUser, hasAuthError }) {
         email_contact: data.email_contact,
         email_marketing: data.email_marketing,
         email_social: data.email_social,
+        chat_read_receipts: data.chat_read_receipts,
         // email_security is always true and not sent to API
       };
 
@@ -705,6 +708,7 @@ export default function SettingsClient({ initialUser, hasAuthError }) {
           email_marketing: responseData.email_marketing ?? prev.email_marketing,
           email_social: responseData.email_social ?? prev.email_social,
           email_security: true, // Always true, cannot be changed
+          chat_read_receipts: responseData.chat_read_receipts !== false,
         }));
       }
     } catch (error) {
@@ -1396,6 +1400,30 @@ export default function SettingsClient({ initialUser, hasAuthError }) {
                       </p>
                     </div>
                     <Switch checked={true} disabled={true} className="ml-4" />
+                  </div>
+                </div>
+              </div>
+
+              {/* Chat privacy */}
+              <div>
+                <h3 className="text-base font-semibold text-gray-900 dark:text-white mb-3">
+                  Quyền riêng tư chat
+                </h3>
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between py-2 border-b border-gray-100 dark:border-neutral-700">
+                    <div>
+                      <h4 className="text-sm font-medium text-gray-800 dark:text-gray-200">
+                        Trạng thái đã xem
+                      </h4>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">
+                        Khi tắt, người khác không biết bạn đã xem tin và bạn cũng không thể xem ai đã xem tin của bạn.
+                      </p>
+                    </div>
+                    <Switch
+                      checked={data.chat_read_receipts}
+                      onChange={(checked) => updateData("chat_read_receipts", checked)}
+                      className="ml-4"
+                    />
                   </div>
                 </div>
               </div>
