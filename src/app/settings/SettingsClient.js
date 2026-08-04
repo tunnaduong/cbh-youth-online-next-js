@@ -1168,8 +1168,37 @@ export default function SettingsClient({ initialUser, hasAuthError }) {
               </div>
             </form>
 
+            {/* Chat Privacy */}
+            <div className="mt-8 pt-8 border-t border-gray-200 dark:border-gray-700">
+              <h3 className="text-base font-semibold text-gray-900 dark:text-white mb-4">
+                Quyền riêng tư
+              </h3>
+              <div className="flex items-center justify-between py-2">
+                <div>
+                  <h4 className="text-sm font-medium text-gray-800 dark:text-gray-200">
+                    Trạng thái đã xem
+                  </h4>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                    Khi tắt, người khác không biết bạn đã xem tin và bạn cũng không thể xem ai đã xem tin của bạn.
+                  </p>
+                </div>
+                <Switch
+                  checked={data.chat_read_receipts}
+                  onChange={async (checked) => {
+                    updateData("chat_read_receipts", checked);
+                    try {
+                      await updateNotificationSettings({ chat_read_receipts: checked });
+                    } catch {
+                      updateData("chat_read_receipts", !checked);
+                    }
+                  }}
+                  className="ml-4"
+                />
+              </div>
+            </div>
+
             {/* Delete Account Section */}
-            <div className="mt-12 pt-8 border-t border-gray-200 dark:border-gray-700">
+            <div className="mt-8 pt-8 border-t border-gray-200 dark:border-gray-700">
               <div className="space-y-6">
                 <div>
                   <h3 className="text-lg font-semibold text-red-600 dark:text-red-400 mb-2">
@@ -1400,30 +1429,6 @@ export default function SettingsClient({ initialUser, hasAuthError }) {
                       </p>
                     </div>
                     <Switch checked={true} disabled={true} className="ml-4" />
-                  </div>
-                </div>
-              </div>
-
-              {/* Chat privacy */}
-              <div>
-                <h3 className="text-base font-semibold text-gray-900 dark:text-white mb-3">
-                  Quyền riêng tư chat
-                </h3>
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between py-2 border-b border-gray-100 dark:border-neutral-700">
-                    <div>
-                      <h4 className="text-sm font-medium text-gray-800 dark:text-gray-200">
-                        Trạng thái đã xem
-                      </h4>
-                      <p className="text-sm text-gray-600 dark:text-gray-400">
-                        Khi tắt, người khác không biết bạn đã xem tin và bạn cũng không thể xem ai đã xem tin của bạn.
-                      </p>
-                    </div>
-                    <Switch
-                      checked={data.chat_read_receipts}
-                      onChange={(checked) => updateData("chat_read_receipts", checked)}
-                      className="ml-4"
-                    />
                   </div>
                 </div>
               </div>
