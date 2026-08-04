@@ -159,7 +159,7 @@ export default function ChatConversation({
   const [hoveredMessageId, setHoveredMessageId] = useState(null);
   const [forwardingMessage, setForwardingMessage] = useState(null);
   const [seenParticipants, setSeenParticipants] = useState([]);
-  const [seenModalMessageId, setSeenModalMessageId] = useState(null);
+  const [seenModalParticipants, setSeenModalParticipants] = useState(null);
   const isSelectingTextRef = useRef(false);
   const messagesContainerRef = useRef(null);
   const longPressTimerRef = useRef(null);
@@ -207,36 +207,26 @@ export default function ChatConversation({
     };
   }, [conversationId, isGroupChat, messageCount]);
 
-  // For each participant, find the newest message they've read (created_at
-  // <= their last_read_at) and group participants by that message's id, so
-  // the small avatar stack renders under the right bubble — same approach
-  // Messenger uses, since read state is "read up to this point in time",
-  // not tracked per message.
-  const seenByMessageId = new Map();
-  if (isGroupChat && seenParticipants.length > 0) {
-    const realMessages = conversationMessages.filter((m) => m.type !== "system");
-    seenParticipants.forEach((participant) => {
-      if (!participant.last_read_at) return;
-      const readAt = new Date(participant.last_read_at).getTime();
-      let lastSeenId = null;
-      for (const m of realMessages) {
-        if (new Date(m.created_at).getTime() <= readAt) {
-          lastSeenId = m.id;
-        } else {
-          break;
-        }
-      }
-      if (lastSeenId != null) {
-        seenByMessageId.set(lastSeenId, [
-          ...(seenByMessageId.get(lastSeenId) || []),
-          participant,
-        ]);
-      }
-    });
-  }
-  const seenModalParticipants = seenModalMessageId != null
-    ? seenByMessageId.get(seenModalMessageId) || []
-    : [];
+  // Who has read at least up through a given message - reused both for the
+  // inline "seen by" indicator (own last message only, see below) and the
+  // on-demand "Lượt xem" menu action (any own message, not just the last one).
+  const getSeenBy = (message) => {
+    if (!message?.created_at) return [];
+    const createdAt = new Date(message.created_at).getTime();
+    return seenParticipants.filter(
+      (p) => p.last_read_at && new Date(p.last_read_at).getTime() >= createdAt
+    );
+  };
+
+  // The inline avatar stack only ever appears under your OWN truly-last
+  // message in the conversation, exactly like Messenger - never under
+  // someone else's message (if they sent the last message, nothing shows),
+  // and never scattered across earlier messages of yours (use the "Lượt
+  // xem" menu action on those instead).
+  const realMessages = conversationMessages.filter((m) => m.type !== "system");
+  const lastRealMessage = realMessages[realMessages.length - 1];
+  const inlineSeenAvatars =
+    isGroupChat && lastRealMessage?.is_myself ? getSeenBy(lastRealMessage) : [];
 
   // Hide hover buttons while the user is selecting text
   useEffect(() => {
@@ -710,7 +700,7 @@ export default function ChatConversation({
               )}
 
               {/* Bubble column */}
-              <div className={`flex flex-col min-w-0 max-w-[75%] ${message.is_myself ? "items-end" : "items-start"}`}>
+              <div className={`flex flex-col min-w-0 max-w-[260px] ${message.is_myself ? "items-end" : "items-start"}`}>
               <div className="flex items-center gap-2 mb-1 min-w-0 max-w-full overflow-hidden">
                 {!message.is_myself &&
                   (message.sender?.username ? (
@@ -866,7 +856,7 @@ export default function ChatConversation({
                   </a>
                 ) : (
                   <div
-                    className={`rounded-lg px-3 py-2 text-sm whitespace-pre-wrap break-words [overflow-wrap:anywhere] w-fit max-w-[75vw] min-w-0 ${
+                    className={`rounded-lg px-3 py-2 text-sm whitespace-pre-wrap break-words [overflow-wrap:anywhere] w-fit max-w-[260px] min-w-0 ${
                       message.is_myself
                         ? "bg-[#319527] text-white"
                         : "bg-gray-200 dark:bg-neutral-600 dark:text-white"
@@ -908,6 +898,11 @@ export default function ChatConversation({
                     } : undefined}
                     onRecall={message.is_myself && !message.is_recalled ? () => handleRecall(message.id) : undefined}
                     onEdit={message.is_myself && message.type === "text" && !message.is_recalled ? () => handleStartEdit(message) : undefined}
+                    onViewSeenBy={
+                      isGroupChat && message.is_myself && !message.is_sending
+                        ? () => setSeenModalParticipants(getSeenBy(message))
+                        : undefined
+                    }
                   />
                 )}
               </div>
@@ -918,15 +913,15 @@ export default function ChatConversation({
                   {message.read_at ? "Đã xem" : "Đã gửi"}
                 </span>
               )}
-              {isGroupChat && seenByMessageId.get(message.id)?.length > 0 && (
+              {isGroupChat && message.id === lastRealMessage?.id && inlineSeenAvatars.length > 0 && (
                 <button
                   type="button"
-                  onClick={() => setSeenModalMessageId(message.id)}
+                  onClick={() => setSeenModalParticipants(inlineSeenAvatars)}
                   className={`flex mt-0.5 ${message.is_myself ? "justify-end" : "justify-start"}`}
                   title="Đã xem"
                 >
                   <div className="flex -space-x-1.5">
-                    {seenByMessageId.get(message.id).slice(0, 3).map((p) => (
+                    {inlineSeenAvatars.slice(0, 3).map((p) => (
                       <Avatar
                         key={p.id}
                         className="w-3.5 h-3.5 border border-white dark:border-neutral-800"
@@ -981,14 +976,14 @@ export default function ChatConversation({
       />
 
       <Modal
-        show={seenModalMessageId != null}
-        onClose={() => setSeenModalMessageId(null)}
+        show={seenModalParticipants != null}
+        onClose={() => setSeenModalParticipants(null)}
         maxWidth="sm"
       >
         <div className="p-4">
           <h3 className="font-medium text-gray-900 dark:text-white mb-3">Đã xem</h3>
           <div className="flex flex-col gap-3 max-h-72 overflow-y-auto">
-            {seenModalParticipants.length === 0 ? (
+            {(seenModalParticipants || []).length === 0 ? (
               <p className="text-sm text-gray-500 dark:text-gray-400">Chưa có ai xem tin nhắn này.</p>
             ) : (
               seenModalParticipants.map((p) => (
