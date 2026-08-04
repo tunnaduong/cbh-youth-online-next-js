@@ -906,7 +906,7 @@ export default function ProfileClient({ initialProfile, activeTab, username }) {
           <div className="lg:bg-white dark:!bg-neutral-700 h-16 lg:shadow-md">
             <div className="mx-auto max-w-[959px] h-full lg:flex hidden">
               <div
-                className="relative group/avatar-desktop w-[170px] h-[170px]"
+                className="relative group/avatar-desktop w-[170px] h-[170px] flex-shrink-0"
                 style={{ transform: "translateY(-45%)" }}
               >
                 <a
