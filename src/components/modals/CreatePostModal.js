@@ -794,7 +794,15 @@ const CreatePostModal = ({ open, onClose, isEditMode = false, postData = null, o
                       ref={textareaRef}
                       id="postDescription"
                       name="description"
-                      className="!bg-white dark:!bg-[#3c3c3c] !text-transparent caret-gray-900 dark:caret-gray-100 !appearance-none"
+                      // Browsers render *selected* text using their own default
+                      // ::selection colors regardless of the `color: transparent`
+                      // above (selection styling isn't affected by text-color),
+                      // so double-clicking/selecting a word made the real
+                      // (normally invisible) textarea text pop back into view -
+                      // right on top of the overlay's own copy of that text,
+                      // looking like duplicated/offset content. Force the
+                      // selection's own text color transparent too.
+                      className="!bg-white dark:!bg-[#3c3c3c] !text-transparent caret-gray-900 dark:caret-gray-100 !appearance-none selection:!text-transparent selection:bg-[#319527]/25 dark:selection:bg-[#6bcf60]/25"
                       // Locks font-size/line-height to an exact px value instead of
                       // antd's relative default (1.5715em) - the overlay mirrors
                       // whatever the textarea computes to, and a relative value can
