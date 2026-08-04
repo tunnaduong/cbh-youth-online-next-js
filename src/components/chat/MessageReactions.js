@@ -1,7 +1,7 @@
 "use client";
 
 import { Popover } from "antd";
-import { X, CornerUpLeft, Forward, Undo2, Pencil, Copy } from "lucide-react";
+import { X, CornerUpLeft, Forward, Undo2, Pencil, Copy, Trash2 } from "lucide-react";
 import { BsEmojiSmile } from "react-icons/bs";
 import {
   BsHandThumbsUpFill,
@@ -88,6 +88,7 @@ export default function MessageReactions({
   onRecall,
   onEdit,
   onCopy,
+  onDelete,
   inline = false,
 }) {
   const summary = reactions?.summary || [];
@@ -170,6 +171,16 @@ export default function MessageReactions({
         >
           <Undo2 className="w-4 h-4" />
           Thu hồi
+        </button>
+      )}
+      {isOwn && onDelete && (
+        <button
+          type="button"
+          onClick={() => { onDelete(); onOpenChange(false); }}
+          className="flex items-center gap-2 w-full px-2 py-1.5 rounded hover:bg-red-50 dark:hover:bg-red-900/30 text-sm text-red-600 dark:text-red-400"
+        >
+          <Trash2 className="w-4 h-4" />
+          Xóa tin nhắn
         </button>
       )}
     </div>

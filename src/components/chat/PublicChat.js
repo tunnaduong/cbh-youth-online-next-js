@@ -12,10 +12,10 @@ import MessageInput from "./MessageInput";
 import ParticipantsList from "./ParticipantsList";
 import ChatMediaLightbox from "./ChatMediaLightbox";
 import ForwardMessageModal from "./ForwardMessageModal";
-import { Menu, FileText, Download, PlayCircle, Forward, Undo2, Pencil } from "lucide-react";
+import { Menu, FileText, Download, PlayCircle, Forward, CornerUpLeft, Undo2, Pencil, Trash2 } from "lucide-react";
 import MessageReactions from "./MessageReactions";
 import ReplyPreviewBubble from "./ReplyPreviewBubble";
-import { reactToMessage, removeMessageReaction, recallMessage, editMessage } from "@/app/Api";
+import { reactToMessage, removeMessageReaction, recallMessage, editMessage, deleteMessage } from "@/app/Api";
 import { Popover, message as antdMessage } from "antd";
 
 const URL_RE = /(https?:\/\/[^\s]+)/g;
@@ -697,6 +697,19 @@ export default function PublicChat() {
     }
   };
 
+  const handleDeletePublic = async (messageId) => {
+    try {
+      await deleteMessage(messageId);
+      setMessages((prev) => prev.filter((m) => m.id !== messageId));
+      antdMessage.success("Đã xóa tin nhắn");
+    } catch (error) {
+      console.error("[PublicChat] Error deleting message:", error);
+      antdMessage.error(
+        error?.response?.data?.message || "Không thể xóa tin nhắn"
+      );
+    }
+  };
+
   const handleSaveEditPublic = async (newContent) => {
     if (!editingMessage || !newContent.trim()) return;
     try {
@@ -915,6 +928,21 @@ export default function PublicChat() {
                           <>
                             <button
                               type="button"
+                              title="Trả lời"
+                              onClick={() => setReplyingTo({
+                                id: message.id,
+                                content: message.content,
+                                type: message.type,
+                                file_url: message.file_url || null,
+                                sender: message.sender,
+                                isSelf: isOwn,
+                              })}
+                              className={`p-1 rounded-full hover:bg-gray-200 dark:hover:bg-neutral-600 text-gray-400 transition-opacity ${hoveredMessageId === message.id ? "opacity-100" : "opacity-0 pointer-events-none"}`}
+                            >
+                              <CornerUpLeft className="w-3 h-3" />
+                            </button>
+                            <button
+                              type="button"
                               title="Chuyển tiếp"
                               onClick={() => setForwardingMessage(message)}
                               className={`p-1 rounded-full hover:bg-gray-200 dark:hover:bg-neutral-600 text-gray-400 transition-opacity ${hoveredMessageId === message.id ? "opacity-100" : "opacity-0 pointer-events-none"}`}
@@ -939,6 +967,16 @@ export default function PublicChat() {
                                 className={`p-1 rounded-full hover:bg-red-100 dark:hover:bg-red-900/30 text-red-400 transition-opacity ${hoveredMessageId === message.id ? "opacity-100" : "opacity-0 pointer-events-none"}`}
                               >
                                 <Undo2 className="w-3 h-3" />
+                              </button>
+                            )}
+                            {isOwn && (
+                              <button
+                                type="button"
+                                title="Xóa tin nhắn"
+                                onClick={() => handleDeletePublic(message.id)}
+                                className={`p-1 rounded-full hover:bg-red-100 dark:hover:bg-red-900/30 text-red-400 transition-opacity ${hoveredMessageId === message.id ? "opacity-100" : "opacity-0 pointer-events-none"}`}
+                              >
+                                <Trash2 className="w-3 h-3" />
                               </button>
                             )}
                           </>
@@ -1078,6 +1116,14 @@ export default function PublicChat() {
                             onOpenChange={(v) => setOpenReactionMessageId(v ? message.id : null)}
                             onReact={(type) => handleReact(message.id, type, rxns)}
                             onRemove={() => handleRemovePublicReaction(message.id, rxns)}
+                            onReply={!message.is_recalled ? () => setReplyingTo({
+                              id: message.id,
+                              content: message.content,
+                              type: message.type,
+                              file_url: message.file_url || null,
+                              sender: message.sender,
+                              isSelf: isOwn,
+                            }) : undefined}
                             onForward={!message.is_recalled ? () => setForwardingMessage(message) : undefined}
                             onCopy={message.type === "text" && !message.is_recalled ? () => {
                               navigator.clipboard.writeText(message.content);
@@ -1085,6 +1131,7 @@ export default function PublicChat() {
                             } : undefined}
                             onRecall={isOwn && !message.is_recalled ? () => handleRecallPublic(message.id) : undefined}
                             onEdit={isOwn && message.type === "text" && !message.is_recalled ? () => setEditingMessage({ id: message.id, content: message.content || "" }) : undefined}
+                            onDelete={isOwn ? () => handleDeletePublic(message.id) : undefined}
                             inline
                           />
                         );
