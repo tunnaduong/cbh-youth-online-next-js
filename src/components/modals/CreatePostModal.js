@@ -794,7 +794,15 @@ const CreatePostModal = ({ open, onClose, isEditMode = false, postData = null, o
                       ref={textareaRef}
                       id="postDescription"
                       name="description"
-                      className="!bg-white dark:!bg-[#3c3c3c] !text-transparent caret-gray-900 dark:caret-gray-100"
+                      className="!bg-white dark:!bg-[#3c3c3c] !text-transparent caret-gray-900 dark:caret-gray-100 !appearance-none"
+                      // Locks font-size/line-height to an exact px value instead of
+                      // antd's relative default (1.5715em) - the overlay mirrors
+                      // whatever the textarea computes to, and a relative value can
+                      // round to a slightly different px number than what the
+                      // browser actually uses to lay out the textarea's own text,
+                      // which is what made the overlay's mention highlights sit a
+                      // couple pixels above the real typing cursor/text.
+                      style={{ fontSize: 14, lineHeight: "22px" }}
                       placeholder="Nội dung bài viết"
                       spellCheck="false"
                       data-ms-editor="true"
