@@ -868,7 +868,7 @@ export default function ProfileClient({ initialProfile, activeTab, username }) {
           </div>
 
           {/* Mobile profile info card — sits BELOW the cover photo */}
-          <div className="lg:hidden bg-white dark:bg-neutral-800 border-b border-gray-200 dark:border-neutral-700 px-4 pb-4 w-full max-w-full overflow-x-hidden box-border">
+          <div className="lg:hidden bg-white dark:bg-neutral-800 border-b border-gray-200 dark:border-neutral-700 px-4 pb-4 w-full max-w-full box-border">
             {/* Avatar peeks above the card */}
             <div className="flex flex-col items-center -mt-12 w-full max-w-full">
               <div className="relative group/avatar w-24 h-24 shrink-0">
