@@ -868,10 +868,10 @@ export default function ProfileClient({ initialProfile, activeTab, username }) {
           </div>
 
           {/* Mobile profile info card — sits BELOW the cover photo */}
-          <div className="lg:hidden bg-white dark:bg-neutral-800 border-b border-gray-200 dark:border-neutral-700 px-4 pb-4">
+          <div className="lg:hidden bg-white dark:bg-neutral-800 border-b border-gray-200 dark:border-neutral-700 px-4 pb-4 w-full max-w-full overflow-x-hidden box-border">
             {/* Avatar peeks above the card */}
-            <div className="flex flex-col items-center -mt-12">
-              <div className="relative group/avatar w-24 h-24">
+            <div className="flex flex-col items-center -mt-12 w-full max-w-full">
+              <div className="relative group/avatar w-24 h-24 shrink-0">
                 <a href={`${process.env.NEXT_PUBLIC_API_URL}/v1.0/users/${profile.username}/avatar`}>
                   <img
                     className="w-24 h-24 rounded-full bg-white ring-4 ring-white dark:ring-neutral-800"
@@ -894,8 +894,8 @@ export default function ProfileClient({ initialProfile, activeTab, username }) {
                   </>
                 )}
               </div>
-              <div className="flex flex-col items-center mt-2">
-                <h1 className="font-bold text-xl text-center text-gray-900 dark:text-white">
+              <div className="flex flex-col items-center mt-2 w-full max-w-full min-w-0">
+                <h1 className="font-bold text-xl text-center text-gray-900 dark:text-white break-words max-w-full">
                   {profile.profile_name}
                   {profile.verified == "1" && (
                     <svg stroke="currentColor" fill="currentColor" strokeWidth={0} viewBox="0 0 20 20" aria-hidden="true" className="relative inline shrink-0 text-xl leading-5 text-primary-500 ml-1" height="1em" width="1em" xmlns="http://www.w3.org/2000/svg">
@@ -903,16 +903,16 @@ export default function ProfileClient({ initialProfile, activeTab, username }) {
                     </svg>
                   )}
                 </h1>
-                <p className="text-sm text-gray-500 dark:text-gray-400">@{profile.username}</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400 break-words max-w-full">@{profile.username}</p>
               </div>
-              <div className="flex flex-wrap justify-center gap-x-4 gap-y-1 mt-3 text-sm">
+              <div className="flex flex-wrap justify-center gap-x-4 gap-y-1 mt-3 text-sm max-w-full">
                 <Link href={`/${profile.username}`}><span className="text-gray-500 dark:text-gray-400">Bài đăng: </span><span className="font-bold text-gray-900 dark:text-white">{profile.stats.posts}</span></Link>
                 <div><span className="text-gray-500 dark:text-gray-400">Điểm: </span><span className="font-bold text-gray-900 dark:text-white">{profile.stats.points}</span></div>
                 <Link href={`/${profile.username}/following`}><span className="text-gray-500 dark:text-gray-400">Đang theo dõi: </span><span className="font-bold text-gray-900 dark:text-white">{profile.stats.following}</span></Link>
                 <Link href={`/${profile.username}/followers`}><span className="text-gray-500 dark:text-gray-400">Người theo dõi: </span><span className="font-bold text-gray-900 dark:text-white">{profile.stats.followers}</span></Link>
                 <div><span className="text-gray-500 dark:text-gray-400">Lượt like: </span><span className="font-bold text-gray-900 dark:text-white">{profile.stats.likes}</span></div>
               </div>
-              {profile.bio && <p className="text-center text-gray-700 dark:text-gray-300 text-sm mt-2">{profile.bio}</p>}
+              {profile.bio && <p className="text-center text-gray-700 dark:text-gray-300 text-sm mt-2 break-words max-w-full">{profile.bio}</p>}
               <div className="flex flex-col gap-y-1 mt-2 text-sm text-gray-500 dark:text-gray-400">
                 {profile.location && <div className="flex items-center gap-x-1"><IoLocationOutline className="text-base" /><span>{profile.location}</span></div>}
                 {profile.joined_at && <div className="flex items-center gap-x-1"><IoCalendarOutline className="text-base" /><span>{profile.joined_at}</span></div>}
