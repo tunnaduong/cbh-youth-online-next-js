@@ -183,7 +183,7 @@ export default function PostItem({ post, single = false, onVote, onRefresh = nul
       if (srcMatch) {
         const src = srcMatch[1];
         const isWhitelisted =
-          /^(https?:)?\/\/(www\.)?(youtube\.com|youtube-nocookie\.com|player\.vimeo\.com)\//.test(
+          /^(https?:)?\/\/((www\.)?(youtube\.com|youtube-nocookie\.com|player\.vimeo\.com)|w\.soundcloud\.com)\//.test(
             src
           );
 
@@ -223,6 +223,43 @@ export default function PostItem({ post, single = false, onVote, onRefresh = nul
       }
     }
     return ids;
+  };
+
+  // Detect plain SoundCloud track/set URLs already present in the post body
+  // and auto-embed them below the content — even when the author didn't
+  // paste a proper <iframe>. Skips any track already embedded via an iframe.
+  const SOUNDCLOUD_URL_RE =
+    /(?:https?:\/\/)?(?:www\.)?soundcloud\.com\/[\w-]+\/(?:sets\/)?[\w-]+/gi;
+
+  const extractSoundCloudEmbedUrls = (html) => {
+    if (!html) return [];
+
+    const alreadyEmbeddedUrls = new Set(
+      [...html.matchAll(/<iframe[^>]+src="([^"]+)"/gi)]
+        .map((m) => {
+          try {
+            return decodeURIComponent(
+              new URL(m[1], "https://w.soundcloud.com").searchParams.get(
+                "url"
+              ) || ""
+            );
+          } catch {
+            return "";
+          }
+        })
+        .filter(Boolean)
+    );
+
+    const urls = [];
+    const seen = new Set();
+    for (const match of html.matchAll(SOUNDCLOUD_URL_RE)) {
+      const url = match[0];
+      if (!seen.has(url) && !alreadyEmbeddedUrls.has(url)) {
+        seen.add(url);
+        urls.push(url);
+      }
+    }
+    return urls;
   };
 
   // Posts don't support "@all" broadcast mentions (that's a comment/chat-only
@@ -270,6 +307,11 @@ export default function PostItem({ post, single = false, onVote, onRefresh = nul
     if (!single || !post.content) return { html: post.content, headings: [] };
     return extractHeadingsAndInjectIds(linkifyMentionsInHtml(post.content, validMentions));
   }, [single, post.content, post.mentions]);
+
+  const soundcloudEmbedUrls = useMemo(
+    () => extractSoundCloudEmbedUrls(post.content),
+    [post.content]
+  );
 
   const youtubeEmbedIds = useMemo(
     () => extractYoutubeEmbedIds(post.content),
@@ -598,6 +640,25 @@ export default function PostItem({ post, single = false, onVote, onRefresh = nul
                     title="YouTube video"
                     allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                     allowFullScreen
+                  />
+                </div>
+              ))}
+            </div>
+          )}
+
+          {soundcloudEmbedUrls.length > 0 && (
+            <div className="prose max-w-[600px]">
+              {soundcloudEmbedUrls.map((url) => (
+                <div key={url} className="h-[166px] mt-2">
+                  <iframe
+                    src={`https://w.soundcloud.com/player/?url=${encodeURIComponent(
+                      url
+                    )}&color=%23ff5500&auto_play=false&hide_related=false&show_comments=true&show_user=true&show_reposts=false&show_teaser=true`}
+                    title="SoundCloud track"
+                    width="100%"
+                    height="166"
+                    frameBorder="0"
+                    allow="autoplay"
                   />
                 </div>
               ))}

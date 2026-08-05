@@ -26,9 +26,9 @@ const MarkdownRenderer = ({ content, className = "" }) => {
 
     while ((match = iframeRegex.exec(markdown)) !== null) {
       const src = match[1];
-      // Whitelist: YouTube, Vimeo
+      // Whitelist: YouTube, Vimeo, SoundCloud
       if (
-        /^(https?:)?\/\/(www\.)?(youtube\.com|youtube-nocookie\.com|player\.vimeo\.com)\//.test(
+        /^(https?:)?\/\/((www\.)?(youtube\.com|youtube-nocookie\.com|player\.vimeo\.com)|w\.soundcloud\.com)\//.test(
           src
         )
       ) {
