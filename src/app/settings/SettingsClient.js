@@ -1074,6 +1074,11 @@ export default function SettingsClient({ initialUser, hasAuthError }) {
                     placeholder="Chọn ngày sinh"
                     format="DD/MM/YYYY"
                     className="w-full"
+                    disabledDate={(current) =>
+                      current &&
+                      (current.isBefore(dayjs("1900-01-01"), "day") ||
+                        !current.isBefore(dayjs(), "day"))
+                    }
                   />
                 </div>
                 <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
