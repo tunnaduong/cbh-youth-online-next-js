@@ -265,6 +265,9 @@ export default function ChatMessageInput({
         // Documents/other file types remain single-attachment only.
         files = [first];
       }
+      if (files.length !== selected.length) {
+        antdMessage.warning("Chỉ gửi được một loại tệp cùng lúc - đã bỏ qua các tệp không cùng loại với lựa chọn đầu tiên");
+      }
       if (files.length > 10) {
         antdMessage.warning("Chỉ có thể gửi tối đa 10 tệp cùng lúc");
         files = files.slice(0, 10);
