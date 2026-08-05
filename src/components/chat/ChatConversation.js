@@ -38,6 +38,20 @@ function resolveFileUrl(url) {
     : `${process.env.NEXT_PUBLIC_API_URL}${url}`;
 }
 
+async function downloadMessageMedia(url) {
+  const absoluteUrl = resolveFileUrl(url);
+  const response = await fetch(absoluteUrl);
+  const blob = await response.blob();
+  const objectUrl = window.URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = objectUrl;
+  link.setAttribute("download", absoluteUrl.split("/").pop().split("?")[0] || "download");
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  window.URL.revokeObjectURL(objectUrl);
+}
+
 const IMAGE_EXTENSION_RE = /\.(png|jpe?g|gif|webp|bmp|svg|heic|heif)$/i;
 
 const URL_RE = /(https?:\/\/[^\s]+)/g;
@@ -730,6 +744,18 @@ export default function ChatConversation({
                   className="p-1.5 rounded-full hover:bg-gray-200 dark:hover:bg-neutral-600 text-gray-500 dark:text-gray-400"
                 >
                   <Forward className="w-3.5 h-3.5" />
+                </button>
+              )}
+              {!message.is_recalled &&
+                message.file_url &&
+                (message.type === "image" || message.type === "video") && (
+                <button
+                  type="button"
+                  title="Tải xuống"
+                  onClick={() => downloadMessageMedia(message.file_url)}
+                  className="p-1.5 rounded-full hover:bg-gray-200 dark:hover:bg-neutral-600 text-gray-500 dark:text-gray-400"
+                >
+                  <Download className="w-3.5 h-3.5" />
                 </button>
               )}
             </div>
