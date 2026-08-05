@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { Button, DatePicker, Radio, Select, Switch, message } from "antd";
-import { Edit2Icon, User, Bell, Shield, Trash2 } from "lucide-react";
+import { Edit2Icon, User, Bell, Shield, Trash2, UserX } from "lucide-react";
 import Input from "@/components/ui/input";
 import DefaultLayout from "@/layouts/DefaultLayout";
 import dayjs from "dayjs";
@@ -19,6 +19,8 @@ import {
   getUserProfile,
   getNotificationSettings,
   updateNotificationSettings,
+  getBlockedUsers,
+  unblockUser,
 } from "@/app/Api";
 import axiosInstance from "@/services/api/AxiosCustom";
 
@@ -33,6 +35,41 @@ export default function SettingsClient({ initialUser, hasAuthError }) {
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [uploadingCover, setUploadingCover] = useState(false);
   const [errors, setErrors] = useState({});
+  const [blockedUsers, setBlockedUsers] = useState([]);
+  const [blockedUsersLoading, setBlockedUsersLoading] = useState(false);
+  const [unblockingId, setUnblockingId] = useState(null);
+
+  useEffect(() => {
+    if (activeTab !== "blocked") return;
+    let cancelled = false;
+    setBlockedUsersLoading(true);
+    getBlockedUsers()
+      .then((res) => {
+        if (!cancelled) setBlockedUsers(res.data || []);
+      })
+      .catch(() => {
+        if (!cancelled) message.error("Không thể tải danh sách người dùng đã chặn");
+      })
+      .finally(() => {
+        if (!cancelled) setBlockedUsersLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [activeTab]);
+
+  const handleUnblock = async (userId) => {
+    setUnblockingId(userId);
+    try {
+      await unblockUser(userId);
+      setBlockedUsers((prev) => prev.filter((u) => u.id !== userId));
+      message.success("Đã bỏ chặn người dùng");
+    } catch (error) {
+      message.error("Không thể bỏ chặn, vui lòng thử lại");
+    } finally {
+      setUnblockingId(null);
+    }
+  };
 
   // Handle authentication check on client-side to avoid redirect loops
   useEffect(() => {
@@ -1457,6 +1494,59 @@ export default function SettingsClient({ initialUser, hasAuthError }) {
           </div>
         );
 
+      case "blocked":
+        return (
+          <div className="space-y-6">
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                Người dùng đã chặn
+              </h3>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mb-6">
+                Những người bạn đã chặn sẽ không thể nhắn tin, bình luận, thả react, vote hay gửi thông báo cho bạn nữa. Bỏ chặn để khôi phục lại bình thường.
+              </p>
+            </div>
+
+            {blockedUsersLoading ? (
+              <p className="text-sm text-gray-500 dark:text-gray-400">Đang tải...</p>
+            ) : blockedUsers.length === 0 ? (
+              <p className="text-sm text-gray-500 dark:text-gray-400">Bạn chưa chặn ai cả.</p>
+            ) : (
+              <div className="space-y-2">
+                {blockedUsers.map((user) => (
+                  <div
+                    key={user.id}
+                    className="flex items-center justify-between p-3 rounded-md border border-gray-200 dark:border-neutral-700"
+                  >
+                    <div className="flex items-center gap-3">
+                      <img
+                        src={`${process.env.NEXT_PUBLIC_API_URL}/v1.0/users/${user.username}/avatar`}
+                        alt=""
+                        className="w-10 h-10 rounded-full bg-gray-200 dark:bg-neutral-700"
+                      />
+                      <div>
+                        <p className="text-sm font-medium text-gray-900 dark:text-white">
+                          {user.profile?.profile_name || user.username}
+                        </p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">
+                          @{user.username}
+                        </p>
+                      </div>
+                    </div>
+                    <Button
+                      size="small"
+                      loading={unblockingId === user.id}
+                      onClick={() => handleUnblock(user.id)}
+                      className="!border-[#319527] !text-[#319527] hover:!bg-[#319527] hover:!text-white"
+                    >
+                      Bỏ chặn
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        );
+
       default:
         return null;
     }
@@ -1541,6 +1631,16 @@ export default function SettingsClient({ initialUser, hasAuthError }) {
                 >
                   <Bell className="w-5 h-5 mr-3" />
                   Thông báo
+                </button>
+                <button
+                  onClick={() => setActiveTab("blocked")}
+                  className={`w-full flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors ${activeTab === "blocked"
+                      ? "bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 border-r-2 border-green-600 dark:border-green-400"
+                      : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-neutral-800"
+                    }`}
+                >
+                  <UserX className="w-5 h-5 mr-3" />
+                  Đã chặn
                 </button>
               </nav>
             </div>

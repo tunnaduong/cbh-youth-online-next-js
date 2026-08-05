@@ -673,3 +673,16 @@ export const getMentionSuggestions = (query) => {
 export const getConversationMentionSuggestions = (conversationId, query) => {
   return Api.getRequest(`/v1.0/chat/conversations/${conversationId}/mention-suggestions?q=${encodeURIComponent(query)}`);
 };
+
+// Blocking
+export const blockUser = (userId) => {
+  return Api.postRequest("/v1.0/users/block", { blocked_user_id: userId });
+};
+
+export const unblockUser = (userId) => {
+  return Api.postRequest("/v1.0/users/unblock", { blocked_user_id: userId });
+};
+
+export const getBlockedUsers = () => {
+  return Api.getRequest("/v1.0/users/blocked");
+};
