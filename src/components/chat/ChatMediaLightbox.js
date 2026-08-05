@@ -87,7 +87,7 @@ export default function ChatMediaLightbox({ media, onClose }) {
     >
       {/* Close */}
       <button
-        className="absolute top-4 right-4 z-10 p-2 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors"
+        className="absolute top-4 right-4 z-10 p-2 rounded-full bg-black/50 hover:bg-black/70 text-white transition-colors"
         onClick={onClose}
         title="Đóng (Esc)"
       >
@@ -98,14 +98,14 @@ export default function ChatMediaLightbox({ media, onClose }) {
       {list && (
         <>
           <button
-            className="absolute left-4 top-1/2 -translate-y-1/2 z-10 p-2 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors"
+            className="absolute left-4 top-1/2 -translate-y-1/2 z-10 p-2 rounded-full bg-black/50 hover:bg-black/70 text-white transition-colors"
             onClick={goPrev}
             title="Ảnh trước"
           >
             <ChevronLeft className="w-6 h-6" />
           </button>
           <button
-            className="absolute right-4 top-1/2 -translate-y-1/2 z-10 p-2 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors"
+            className="absolute right-4 top-1/2 -translate-y-1/2 z-10 p-2 rounded-full bg-black/50 hover:bg-black/70 text-white transition-colors"
             onClick={goNext}
             title="Ảnh tiếp theo"
           >
