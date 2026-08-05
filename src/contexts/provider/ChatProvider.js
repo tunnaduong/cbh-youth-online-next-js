@@ -367,10 +367,15 @@ const ChatProvider = ({ children }) => {
     [loggedIn, loadMessages]
   );
 
-  // Send an image/file attachment message
+  // Send an image/file attachment message. `fileOrFiles` is either a single
+  // File (the common case, unchanged behavior) or an array of 2-10 Files
+  // (multi image/video attachments), as selected via the chat attach picker.
   const sendFileMessage = useCallback(
-    async (conversationId, file) => {
-      if (!loggedIn || !conversationId || !file) return;
+    async (conversationId, fileOrFiles) => {
+      if (!loggedIn || !conversationId || !fileOrFiles) return;
+      const files = Array.isArray(fileOrFiles) ? fileOrFiles : [fileOrFiles];
+      if (files.length === 0) return;
+      const file = files[0];
 
       // Some file pickers (mobile "Files" providers, certain Windows dialogs) leave
       // file.type blank or generic instead of a proper image/* or video/* MIME, which
@@ -388,13 +393,15 @@ const ChatProvider = ({ children }) => {
           (!file.type && VIDEO_EXTENSION_RE.test(file.name || "")));
       const type = isImage ? "image" : isVideo ? "video" : "file";
       const tempId = `temp-${Date.now()}`;
-      const localUrl = isImage || isVideo ? URL.createObjectURL(file) : null;
+      const localUrls =
+        isImage || isVideo ? files.map((f) => URL.createObjectURL(f)) : [];
 
       const optimisticMessage = {
         id: tempId,
         content: file.name,
         type,
-        file_url: localUrl,
+        file_url: localUrls[0] || null,
+        file_urls: localUrls.length > 1 ? localUrls : null,
         file_name: file.name,
         file_size: file.size,
         is_myself: true,
@@ -411,7 +418,11 @@ const ChatProvider = ({ children }) => {
       setSending(true);
       try {
         const formData = new FormData();
-        formData.append("file", file);
+        if (files.length > 1) {
+          files.forEach((f) => formData.append("files[]", f));
+        } else {
+          formData.append("file", file);
+        }
         formData.append("type", type);
         formData.append("content", file.name);
 
@@ -436,7 +447,7 @@ const ChatProvider = ({ children }) => {
         }));
         throw error;
       } finally {
-        if (localUrl) URL.revokeObjectURL(localUrl);
+        localUrls.forEach((u) => URL.revokeObjectURL(u));
         setSending(false);
       }
     },

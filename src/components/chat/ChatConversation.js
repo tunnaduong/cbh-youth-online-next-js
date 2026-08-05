@@ -495,8 +495,8 @@ export default function ChatConversation({
     }
   };
 
-  const handleSendFile = async (file) => {
-    if (!file) return;
+  const handleSendFile = async (fileOrFiles) => {
+    if (!fileOrFiles || (Array.isArray(fileOrFiles) && fileOrFiles.length === 0)) return;
 
     // If this is a preview conversation, create it first
     if (previewParticipant && !conversationId) {
@@ -508,7 +508,7 @@ export default function ChatConversation({
           if (onConversationCreated) {
             onConversationCreated(conversation.id);
           }
-          await sendFileMessage(conversation.id, file);
+          await sendFileMessage(conversation.id, fileOrFiles);
         }
       } catch (error) {
         console.error("[ChatConversation] Error creating conversation:", error);
@@ -517,7 +517,7 @@ export default function ChatConversation({
     }
 
     if (conversationId) {
-      await sendFileMessage(conversationId, file);
+      await sendFileMessage(conversationId, fileOrFiles);
     }
   };
 
@@ -835,6 +835,74 @@ export default function ChatConversation({
                       : "bg-gray-200 dark:bg-neutral-600 text-gray-500 dark:text-gray-400"
                   }`}>
                     Tin nhắn đã bị thu hồi
+                  </div>
+                ) : (message.type === "image" || message.type === "video") &&
+                  message.file_urls?.length >= 2 ? (
+                  <div
+                    className={`relative grid gap-1 rounded-lg overflow-hidden max-w-[240px] ${
+                      message.file_urls.length === 2 ? "grid-cols-2" : "grid-cols-3"
+                    }`}
+                    onMouseDown={(e) => { if (e.button === 0) startLongPress(message.id); }}
+                    onMouseMove={clearLongPressTimer}
+                    onMouseUp={clearLongPressTimer}
+                    onMouseLeave={clearLongPressTimer}
+                    onTouchStart={() => startLongPress(message.id)}
+                    onTouchEnd={clearLongPressTimer}
+                    onTouchMove={clearLongPressTimer}
+                    onContextMenu={(e) => e.preventDefault()}
+                  >
+                    {message.file_urls.map((url, idx) => (
+                      <div
+                        key={idx}
+                        className="relative aspect-square cursor-pointer overflow-hidden bg-black/5"
+                        onClick={() =>
+                          !message.is_sending &&
+                          setLightboxMedia({
+                            type: message.type,
+                            url: resolveFileUrl(url),
+                            poster:
+                              message.type === "video"
+                                ? resolveFileUrl(message.metadata?.thumbnail_url)
+                                : undefined,
+                            index: idx,
+                            list: message.file_urls.map((u) => ({
+                              type: message.type,
+                              url: resolveFileUrl(u),
+                              poster:
+                                message.type === "video"
+                                  ? resolveFileUrl(message.metadata?.thumbnail_url)
+                                  : undefined,
+                            })),
+                          })
+                        }
+                      >
+                        {message.type === "video" ? (
+                          <video
+                            src={resolveFileUrl(url)}
+                            preload="metadata"
+                            muted
+                            playsInline
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <img
+                            src={resolveFileUrl(url)}
+                            alt={message.content || "image"}
+                            className="w-full h-full object-cover"
+                          />
+                        )}
+                        {message.type === "video" && (
+                          <div className="absolute inset-0 flex items-center justify-center bg-black/20 pointer-events-none">
+                            <PlayCircle className="w-6 h-6 text-white drop-shadow" />
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                    {message.is_sending && (
+                      <div className="absolute inset-0 flex items-center justify-center bg-black/30">
+                        <span className="text-xs text-white">Đang gửi...</span>
+                      </div>
+                    )}
                   </div>
                 ) : message.type === "image" ||
                 (message.type === "file" && looksLikeImage(message)) ? (

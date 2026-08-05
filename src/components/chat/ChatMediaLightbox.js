@@ -1,28 +1,65 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { X, ZoomIn, ZoomOut } from "lucide-react";
+import { ChevronLeft, ChevronRight, X, ZoomIn, ZoomOut } from "lucide-react";
 
+// `media` is either a single-item shape { type, url, poster } (unchanged
+// behavior) or a gallery shape that additionally carries `list` (an array of
+// { type, url, poster } items) and `index` (which item was tapped), used for
+// multi-attachment chat messages so the user can navigate between images.
 export default function ChatMediaLightbox({ media, onClose }) {
   const [scale, setScale] = useState(1);
   const [dragging, setDragging] = useState(false);
   const [pos, setPos] = useState({ x: 0, y: 0 });
+  const [currentIndex, setCurrentIndex] = useState(0);
   const dragStart = useRef(null);
+
+  const list = media?.list && media.list.length > 1 ? media.list : null;
 
   useEffect(() => {
     if (!media) return;
     setScale(1);
     setPos({ x: 0, y: 0 });
+    setCurrentIndex(media.index || 0);
+  }, [media]);
+
+  useEffect(() => {
+    if (!media) return;
     const handleKeyDown = (e) => {
       if (e.key === "Escape") onClose?.();
       if (e.key === "+" || e.key === "=") setScale((s) => Math.min(s + 0.25, 4));
       if (e.key === "-") setScale((s) => Math.max(s - 0.25, 0.25));
+      if (list && e.key === "ArrowLeft") {
+        setCurrentIndex((i) => (i - 1 + list.length) % list.length);
+        setScale(1);
+        setPos({ x: 0, y: 0 });
+      }
+      if (list && e.key === "ArrowRight") {
+        setCurrentIndex((i) => (i + 1) % list.length);
+        setScale(1);
+        setPos({ x: 0, y: 0 });
+      }
     };
     document.addEventListener("keydown", handleKeyDown);
     return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [media, onClose]);
+  }, [media, onClose, list]);
 
   if (!media) return null;
+
+  const current = list ? list[currentIndex] || list[0] : media;
+
+  const goPrev = (e) => {
+    e.stopPropagation();
+    setCurrentIndex((i) => (i - 1 + list.length) % list.length);
+    setScale(1);
+    setPos({ x: 0, y: 0 });
+  };
+  const goNext = (e) => {
+    e.stopPropagation();
+    setCurrentIndex((i) => (i + 1) % list.length);
+    setScale(1);
+    setPos({ x: 0, y: 0 });
+  };
 
   const handleWheel = (e) => {
     e.preventDefault();
@@ -57,8 +94,31 @@ export default function ChatMediaLightbox({ media, onClose }) {
         <X className="w-6 h-6" />
       </button>
 
+      {/* Gallery navigation */}
+      {list && (
+        <>
+          <button
+            className="absolute left-4 top-1/2 -translate-y-1/2 z-10 p-2 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors"
+            onClick={goPrev}
+            title="Ảnh trước"
+          >
+            <ChevronLeft className="w-6 h-6" />
+          </button>
+          <button
+            className="absolute right-4 top-1/2 -translate-y-1/2 z-10 p-2 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors"
+            onClick={goNext}
+            title="Ảnh tiếp theo"
+          >
+            <ChevronRight className="w-6 h-6" />
+          </button>
+          <div className="absolute top-4 left-1/2 -translate-x-1/2 z-10 text-white text-xs bg-black/50 rounded-full px-2.5 py-1">
+            {currentIndex + 1} / {list.length}
+          </div>
+        </>
+      )}
+
       {/* Zoom controls */}
-      {media.type === "image" && (
+      {current.type === "image" && (
         <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-10 flex items-center gap-2 bg-black/50 rounded-full px-3 py-1.5">
           <button
             onClick={(e) => { e.stopPropagation(); setScale((s) => Math.max(s - 0.25, 0.25)); }}
@@ -95,17 +155,18 @@ export default function ChatMediaLightbox({ media, onClose }) {
           transition: dragging ? "none" : "transform 0.1s ease",
         }}
       >
-        {media.type === "image" ? (
+        {current.type === "image" ? (
           <img
-            src={media.url}
+            src={current.url}
             alt="preview"
             draggable={false}
             style={{ maxWidth: "90vw", maxHeight: "90vh", display: "block" }}
           />
-        ) : media.type === "video" ? (
+        ) : current.type === "video" ? (
           <video
-            src={media.url}
-            poster={media.poster}
+            key={current.url}
+            src={current.url}
+            poster={current.poster}
             controls
             autoPlay
             style={{ maxWidth: "90vw", maxHeight: "90vh" }}

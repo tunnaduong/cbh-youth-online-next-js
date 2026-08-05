@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback } from "react";
+import { message as antdMessage } from "antd";
 import { FileText, Paperclip, Pencil, Send, Video, X } from "lucide-react";
 import MentionSuggestionsDropdown from "@/components/ui/MentionSuggestionsDropdown";
 import { useMentionInput } from "@/hooks/useMentionInput";
@@ -246,11 +247,32 @@ export default function ChatMessageInput({
   );
 
   const handleFileChange = async (e) => {
-    const file = e.target.files?.[0];
+    const selected = Array.from(e.target.files || []);
     e.target.value = "";
-    if (!file || !onSendFile) return;
+    if (selected.length === 0 || !onSendFile) return;
+
+    const isImage = (f) => f.type?.startsWith("image/");
+    const isVideo = (f) => f.type?.startsWith("video/");
+
+    let files = selected;
+    if (selected.length > 1) {
+      const first = selected[0];
+      if (isImage(first)) {
+        files = selected.filter(isImage);
+      } else if (isVideo(first)) {
+        files = selected.filter(isVideo);
+      } else {
+        // Documents/other file types remain single-attachment only.
+        files = [first];
+      }
+      if (files.length > 10) {
+        antdMessage.warning("Chỉ có thể gửi tối đa 10 tệp cùng lúc");
+        files = files.slice(0, 10);
+      }
+    }
+
     try {
-      await onSendFile(file);
+      await onSendFile(files.length === 1 ? files[0] : files);
     } catch (error) {
       console.error("[ChatMessageInput] Error sending file:", error);
     }
@@ -264,6 +286,7 @@ export default function ChatMessageInput({
         <input
           ref={fileInputRef}
           type="file"
+          multiple
           onChange={handleFileChange}
           style={{ display: "none" }}
         />
