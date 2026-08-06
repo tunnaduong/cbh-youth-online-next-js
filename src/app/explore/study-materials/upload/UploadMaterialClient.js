@@ -121,6 +121,16 @@ export default function UploadMaterialClient() {
     }
   };
 
+  const MAX_FILE_SIZE_BYTES = 100 * 1024 * 1024; // 100MB, must match backend FileUploadController max:102400
+
+  const beforeUpload = (file) => {
+    if (file.size > MAX_FILE_SIZE_BYTES) {
+      message.error("Tệp quá lớn. Kích thước tối đa là 100MB.");
+      return Upload.LIST_IGNORE;
+    }
+    return true;
+  };
+
   const customUpload = async ({ file, onSuccess, onError }) => {
     try {
       setUploading(true);
@@ -135,7 +145,11 @@ export default function UploadMaterialClient() {
       message.success("Tải tệp lên thành công!");
     } catch (err) {
       onError(err);
-      message.error("Tải tệp lên thất bại");
+      message.error(
+        err.response?.status === 422
+          ? err.response?.data?.errors?.file?.[0] || "Tệp quá lớn. Kích thước tối đa là 100MB."
+          : err.response?.data?.message || "Tải tệp lên thất bại"
+      );
     } finally {
       setUploading(false);
     }
@@ -242,6 +256,7 @@ export default function UploadMaterialClient() {
                   >
                     <Upload
                       customRequest={customUpload}
+                      beforeUpload={beforeUpload}
                       maxCount={1}
                       accept=".pdf,.doc,.docx,.txt,.xlsx,.xls"
                       className="w-full"
