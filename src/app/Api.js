@@ -484,6 +484,10 @@ export const getProfile = (username) => {
   return Api.getRequest(`/v1.0/users/${username}/profile`);
 };
 
+export const getUserPosts = (username, page = 1, perPage = 10) => {
+  return Api.getRequest(`/v1.0/users/${username}/posts?page=${page}&per_page=${perPage}`);
+};
+
 export const updateProfile = (username, params) => {
   return Api.putRequest(`/v1.0/users/${username}/profile`, params);
 };

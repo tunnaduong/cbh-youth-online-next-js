@@ -17,6 +17,7 @@ import {
   unfollowUser,
   registerVote,
   getProfile,
+  getUserPosts,
   updateAvatar,
   updateCover,
 } from "@/app/Api";
@@ -132,6 +133,9 @@ export default function ProfileClient({ initialProfile, activeTab, username }) {
   const [followingList, setFollowingList] = useState(profile?.following || []);
   const [followersList, setFollowersList] = useState(profile?.followers || []);
   const [posts, setPosts] = useState(profile?.posts || []);
+  const [postsPage, setPostsPage] = useState(1);
+  const [postsHasMore, setPostsHasMore] = useState(true);
+  const [loadingMorePosts, setLoadingMorePosts] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [uploadingCover, setUploadingCover] = useState(false);
   const [coverIsLight, setCoverIsLight] = useState(false);
@@ -173,6 +177,50 @@ export default function ProfileClient({ initialProfile, activeTab, username }) {
       cancelled = true;
     };
   }, [profile?.cover_photo_url, profile?.username]);
+
+  // The initial profile payload only includes a 5-post "recent posts"
+  // preview (see UserController::getProfile on the backend) - fetch the
+  // real, fully-paginated list once the Posts tab is opened so older posts
+  // beyond those 5 actually show up.
+  useEffect(() => {
+    if (activeTab !== "posts" || !username) return;
+
+    let cancelled = false;
+    setLoadingMorePosts(true);
+    getUserPosts(username, 1, 10)
+      .then((response) => {
+        if (cancelled) return;
+        setPosts(response.data?.data || []);
+        setPostsPage(1);
+        setPostsHasMore(Boolean(response.data?.has_more));
+      })
+      .catch((error) => {
+        console.error("Error loading posts:", error);
+      })
+      .finally(() => {
+        if (!cancelled) setLoadingMorePosts(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [activeTab, username]);
+
+  const loadMorePosts = async () => {
+    if (loadingMorePosts || !postsHasMore) return;
+    setLoadingMorePosts(true);
+    try {
+      const nextPage = postsPage + 1;
+      const response = await getUserPosts(username, nextPage, 10);
+      setPosts((prev) => [...prev, ...(response.data?.data || [])]);
+      setPostsPage(nextPage);
+      setPostsHasMore(Boolean(response.data?.has_more));
+    } catch (error) {
+      console.error("Error loading more posts:", error);
+    } finally {
+      setLoadingMorePosts(false);
+    }
+  };
 
   const handleMessage = async () => {
     if (!currentUser) {
@@ -515,6 +563,13 @@ export default function ProfileClient({ initialProfile, activeTab, username }) {
                 onVote={handleVote}
               />
             ))}
+            {postsHasMore && (
+              <div className="flex justify-center py-4">
+                <Button loading={loadingMorePosts} onClick={loadMorePosts}>
+                  Xem thêm bài viết
+                </Button>
+              </div>
+            )}
           </>
         );
       case "followers":
