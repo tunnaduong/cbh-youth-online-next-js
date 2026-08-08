@@ -9,9 +9,8 @@ function esc(s) {
   return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
 
-export function buildHtml(text, allowAllMention = true) {
-  if (!text) return "";
-  return text
+function buildLineHtml(line, allowAllMention) {
+  return line
     .split(MENTION_RE)
     .map((part, i) => {
       if (i % 2 !== 1) return esc(part);
@@ -19,6 +18,16 @@ export function buildHtml(text, allowAllMention = true) {
       return `<span class="ce-mention">${esc(part)}</span>`;
     })
     .join("");
+}
+
+// Newlines (from Shift+Enter) need to become <br> - a bare "\n" inside a
+// contenteditable's HTML is collapsed/ignored by the browser.
+export function buildHtml(text, allowAllMention = true) {
+  if (!text) return "";
+  return text
+    .split("\n")
+    .map((line) => buildLineHtml(line, allowAllMention))
+    .join("<br>");
 }
 
 export function getCaretOffset(el) {
@@ -64,10 +73,43 @@ export function setCaretOffset(el, offset) {
   window.getSelection().addRange(r);
 }
 
+// el.textContent silently drops <br> elements (they contribute zero
+// characters), which is how Shift+Enter line breaks get lost. Walk the DOM
+// instead and turn <br> - and the extra <div>/<p> blocks some browsers
+// create on plain Enter before handleKeyDown's preventDefault kicks in -
+// back into "\n".
 export function getContentText(el) {
-  let t = el.textContent ?? "";
-  if (t.endsWith("\n")) t = t.slice(0, -1);
-  return t;
+  let out = "";
+  const BLOCK_TAGS = new Set(["DIV", "P"]);
+
+  function walk(node, isFirstBlockChild) {
+    if (node.nodeType === Node.TEXT_NODE) {
+      out += node.textContent;
+      return;
+    }
+    if (node.nodeType !== Node.ELEMENT_NODE) return;
+    if (node.tagName === "BR") {
+      out += "\n";
+      return;
+    }
+    if (BLOCK_TAGS.has(node.tagName) && !isFirstBlockChild) {
+      out += "\n";
+    }
+    let first = true;
+    for (const child of node.childNodes) {
+      walk(child, first);
+      first = false;
+    }
+  }
+
+  let first = true;
+  for (const child of el.childNodes) {
+    walk(child, first);
+    first = false;
+  }
+
+  if (out.endsWith("\n")) out = out.slice(0, -1);
+  return out;
 }
 
 /**
