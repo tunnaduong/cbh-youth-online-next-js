@@ -169,10 +169,11 @@ export const sendMessage = (conversationId, params) => {
   );
 };
 
-export const sendMessageWithFile = (conversationId, formData) => {
+export const sendMessageWithFile = (conversationId, formData, config = {}) => {
   return Api.postFormDataRequest(
     `/v1.0/chat/conversations/${conversationId}/messages`,
-    formData
+    formData,
+    config
   );
 };
 

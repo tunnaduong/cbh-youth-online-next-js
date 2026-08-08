@@ -406,6 +406,7 @@ const ChatProvider = ({ children }) => {
         file_size: file.size,
         is_myself: true,
         is_sending: true,
+        upload_progress: 0,
         created_at: new Date().toISOString(),
         read_at: null,
       };
@@ -426,7 +427,19 @@ const ChatProvider = ({ children }) => {
         formData.append("type", type);
         formData.append("content", file.name);
 
-        const response = await sendMessageWithFileApi(conversationId, formData);
+        const response = await sendMessageWithFileApi(conversationId, formData, {
+          onUploadProgress: (progressEvent) => {
+            const total = progressEvent.total;
+            if (!total) return;
+            const percent = Math.round((progressEvent.loaded * 100) / total);
+            setMessages((prev) => ({
+              ...prev,
+              [conversationId]: (prev[conversationId] || []).map((m) =>
+                m.id === tempId ? { ...m, upload_progress: percent } : m
+              ),
+            }));
+          },
+        });
         const messageData = response?.data || response;
 
         setMessages((prev) => ({

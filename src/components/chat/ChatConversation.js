@@ -13,7 +13,7 @@ import ReplyPreviewBubble from "./ReplyPreviewBubble";
 import ChatMediaLightbox from "./ChatMediaLightbox";
 import ForwardMessageModal from "./ForwardMessageModal";
 import Modal from "@/components/ui/Modal";
-import { CornerUpLeft, FileText, Download, PlayCircle, Forward } from "lucide-react";
+import { CornerUpLeft, FileText, Download, PlayCircle, Forward, Loader2 } from "lucide-react";
 import NextLink from "next/link";
 import { recallMessage, editMessage, getGroupSeenReceipts, getNotificationSettings } from "@/app/Api";
 
@@ -974,14 +974,16 @@ export default function ChatConversation({
                   </div>
                 ) : message.type === "file" ? (
                   <a
-                    href={resolveFileUrl(message.file_url)}
+                    href={message.is_sending ? undefined : resolveFileUrl(message.file_url)}
                     target="_blank"
                     rel="noopener noreferrer"
+                    aria-disabled={message.is_sending || undefined}
                     className={`flex items-center gap-2 rounded-lg px-3 py-2 text-sm max-w-[240px] ${
                       message.is_myself
                         ? "bg-[#319527] text-white"
                         : "bg-gray-200 dark:bg-neutral-600 dark:text-white"
-                    }`}
+                    } ${message.is_sending ? "pointer-events-none opacity-90" : ""}`}
+                    onClick={(e) => { if (message.is_sending) e.preventDefault(); }}
                     onMouseDown={(e) => { if (e.button === 0) startLongPress(message.id); }}
                     onMouseMove={clearLongPressTimer}
                     onMouseUp={clearLongPressTimer}
@@ -991,21 +993,43 @@ export default function ChatConversation({
                     onTouchMove={clearLongPressTimer}
                     onContextMenu={(e) => e.preventDefault()}
                   >
-                    <FileText className="w-6 h-6 flex-shrink-0" />
-                    <div className="flex flex-col min-w-0">
+                    {message.is_sending ? (
+                      <Loader2 className="w-6 h-6 flex-shrink-0 animate-spin" />
+                    ) : (
+                      <FileText className="w-6 h-6 flex-shrink-0" />
+                    )}
+                    <div className="flex flex-col min-w-0 flex-1">
                       <span className="truncate font-medium">
                         {message.content || message.file_name || "Tệp đính kèm"}
                       </span>
-                      {message.file_size ? (
+                      {message.is_sending ? (
+                        <div className="flex flex-col gap-1 mt-1">
+                          <span className="text-xs opacity-80">
+                            Đang tải lên{message.file_size ? ` · ${formatFileSize(message.file_size)}` : ""}
+                            {typeof message.upload_progress === "number"
+                              ? ` (${message.upload_progress}%)`
+                              : ""}
+                          </span>
+                          <div className="w-full h-1 rounded-full bg-black/20 overflow-hidden">
+                            <div
+                              className="h-full bg-white/90 transition-all duration-150"
+                              style={{
+                                width: `${Math.max(
+                                  4,
+                                  message.upload_progress || 0
+                                )}%`,
+                              }}
+                            />
+                          </div>
+                        </div>
+                      ) : message.file_size ? (
                         <span className="text-xs opacity-80">
                           {formatFileSize(message.file_size)}
                         </span>
                       ) : (
-                        !message.is_sending && (
-                          <span className="text-xs opacity-80 flex items-center gap-1">
-                            <Download className="w-3 h-3" /> Tải xuống
-                          </span>
-                        )
+                        <span className="text-xs opacity-80 flex items-center gap-1">
+                          <Download className="w-3 h-3" /> Tải xuống
+                        </span>
                       )}
                     </div>
                   </a>
