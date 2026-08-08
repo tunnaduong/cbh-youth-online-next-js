@@ -13,7 +13,7 @@ import ReplyPreviewBubble from "./ReplyPreviewBubble";
 import ChatMediaLightbox from "./ChatMediaLightbox";
 import ForwardMessageModal from "./ForwardMessageModal";
 import Modal from "@/components/ui/Modal";
-import { CornerUpLeft, FileText, Download, PlayCircle, Forward, Loader2 } from "lucide-react";
+import { CornerUpLeft, FileText, Download, PlayCircle, Forward, Loader2, AlertCircle, RotateCw, X } from "lucide-react";
 import NextLink from "next/link";
 import { recallMessage, editMessage, getGroupSeenReceipts, getNotificationSettings } from "@/app/Api";
 
@@ -161,6 +161,7 @@ export default function ChatConversation({
     highlightMessageId,
     setHighlightMessageId,
     updateMessageLocally,
+    removeMessageLocally,
   } = useChatContext();
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
@@ -517,8 +518,24 @@ export default function ChatConversation({
     }
 
     if (conversationId) {
-      await sendFileMessage(conversationId, fileOrFiles);
+      try {
+        await sendFileMessage(conversationId, fileOrFiles);
+      } catch (error) {
+        antdMessage.error(error?.chatFailReason || "Gửi tệp thất bại, vui lòng thử lại");
+      }
     }
+  };
+
+  const handleRetryFile = async (message) => {
+    if (!message?._retryFiles?.length) return;
+    removeMessageLocally?.(conversationId, message.id);
+    await handleSendFile(
+      message._retryFiles.length === 1 ? message._retryFiles[0] : message._retryFiles
+    );
+  };
+
+  const handleDismissFailed = (message) => {
+    removeMessageLocally?.(conversationId, message.id);
   };
 
   const handleReact = async (messageId, reactionType) => {
@@ -930,8 +947,36 @@ export default function ChatConversation({
                       className="w-full h-auto max-h-[300px] object-cover"
                     />
                     {message.is_sending && (
-                      <div className="absolute inset-0 flex items-center justify-center bg-black/30">
-                        <span className="text-xs text-white">Đang gửi...</span>
+                      <div className="absolute inset-0 flex flex-col items-center justify-center gap-1 bg-black/30">
+                        <span className="text-xs text-white">
+                          Đang gửi...
+                          {typeof message.upload_progress === "number"
+                            ? ` (${message.upload_progress}%)`
+                            : ""}
+                        </span>
+                      </div>
+                    )}
+                    {message.is_failed && (
+                      <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-black/50 pointer-events-auto">
+                        <span className="text-xs text-white text-center px-2">
+                          {message.fail_reason || "Gửi ảnh thất bại"}
+                        </span>
+                        <div className="flex items-center gap-3">
+                          <button
+                            type="button"
+                            className="text-xs text-white font-medium underline flex items-center gap-0.5"
+                            onClick={(e) => { e.stopPropagation(); handleRetryFile(message); }}
+                          >
+                            <RotateCw className="w-3 h-3" /> Gửi lại
+                          </button>
+                          <button
+                            type="button"
+                            className="text-white"
+                            onClick={(e) => { e.stopPropagation(); handleDismissFailed(message); }}
+                          >
+                            <X className="w-3 h-3" />
+                          </button>
+                        </div>
                       </div>
                     )}
                   </div>
@@ -967,23 +1012,63 @@ export default function ChatConversation({
                       <PlayCircle className="w-10 h-10 text-white drop-shadow" />
                     </div>
                     {message.is_sending && (
-                      <div className="absolute inset-0 flex items-center justify-center bg-black/30">
-                        <span className="text-xs text-white">Đang gửi...</span>
+                      <div className="absolute inset-0 flex flex-col items-center justify-center gap-1 bg-black/30">
+                        <span className="text-xs text-white">
+                          Đang gửi...
+                          {typeof message.upload_progress === "number"
+                            ? ` (${message.upload_progress}%)`
+                            : ""}
+                        </span>
+                      </div>
+                    )}
+                    {message.is_failed && (
+                      <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-black/50 pointer-events-auto">
+                        <span className="text-xs text-white text-center px-2">
+                          {message.fail_reason || "Gửi video thất bại"}
+                        </span>
+                        <div className="flex items-center gap-3">
+                          <button
+                            type="button"
+                            className="text-xs text-white font-medium underline flex items-center gap-0.5"
+                            onClick={(e) => { e.stopPropagation(); handleRetryFile(message); }}
+                          >
+                            <RotateCw className="w-3 h-3" /> Gửi lại
+                          </button>
+                          <button
+                            type="button"
+                            className="text-white"
+                            onClick={(e) => { e.stopPropagation(); handleDismissFailed(message); }}
+                          >
+                            <X className="w-3 h-3" />
+                          </button>
+                        </div>
                       </div>
                     )}
                   </div>
                 ) : message.type === "file" ? (
                   <a
-                    href={message.is_sending ? undefined : resolveFileUrl(message.file_url)}
+                    href={
+                      message.is_sending || message.is_failed
+                        ? undefined
+                        : resolveFileUrl(message.file_url)
+                    }
                     target="_blank"
                     rel="noopener noreferrer"
-                    aria-disabled={message.is_sending || undefined}
+                    aria-disabled={message.is_sending || message.is_failed || undefined}
                     className={`flex items-center gap-2 rounded-lg px-3 py-2 text-sm max-w-[240px] ${
-                      message.is_myself
+                      message.is_failed
+                        ? "bg-red-50 text-red-700 border border-red-200 dark:bg-red-950/40 dark:text-red-300 dark:border-red-900"
+                        : message.is_myself
                         ? "bg-[#319527] text-white"
                         : "bg-gray-200 dark:bg-neutral-600 dark:text-white"
-                    } ${message.is_sending ? "pointer-events-none opacity-90" : ""}`}
-                    onClick={(e) => { if (message.is_sending) e.preventDefault(); }}
+                    } ${
+                      message.is_sending || message.is_failed
+                        ? "pointer-events-none opacity-90"
+                        : ""
+                    }`}
+                    onClick={(e) => {
+                      if (message.is_sending || message.is_failed) e.preventDefault();
+                    }}
                     onMouseDown={(e) => { if (e.button === 0) startLongPress(message.id); }}
                     onMouseMove={clearLongPressTimer}
                     onMouseUp={clearLongPressTimer}
@@ -995,6 +1080,8 @@ export default function ChatConversation({
                   >
                     {message.is_sending ? (
                       <Loader2 className="w-6 h-6 flex-shrink-0 animate-spin" />
+                    ) : message.is_failed ? (
+                      <AlertCircle className="w-6 h-6 flex-shrink-0" />
                     ) : (
                       <FileText className="w-6 h-6 flex-shrink-0" />
                     )}
@@ -1021,6 +1108,34 @@ export default function ChatConversation({
                               }}
                             />
                           </div>
+                        </div>
+                      ) : message.is_failed ? (
+                        <div className="flex items-center gap-2 mt-1 pointer-events-auto">
+                          <span className="text-xs">
+                            {message.fail_reason || "Gửi tệp thất bại"}
+                          </span>
+                          <button
+                            type="button"
+                            className="text-xs font-medium underline flex items-center gap-0.5 hover:opacity-80"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              handleRetryFile(message);
+                            }}
+                          >
+                            <RotateCw className="w-3 h-3" /> Gửi lại
+                          </button>
+                          <button
+                            type="button"
+                            className="hover:opacity-80"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              handleDismissFailed(message);
+                            }}
+                          >
+                            <X className="w-3 h-3" />
+                          </button>
                         </div>
                       ) : message.file_size ? (
                         <span className="text-xs opacity-80">

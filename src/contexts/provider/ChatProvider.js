@@ -409,6 +409,8 @@ const ChatProvider = ({ children }) => {
         upload_progress: 0,
         created_at: new Date().toISOString(),
         read_at: null,
+        // Kept so a failed upload can be retried without re-picking the file.
+        _retryFiles: files,
       };
 
       setMessages((prev) => ({
@@ -417,6 +419,7 @@ const ChatProvider = ({ children }) => {
       }));
 
       setSending(true);
+      let didFail = false;
       try {
         const formData = new FormData();
         if (files.length > 1) {
@@ -428,6 +431,11 @@ const ChatProvider = ({ children }) => {
         formData.append("content", file.name);
 
         const response = await sendMessageWithFileApi(conversationId, formData, {
+          // Large documents/videos can take a while over slow connections; the
+          // default axios timeout is 0 (none), but some browsers/proxies still
+          // abort long-idle requests, so give uploads generous headroom instead
+          // of inheriting a short default meant for regular JSON requests.
+          timeout: 10 * 60 * 1000,
           onUploadProgress: (progressEvent) => {
             const total = progressEvent.total;
             if (!total) return;
@@ -452,15 +460,43 @@ const ChatProvider = ({ children }) => {
         return messageData;
       } catch (error) {
         console.error("[ChatProvider] Error sending file message:", error);
+
+        // Previously the optimistic bubble was just removed on failure, which
+        // for a large file looks like "progress hit 100% then vanished" with
+        // no explanation. Keep it visible and mark it failed instead so the
+        // user knows the upload didn't go through and can retry.
+        const status = error?.response?.status;
+        const serverMessage = error?.response?.data?.message;
+        let failReason = serverMessage;
+        if (!failReason) {
+          if (status === 413) {
+            failReason = "Tệp quá lớn, vượt quá giới hạn cho phép của máy chủ";
+          } else if (error?.code === "ECONNABORTED") {
+            failReason = "Quá thời gian tải lên, vui lòng thử lại";
+          } else if (!error?.response) {
+            failReason = "Mất kết nối mạng trong khi tải lên";
+          } else {
+            failReason = "Gửi tệp thất bại, vui lòng thử lại";
+          }
+        }
+
         setMessages((prev) => ({
           ...prev,
-          [conversationId]: (prev[conversationId] || []).filter(
-            (m) => m.id !== tempId
+          [conversationId]: (prev[conversationId] || []).map((m) =>
+            m.id === tempId
+              ? { ...m, is_sending: false, is_failed: true, fail_reason: failReason }
+              : m
           ),
         }));
+        error.chatFailReason = failReason;
+        // Keep the object URLs alive so the failed bubble still shows the
+        // image/video preview instead of a broken thumbnail.
+        didFail = true;
         throw error;
       } finally {
-        localUrls.forEach((u) => URL.revokeObjectURL(u));
+        if (!didFail) {
+          localUrls.forEach((u) => URL.revokeObjectURL(u));
+        }
         setSending(false);
       }
     },
@@ -1149,6 +1185,14 @@ const ChatProvider = ({ children }) => {
         }
         return updated;
       });
+    },
+    removeMessageLocally: (conversationId, messageId) => {
+      setMessages((prev) => ({
+        ...prev,
+        [conversationId]: (prev[conversationId] || []).filter(
+          (m) => m.id !== messageId
+        ),
+      }));
     },
   };
 

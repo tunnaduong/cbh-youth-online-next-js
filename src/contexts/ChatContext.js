@@ -31,6 +31,8 @@ const ChatContext = createContext({
   reactToMessage: () => {},
   removeMessageReaction: () => {},
   setHighlightMessageId: () => {},
+  updateMessageLocally: () => {},
+  removeMessageLocally: () => {},
 });
 
 export default ChatContext;
