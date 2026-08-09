@@ -16,7 +16,7 @@ const CATEGORY_LABELS = {
   racing: "Racing",
   adventure: "Adventure",
   shooting: "Shooting",
-  sports: "Thể thao",
+  sports: "Sports",
   other: "Khác",
 };
 
@@ -125,7 +125,12 @@ export default function GamesClient() {
       setGames(data.games || []);
       setMostPlayed(data.most_played || []);
       setNewest(data.newest || []);
-      setCategories(["all", ...(data.categories || [])]);
+      const rawCategories = data.categories || [];
+      const sortedCategories = [
+        ...rawCategories.filter((c) => c !== "other"),
+        ...rawCategories.filter((c) => c === "other"),
+      ];
+      setCategories(["all", ...sortedCategories]);
     } catch (error) {
       message.error("Không thể tải danh sách game");
     } finally {
