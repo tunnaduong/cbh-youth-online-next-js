@@ -96,7 +96,7 @@ export default function StudyMaterialsClient() {
       Icon: HelpCircle,
       label: "Đố vui",
       key: "quiz",
-      href: "#",
+      href: "/explore/quiz",
     },
     {
       Icon: GameController,

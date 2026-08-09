@@ -82,7 +82,7 @@ export default function UploadMaterialClient() {
       Icon: HelpCircle,
       label: "Đố vui",
       key: "quiz",
-      href: "#",
+      href: "/explore/quiz",
     },
     {
       Icon: GameController,

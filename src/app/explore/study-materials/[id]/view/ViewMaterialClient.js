@@ -136,7 +136,7 @@ export default function ViewMaterialClient({ materialId }) {
       Icon: HelpCircle,
       label: "Đố vui",
       key: "quiz",
-      href: "#",
+      href: "/explore/quiz",
     },
     {
       Icon: GameController,

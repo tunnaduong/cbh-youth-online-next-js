@@ -63,7 +63,7 @@ export const EXPLORE_FEATURES = [
     sidebarIcon: HelpCircle,
     title: "Đố vui",
     key: "quiz",
-    href: "#",
+    href: "/explore/quiz",
   },
   {
     icon: GameControllerOutline,

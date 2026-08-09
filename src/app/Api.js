@@ -720,3 +720,12 @@ export const gameSessionHeartbeat = (sessionId) => {
 export const endGameSession = (sessionId) => {
   return Api.postRequest(`/v1.0/games/sessions/${sessionId}/end`);
 };
+
+// Quiz
+export const startQuiz = (count, difficulty) => {
+  return Api.postRequest("/v1.0/quiz/start", { count, difficulty });
+};
+
+export const submitQuiz = (quizSetId, answers) => {
+  return Api.postRequest(`/v1.0/quiz/${quizSetId}/submit`, { answers });
+};
