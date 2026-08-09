@@ -234,7 +234,7 @@ export default function GamesClient() {
       <div className="max-w-[1300px] mx-auto px-4 py-6 flex gap-6 overflow-x-hidden">
         <div className="flex-1 min-w-0">
           {/* Header */}
-          <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
             <div>
               <h1 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
                 🎮 Game
@@ -243,20 +243,20 @@ export default function GamesClient() {
                 Chơi game trực tiếp trên web – Miễn phí, không cần tải về!
               </p>
             </div>
-            <div className="flex items-center gap-2">
-              <div className="relative">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+              <div className="relative flex-1 sm:flex-none">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                 <input
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   placeholder="Tìm kiếm game..."
-                  className="pl-9 pr-3 py-2 rounded-full border border-gray-200 dark:border-neutral-600 bg-white dark:bg-neutral-700 text-sm text-gray-900 dark:text-white focus:outline-none focus:border-[#319527] w-52"
+                  className="pl-9 pr-3 py-2 rounded-full border border-gray-200 dark:border-neutral-600 bg-white dark:bg-neutral-700 text-sm text-gray-900 dark:text-white focus:outline-none focus:border-[#319527] w-full sm:w-52"
                 />
               </div>
               <button
                 onClick={handleRandom}
                 disabled={rollingRandom}
-                className="flex items-center gap-1.5 bg-[#319527] hover:bg-[#3dbb31] disabled:opacity-60 text-white text-sm font-medium px-4 py-2 rounded-full transition-colors"
+                className="flex items-center justify-center gap-1.5 bg-[#319527] hover:bg-[#3dbb31] disabled:opacity-60 text-white text-sm font-medium px-4 py-2 rounded-full transition-colors"
               >
                 <Dice5 className="w-4 h-4" />
                 Game ngẫu nhiên
@@ -321,7 +321,7 @@ export default function GamesClient() {
           </div>
 
           {/* All games grid */}
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-x-4 gap-y-7">
             {loading ? (
               <p className="col-span-full text-center text-gray-500 dark:text-gray-400 py-10">
                 Đang tải...
