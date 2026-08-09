@@ -96,11 +96,17 @@ const CATEGORY_LABELS = {
   other: "Khác",
 };
 
-function GameCard({ game, rank }) {
+function GameCard({ game, rank, fixedWidth = false }) {
   return (
     <Link
       href={`/explore/games/${game.slug}`}
-      className="flex-shrink-0 w-[190px] group"
+      // fixedWidth is for the horizontal ScrollableRow, which needs a fixed
+      // card width so flex-shrink-0 keeps every card the same size while
+      // scrolling. In the "Tất cả game" CSS grid below, that same 190px was
+      // wider than a mobile 2-column track, so the card overflowed into the
+      // next column and visually overlapped it - w-full there instead lets
+      // the grid track size the card.
+      className={`group ${fixedWidth ? "flex-shrink-0 w-[190px]" : "w-full"}`}
     >
       <div className="relative rounded-xl overflow-hidden aspect-[4/3] bg-gray-100 dark:bg-neutral-700">
         {rank != null && (
@@ -292,7 +298,7 @@ export default function GamesClient() {
               </div>
               <ScrollableRow>
                 {mostPlayed.map((g, i) => (
-                  <GameCard key={g.id} game={g} rank={i + 1} />
+                  <GameCard key={g.id} game={g} rank={i + 1} fixedWidth />
                 ))}
               </ScrollableRow>
             </section>
