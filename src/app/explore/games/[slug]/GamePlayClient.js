@@ -23,6 +23,15 @@ const detectPlatform = () => {
 
 export default function GamePlayClient({ slug }) {
   const { loggedIn } = useAuthContext();
+  // The mobile app opens this page in a WebView with its own floating back
+  // button (see GamePlayScreen) - hide this one to avoid showing two. Read
+  // directly off window.location instead of useSearchParams() so this
+  // client component doesn't need a <Suspense> boundary just for a simple
+  // UI toggle that has no bearing on the initial server-rendered HTML.
+  const [isInApp, setIsInApp] = useState(false);
+  useEffect(() => {
+    setIsInApp(new URLSearchParams(window.location.search).get("app") === "true");
+  }, []);
   const [game, setGame] = useState(null);
   const [loading, setLoading] = useState(true);
   const [playing, setPlaying] = useState(false);
@@ -115,13 +124,15 @@ export default function GamePlayClient({ slug }) {
 
   return (
     <div className="fixed inset-0 bg-black z-[100] flex flex-col">
-      <button
-        onClick={handleBack}
-        aria-label="Quay lại"
-        className="absolute top-4 left-4 z-10 flex items-center justify-center w-10 h-10 rounded-full bg-black/60 hover:bg-black/80 text-white transition-colors"
-      >
-        <ArrowLeft className="w-5 h-5" />
-      </button>
+      {!isInApp && (
+        <button
+          onClick={handleBack}
+          aria-label="Quay lại"
+          className="absolute top-4 left-4 z-10 flex items-center justify-center w-10 h-10 rounded-full bg-black/60 hover:bg-black/80 text-white transition-colors"
+        >
+          <ArrowLeft className="w-5 h-5" />
+        </button>
+      )}
 
       {playing && !unsupported ? (
         <iframe
