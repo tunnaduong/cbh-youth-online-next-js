@@ -7,6 +7,7 @@ import { message } from "antd";
 import HomeLayout from "@/layouts/HomeLayout";
 import { getGames, getRandomGame, getGameLeaderboard } from "@/app/Api";
 import { Search, Dice5, TrendingUp, Sparkles, Trophy } from "lucide-react";
+import { EXPLORE_FEATURES } from "@/data/exploreFeatures";
 
 const CATEGORY_LABELS = {
   all: "Tất cả",
@@ -96,6 +97,23 @@ export default function GamesClient() {
   const [rollingRandom, setRollingRandom] = useState(false);
   const [leaderboard, setLeaderboard] = useState([]);
 
+  // Explore's own sidebar (Trang chủ/Chợ tài liệu/Game/...) instead of the
+  // main forum sidebar, matching every other page nested under /explore.
+  const sidebarItems = EXPLORE_FEATURES.map((feature) => ({
+    key: feature.key,
+    href: feature.href,
+    label: feature.title,
+    Icon: feature.sidebarIcon,
+    isExternal: false,
+    onClick:
+      feature.href === "#"
+        ? (e) => {
+            e.preventDefault();
+            message.info("Chức năng đang phát triển");
+          }
+        : undefined,
+  }));
+
   const load = async (params = "") => {
     setLoading(true);
     try {
@@ -149,7 +167,14 @@ export default function GamesClient() {
   const filteredGames = useMemo(() => games, [games]);
 
   return (
-    <HomeLayout activeNav="explore" showRightSidebar={false}>
+    <HomeLayout
+      activeNav="explore"
+      activeBar="game"
+      sidebarItems={sidebarItems}
+      sidebarType="all"
+      sidebarWidth="306px"
+      showRightSidebar={false}
+    >
       <div className="max-w-[1300px] mx-auto px-4 py-6 flex gap-6 overflow-x-hidden">
         <div className="flex-1 min-w-0">
           {/* Header */}

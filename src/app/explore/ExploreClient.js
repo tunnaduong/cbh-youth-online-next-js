@@ -4,92 +4,10 @@ import HomeLayout from "@/layouts/HomeLayout";
 import React from "react";
 import Image from "next/image";
 import { message } from "antd";
-import {
-  HomeOutline,
-  Home,
-  BookOutline,
-  Book,
-  SearchOutline,
-  Search,
-  MapOutline,
-  Map,
-  PrintOutline,
-  Print,
-  HelpCircle,
-  GameControllerOutline,
-  GameController,
-  TrophyOutline,
-  Trophy,
-  PeopleOutline,
-  People,
-} from "react-ionicons";
+import { EXPLORE_FEATURES } from "@/data/exploreFeatures";
 
 export default function ExploreClient() {
-  const features = [
-    {
-      icon: HomeOutline,
-      sidebarIcon: Home,
-      title: "Trang chủ",
-      key: "home",
-      href: "/explore",
-    },
-    {
-      icon: BookOutline,
-      sidebarIcon: Book,
-      title: "Chợ tài liệu",
-      key: "study",
-      href: "/explore/study-materials",
-    },
-    {
-      icon: SearchOutline,
-      sidebarIcon: Search,
-      title: "Tra cứu điểm thi",
-      key: "grades",
-      href: "/lookup/grades",
-    },
-    {
-      icon: MapOutline,
-      sidebarIcon: Map,
-      title: "Tìm trường ĐH-CĐ",
-      key: "universities",
-      href: "#",
-    },
-    {
-      icon: PrintOutline,
-      sidebarIcon: Print,
-      title: "In ấn tài liệu",
-      key: "print",
-      href: "#",
-    },
-    {
-      icon: HelpCircle,
-      sidebarIcon: HelpCircle,
-      title: "Đố vui",
-      key: "quiz",
-      href: "#",
-    },
-    {
-      icon: GameControllerOutline,
-      sidebarIcon: GameController,
-      title: "Game",
-      key: "game",
-      href: "/explore/games",
-    },
-    {
-      icon: TrophyOutline,
-      sidebarIcon: Trophy,
-      title: "Xếp hạng thành viên",
-      key: "ranking",
-      href: "/users/ranking",
-    },
-    {
-      icon: PeopleOutline,
-      sidebarIcon: People,
-      title: "Xếp hạng lớp",
-      key: "class-ranking",
-      href: "#",
-    },
-  ];
+  const features = EXPLORE_FEATURES;
 
   const handleFeatureClick = (e, feature) => {
     if (feature.href === "#") {
