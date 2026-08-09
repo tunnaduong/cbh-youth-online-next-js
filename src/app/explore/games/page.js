@@ -22,7 +22,7 @@ export const metadata = enhanceMetadataWithURLs(
       images: ["/images/cyo_thumbnail.png"],
     },
   },
-  "/games"
+  "/explore/games"
 );
 
 export default function GamesPage() {

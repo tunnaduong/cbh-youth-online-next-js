@@ -73,7 +73,7 @@ export default function ExploreClient() {
       sidebarIcon: GameController,
       title: "Game",
       key: "game",
-      href: "#",
+      href: "/explore/games",
     },
     {
       icon: TrophyOutline,

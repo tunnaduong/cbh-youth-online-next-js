@@ -25,7 +25,7 @@ export async function generateMetadata({ params }) {
         type: "website",
       },
     },
-    `/games/${slug}`
+    `/explore/games/${slug}`
   );
 }
 

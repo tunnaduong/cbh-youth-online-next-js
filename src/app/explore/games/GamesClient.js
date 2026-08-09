@@ -21,7 +21,7 @@ const CATEGORY_LABELS = {
 function GameCard({ game, rank }) {
   return (
     <Link
-      href={`/games/${game.slug}`}
+      href={`/explore/games/${game.slug}`}
       className="flex-shrink-0 w-[190px] group"
     >
       <div className="relative rounded-xl overflow-hidden aspect-[4/3] bg-gray-100 dark:bg-neutral-700">
@@ -57,7 +57,7 @@ function GameCard({ game, rank }) {
 function SmallGameCard({ game }) {
   return (
     <Link
-      href={`/games/${game.slug}`}
+      href={`/explore/games/${game.slug}`}
       className="flex-shrink-0 w-[180px] group"
     >
       <div className="relative rounded-xl overflow-hidden aspect-[4/3] bg-gray-100 dark:bg-neutral-700">
@@ -138,7 +138,7 @@ export default function GamesClient() {
         : "pc";
       const res = await getRandomGame(platform);
       const game = res?.data || res;
-      router.push(`/games/${game.slug}`);
+      router.push(`/explore/games/${game.slug}`);
     } catch (error) {
       message.error("Không tìm được game nào phù hợp");
     } finally {
@@ -149,8 +149,8 @@ export default function GamesClient() {
   const filteredGames = useMemo(() => games, [games]);
 
   return (
-    <HomeLayout activeBar="games" showRightSidebar={false}>
-      <div className="max-w-[1000px] mx-auto px-4 py-6 flex gap-6">
+    <HomeLayout activeNav="explore" showRightSidebar={false}>
+      <div className="max-w-[1300px] mx-auto px-4 py-6 flex gap-6 overflow-x-hidden">
         <div className="flex-1 min-w-0">
           {/* Header */}
           <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
@@ -192,7 +192,7 @@ export default function GamesClient() {
                   Game được chơi nhiều nhất
                 </h2>
               </div>
-              <div className="flex gap-4 overflow-x-auto pb-2 no-scrollbar">
+              <div className="flex gap-4 overflow-x-auto pb-2 pr-4 no-scrollbar w-full">
                 {mostPlayed.map((g, i) => (
                   <GameCard key={g.id} game={g} rank={i + 1} />
                 ))}
@@ -209,7 +209,7 @@ export default function GamesClient() {
                   Game mới cập nhật
                 </h2>
               </div>
-              <div className="flex gap-4 overflow-x-auto pb-2 no-scrollbar">
+              <div className="flex gap-4 overflow-x-auto pb-2 pr-4 no-scrollbar w-full">
                 {newest.map((g) => (
                   <SmallGameCard key={g.id} game={g} />
                 ))}
@@ -256,7 +256,7 @@ export default function GamesClient() {
         </div>
 
         {/* Right column: leaderboard */}
-        <div className="hidden lg:block w-[280px] flex-shrink-0">
+        <div className="hidden xl:block w-[280px] flex-shrink-0">
           <div className="sticky top-[90px] bg-white dark:bg-neutral-800 rounded-xl border border-gray-100 dark:border-neutral-700 p-4">
             <div className="flex items-center justify-between mb-3">
               <h3 className="font-semibold text-gray-900 dark:text-white flex items-center gap-1.5">

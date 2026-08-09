@@ -100,7 +100,7 @@ export default function GamePlayClient({ slug }) {
       <div className="fixed inset-0 bg-black flex flex-col items-center justify-center text-white gap-4">
         <p>Không tìm thấy game này.</p>
         <Link
-          href="/games"
+          href="/explore/games"
           className="px-4 py-2 rounded-full bg-[#319527] text-sm font-medium"
         >
           Về trang Game
