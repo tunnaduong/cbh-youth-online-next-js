@@ -62,9 +62,11 @@ function SmallGameCard({ game }) {
       className="flex-shrink-0 w-[180px] group"
     >
       <div className="relative rounded-xl overflow-hidden aspect-[4/3] bg-gray-100 dark:bg-neutral-700">
-        <span className="absolute top-2 left-2 z-10 text-[10px] font-bold px-1.5 py-0.5 rounded bg-[#319527] text-white">
-          MỚI
-        </span>
+        {game.is_new && (
+          <span className="absolute top-2 left-2 z-10 text-[10px] font-bold px-1.5 py-0.5 rounded bg-[#319527] text-white">
+            MỚI
+          </span>
+        )}
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={game.image_url}
