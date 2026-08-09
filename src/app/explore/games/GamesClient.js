@@ -33,10 +33,11 @@ function ScrollableRow({ children }) {
     <div className="relative group/row">
       <div
         ref={rowRef}
-        className="flex gap-4 overflow-x-auto pb-2 pr-4 no-scrollbar w-full scroll-smooth"
+        className="flex gap-4 overflow-x-auto pb-2 pr-4 no-scrollbar w-full scroll-smooth [touch-action:pan-x]"
       >
         {children}
       </div>
+      {/* Arrow buttons are PC-only - mobile relies on native touch swipe */}
       <button
         type="button"
         onClick={() => scrollByAmount(-1)}
@@ -49,7 +50,7 @@ function ScrollableRow({ children }) {
         type="button"
         onClick={() => scrollByAmount(1)}
         aria-label="Tiếp theo"
-        className="flex absolute right-0 top-1/2 -translate-y-1/2 translate-x-1/2 sm:translate-x-1/2 w-9 h-9 rounded-full bg-white dark:bg-neutral-700 shadow-md border border-gray-200 dark:border-neutral-600 items-center justify-center"
+        className="hidden sm:flex absolute right-0 top-1/2 -translate-y-1/2 translate-x-1/2 w-9 h-9 rounded-full bg-white dark:bg-neutral-700 shadow-md border border-gray-200 dark:border-neutral-600 items-center justify-center opacity-0 group-hover/row:opacity-100 transition-opacity"
       >
         <ChevronRight className="w-4 h-4 text-gray-700 dark:text-gray-200" />
       </button>
