@@ -254,7 +254,7 @@ const StoryContent = ({ story, isActive, isPaused, onNext, isMuted }) => {
             ? process.env.NEXT_PUBLIC_API_URL + story.video_first_frame_url
             : undefined
         }
-        className="w-full h-full object-cover"
+        className="w-full h-full object-contain"
         autoPlay={isActive}
         muted={isMuted}
         playsInline
