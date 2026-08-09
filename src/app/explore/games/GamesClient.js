@@ -16,6 +16,7 @@ const CATEGORY_LABELS = {
   racing: "Racing",
   adventure: "Adventure",
   shooting: "Shooting",
+  sports: "Thể thao",
   other: "Khác",
 };
 
