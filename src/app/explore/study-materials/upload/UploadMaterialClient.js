@@ -88,7 +88,7 @@ export default function UploadMaterialClient() {
       Icon: GameController,
       label: "Game",
       key: "game",
-      href: "#",
+      href: "/explore/games",
     },
     {
       Icon: Trophy,

@@ -102,7 +102,7 @@ export default function StudyMaterialsClient() {
       Icon: GameController,
       label: "Game",
       key: "game",
-      href: "#",
+      href: "/explore/games",
     },
     {
       Icon: Trophy,

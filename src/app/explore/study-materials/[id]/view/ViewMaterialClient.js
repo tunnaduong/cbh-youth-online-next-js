@@ -142,7 +142,7 @@ export default function ViewMaterialClient({ materialId }) {
       Icon: GameController,
       label: "Game",
       key: "game",
-      href: "#",
+      href: "/explore/games",
     },
     {
       Icon: Trophy,
