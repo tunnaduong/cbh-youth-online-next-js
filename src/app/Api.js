@@ -691,3 +691,32 @@ export const unblockUser = (userId) => {
 export const getBlockedUsers = () => {
   return Api.getRequest("/v1.0/users/blocked");
 };
+
+// Games
+export const getGames = (params = "") => {
+  return Api.getRequest(`/v1.0/games${params ? `?${params}` : ""}`);
+};
+
+export const getGame = (slug) => {
+  return Api.getRequest(`/v1.0/games/${slug}`);
+};
+
+export const getRandomGame = (platform) => {
+  return Api.getRequest(`/v1.0/games/random${platform ? `?platform=${platform}` : ""}`);
+};
+
+export const getGameLeaderboard = (period = "week") => {
+  return Api.getRequest(`/v1.0/games/leaderboard?period=${period}`);
+};
+
+export const startGameSession = (slug) => {
+  return Api.postRequest(`/v1.0/games/${slug}/sessions`);
+};
+
+export const gameSessionHeartbeat = (sessionId) => {
+  return Api.postRequest(`/v1.0/games/sessions/${sessionId}/heartbeat`);
+};
+
+export const endGameSession = (sessionId) => {
+  return Api.postRequest(`/v1.0/games/sessions/${sessionId}/end`);
+};

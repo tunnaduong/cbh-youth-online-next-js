@@ -11,6 +11,7 @@ import {
   Bookmark,
   HelpCircle,
   Chatbubbles,
+  GameController as GameIcon,
 } from "react-ionicons";
 import { useAuthContext } from "@/contexts/Support";
 
@@ -43,6 +44,12 @@ export default function LeftSidebar({
       href: "/youth-news",
       label: "Tin tức Đoàn",
       Icon: Newspaper,
+    },
+    {
+      key: "games",
+      href: "/games",
+      label: "Game",
+      Icon: GameIcon,
     },
     {
       key: "saved",
@@ -111,7 +118,7 @@ export default function LeftSidebar({
           MENU
         </p>
 
-        {(type === "default" ? items.slice(0, 5) : items).map((it, idx) => {
+        {(type === "default" ? items.slice(0, 6) : items).map((it, idx) => {
           if (it.type === "divider") {
             return (
               <hr key={`hr-${idx}`} className="my-3 dark:border-neutral-600" />

@@ -1030,6 +1030,8 @@ body.has-email-verification-alert [class*="mt-\\[4\\.3rem\\]"] {
 .mention-tag:hover {
   opacity: 0.75;
 }
+.no-scrollbar { scrollbar-width: none; -ms-overflow-style: none; }
+.no-scrollbar::-webkit-scrollbar { display: none; }
 /* contenteditable chat input */
 .ce-input { scrollbar-width: none; }
 .ce-input::-webkit-scrollbar { display: none; }
