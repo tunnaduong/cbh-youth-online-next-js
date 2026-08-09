@@ -24,6 +24,29 @@ import { EXPLORE_FEATURES } from "@/data/exploreFeatures";
 // than fit on screen at once.
 function ScrollableRow({ children }) {
   const rowRef = useRef(null);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(false);
+
+  const updateScrollState = () => {
+    const el = rowRef.current;
+    if (!el) return;
+    setCanScrollLeft(el.scrollLeft > 4);
+    setCanScrollRight(el.scrollLeft + el.clientWidth < el.scrollWidth - 4);
+  };
+
+  useEffect(() => {
+    updateScrollState();
+    const el = rowRef.current;
+    if (!el) return;
+    const onScroll = () => updateScrollState();
+    el.addEventListener("scroll", onScroll);
+    window.addEventListener("resize", onScroll);
+    return () => {
+      el.removeEventListener("scroll", onScroll);
+      window.removeEventListener("resize", onScroll);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [children]);
 
   const scrollByAmount = (dir) => {
     rowRef.current?.scrollBy({ left: dir * 300, behavior: "smooth" });
@@ -38,22 +61,26 @@ function ScrollableRow({ children }) {
         {children}
       </div>
       {/* Arrow buttons are PC-only - mobile relies on native touch swipe */}
-      <button
-        type="button"
-        onClick={() => scrollByAmount(-1)}
-        aria-label="Trước"
-        className="hidden sm:flex absolute left-0 top-1/2 -translate-y-1/2 -translate-x-1/2 w-9 h-9 rounded-full bg-white dark:bg-neutral-700 shadow-md border border-gray-200 dark:border-neutral-600 items-center justify-center opacity-0 group-hover/row:opacity-100 transition-opacity"
-      >
-        <ChevronLeft className="w-4 h-4 text-gray-700 dark:text-gray-200" />
-      </button>
-      <button
-        type="button"
-        onClick={() => scrollByAmount(1)}
-        aria-label="Tiếp theo"
-        className="hidden sm:flex absolute right-0 top-1/2 -translate-y-1/2 translate-x-1/2 w-9 h-9 rounded-full bg-white dark:bg-neutral-700 shadow-md border border-gray-200 dark:border-neutral-600 items-center justify-center opacity-0 group-hover/row:opacity-100 transition-opacity"
-      >
-        <ChevronRight className="w-4 h-4 text-gray-700 dark:text-gray-200" />
-      </button>
+      {canScrollLeft && (
+        <button
+          type="button"
+          onClick={() => scrollByAmount(-1)}
+          aria-label="Trước"
+          className="hidden sm:flex absolute left-0 top-1/2 -translate-y-1/2 -translate-x-1/2 w-9 h-9 rounded-full bg-white dark:bg-neutral-700 shadow-md border border-gray-200 dark:border-neutral-600 items-center justify-center opacity-0 group-hover/row:opacity-100 transition-opacity"
+        >
+          <ChevronLeft className="w-4 h-4 text-gray-700 dark:text-gray-200" />
+        </button>
+      )}
+      {canScrollRight && (
+        <button
+          type="button"
+          onClick={() => scrollByAmount(1)}
+          aria-label="Tiếp theo"
+          className="hidden sm:flex absolute right-0 top-1/2 -translate-y-1/2 translate-x-1/2 w-9 h-9 rounded-full bg-white dark:bg-neutral-700 shadow-md border border-gray-200 dark:border-neutral-600 items-center justify-center opacity-0 group-hover/row:opacity-100 transition-opacity"
+        >
+          <ChevronRight className="w-4 h-4 text-gray-700 dark:text-gray-200" />
+        </button>
+      )}
     </div>
   );
 }
