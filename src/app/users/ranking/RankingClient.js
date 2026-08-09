@@ -79,11 +79,7 @@ export default function RankingClient() {
                 </span>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
-                  src={
-                    u.profile_picture ||
-                    u.oauth_profile_picture ||
-                    `${process.env.NEXT_PUBLIC_API_URL}/v1.0/users/${u.username}/avatar`
-                  }
+                  src={`${process.env.NEXT_PUBLIC_API_URL}/v1.0/users/${u.username}/avatar`}
                   alt={u.username}
                   className="w-10 h-10 rounded-full"
                 />
