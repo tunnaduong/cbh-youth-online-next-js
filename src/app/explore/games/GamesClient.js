@@ -1,13 +1,61 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "@bprogress/next/app";
 import { message } from "antd";
 import HomeLayout from "@/layouts/HomeLayout";
 import { getGames, getRandomGame, getGameLeaderboard } from "@/app/Api";
-import { Search, Dice5, TrendingUp, Sparkles, Trophy } from "lucide-react";
+import {
+  Search,
+  Dice5,
+  TrendingUp,
+  Sparkles,
+  Trophy,
+  ChevronLeft,
+  ChevronRight,
+} from "lucide-react";
 import { EXPLORE_FEATURES } from "@/data/exploreFeatures";
+
+// Horizontal card row with prev/next buttons - touch-drag scrolling on a
+// row nested inside a vertically-scrolling page is finicky on mobile (the
+// browser can't always tell a horizontal swipe from the page trying to
+// scroll down), so tapping is the reliable way to move through more games
+// than fit on screen at once.
+function ScrollableRow({ children }) {
+  const rowRef = useRef(null);
+
+  const scrollByAmount = (dir) => {
+    rowRef.current?.scrollBy({ left: dir * 300, behavior: "smooth" });
+  };
+
+  return (
+    <div className="relative group/row">
+      <div
+        ref={rowRef}
+        className="flex gap-4 overflow-x-auto pb-2 pr-4 no-scrollbar w-full scroll-smooth"
+      >
+        {children}
+      </div>
+      <button
+        type="button"
+        onClick={() => scrollByAmount(-1)}
+        aria-label="Trước"
+        className="hidden sm:flex absolute left-0 top-1/2 -translate-y-1/2 -translate-x-1/2 w-9 h-9 rounded-full bg-white dark:bg-neutral-700 shadow-md border border-gray-200 dark:border-neutral-600 items-center justify-center opacity-0 group-hover/row:opacity-100 transition-opacity"
+      >
+        <ChevronLeft className="w-4 h-4 text-gray-700 dark:text-gray-200" />
+      </button>
+      <button
+        type="button"
+        onClick={() => scrollByAmount(1)}
+        aria-label="Tiếp theo"
+        className="flex absolute right-0 top-1/2 -translate-y-1/2 translate-x-1/2 sm:translate-x-1/2 w-9 h-9 rounded-full bg-white dark:bg-neutral-700 shadow-md border border-gray-200 dark:border-neutral-600 items-center justify-center"
+      >
+        <ChevronRight className="w-4 h-4 text-gray-700 dark:text-gray-200" />
+      </button>
+    </div>
+  );
+}
 
 const CATEGORY_LABELS = {
   all: "Tất cả",
@@ -225,11 +273,11 @@ export default function GamesClient() {
                   Game được chơi nhiều nhất
                 </h2>
               </div>
-              <div className="flex gap-4 overflow-x-auto pb-2 pr-4 no-scrollbar w-full">
+              <ScrollableRow>
                 {mostPlayed.map((g, i) => (
                   <GameCard key={g.id} game={g} rank={i + 1} />
                 ))}
-              </div>
+              </ScrollableRow>
             </section>
           )}
 
@@ -242,11 +290,11 @@ export default function GamesClient() {
                   Game mới cập nhật
                 </h2>
               </div>
-              <div className="flex gap-4 overflow-x-auto pb-2 pr-4 no-scrollbar w-full">
+              <ScrollableRow>
                 {newest.map((g) => (
                   <SmallGameCard key={g.id} game={g} />
                 ))}
-              </div>
+              </ScrollableRow>
             </section>
           )}
 
