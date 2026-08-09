@@ -11,12 +11,12 @@ import { EXPLORE_FEATURES } from "@/data/exploreFeatures";
 
 const CATEGORY_LABELS = {
   all: "Tất cả",
-  arcade: "Arcade",
-  puzzle: "Puzzle",
-  racing: "Racing",
-  adventure: "Adventure",
-  shooting: "Shooting",
-  sports: "Sports",
+  arcade: "Hành động",
+  puzzle: "Giải đố",
+  racing: "Đua xe",
+  adventure: "Phiêu lưu",
+  shooting: "Bắn súng",
+  sports: "Thể thao",
   other: "Khác",
 };
 
