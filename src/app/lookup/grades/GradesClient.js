@@ -65,7 +65,7 @@ export default function GradesClient() {
   }, []);
 
   const handleFeatureClick = (e, key, href) => {
-    if (["schedule", "class-ranking", "member-ranking"].includes(key)) {
+    if (["schedule", "class-ranking"].includes(key)) {
       e.preventDefault();
       message.info("Chức năng đang phát triển");
     }
@@ -96,8 +96,7 @@ export default function GradesClient() {
       Icon: Trophy,
       label: "Xếp hạng thành viên",
       key: "member-ranking",
-      href: "#", // Assuming this might be different or under lookup now? Keeping likely URL structure or # per request
-      onClick: (e) => handleFeatureClick(e, "member-ranking", "#"),
+      href: "/users/ranking",
     },
   ];
 
