@@ -56,7 +56,7 @@ function ScrollableRow({ children }) {
     <div className="relative group/row">
       <div
         ref={rowRef}
-        className="flex gap-4 overflow-x-auto pb-2 pr-4 no-scrollbar w-full scroll-smooth [touch-action:pan-x]"
+        className="flex gap-4 overflow-x-auto pb-2 pr-4 no-scrollbar w-full scroll-smooth"
       >
         {children}
       </div>
