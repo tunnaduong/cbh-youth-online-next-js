@@ -14,7 +14,7 @@ import {
   Trophy,
 } from "lucide-react";
 import HomeLayout from "@/layouts/HomeLayout";
-import { startQuiz, submitQuiz, getQuizLeaderboard } from "@/app/Api";
+import { startQuiz, answerQuizQuestion, getQuizLeaderboard } from "@/app/Api";
 import { useAuthContext } from "@/contexts/Support";
 import { EXPLORE_FEATURES } from "@/data/exploreFeatures";
 
@@ -49,8 +49,11 @@ export default function QuizClient() {
   const [quiz, setQuiz] = useState(null); // { quiz_set_id, topic, difficulty, question_count, questions }
   const [currentIndex, setCurrentIndex] = useState(0);
   const [answers, setAnswers] = useState({}); // { [questionId]: "A" }
+  // { [questionId]: { is_correct, correct_answer, explanation } } - filled in
+  // the instant each question is answered, see handleSelect.
+  const [feedback, setFeedback] = useState({});
+  const [answering, setAnswering] = useState(false);
   const [result, setResult] = useState(null); // { score, total, points, results }
-  const [submitting, setSubmitting] = useState(false);
   const [leaderboard, setLeaderboard] = useState([]);
 
   useEffect(() => {
@@ -95,6 +98,7 @@ export default function QuizClient() {
       const data = res?.data || res;
       setQuiz(data);
       setAnswers({});
+      setFeedback({});
       setCurrentIndex(0);
       setResult(null);
       setPhase("taking");
@@ -109,28 +113,44 @@ export default function QuizClient() {
     }
   };
 
-  const handleSelect = (questionId, letter) => {
-    setAnswers((prev) => ({ ...prev, [questionId]: letter }));
-  };
-
-  const handleSubmit = async () => {
-    if (!quiz) return;
-    setSubmitting(true);
+  // Grades the question the instant it's answered - no separate "submit"
+  // step. Once the last question in the set is answered, the API finalizes
+  // the play and returns the final score/points, so the result screen is
+  // built right here from the accumulated per-question feedback.
+  const handleSelect = async (questionId, letter) => {
+    if (!quiz || feedback[questionId] || answering) return; // already answered / a request in flight
+    setAnswering(true);
     try {
-      const payload = quiz.questions.map((q) => ({
-        id: q.id,
-        answer: answers[q.id] || null,
-      }));
-      const res = await submitQuiz(quiz.quiz_set_id, payload);
+      const res = await answerQuizQuestion(quiz.quiz_set_id, questionId, letter);
       const data = res?.data || res;
-      setResult(data);
-      setPhase("result");
+      const nextAnswers = { ...answers, [questionId]: letter };
+      const nextFeedback = { ...feedback, [questionId]: data };
+      setAnswers(nextAnswers);
+      setFeedback(nextFeedback);
+
+      if (data.finished) {
+        setResult({
+          score: data.score,
+          total: data.total,
+          points: data.points,
+          results: quiz.questions.map((q) => ({
+            id: q.id,
+            your_answer: nextAnswers[q.id] ?? null,
+            correct_answer: nextFeedback[q.id]?.correct_answer,
+            is_correct: nextFeedback[q.id]?.is_correct,
+            explanation: nextFeedback[q.id]?.explanation,
+          })),
+        });
+        setPhase("result");
+      }
     } catch (error) {
       if (!isInAppWebView()) {
-        message.error(error?.response?.data?.message || "Không thể nộp bài, vui lòng thử lại.");
+        message.error(
+          error?.response?.data?.message || "Không thể ghi nhận câu trả lời, vui lòng thử lại."
+        );
       }
     } finally {
-      setSubmitting(false);
+      setAnswering(false);
     }
   };
 
@@ -139,6 +159,7 @@ export default function QuizClient() {
     setQuiz(null);
     setResult(null);
     setAnswers({});
+    setFeedback({});
     setCurrentIndex(0);
   };
 
@@ -313,33 +334,57 @@ export default function QuizClient() {
               />
             </div>
 
-            <div className="bg-white dark:bg-neutral-800 rounded-2xl border border-gray-100 dark:border-neutral-700 p-6 mb-4">
-              <p className="text-xs text-gray-400 mb-2">
-                Câu {currentIndex + 1}/{quiz.question_count}
-              </p>
-              <p className="font-semibold text-gray-900 dark:text-white mb-4 text-base">
-                {quiz.questions[currentIndex].question}
-              </p>
-              <div className="flex flex-col gap-2">
-                {quiz.questions[currentIndex].options.map((opt) => {
-                  const letter = opt.trim().charAt(0);
-                  const selected = answers[quiz.questions[currentIndex].id] === letter;
-                  return (
-                    <button
-                      key={opt}
-                      onClick={() => handleSelect(quiz.questions[currentIndex].id, letter)}
-                      className={`text-left px-4 py-3 rounded-xl border transition-colors ${
-                        selected
-                          ? "bg-[#319527]/10 border-[#319527] text-[#319527] dark:text-[#6bcf60] font-medium"
-                          : "bg-gray-50 dark:bg-neutral-700 border-transparent text-gray-800 dark:text-gray-200 hover:border-gray-300 dark:hover:border-neutral-500"
-                      }`}
-                    >
-                      {opt}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
+            {(() => {
+              const currentQuestion = quiz.questions[currentIndex];
+              const currentFeedback = feedback[currentQuestion.id];
+              return (
+                <div className="bg-white dark:bg-neutral-800 rounded-2xl border border-gray-100 dark:border-neutral-700 p-6 mb-4">
+                  <p className="text-xs text-gray-400 mb-2">
+                    Câu {currentIndex + 1}/{quiz.question_count}
+                  </p>
+                  <p className="font-semibold text-gray-900 dark:text-white mb-4 text-base">
+                    {currentQuestion.question}
+                  </p>
+                  <div className="flex flex-col gap-2">
+                    {currentQuestion.options.map((opt) => {
+                      const letter = opt.trim().charAt(0);
+                      const selected = answers[currentQuestion.id] === letter;
+                      const isCorrectOption = currentFeedback && letter === currentFeedback.correct_answer;
+                      const isWrongSelected = currentFeedback && selected && !currentFeedback.is_correct;
+                      let stateClasses =
+                        "bg-gray-50 dark:bg-neutral-700 border-transparent text-gray-800 dark:text-gray-200 hover:border-gray-300 dark:hover:border-neutral-500";
+                      if (currentFeedback) {
+                        if (isCorrectOption) {
+                          stateClasses = "bg-[#319527]/10 border-[#319527] text-[#319527] dark:text-[#6bcf60] font-medium";
+                        } else if (isWrongSelected) {
+                          stateClasses = "bg-red-500/10 border-red-500 text-red-500 font-medium";
+                        } else {
+                          stateClasses = "bg-gray-50 dark:bg-neutral-700 border-transparent text-gray-500 dark:text-gray-400";
+                        }
+                      } else if (selected) {
+                        stateClasses = "bg-[#319527]/10 border-[#319527] text-[#319527] dark:text-[#6bcf60] font-medium";
+                      }
+                      return (
+                        <button
+                          key={opt}
+                          onClick={() => handleSelect(currentQuestion.id, letter)}
+                          disabled={!!currentFeedback || answering}
+                          className={`text-left px-4 py-3 rounded-xl border transition-colors disabled:cursor-default ${stateClasses}`}
+                        >
+                          {opt}
+                          {isCorrectOption ? " ✓" : isWrongSelected ? " ✗" : ""}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  {currentFeedback?.explanation && (
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-3 italic">
+                      {currentFeedback.explanation}
+                    </p>
+                  )}
+                </div>
+              );
+            })()}
 
             <div className="flex items-center justify-between gap-3">
               <button
@@ -349,20 +394,13 @@ export default function QuizClient() {
               >
                 Câu trước
               </button>
-              {currentIndex < quiz.question_count - 1 ? (
+              {currentIndex < quiz.question_count - 1 && (
                 <button
                   onClick={() => setCurrentIndex((i) => Math.min(quiz.question_count - 1, i + 1))}
-                  className="px-4 py-2 rounded-full text-sm font-medium bg-[#319527] hover:bg-[#3dbb31] text-white"
+                  disabled={!feedback[quiz.questions[currentIndex].id]}
+                  className="px-4 py-2 rounded-full text-sm font-medium bg-[#319527] hover:bg-[#3dbb31] disabled:opacity-40 text-white"
                 >
                   Câu tiếp theo
-                </button>
-              ) : (
-                <button
-                  onClick={handleSubmit}
-                  disabled={submitting}
-                  className="px-6 py-2 rounded-full text-sm font-semibold bg-[#319527] hover:bg-[#3dbb31] disabled:opacity-60 text-white"
-                >
-                  {submitting ? "Đang nộp bài..." : "Nộp bài"}
                 </button>
               )}
             </div>
@@ -376,8 +414,10 @@ export default function QuizClient() {
                   className={`w-7 h-7 rounded-full text-xs font-semibold flex items-center justify-center border transition-colors ${
                     i === currentIndex
                       ? "bg-[#319527] text-white border-[#319527]"
-                      : answers[q.id]
-                      ? "bg-[#319527]/10 text-[#319527] border-[#319527]/30"
+                      : feedback[q.id]
+                      ? feedback[q.id].is_correct
+                        ? "bg-[#319527]/10 text-[#319527] border-[#319527]/30"
+                        : "bg-red-500/10 text-red-500 border-red-500/30"
                       : "bg-gray-50 dark:bg-neutral-700 text-gray-500 dark:text-gray-400 border-transparent"
                   }`}
                 >
