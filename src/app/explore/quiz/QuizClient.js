@@ -300,7 +300,7 @@ export default function QuizClient() {
                   value={customTopic}
                   onChange={(e) => setCustomTopic(e.target.value)}
                   placeholder="Nhập chủ đề bạn muốn (VD: Bóng đá, Âm nhạc...)"
-                  maxLength={100}
+                  maxLength={256}
                   className="mt-3 w-full sm:w-80 px-3 py-2 rounded-lg border border-gray-200 dark:border-neutral-600 bg-white dark:bg-neutral-700 text-sm text-gray-900 dark:text-white focus:outline-none focus:border-[#319527]"
                 />
               )}
