@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, Play, Monitor, Smartphone } from "lucide-react";
+import { ArrowLeft, Play, Monitor, Smartphone, ExternalLink } from "lucide-react";
 import { message } from "antd";
 import {
   getGame,
@@ -11,6 +11,7 @@ import {
   endGameSession,
 } from "@/app/Api";
 import { useAuthContext } from "@/contexts/Support";
+import { openDeepLink, isMobileDevice } from "@/lib/deepLink";
 
 const HEARTBEAT_INTERVAL_MS = 20000;
 
@@ -30,10 +31,12 @@ export default function GamePlayClient({ slug }) {
   // UI toggle that has no bearing on the initial server-rendered HTML.
   const [isInApp, setIsInApp] = useState(false);
   const isInAppRef = useRef(false);
+  const [canOpenInApp, setCanOpenInApp] = useState(false);
   useEffect(() => {
     const inApp = new URLSearchParams(window.location.search).get("app") === "true";
     setIsInApp(inApp);
     isInAppRef.current = inApp;
+    setCanOpenInApp(isMobileDevice() && !inApp);
   }, []);
   const [game, setGame] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -103,6 +106,16 @@ export default function GamePlayClient({ slug }) {
     window.history.back();
   };
 
+  const handleOpenInApp = () => {
+    openDeepLink("game", slug, {
+      onFallback: (storeUrl) => {
+        if (confirm("Chưa cài app? Tải về ngay để trải nghiệm tốt nhất!")) {
+          window.location.href = storeUrl;
+        }
+      },
+    });
+  };
+
   if (loading) {
     return (
       <div className="fixed inset-0 bg-black flex items-center justify-center text-white">
@@ -138,6 +151,16 @@ export default function GamePlayClient({ slug }) {
           className="absolute top-4 left-4 z-10 flex items-center justify-center w-10 h-10 rounded-full bg-black/60 hover:bg-black/80 text-white transition-colors"
         >
           <ArrowLeft className="w-5 h-5" />
+        </button>
+      )}
+
+      {canOpenInApp && (
+        <button
+          onClick={handleOpenInApp}
+          className="absolute top-4 right-4 z-10 flex items-center gap-1.5 px-3 py-2 rounded-full bg-[#319527] hover:bg-[#3dbb31] text-white text-xs font-medium transition-colors"
+        >
+          <ExternalLink className="w-4 h-4" />
+          Mở trong app
         </button>
       )}
 

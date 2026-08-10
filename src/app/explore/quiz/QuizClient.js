@@ -14,8 +14,10 @@ import {
   Loader2,
   Trophy,
   Share2,
+  ExternalLink,
 } from "lucide-react";
 import HomeLayout from "@/layouts/HomeLayout";
+import { openDeepLink, isMobileDevice } from "@/lib/deepLink";
 import {
   startQuiz,
   answerQuizQuestion,
@@ -82,6 +84,14 @@ export default function QuizClient() {
   // they get to see the ✓/✗ feedback on that last question first.
   const [pendingResult, setPendingResult] = useState(null);
   const [leaderboard, setLeaderboard] = useState([]);
+  // Only worth offering on an actual mobile browser that isn't already
+  // running inside the app's own WebView (?app=true) - computed in an
+  // effect (not read directly during render) so SSR/hydration always
+  // start from the same "false" the server saw.
+  const [canOpenInApp, setCanOpenInApp] = useState(false);
+  useEffect(() => {
+    setCanOpenInApp(isMobileDevice() && !isInAppWebView());
+  }, []);
 
   useEffect(() => {
     getQuizLeaderboard("week")
@@ -154,6 +164,17 @@ export default function QuizClient() {
     }
     navigator.clipboard.writeText(link);
     message.success("Đã sao chép liên kết vào bộ nhớ tạm");
+  };
+
+  const handleOpenInApp = (quizSetId) => {
+    openDeepLink("quiz", quizSetId, {
+      onFallback: (storeUrl) => {
+        if (confirm("Chưa cài app? Tải về ngay để trải nghiệm tốt nhất!")) {
+          window.location.href = storeUrl;
+        }
+      },
+      delay: isMobileDevice() ? 2000 : 2500,
+    });
   };
 
   const sidebarItems = EXPLORE_FEATURES.map((feature) => ({
@@ -294,13 +315,24 @@ export default function QuizClient() {
             Đố vui
           </h1>
           {quiz?.quiz_set_id && (phase === "taking" || phase === "result") && (
-            <button
-              onClick={() => handleShare(quiz.quiz_set_id)}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border border-gray-200 dark:border-neutral-600 text-gray-700 dark:text-gray-200 hover:border-[#319527] transition-colors"
-            >
-              <Share2 className="w-3.5 h-3.5" />
-              Chia sẻ
-            </button>
+            <div className="flex items-center gap-2 flex-shrink-0">
+              {canOpenInApp && (
+                <button
+                  onClick={() => handleOpenInApp(quiz.quiz_set_id)}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-[#319527] text-white hover:bg-[#3dbb31] transition-colors"
+                >
+                  <ExternalLink className="w-3.5 h-3.5" />
+                  Mở trong app
+                </button>
+              )}
+              <button
+                onClick={() => handleShare(quiz.quiz_set_id)}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border border-gray-200 dark:border-neutral-600 text-gray-700 dark:text-gray-200 hover:border-[#319527] transition-colors"
+              >
+                <Share2 className="w-3.5 h-3.5" />
+                Chia sẻ
+              </button>
+            </div>
           )}
         </div>
         <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
