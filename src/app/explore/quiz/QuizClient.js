@@ -71,6 +71,10 @@ export default function QuizClient() {
   const [feedback, setFeedback] = useState({});
   const [answering, setAnswering] = useState(false);
   const [result, setResult] = useState(null); // { score, total, points, results }
+  // Computed the instant the last question is answered, but held back until
+  // the user explicitly moves on - see handleSelect/handleViewResult - so
+  // they get to see the ✓/✗ feedback on that last question first.
+  const [pendingResult, setPendingResult] = useState(null);
   const [leaderboard, setLeaderboard] = useState([]);
 
   useEffect(() => {
@@ -137,6 +141,7 @@ export default function QuizClient() {
       setFeedback({});
       setCurrentIndex(0);
       setResult(null);
+      setPendingResult(null);
       setPhase("taking");
     } catch (error) {
       if (!isInAppWebView()) {
@@ -151,8 +156,10 @@ export default function QuizClient() {
 
   // Grades the question the instant it's answered - no separate "submit"
   // step. Once the last question in the set is answered, the API finalizes
-  // the play and returns the final score/points, so the result screen is
-  // built right here from the accumulated per-question feedback.
+  // the play and returns the final score/points - but we hold off switching
+  // to the result screen until the user taps "Xem kết quả" (see
+  // handleViewResult) so they get to see the ✓/✗ feedback on that last
+  // question first instead of jumping straight to the summary.
   const handleSelect = async (questionId, letter) => {
     if (!quiz || feedback[questionId] || answering) return; // already answered / a request in flight
     setAnswering(true);
@@ -165,7 +172,7 @@ export default function QuizClient() {
       setFeedback(nextFeedback);
 
       if (data.finished) {
-        setResult({
+        setPendingResult({
           score: data.score,
           total: data.total,
           points: data.points,
@@ -177,7 +184,6 @@ export default function QuizClient() {
             explanation: nextFeedback[q.id]?.explanation,
           })),
         });
-        setPhase("result");
       }
     } catch (error) {
       if (!isInAppWebView()) {
@@ -190,10 +196,17 @@ export default function QuizClient() {
     }
   };
 
+  const handleViewResult = () => {
+    if (!pendingResult) return;
+    setResult(pendingResult);
+    setPhase("result");
+  };
+
   const handleRestart = () => {
     setPhase("setup");
     setQuiz(null);
     setResult(null);
+    setPendingResult(null);
     setAnswers({});
     setFeedback({});
     setCurrentIndex(0);
@@ -478,13 +491,21 @@ export default function QuizClient() {
               >
                 Câu trước
               </button>
-              {currentIndex < quiz.question_count - 1 && (
+              {currentIndex < quiz.question_count - 1 ? (
                 <button
                   onClick={() => setCurrentIndex((i) => Math.min(quiz.question_count - 1, i + 1))}
                   disabled={!feedback[quiz.questions[currentIndex].id]}
                   className="px-4 py-2 rounded-full text-sm font-medium bg-[#319527] hover:bg-[#3dbb31] disabled:opacity-40 text-white"
                 >
                   Câu tiếp theo
+                </button>
+              ) : (
+                <button
+                  onClick={handleViewResult}
+                  disabled={!pendingResult}
+                  className="px-4 py-2 rounded-full text-sm font-medium bg-[#319527] hover:bg-[#3dbb31] disabled:opacity-40 text-white"
+                >
+                  Xem kết quả
                 </button>
               )}
             </div>
