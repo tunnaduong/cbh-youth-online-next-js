@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { message } from "antd";
 import { useRouter } from "@bprogress/next/app";
+import { useSearchParams } from "next/navigation";
 import {
   HelpCircle,
   Sparkles,
@@ -12,6 +13,7 @@ import {
   RotateCcw,
   Loader2,
   Trophy,
+  Share2,
 } from "lucide-react";
 import HomeLayout from "@/layouts/HomeLayout";
 import {
@@ -19,6 +21,7 @@ import {
   answerQuizQuestion,
   getQuizLeaderboard,
   getQuizTopics,
+  joinQuiz,
 } from "@/app/Api";
 import { useAuthContext } from "@/contexts/Support";
 import { EXPLORE_FEATURES } from "@/data/exploreFeatures";
@@ -48,11 +51,14 @@ function isInAppWebView() {
 }
 
 export default function QuizClient() {
-  const { loggedIn } = useAuthContext();
+  const { loggedIn, authLoading } = useAuthContext();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const sharedQuizId = searchParams.get("shared");
 
   // phase: "setup" -> "taking" -> "result"
   const [phase, setPhase] = useState("setup");
+  const [joiningShared, setJoiningShared] = useState(!!sharedQuizId);
   const [count, setCount] = useState(10);
   const [customCount, setCustomCount] = useState("");
   const [useCustomCount, setUseCustomCount] = useState(false);
@@ -91,6 +97,64 @@ export default function QuizClient() {
       })
       .catch(() => {});
   }, []);
+
+  // Opened via a shared quiz link - join that exact set instead of showing
+  // the setup screen, so both people answer the same questions.
+  useEffect(() => {
+    if (!sharedQuizId || authLoading) return;
+    if (!loggedIn) {
+      router.push("/login?continue=" + encodeURIComponent(window.location.href));
+      return;
+    }
+
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await joinQuiz(sharedQuizId);
+        const data = res?.data || res;
+        if (cancelled) return;
+
+        if (data.status === "completed") {
+          setQuiz(data);
+          setResult(data.result);
+          setPhase("result");
+        } else {
+          setQuiz(data);
+          setAnswers(data.answered || {});
+          setFeedback({});
+          setCurrentIndex(0);
+          setResult(null);
+          setPendingResult(null);
+          setPhase("taking");
+        }
+      } catch (error) {
+        if (!isInAppWebView()) {
+          message.error(error?.response?.data?.message || "Không thể tham gia bài đố vui này.");
+        }
+      } finally {
+        if (!cancelled) setJoiningShared(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [sharedQuizId, loggedIn, authLoading]);
+
+  const handleShare = async (quizSetId) => {
+    if (!quizSetId) return;
+    const link = `${window.location.origin}/explore/quiz?shared=${quizSetId}`;
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: "Đố vui", text: "Cùng thử sức với bài đố vui này nhé!", url: link });
+        return;
+      } catch {
+        // User cancelled the native share sheet, or it's unsupported here -
+        // fall back to clipboard below.
+      }
+    }
+    navigator.clipboard.writeText(link);
+    message.success("Đã sao chép liên kết vào bộ nhớ tạm");
+  };
 
   const sidebarItems = EXPLORE_FEATURES.map((feature) => ({
     key: feature.key,
@@ -224,14 +288,31 @@ export default function QuizClient() {
       showRightSidebar={false}
     >
       <div className="max-w-[760px] mx-auto px-4 py-6">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2 mb-1">
-          <HelpCircle className="w-6 h-6 text-[#319527]" />
-          Đố vui
-        </h1>
+        <div className="flex items-start justify-between gap-3 mb-1">
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+            <HelpCircle className="w-6 h-6 text-[#319527]" />
+            Đố vui
+          </h1>
+          {quiz?.quiz_set_id && (phase === "taking" || phase === "result") && (
+            <button
+              onClick={() => handleShare(quiz.quiz_set_id)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border border-gray-200 dark:border-neutral-600 text-gray-700 dark:text-gray-200 hover:border-[#319527] transition-colors"
+            >
+              <Share2 className="w-3.5 h-3.5" />
+              Chia sẻ
+            </button>
+          )}
+        </div>
         <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
           Trả lời câu hỏi trắc nghiệm do AI tạo ra, thử thách kiến thức của bạn.
         </p>
 
+        {joiningShared ? (
+          <div className="flex items-center justify-center py-20">
+            <Loader2 className="w-8 h-8 animate-spin text-[#319527]" />
+          </div>
+        ) : (
+        <>
         {phase === "setup" && (
           <div className="bg-white dark:bg-neutral-800 rounded-2xl border border-gray-100 dark:border-neutral-700 p-6">
             <div className="mb-6">
@@ -606,6 +687,8 @@ export default function QuizClient() {
               })}
             </div>
           </div>
+        )}
+        </>
         )}
       </div>
     </HomeLayout>

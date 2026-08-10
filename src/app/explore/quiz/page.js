@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import QuizClient from "./QuizClient";
 import { enhanceMetadataWithURLs } from "@/utils/seo";
 
@@ -17,5 +18,17 @@ export const metadata = enhanceMetadataWithURLs(
 );
 
 export default function QuizPage() {
-  return <QuizClient />;
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-[#F8F8F8] dark:bg-neutral-800 flex items-center justify-center">
+          <div className="text-center text-gray-500 dark:text-gray-400">
+            Đang tải...
+          </div>
+        </div>
+      }
+    >
+      <QuizClient />
+    </Suspense>
+  );
 }
