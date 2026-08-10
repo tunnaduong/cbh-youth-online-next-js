@@ -14,16 +14,29 @@ import {
   Trophy,
 } from "lucide-react";
 import HomeLayout from "@/layouts/HomeLayout";
-import { startQuiz, answerQuizQuestion, getQuizLeaderboard } from "@/app/Api";
+import {
+  startQuiz,
+  answerQuizQuestion,
+  getQuizLeaderboard,
+  getQuizTopics,
+} from "@/app/Api";
 import { useAuthContext } from "@/contexts/Support";
 import { EXPLORE_FEATURES } from "@/data/exploreFeatures";
 
-const COUNT_PRESETS = [5, 10, 20, 50, 100];
+const COUNT_PRESETS = [5, 10, 20, 50];
+const MAX_COUNT = 50;
 const DIFFICULTIES = [
   { value: "easy", label: "Dễ" },
   { value: "medium", label: "Trung bình" },
   { value: "hard", label: "Khó" },
 ];
+const GRADES = [
+  { value: "10", label: "Lớp 10" },
+  { value: "11", label: "Lớp 11" },
+  { value: "12", label: "Lớp 12" },
+];
+const RANDOM_TOPIC = "Ngẫu nhiên";
+const OTHER_TOPIC = "Khác";
 
 // Embedded in the mobile app's WebView (?app=true) - the app shows its own
 // native toasts/alerts for these, so a web toast on top would double up.
@@ -44,6 +57,10 @@ export default function QuizClient() {
   const [customCount, setCustomCount] = useState("");
   const [useCustomCount, setUseCustomCount] = useState(false);
   const [difficulty, setDifficulty] = useState("medium");
+  const [grade, setGrade] = useState("10");
+  const [topics, setTopics] = useState([]);
+  const [topic, setTopic] = useState(RANDOM_TOPIC);
+  const [customTopic, setCustomTopic] = useState("");
   const [loading, setLoading] = useState(false);
 
   const [quiz, setQuiz] = useState(null); // { quiz_set_id, topic, difficulty, question_count, questions }
@@ -59,6 +76,15 @@ export default function QuizClient() {
   useEffect(() => {
     getQuizLeaderboard("week")
       .then((res) => setLeaderboard((res?.data || res)?.leaderboard || []))
+      .catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    getQuizTopics()
+      .then((res) => {
+        const data = res?.data || res;
+        setTopics(data?.topics || []);
+      })
       .catch(() => {});
   }, []);
 
@@ -78,7 +104,7 @@ export default function QuizClient() {
   }));
 
   const resolvedCount = useCustomCount
-    ? Math.max(1, Math.min(100, parseInt(customCount, 10) || 0))
+    ? Math.max(1, Math.min(MAX_COUNT, parseInt(customCount, 10) || 0))
     : count;
 
   const handleStart = async () => {
@@ -88,13 +114,23 @@ export default function QuizClient() {
       return;
     }
     if (useCustomCount && (!customCount || resolvedCount < 1)) {
-      message.error("Vui lòng nhập số câu hỏi hợp lệ (1-100)");
+      message.error(`Vui lòng nhập số câu hỏi hợp lệ (1-${MAX_COUNT})`);
+      return;
+    }
+    if (topic === OTHER_TOPIC && !customTopic.trim()) {
+      message.error("Vui lòng nhập chủ đề bạn muốn");
       return;
     }
 
     setLoading(true);
     try {
-      const res = await startQuiz(resolvedCount, difficulty);
+      const res = await startQuiz(
+        resolvedCount,
+        difficulty,
+        topic,
+        grade,
+        topic === OTHER_TOPIC ? customTopic.trim() : undefined
+      );
       const data = res?.data || res;
       setQuiz(data);
       setAnswers({});
@@ -219,13 +255,61 @@ export default function QuizClient() {
                 <input
                   type="number"
                   min={1}
-                  max={100}
+                  max={MAX_COUNT}
                   value={customCount}
                   onChange={(e) => setCustomCount(e.target.value)}
-                  placeholder="Nhập số câu (1-100)"
+                  placeholder={`Nhập số câu (1-${MAX_COUNT})`}
                   className="mt-3 w-full sm:w-52 px-3 py-2 rounded-lg border border-gray-200 dark:border-neutral-600 bg-white dark:bg-neutral-700 text-sm text-gray-900 dark:text-white focus:outline-none focus:border-[#319527]"
                 />
               )}
+            </div>
+
+            <div className="mb-6">
+              <p className="font-semibold text-gray-900 dark:text-white mb-3">Chủ đề</p>
+              <div className="flex flex-wrap gap-2">
+                {[RANDOM_TOPIC, ...topics, OTHER_TOPIC].map((t) => (
+                  <button
+                    key={t}
+                    onClick={() => setTopic(t)}
+                    className={`px-4 py-2 rounded-full text-sm font-medium border transition-colors ${
+                      topic === t
+                        ? "bg-[#319527] text-white border-[#319527]"
+                        : "bg-white dark:bg-neutral-700 text-gray-700 dark:text-gray-200 border-gray-200 dark:border-neutral-600 hover:border-[#319527]"
+                    }`}
+                  >
+                    {t}
+                  </button>
+                ))}
+              </div>
+              {topic === OTHER_TOPIC && (
+                <input
+                  type="text"
+                  value={customTopic}
+                  onChange={(e) => setCustomTopic(e.target.value)}
+                  placeholder="Nhập chủ đề bạn muốn (VD: Bóng đá, Âm nhạc...)"
+                  maxLength={100}
+                  className="mt-3 w-full sm:w-80 px-3 py-2 rounded-lg border border-gray-200 dark:border-neutral-600 bg-white dark:bg-neutral-700 text-sm text-gray-900 dark:text-white focus:outline-none focus:border-[#319527]"
+                />
+              )}
+            </div>
+
+            <div className="mb-6">
+              <p className="font-semibold text-gray-900 dark:text-white mb-3">Lớp</p>
+              <div className="flex flex-wrap gap-2">
+                {GRADES.map((g) => (
+                  <button
+                    key={g.value}
+                    onClick={() => setGrade(g.value)}
+                    className={`px-4 py-2 rounded-full text-sm font-medium border transition-colors ${
+                      grade === g.value
+                        ? "bg-[#319527] text-white border-[#319527]"
+                        : "bg-white dark:bg-neutral-700 text-gray-700 dark:text-gray-200 border-gray-200 dark:border-neutral-600 hover:border-[#319527]"
+                    }`}
+                  >
+                    {g.label}
+                  </button>
+                ))}
+              </div>
             </div>
 
             <div className="mb-6">
