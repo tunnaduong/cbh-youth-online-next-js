@@ -38,6 +38,14 @@ export default function AppBanner() {
 
       // Always show on mobile. Determine deep link from current location.
       const params = new URLSearchParams(window.location.search);
+
+      // Already inside the app's own webview (?app=true), or actively
+      // playing a game - the banner would just cover the game iframe.
+      if (params.get("app") === "true" || /^\/explore\/games\/[^/]+/.test(pathname)) {
+        setVisible(false);
+        return;
+      }
+
       const storyId = params.get("storyId");
       if (storyId) {
         setAppUrl(`com.fatties.youth://story/${storyId}`);
