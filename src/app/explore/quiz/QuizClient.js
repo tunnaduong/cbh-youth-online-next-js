@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import Link from "next/link";
 import { message } from "antd";
 import { useRouter } from "@bprogress/next/app";
 import {
@@ -10,9 +11,10 @@ import {
   XCircle,
   RotateCcw,
   Loader2,
+  Trophy,
 } from "lucide-react";
 import HomeLayout from "@/layouts/HomeLayout";
-import { startQuiz, submitQuiz } from "@/app/Api";
+import { startQuiz, submitQuiz, getQuizLeaderboard } from "@/app/Api";
 import { useAuthContext } from "@/contexts/Support";
 import { EXPLORE_FEATURES } from "@/data/exploreFeatures";
 
@@ -22,6 +24,15 @@ const DIFFICULTIES = [
   { value: "medium", label: "Trung bình" },
   { value: "hard", label: "Khó" },
 ];
+
+// Embedded in the mobile app's WebView (?app=true) - the app shows its own
+// native toasts/alerts for these, so a web toast on top would double up.
+function isInAppWebView() {
+  return (
+    typeof window !== "undefined" &&
+    new URLSearchParams(window.location.search).get("app") === "true"
+  );
+}
 
 export default function QuizClient() {
   const { loggedIn } = useAuthContext();
@@ -38,8 +49,15 @@ export default function QuizClient() {
   const [quiz, setQuiz] = useState(null); // { quiz_set_id, topic, difficulty, question_count, questions }
   const [currentIndex, setCurrentIndex] = useState(0);
   const [answers, setAnswers] = useState({}); // { [questionId]: "A" }
-  const [result, setResult] = useState(null); // { score, total, results }
+  const [result, setResult] = useState(null); // { score, total, points, results }
   const [submitting, setSubmitting] = useState(false);
+  const [leaderboard, setLeaderboard] = useState([]);
+
+  useEffect(() => {
+    getQuizLeaderboard("week")
+      .then((res) => setLeaderboard((res?.data || res)?.leaderboard || []))
+      .catch(() => {});
+  }, []);
 
   const sidebarItems = EXPLORE_FEATURES.map((feature) => ({
     key: feature.key,
@@ -81,9 +99,11 @@ export default function QuizClient() {
       setResult(null);
       setPhase("taking");
     } catch (error) {
-      message.error(
-        error?.response?.data?.message || "Không thể tạo câu hỏi lúc này, vui lòng thử lại."
-      );
+      if (!isInAppWebView()) {
+        message.error(
+          error?.response?.data?.message || "Không thể tạo câu hỏi lúc này, vui lòng thử lại."
+        );
+      }
     } finally {
       setLoading(false);
     }
@@ -106,7 +126,9 @@ export default function QuizClient() {
       setResult(data);
       setPhase("result");
     } catch (error) {
-      message.error(error?.response?.data?.message || "Không thể nộp bài, vui lòng thử lại.");
+      if (!isInAppWebView()) {
+        message.error(error?.response?.data?.message || "Không thể nộp bài, vui lòng thử lại.");
+      }
     } finally {
       setSubmitting(false);
     }
@@ -219,6 +241,59 @@ export default function QuizClient() {
           </div>
         )}
 
+        {phase === "setup" && (
+          <div className="bg-white dark:bg-neutral-800 rounded-2xl border border-gray-100 dark:border-neutral-700 p-6 mt-4">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="font-semibold text-gray-900 dark:text-white flex items-center gap-1.5">
+                <Trophy className="w-4 h-4 text-yellow-500" />
+                Bảng xếp hạng đố vui
+              </h3>
+              <span className="text-xs text-gray-400">Tuần này</span>
+            </div>
+            {leaderboard.length === 0 ? (
+              <p className="text-sm text-gray-400 py-4 text-center">
+                Chưa có dữ liệu
+              </p>
+            ) : (
+              <div className="space-y-2">
+                {leaderboard.slice(0, 5).map((u, i) => (
+                  <Link
+                    href={`/${u.username}`}
+                    key={u.id}
+                    className="flex items-center gap-2.5 hover:bg-gray-50 dark:hover:bg-neutral-700 rounded-lg p-1.5 -mx-1.5"
+                  >
+                    <span
+                      className={`w-5 text-center text-sm font-bold ${
+                        i === 0
+                          ? "text-yellow-500"
+                          : i === 1
+                          ? "text-gray-400"
+                          : i === 2
+                          ? "text-amber-700"
+                          : "text-gray-400"
+                      }`}
+                    >
+                      {i + 1}
+                    </span>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={u.avatar_url}
+                      alt={u.username}
+                      className="w-8 h-8 rounded-full"
+                    />
+                    <span className="flex-1 text-sm text-gray-800 dark:text-gray-200 truncate">
+                      {u.profile_name}
+                    </span>
+                    <span className="text-xs font-semibold text-[#319527]">
+                      {u.points} điểm
+                    </span>
+                  </Link>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
         {phase === "taking" && quiz && (
           <div>
             <div className="flex items-center justify-between mb-4">
@@ -320,6 +395,11 @@ export default function QuizClient() {
               <p className="text-4xl font-bold text-[#319527] mb-1">
                 {result.score}/{result.total}
               </p>
+              {result.points != null && (
+                <p className="text-sm font-semibold text-yellow-600 dark:text-yellow-400 mb-1">
+                  +{result.points} điểm
+                </p>
+              )}
               <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
                 Chủ đề: {quiz.topic}
               </p>

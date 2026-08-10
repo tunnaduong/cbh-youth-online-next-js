@@ -29,8 +29,11 @@ export default function GamePlayClient({ slug }) {
   // client component doesn't need a <Suspense> boundary just for a simple
   // UI toggle that has no bearing on the initial server-rendered HTML.
   const [isInApp, setIsInApp] = useState(false);
+  const isInAppRef = useRef(false);
   useEffect(() => {
-    setIsInApp(new URLSearchParams(window.location.search).get("app") === "true");
+    const inApp = new URLSearchParams(window.location.search).get("app") === "true";
+    setIsInApp(inApp);
+    isInAppRef.current = inApp;
   }, []);
   const [game, setGame] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -43,7 +46,11 @@ export default function GamePlayClient({ slug }) {
     setPlatform(detectPlatform());
     getGame(slug)
       .then((res) => setGame(res?.data || res))
-      .catch(() => message.error("Không tìm thấy game này"))
+      .catch(() => {
+        // Skip the toast when embedded in the mobile app's WebView (?app=true)
+        // - the app shows its own native error handling for a failed load.
+        if (!isInAppRef.current) message.error("Không tìm thấy game này");
+      })
       .finally(() => setLoading(false));
   }, [slug]);
 

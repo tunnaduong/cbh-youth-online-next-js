@@ -5,13 +5,14 @@ import Link from "next/link";
 import { useRouter } from "@bprogress/next/app";
 import { message } from "antd";
 import HomeLayout from "@/layouts/HomeLayout";
-import { getGames, getRandomGame, getGameLeaderboard } from "@/app/Api";
+import { getGames, getRandomGame, getGameLeaderboard, getGameNowPlaying } from "@/app/Api";
 import {
   Search,
   Dice5,
   TrendingUp,
   Sparkles,
   Trophy,
+  Radio,
   ChevronLeft,
   ChevronRight,
 } from "lucide-react";
@@ -170,6 +171,15 @@ function SmallGameCard({ game }) {
   );
 }
 
+// Embedded in the mobile app's WebView (?app=true) - the app shows its own
+// native toasts/alerts for these, so a web toast on top would double up.
+function isInAppWebView() {
+  return (
+    typeof window !== "undefined" &&
+    new URLSearchParams(window.location.search).get("app") === "true"
+  );
+}
+
 export default function GamesClient() {
   const router = useRouter();
   const [games, setGames] = useState([]);
@@ -181,6 +191,7 @@ export default function GamesClient() {
   const [activeCategory, setActiveCategory] = useState("all");
   const [rollingRandom, setRollingRandom] = useState(false);
   const [leaderboard, setLeaderboard] = useState([]);
+  const [nowPlaying, setNowPlaying] = useState([]);
 
   // Explore's own sidebar (Trang chủ/Chợ tài liệu/Game/...) instead of the
   // main forum sidebar, matching every other page nested under /explore.
@@ -214,7 +225,7 @@ export default function GamesClient() {
       ];
       setCategories(["all", ...sortedCategories]);
     } catch (error) {
-      message.error("Không thể tải danh sách game");
+      if (!isInAppWebView()) message.error("Không thể tải danh sách game");
     } finally {
       setLoading(false);
     }
@@ -225,6 +236,17 @@ export default function GamesClient() {
     getGameLeaderboard("week")
       .then((res) => setLeaderboard((res?.data || res)?.leaderboard || []))
       .catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    const loadNowPlaying = () => {
+      getGameNowPlaying()
+        .then((res) => setNowPlaying((res?.data || res)?.playing || []))
+        .catch(() => {});
+    };
+    loadNowPlaying();
+    const interval = setInterval(loadNowPlaying, 25000);
+    return () => clearInterval(interval);
   }, []);
 
   useEffect(() => {
@@ -248,7 +270,7 @@ export default function GamesClient() {
       const game = res?.data || res;
       router.push(`/explore/games/${game.slug}`);
     } catch (error) {
-      message.error("Không tìm được game nào phù hợp");
+      if (!isInAppWebView()) message.error("Không tìm được game nào phù hợp");
     } finally {
       setRollingRandom(false);
     }
@@ -418,6 +440,43 @@ export default function GamesClient() {
                       {u.xp} XP
                     </span>
                   </Link>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Who's playing right now */}
+          <div className="bg-white dark:bg-neutral-800 rounded-xl border border-gray-100 dark:border-neutral-700 p-4 mt-4">
+            <h3 className="font-semibold text-gray-900 dark:text-white flex items-center gap-1.5 mb-3">
+              <Radio className="w-4 h-4 text-[#319527]" />
+              Đang chơi
+            </h3>
+            {nowPlaying.length === 0 ? (
+              <p className="text-sm text-gray-400 py-4 text-center">
+                Chưa có ai đang chơi
+              </p>
+            ) : (
+              <div className="space-y-2">
+                {nowPlaying.slice(0, 8).map((p) => (
+                  <div
+                    key={`${p.user_id}-${p.game_slug}`}
+                    className="flex items-center gap-2.5"
+                  >
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={p.avatar_url}
+                      alt={p.username}
+                      className="w-8 h-8 rounded-full"
+                    />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm text-gray-800 dark:text-gray-200 truncate">
+                        {p.profile_name}
+                      </p>
+                      <p className="text-xs text-gray-400 truncate">
+                        đang chơi {p.game_name}
+                      </p>
+                    </div>
+                  </div>
                 ))}
               </div>
             )}

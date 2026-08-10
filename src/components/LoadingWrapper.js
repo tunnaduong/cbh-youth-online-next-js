@@ -14,7 +14,13 @@ export default function LoadingWrapper({ children }) {
   const [isInitialLoading, setIsInitialLoading] = useState(!hideLoading);
 
   useEffect(() => {
-    if (hideLoading) {
+    // Embedded in the mobile app's WebView (?app=true) - the app already
+    // shows its own native splash, so a second web one is just a flash of a
+    // duplicate loading screen. Checked client-side only (window isn't
+    // available during SSR) so it can't cause a hydration mismatch.
+    const isInApp = new URLSearchParams(window.location.search).get("app") === "true";
+
+    if (hideLoading || isInApp) {
       setIsInitialLoading(false);
       return;
     }
