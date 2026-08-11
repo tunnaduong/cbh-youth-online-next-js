@@ -41,14 +41,31 @@ export default function RootLayout({ children }) {
   return (
     <html lang="vi">
       <head>
+        <meta name="google-adsense-account" content="ca-pub-3425905751761094"></meta>
+      </head>
+      <body className="bg-[#F8F8F8] dark:bg-neutral-800">
+        {/* Google Adsense */}
         <Script
           async
           src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3425905751761094"
           crossOrigin="anonymous"
+          strategy="afterInteractive"
         />
-        <meta name="google-adsense-account" content="ca-pub-3425905751761094"></meta>
-      </head>
-      <body className="bg-[#F8F8F8] dark:bg-neutral-800">
+        {/* Google Analytics (gtag.js) */}
+        <Script
+          async
+          src="https://www.googletagmanager.com/gtag/js?id=G-MYK6XE8MX3"
+          strategy="afterInteractive"
+        />
+        <Script id="google-analytics" strategy="afterInteractive">
+          {`
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('js', new Date());
+
+            gtag('config', 'G-MYK6XE8MX3');
+          `}
+        </Script>
         <GlobalConsoleMessage />
         <ClientProviders>{children}</ClientProviders>
         <Analytics />
