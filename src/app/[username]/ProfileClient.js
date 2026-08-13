@@ -10,8 +10,9 @@ import FollowButton from "@/components/profile/FollowButton";
 import { BsFillGearFill } from "react-icons/bs";
 import { IoChatbubbleEllipsesOutline } from "react-icons/io5";
 import { IoCalendarOutline, IoLocationOutline } from "react-icons/io5";
-import { Edit2Icon } from "lucide-react";
+import { Edit2Icon, Flag } from "lucide-react";
 import { useAuthContext, useChatContext } from "@/contexts/Support";
+import ReportModal from "@/components/ReportModal";
 import {
   followUser,
   unfollowUser,
@@ -26,6 +27,7 @@ export default function ProfileClient({ initialProfile, activeTab, username }) {
   const { currentUser } = useAuthContext();
   const { openChat, createConversation } = useChatContext();
   const router = useRouter();
+  const [showReportModal, setShowReportModal] = useState(false);
 
   // Transform API response to component format
   const transformProfileData = (apiData, currentUsername = null) => {
@@ -733,6 +735,12 @@ export default function ProfileClient({ initialProfile, activeTab, username }) {
 
   return (
     <DefaultLayout activeNav="home">
+      <ReportModal
+        open={showReportModal}
+        onClose={() => setShowReportModal(false)}
+        reportedUserId={profile.id}
+        title="Báo cáo người dùng"
+      />
       <div>
         <div className="flex-1">
           <div className="relative h-36 lg:h-96 overflow-hidden group/cover">
@@ -916,6 +924,14 @@ export default function ProfileClient({ initialProfile, activeTab, username }) {
                       loading={loading}
                       handleFollow={handleFollow}
                     />
+                    <Button
+                      shape="circle"
+                      icon={<Flag className="w-4 h-4" />}
+                      aria-label="Báo cáo"
+                      title="Báo cáo người dùng"
+                      onClick={() => setShowReportModal(true)}
+                      className="!flex !items-center !justify-center"
+                    />
                   </>
                 )}
               </div>
@@ -984,6 +1000,7 @@ export default function ProfileClient({ initialProfile, activeTab, username }) {
                   <>
                     <Button shape="circle" icon={<IoChatbubbleEllipsesOutline className="w-5 h-5 mt-1" />} aria-label="Nhắn tin" title="Nhắn tin" loading={messaging} onClick={handleMessage} className="!flex !items-center !justify-center !border-[#319527]" />
                     <FollowButton isFollowing={isFollowing} loading={loading} handleFollow={handleFollow} />
+                    <Button shape="circle" icon={<Flag className="w-4 h-4" />} aria-label="Báo cáo" title="Báo cáo người dùng" onClick={() => setShowReportModal(true)} className="!flex !items-center !justify-center" />
                   </>
                 )}
               </div>
@@ -1132,6 +1149,14 @@ export default function ProfileClient({ initialProfile, activeTab, username }) {
                       isFollowing={isFollowing}
                       loading={loading}
                       handleFollow={handleFollow}
+                    />
+                    <Button
+                      shape="circle"
+                      icon={<Flag className="w-4 h-4" />}
+                      aria-label="Báo cáo"
+                      title="Báo cáo người dùng"
+                      onClick={() => setShowReportModal(true)}
+                      className="!flex !items-center !justify-center"
                     />
                   </>
                 )}
