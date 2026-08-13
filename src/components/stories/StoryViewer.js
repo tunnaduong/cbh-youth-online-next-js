@@ -6,12 +6,13 @@ import { Drawer, message } from "antd";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { EffectCube } from "swiper/modules";
 import { useRouter } from "@bprogress/next/app";
-import { X, ChevronLeft, ChevronRight, VolumeX, Volume2, Link2, Smartphone, Trash2, Send } from "lucide-react";
+import { X, ChevronLeft, ChevronRight, VolumeX, Volume2, Link2, Smartphone, Trash2, Send, Flag } from "lucide-react";
 import { markStoryAsViewed, deleteStory, reactToStory, removeStoryReaction } from "@/app/Api";
 import { postRequest } from "@/services/api/ApiByAxios";
 import { Modal } from "antd";
 import Link from "next/link";
 import { openDeepLink } from "@/lib/deepLink";
+import ReportModal from "@/components/ReportModal";
 
 // Import Swiper styles
 import "swiper/css";
@@ -87,8 +88,11 @@ const UserHeader = ({
   isOwner,
   onDelete,
   isMuteLocked,
+  currentUser,
+  reportedUserId,
 }) => {
   const [isMobile, setIsMobile] = useState(false);
+  const [showReportModal, setShowReportModal] = useState(false);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -193,6 +197,21 @@ const UserHeader = ({
             <Trash2 className="w-5 h-5 sm:w-6 sm:h-6 drop-shadow" />
           </button>
         )}
+        {!isOwner && (
+          <button
+            onClick={() => {
+              if (!currentUser) {
+                message.warning("Bạn cần đăng nhập để báo cáo.");
+                return;
+              }
+              setShowReportModal(true);
+            }}
+            className="text-white hover:text-red-400 transition-colors p-1.5 sm:p-2 flex-shrink-0"
+            title="Báo cáo tin này"
+          >
+            <Flag className="w-5 h-5 sm:w-6 sm:h-6 drop-shadow" />
+          </button>
+        )}
         <button
           onClick={onClose}
           className="text-white hover:text-white/80 transition-colors p-1.5 sm:p-2 flex-shrink-0"
@@ -200,6 +219,13 @@ const UserHeader = ({
           <X className="w-5 h-5 sm:w-6 sm:h-6 drop-shadow" />
         </button>
       </div>
+      <ReportModal
+        open={showReportModal}
+        onClose={() => setShowReportModal(false)}
+        reportedUserId={reportedUserId}
+        storyId={storyId}
+        title="Báo cáo tin"
+      />
     </div>
   );
 };
@@ -698,6 +724,8 @@ const StorySlide = ({
         storyId={currentStory?.id}
         isMuteLocked={Boolean(currentStory?.is_muted)}
         isOwner={isOwner}
+        currentUser={currentUser}
+        reportedUserId={user?.id}
         onDelete={() => {
           Modal.confirm({
             title: "Xóa tin này?",

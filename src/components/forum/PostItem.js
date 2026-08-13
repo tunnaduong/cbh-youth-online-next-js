@@ -50,6 +50,7 @@ import {
 import { usePostRefresh } from "@/contexts/PostRefreshContext";
 import CreatePostModal from "../modals/CreatePostModal";
 import PostVotesModal from "./PostVotesModal";
+import ReportModal from "@/components/ReportModal";
 
 export default function PostItem({ post, single = false, onVote, onRefresh = null }) {
   const { currentUser, refreshUser } = useAuthContext();
@@ -57,6 +58,7 @@ export default function PostItem({ post, single = false, onVote, onRefresh = nul
   const [showFullContent, setShowFullContent] = useState(false);
   const [isSaved, setIsSaved] = useState(!!(post.is_saved || post.saved));
   const [showVotesModal, setShowVotesModal] = useState(false);
+  const [showReportModal, setShowReportModal] = useState(false);
   const maxLength = 300; // Số ký tự tối đa trước khi truncate
   const myVote =
     post.votes?.find((v) => v.username === currentUser?.username)?.vote_value ||
@@ -385,7 +387,11 @@ export default function PostItem({ post, single = false, onVote, onRefresh = nul
   };
 
   const handleReport = () => {
-    message.info("Tính năng đang phát triển");
+    if (!currentUser) {
+      message.warning("Bạn cần đăng nhập để báo cáo bài viết.");
+      return;
+    }
+    setShowReportModal(true);
   };
 
   const menuItems = [
@@ -444,6 +450,13 @@ export default function PostItem({ post, single = false, onVote, onRefresh = nul
         postId={post.id}
         postTitle={post.title}
         onClose={() => setShowVotesModal(false)}
+      />
+      <ReportModal
+        open={showReportModal}
+        onClose={() => setShowReportModal(false)}
+        reportedUserId={post.author?.id}
+        topicId={post.id}
+        title="Báo cáo bài viết"
       />
       <div className="post-container-post post-container mb-4 shadow-lg rounded-xl !p-6 bg-white flex flex-col-reverse md:flex-row">
         <div className="min-w-[72px]">

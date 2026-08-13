@@ -679,6 +679,23 @@ export const getConversationMentionSuggestions = (conversationId, query) => {
   return Api.getRequest(`/v1.0/chat/conversations/${conversationId}/mention-suggestions?q=${encodeURIComponent(query)}`);
 };
 
+// Reports
+export const reportContent = (params) => {
+  return Api.postRequest("/v1.0/reports", params);
+};
+
+export const getReports = (params = {}) => {
+  return Api.getRequest("/v1.0/reports", params);
+};
+
+export const getReportStats = () => {
+  return Api.getRequest("/v1.0/reports/stats");
+};
+
+export const reviewReport = (id, params) => {
+  return Api.postRequest(`/v1.0/reports/${id}/review`, params);
+};
+
 // Blocking
 export const blockUser = (userId) => {
   return Api.postRequest("/v1.0/users/block", { blocked_user_id: userId });

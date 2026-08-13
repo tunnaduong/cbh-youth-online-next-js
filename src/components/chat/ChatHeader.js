@@ -9,9 +9,12 @@ import {
   ChevronUp,
   ChevronLeft,
   X,
+  Flag,
 } from "lucide-react";
 import Link from "next/link";
+import { useState } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import ReportModal from "@/components/ReportModal";
 
 export default function ChatHeader({
   conversation,
@@ -27,6 +30,9 @@ export default function ChatHeader({
   showNewGroupDialog,
 }) {
   const isThreadsView = !conversation;
+  const [showReportModal, setShowReportModal] = useState(false);
+  const otherParticipant =
+    conversation?.type !== "group" ? conversation?.participants?.[0] : null;
 
   return (
     <div className="flex items-center justify-between rounded-lg px-4 py-3 bg-white dark:bg-neutral-700">
@@ -178,6 +184,15 @@ export default function ChatHeader({
             <ImageIcon className="w-4 h-4 text-gray-600 dark:text-gray-300" />
           </button>
         )}
+        {conversation?.id && conversation?.type !== "group" && otherParticipant?.id && (
+          <button
+            onClick={() => setShowReportModal(true)}
+            className="p-1.5 hover:bg-gray-100 dark:hover:bg-neutral-600 rounded transition-colors"
+            title="Báo cáo người dùng"
+          >
+            <Flag className="w-4 h-4 text-gray-600 dark:text-gray-300" />
+          </button>
+        )}
         <button
           onClick={onMinimize}
           className="p-1.5 hover:bg-gray-100 dark:hover:bg-neutral-600 rounded transition-colors"
@@ -197,6 +212,12 @@ export default function ChatHeader({
           <X className="w-4 h-4 text-gray-600 dark:text-gray-300" />
         </button>
       </div>
+      <ReportModal
+        open={showReportModal}
+        onClose={() => setShowReportModal(false)}
+        reportedUserId={otherParticipant?.id}
+        title="Báo cáo người dùng"
+      />
     </div>
   );
 }
