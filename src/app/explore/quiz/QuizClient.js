@@ -15,6 +15,7 @@ import {
   Trophy,
   Share2,
   ExternalLink,
+  PencilLine,
 } from "lucide-react";
 import HomeLayout from "@/layouts/HomeLayout";
 import { openDeepLink, isMobileDevice } from "@/lib/deepLink";
@@ -457,18 +458,27 @@ export default function QuizClient() {
               </div>
             </div>
 
-            <button
-              onClick={handleStart}
-              disabled={loading}
-              className="w-full flex items-center justify-center gap-2 bg-[#319527] hover:bg-[#3dbb31] disabled:opacity-60 text-white font-semibold px-6 py-3 rounded-full transition-colors"
-            >
-              {loading ? (
-                <Loader2 className="w-5 h-5 animate-spin" />
-              ) : (
-                <Sparkles className="w-5 h-5" />
-              )}
-              {loading ? "Đang tạo câu hỏi..." : "Bắt đầu"}
-            </button>
+            <div className="flex flex-col sm:flex-row items-stretch gap-2">
+              <button
+                onClick={handleStart}
+                disabled={loading}
+                className="flex-1 flex items-center justify-center gap-2 bg-[#319527] hover:bg-[#3dbb31] disabled:opacity-60 text-white font-semibold px-6 py-3 rounded-full transition-colors"
+              >
+                {loading ? (
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                ) : (
+                  <Sparkles className="w-5 h-5" />
+                )}
+                {loading ? "Đang tạo câu hỏi..." : "AI tạo đề"}
+              </button>
+              <Link
+                href="/explore/quiz/custom"
+                className="flex-1 flex items-center justify-center gap-2 border border-gray-200 dark:border-neutral-600 hover:border-[#319527] text-gray-700 dark:text-gray-200 font-semibold px-6 py-3 rounded-full transition-colors"
+              >
+                <PencilLine className="w-5 h-5" />
+                Tạo bộ đề tùy chỉnh
+              </Link>
+            </div>
           </div>
         )}
 
