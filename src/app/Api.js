@@ -772,3 +772,7 @@ export const getQuizLeaderboard = (period = "week") => {
 export const joinQuiz = (quizSetId) => {
   return Api.postRequest(`/v1.0/quiz/${quizSetId}/join`, {});
 };
+
+export const createCustomQuiz = (formData) => {
+  return Api.postFormDataRequest("/v1.0/quiz/custom", formData);
+};
