@@ -566,8 +566,9 @@ export default function QuizClient() {
                     {currentQuestion.question}
                   </p>
                   <div className="flex flex-col gap-2">
-                    {currentQuestion.options.map((opt) => {
-                      const letter = opt.trim().charAt(0);
+                    {currentQuestion.options.map((opt, optIndex) => {
+                      if (opt.trim() === "") return null;
+                      const letter = ["A", "B", "C", "D"][optIndex];
                       const selected = answers[currentQuestion.id] === letter;
                       const isCorrectOption = currentFeedback && letter === currentFeedback.correct_answer;
                       const isWrongSelected = currentFeedback && selected && !currentFeedback.is_correct;
@@ -698,8 +699,9 @@ export default function QuizClient() {
                       <p className="font-medium text-gray-900 dark:text-white">{q.question}</p>
                     </div>
                     <div className="pl-7 flex flex-col gap-1">
-                      {q.options.map((opt) => {
-                        const letter = opt.trim().charAt(0);
+                      {q.options.map((opt, optIndex) => {
+                        if (opt.trim() === "") return null;
+                        const letter = ["A", "B", "C", "D"][optIndex];
                         const isCorrect = letter === r.correct_answer;
                         const isYours = letter === r.your_answer;
                         return (
