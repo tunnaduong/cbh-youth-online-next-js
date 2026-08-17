@@ -773,6 +773,10 @@ export const joinQuiz = (quizSetId) => {
   return Api.postRequest(`/v1.0/quiz/${quizSetId}/join`, {});
 };
 
+export const restartQuiz = (quizSetId) => {
+  return Api.postRequest(`/v1.0/quiz/${quizSetId}/restart`, {});
+};
+
 export const createCustomQuiz = (formData) => {
   return Api.postFormDataRequest("/v1.0/quiz/custom", formData);
 };

@@ -25,6 +25,7 @@ import {
   getQuizLeaderboard,
   getQuizTopics,
   joinQuiz,
+  restartQuiz,
 } from "@/app/Api";
 import { useAuthContext } from "@/contexts/Support";
 import { EXPLORE_FEATURES } from "@/data/exploreFeatures";
@@ -296,6 +297,35 @@ export default function QuizClient() {
     setAnswers({});
     setFeedback({});
     setCurrentIndex(0);
+  };
+
+  // Replays the exact same quiz set (shared or self-created) instead of
+  // generating/joining a different one - unlike handleRestart above, which
+  // sends the user back to the setup screen. Points are only ever awarded
+  // for a user's first completion of a given set (see the API's
+  // points_awarded_at) - a replay is still scored for feedback, but earns
+  // nothing more.
+  const [retrying, setRetrying] = useState(false);
+  const handleRetrySame = async () => {
+    if (!quiz?.quiz_set_id || retrying) return;
+    setRetrying(true);
+    try {
+      const res = await restartQuiz(quiz.quiz_set_id);
+      const data = res?.data || res;
+      setQuiz(data);
+      setAnswers({});
+      setFeedback({});
+      setCurrentIndex(0);
+      setResult(null);
+      setPendingResult(null);
+      setPhase("taking");
+    } catch (error) {
+      if (!isInAppWebView()) {
+        message.error(error?.response?.data?.message || "Không thể làm lại bài đố vui này.");
+      }
+    } finally {
+      setRetrying(false);
+    }
   };
 
   const answeredCount = quiz ? Object.keys(answers).length : 0;
@@ -672,13 +702,27 @@ export default function QuizClient() {
               <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
                 Chủ đề: {quiz.topic}
               </p>
-              <button
-                onClick={handleRestart}
-                className="inline-flex items-center gap-2 px-5 py-2 rounded-full text-sm font-medium bg-[#319527] hover:bg-[#3dbb31] text-white"
-              >
-                <RotateCcw className="w-4 h-4" />
-                Làm bài mới
-              </button>
+              <div className="flex items-center justify-center gap-2 flex-wrap">
+                <button
+                  onClick={handleRetrySame}
+                  disabled={retrying}
+                  className="inline-flex items-center gap-2 px-5 py-2 rounded-full text-sm font-medium border border-gray-200 dark:border-neutral-600 text-gray-700 dark:text-gray-200 hover:border-[#319527] disabled:opacity-60"
+                >
+                  {retrying ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <RotateCcw className="w-4 h-4" />
+                  )}
+                  Làm lại bài này
+                </button>
+                <button
+                  onClick={handleRestart}
+                  className="inline-flex items-center gap-2 px-5 py-2 rounded-full text-sm font-medium bg-[#319527] hover:bg-[#3dbb31] text-white"
+                >
+                  <Sparkles className="w-4 h-4" />
+                  Làm bài mới
+                </button>
+              </div>
             </div>
 
             <div className="flex flex-col gap-3">
