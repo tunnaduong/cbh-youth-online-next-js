@@ -682,7 +682,7 @@ export default function QuizClient() {
             </div>
 
             <div className="flex flex-col gap-3">
-              {quiz.questions.map((q) => {
+              {(quiz.questions || []).map((q) => {
                 const r = result.results.find((item) => item.id === q.id);
                 if (!r) return null;
                 return (
