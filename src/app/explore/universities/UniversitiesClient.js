@@ -1,143 +1,67 @@
 "use client";
 
-import { useState } from "react";
-import {
-  Select,
-  Card,
-  Tag,
-  Spin,
-  Empty,
-  Typography,
-  Tooltip,
-} from "antd";
-import {
-  Home,
-  Book,
-  Search,
-  Map,
-  Print,
-  HelpCircle,
-  GameController,
-  Trophy,
-  People,
-} from "react-ionicons";
-import { Globe, Phone, MapPin, GraduationCap, Building2 } from "lucide-react";
+import { useState, useEffect, useRef, useCallback } from "react";
+import { Select, Spin, Empty, Typography, Tag, Tooltip } from "antd";
+import { Globe, Phone, MapPin, GraduationCap, ChevronDown, ChevronUp, Search, SlidersHorizontal } from "lucide-react";
 import HomeLayout from "@/layouts/HomeLayout";
 import { EXPLORE_FEATURES } from "@/data/exploreFeatures";
 
-const { Text, Title, Paragraph } = Typography;
+const { Text, Title } = Typography;
 
-const CITIES = [
-  { value: 1, label: "Hồ Chí Minh" },
-  { value: 3, label: "Bà Rịa - Vũng Tàu" },
-  { value: 6, label: "Bắc Ninh" },
-  { value: 12, label: "Cần Thơ" },
-  { value: 13, label: "Đà Nẵng" },
-  { value: 16, label: "Đồng Nai" },
-  { value: 18, label: "Gia Lai" },
-  { value: 21, label: "Hải Dương" },
-  { value: 22, label: "Hải Phòng" },
-  { value: 25, label: "Huế" },
-  { value: 26, label: "Hưng Yên" },
-  { value: 35, label: "Nam Định" },
-  { value: 36, label: "Nghệ An" },
-  { value: 40, label: "Phú Yên" },
-  { value: 43, label: "Quảng Ngãi" },
-  { value: 44, label: "Quảng Ninh" },
-  { value: 48, label: "Thái Nguyên" },
+const SCORE_OPTIONS = [
+  { label: "Dưới 15", value: [0, 15] },
+  { label: "15 – 18", value: [15, 18] },
+  { label: "18 – 20", value: [18, 20] },
+  { label: "20 – 22", value: [20, 22] },
+  { label: "22 – 24", value: [22, 24] },
+  { label: "Trên 24", value: [24, 30] },
 ];
 
-const MAJORS = [
-  { value: 1, label: "Kỹ thuật & Giao thông" },
-  { value: 2, label: "Du lịch & Nhà hàng" },
-  { value: 3, label: "Hàng hải & Hàng không" },
-  { value: 4, label: "Công tác xã hội" },
-  { value: 5, label: "Sư phạm" },
-  { value: 6, label: "Hóa học & Sinh học" },
-  { value: 7, label: "Khoa học & Môi trường" },
-  { value: 8, label: "Kinh tế & Tâm lý học" },
-  { value: 9, label: "Kinh doanh & Thương mại" },
-  { value: 10, label: "Xây dựng" },
-  { value: 11, label: "Cơ khí & Điện tử" },
-  { value: 12, label: "Công nghệ thông tin" },
-  { value: 13, label: "Quản lý môi trường" },
-  { value: 14, label: "Nghệ thuật & Mỹ thuật" },
-  { value: 15, label: "Ngoại ngữ" },
-  { value: 17, label: "Luật" },
-  { value: 18, label: "Dệt may & Thời trang" },
-  { value: 21, label: "Ngôn ngữ Anh" },
-];
+const TYPE_MAP = { "Công lập": 0, "Dân lập": 1 };
 
 function UniversityCard({ uni }) {
   const [expanded, setExpanded] = useState(false);
-
-  const typeColor =
-    uni.type === "Công lập"
-      ? "blue"
-      : uni.type === "Dân lập"
-      ? "green"
-      : "default";
-
-  const visibleMajors = expanded
-    ? uni.universityMajors
-    : uni.universityMajors?.slice(0, 4);
+  const visibleMajors = expanded ? uni.universityMajors : uni.universityMajors?.slice(0, 4);
+  const typeColor = uni.type === "Công lập" ? "blue" : uni.type === "Dân lập" ? "green" : "default";
 
   return (
-    <Card
-      className="rounded-2xl border border-gray-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 shadow-sm hover:shadow-md transition-shadow"
-      styles={{ body: { padding: "20px" } }}
-    >
-      {/* Header */}
+    <div className="rounded-2xl border border-gray-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 p-5 hover:shadow-md transition-shadow">
       <div className="flex items-start gap-3 mb-3">
-        <div className="flex-shrink-0 w-10 h-10 rounded-full bg-green-50 dark:bg-green-900/20 flex items-center justify-center">
-          <GraduationCap size={20} className="text-green-600 dark:text-green-400" />
+        <div className="flex-shrink-0 w-9 h-9 rounded-full bg-green-50 dark:bg-green-900/20 flex items-center justify-center">
+          <GraduationCap size={18} className="text-green-600 dark:text-green-400" />
         </div>
         <div className="flex-1 min-w-0">
-          <Title
-            level={5}
-            className="!mb-1 !text-gray-900 dark:!text-gray-100 leading-tight line-clamp-2"
-            style={{ fontSize: 15 }}
-          >
+          <p className="font-semibold text-sm text-gray-900 dark:text-gray-100 leading-snug mb-1.5">
             {uni.name}
-          </Title>
-          <div className="flex flex-wrap gap-1.5 mt-1">
-            {uni.type && (
-              <Tag color={typeColor} className="text-xs">
-                {uni.type}
-              </Tag>
-            )}
+            {uni.acronym ? ` (${uni.acronym})` : ""}
+          </p>
+          <div className="flex flex-wrap gap-1">
+            {uni.type && <Tag color={typeColor} className="text-xs !m-0">{uni.type}</Tag>}
             {uni.city?.map((c) => (
-              <Tag key={c} className="text-xs">
-                {c}
-              </Tag>
+              <Tag key={c} className="text-xs !m-0">{c}</Tag>
             ))}
           </div>
         </div>
       </div>
 
-      {/* Info rows */}
-      <div className="space-y-1.5 mb-3">
+      <div className="space-y-1 mb-3">
         {uni.address && (
-          <div className="flex items-start gap-2 text-gray-500 dark:text-gray-400 text-sm">
-            <MapPin size={14} className="flex-shrink-0 mt-0.5" />
+          <div className="flex items-start gap-2 text-xs text-gray-500 dark:text-gray-400">
+            <MapPin size={12} className="flex-shrink-0 mt-0.5" />
             <span className="line-clamp-2">{uni.address}</span>
           </div>
         )}
         {uni.phone && (
-          <div className="flex items-center gap-2 text-gray-500 dark:text-gray-400 text-sm">
-            <Phone size={14} className="flex-shrink-0" />
+          <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
+            <Phone size={12} className="flex-shrink-0" />
             <span>{uni.phone}</span>
           </div>
         )}
         {uni.website && (
-          <div className="flex items-center gap-2 text-sm">
-            <Globe size={14} className="flex-shrink-0 text-gray-400" />
+          <div className="flex items-center gap-2 text-xs">
+            <Globe size={12} className="flex-shrink-0 text-gray-400" />
             <a
-              href={
-                uni.website.startsWith("http")
-                  ? uni.website
-                  : `https://${uni.website}`
-              }
+              href={uni.website.startsWith("http") ? uni.website : `https://${uni.website}`}
               target="_blank"
               rel="noopener noreferrer"
               className="text-green-600 dark:text-green-400 hover:underline truncate"
@@ -148,44 +72,25 @@ function UniversityCard({ uni }) {
         )}
       </div>
 
-      {/* Majors */}
       {uni.universityMajors?.length > 0 && (
         <div>
-          <div className="flex items-center gap-1.5 mb-2">
-            <Building2 size={13} className="text-gray-400" />
-            <Text className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
-              Ngành đào tạo
-            </Text>
-          </div>
-          <div className="space-y-1.5">
+          <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1.5">
+            Ngành đào tạo
+          </p>
+          <div className="divide-y divide-gray-100 dark:divide-neutral-700">
             {visibleMajors.map((m, i) => {
-              const years = Object.entries(m.scores || {}).sort(
-                ([a], [b]) => Number(b) - Number(a)
-              );
+              const years = Object.entries(m.scores || {}).sort(([a], [b]) => Number(b) - Number(a));
               return (
-                <div
-                  key={i}
-                  className="flex items-start justify-between gap-2 py-1 border-b border-gray-100 dark:border-neutral-700 last:border-0"
-                >
+                <div key={i} className="flex items-start justify-between gap-2 py-1.5">
                   <div className="flex-1 min-w-0">
-                    <Text className="text-sm text-gray-800 dark:text-gray-200 line-clamp-1">
-                      {m.name}
-                    </Text>
-                    <Text className="text-xs text-gray-400">{m.code}</Text>
+                    <p className="text-xs text-gray-800 dark:text-gray-200 leading-snug">{m.name}</p>
+                    <p className="text-xs text-gray-400">{m.code}</p>
                   </div>
                   {years.length > 0 && (
-                    <Tooltip
-                      title={years
-                        .map(([y, s]) => `${y}: ${s}`)
-                        .join(" | ")}
-                    >
-                      <div className="flex-shrink-0 text-right">
-                        <div className="text-sm font-semibold text-orange-500">
-                          {years[0][1]}
-                        </div>
-                        <div className="text-xs text-gray-400">
-                          {years[0][0]}
-                        </div>
+                    <Tooltip title={years.map(([y, s]) => `${y}: ${s}`).join(" | ")}>
+                      <div className="text-right flex-shrink-0">
+                        <p className="text-sm font-bold text-orange-500">{years[0][1]}</p>
+                        <p className="text-xs text-gray-400">{years[0][0]}</p>
                       </div>
                     </Tooltip>
                   )}
@@ -196,67 +101,164 @@ function UniversityCard({ uni }) {
           {uni.universityMajors.length > 4 && (
             <button
               onClick={() => setExpanded(!expanded)}
-              className="mt-2 text-xs text-green-600 dark:text-green-400 hover:underline"
+              className="mt-1.5 flex items-center gap-1 text-xs text-green-600 dark:text-green-400 hover:underline"
             >
-              {expanded
-                ? "Thu gọn"
-                : `Xem thêm ${uni.universityMajors.length - 4} ngành`}
+              {expanded ? (
+                <><ChevronUp size={12} /> Thu gọn</>
+              ) : (
+                <><ChevronDown size={12} /> Xem thêm {uni.universityMajors.length - 4} ngành</>
+              )}
             </button>
           )}
         </div>
       )}
 
-      {/* Link to detail */}
       {uni.url && (
         <a
           href={uni.url}
           target="_blank"
           rel="noopener noreferrer"
-          className="mt-3 inline-flex items-center gap-1 text-xs text-green-600 dark:text-green-400 hover:underline"
+          className="mt-3 inline-block text-xs text-green-600 dark:text-green-400 hover:underline"
         >
           Xem trang tuyển sinh →
         </a>
       )}
-    </Card>
+    </div>
   );
 }
 
 export default function UniversitiesClient() {
-  const [cityId, setCityId] = useState(null);
-  const [majorId, setMajorId] = useState(null);
+  const [tab, setTab] = useState("filter"); // "filter" | "search"
+
+  // filter options loaded from API
+  const [filterOptions, setFilterOptions] = useState({ city: [], major: [], type: [], subjectComposition: [] });
+  const [optionsLoading, setOptionsLoading] = useState(true);
+
+  // filter state
+  const [cityIdx, setCityIdx] = useState(null);
+  const [typeIdx, setTypeIdx] = useState(null);
+  const [majorIdx, setMajorIdx] = useState(null);
+  const [subjectIdx, setSubjectIdx] = useState(null);
+  const [scoreRange, setScoreRange] = useState(null); // [min, max]
+
+  // results
   const [universities, setUniversities] = useState([]);
   const [loading, setLoading] = useState(false);
   const [searched, setSearched] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [maxPage, setMaxPage] = useState(1);
+
+  // search by name
+  const [nameQuery, setNameQuery] = useState("");
+  const [suggestions, setSuggestions] = useState([]);
+  const [suggestLoading, setSuggestLoading] = useState(false);
+  const [nameResults, setNameResults] = useState([]);
+  const [nameLoading, setNameLoading] = useState(false);
+  const [nameSearched, setNameSearched] = useState(false);
+  const suggestTimer = useRef(null);
+
+  // Load filter options on mount
+  useEffect(() => {
+    fetch("/api/universities?mode=options")
+      .then((r) => r.json())
+      .then((d) => {
+        const uh = d?.verticals_university_hub?.university_hub;
+        if (uh) setFilterOptions(uh);
+      })
+      .catch(() => {})
+      .finally(() => setOptionsLoading(false));
+  }, []);
+
+  const fetchUniversities = useCallback(
+    async (page = 1) => {
+      const params = new URLSearchParams({ page: String(page) });
+      if (cityIdx !== null) params.set("city", String(cityIdx));
+      if (typeIdx !== null) params.set("type", String(typeIdx));
+      if (majorIdx !== null) params.set("major", String(majorIdx));
+      if (subjectIdx !== null) params.set("subjectComposition", String(subjectIdx));
+      if (scoreRange) params.set("score", `${scoreRange[0]},${scoreRange[1]}`);
+
+      setLoading(true);
+      setSearched(true);
+      try {
+        const res = await fetch(`/api/universities?${params}`);
+        const data = await res.json();
+        const uh = data?.verticals_university_hub?.university_hub;
+        setUniversities(uh?.universityResponses ?? []);
+        setCurrentPage(uh?.currentPage ?? 1);
+        setMaxPage(uh?.maxPage ?? 1);
+      } catch {
+        setUniversities([]);
+      } finally {
+        setLoading(false);
+      }
+    },
+    [cityIdx, typeIdx, majorIdx, subjectIdx, scoreRange]
+  );
+
+  const handleFilterSearch = () => {
+    setCurrentPage(1);
+    fetchUniversities(1);
+  };
+
+  const handlePage = (p) => {
+    setCurrentPage(p);
+    fetchUniversities(p);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const handleNameInput = (e) => {
+    const q = e.target.value;
+    setNameQuery(q);
+    if (!q.trim()) {
+      setSuggestions([]);
+      return;
+    }
+    clearTimeout(suggestTimer.current);
+    suggestTimer.current = setTimeout(async () => {
+      setSuggestLoading(true);
+      try {
+        const res = await fetch(`/api/universities?mode=search&q=${encodeURIComponent(q)}&autocomplete=1`);
+        const data = await res.json();
+        const uh = data?.verticals_university_hub?.university_hub;
+        setSuggestions(Array.isArray(uh) ? uh.slice(0, 8) : []);
+      } catch {
+        setSuggestions([]);
+      } finally {
+        setSuggestLoading(false);
+      }
+    }, 300);
+  };
+
+  const handleNameSearch = async (q = nameQuery) => {
+    if (!q.trim()) return;
+    setSuggestions([]);
+    setNameLoading(true);
+    setNameSearched(true);
+    try {
+      const res = await fetch(`/api/universities?mode=search&q=${encodeURIComponent(q)}`);
+      const data = await res.json();
+      const uh = data?.verticals_university_hub?.university_hub;
+      setNameResults(Array.isArray(uh) ? uh : []);
+    } catch {
+      setNameResults([]);
+    } finally {
+      setNameLoading(false);
+    }
+  };
 
   const sidebarItems = EXPLORE_FEATURES.map((f) => ({
     key: f.key,
-    href: f.href === "#" && f.key !== "universities" ? "#" : f.href,
+    href: f.href,
     label: f.title,
     Icon: f.sidebarIcon,
     isExternal: false,
-    onClick:
-      f.href === "#" && f.key !== "universities"
-        ? (e) => e.preventDefault()
-        : undefined,
   }));
 
-  const handleSearch = async () => {
-    if (!cityId || !majorId) return;
-    setLoading(true);
-    setSearched(true);
-    try {
-      const res = await fetch(
-        `/api/universities?city=${cityId}&major=${majorId}`
-      );
-      const data = await res.json();
-      const hub = data?.verticals_university_hub?.university_hub;
-      setUniversities(hub?.universityResponses ?? []);
-    } catch {
-      setUniversities([]);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const cityOptions = filterOptions.city.map((name, i) => ({ value: i, label: name }));
+  const majorOptions = filterOptions.major.map((name, i) => ({ value: i, label: name }));
+  const typeOptions = filterOptions.type.map((name, i) => ({ value: i, label: name }));
+  const subjectOptions = filterOptions.subjectComposition.map((code, i) => ({ value: i, label: code }));
 
   return (
     <HomeLayout
@@ -269,98 +271,253 @@ export default function UniversitiesClient() {
     >
       <div className="px-2.5">
         <main className="px-1 py-4 md:max-w-[936px] mx-auto">
-          {/* Page header */}
-          <div className="mb-6">
-            <Title
-              level={3}
-              className="!text-gray-900 dark:!text-gray-100 !mb-1"
-            >
+          {/* Header */}
+          <div className="mb-5">
+            <Title level={3} className="!text-gray-900 dark:!text-gray-100 !mb-1">
               Tìm trường Đại học - Cao đẳng
             </Title>
-            <Text className="text-gray-500 dark:text-gray-400">
-              Tra cứu thông tin trường và điểm chuẩn tuyển sinh theo tỉnh thành
-              và ngành học.
+            <Text className="text-gray-500 dark:text-gray-400 text-sm">
+              Tra cứu thông tin trường và điểm chuẩn tuyển sinh.
             </Text>
           </div>
 
-          {/* Filters */}
-          <div className="flex flex-col sm:flex-row gap-3 mb-6">
-            <Select
-              placeholder="Chọn tỉnh / thành phố"
-              className="flex-1"
-              size="large"
-              value={cityId}
-              onChange={setCityId}
-              showSearch
-              optionFilterProp="label"
-              options={CITIES.map((c) => ({
-                value: c.value,
-                label: c.label,
-              }))}
-            />
-            <Select
-              placeholder="Chọn nhóm ngành"
-              className="flex-1"
-              size="large"
-              value={majorId}
-              onChange={setMajorId}
-              showSearch
-              optionFilterProp="label"
-              options={MAJORS.map((m) => ({
-                value: m.value,
-                label: m.label,
-              }))}
-            />
-            <button
-              onClick={handleSearch}
-              disabled={!cityId || !majorId || loading}
-              className="px-6 py-2 rounded-lg bg-green-600 hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-medium text-sm transition-colors"
-            >
-              Tìm kiếm
-            </button>
+          {/* Tabs */}
+          <div className="flex gap-0 mb-5 border-b border-gray-200 dark:border-neutral-700">
+            {[
+              { key: "filter", icon: <SlidersHorizontal size={14} />, label: "Bộ lọc" },
+              { key: "search", icon: <Search size={14} />, label: "Tìm theo tên" },
+            ].map((t) => (
+              <button
+                key={t.key}
+                onClick={() => setTab(t.key)}
+                className={`flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${
+                  tab === t.key
+                    ? "border-green-500 text-green-600 dark:text-green-400"
+                    : "border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
+                }`}
+              >
+                {t.icon}
+                {t.label}
+              </button>
+            ))}
           </div>
 
-          {/* Results */}
-          {loading ? (
-            <div className="flex justify-center py-16">
-              <Spin size="large" />
+          {/* Filter tab */}
+          {tab === "filter" && (
+            <div className="mb-5 space-y-3">
+              {optionsLoading ? (
+                <div className="flex items-center gap-2 text-gray-400 text-sm py-4">
+                  <Spin size="small" />
+                  Đang tải bộ lọc...
+                </div>
+              ) : (
+                <>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <Select
+                      placeholder="TP / Tỉnh"
+                      allowClear
+                      showSearch
+                      optionFilterProp="label"
+                      size="large"
+                      value={cityIdx}
+                      onChange={setCityIdx}
+                      options={cityOptions}
+                      className="w-full"
+                    />
+                    <Select
+                      placeholder="Loại hình"
+                      allowClear
+                      size="large"
+                      value={typeIdx}
+                      onChange={setTypeIdx}
+                      options={typeOptions}
+                      className="w-full"
+                    />
+                    <Select
+                      placeholder="Ngành học"
+                      allowClear
+                      showSearch
+                      optionFilterProp="label"
+                      size="large"
+                      value={majorIdx}
+                      onChange={setMajorIdx}
+                      options={majorOptions}
+                      className="w-full"
+                    />
+                    <Select
+                      placeholder="Khối thi"
+                      allowClear
+                      showSearch
+                      optionFilterProp="label"
+                      size="large"
+                      value={subjectIdx}
+                      onChange={setSubjectIdx}
+                      options={subjectOptions}
+                      className="w-full"
+                    />
+                    <Select
+                      placeholder="Điểm chuẩn"
+                      allowClear
+                      size="large"
+                      value={scoreRange ? `${scoreRange[0]},${scoreRange[1]}` : null}
+                      onChange={(v) => setScoreRange(v ? v.split(",").map(Number) : null)}
+                      options={SCORE_OPTIONS.map((o) => ({
+                        value: `${o.value[0]},${o.value[1]}`,
+                        label: o.label,
+                      }))}
+                      className="w-full"
+                    />
+                  </div>
+                  <button
+                    onClick={handleFilterSearch}
+                    className="w-full sm:w-auto px-8 py-2.5 rounded-xl bg-green-600 hover:bg-green-700 text-white font-medium text-sm transition-colors"
+                  >
+                    Tìm kiếm
+                  </button>
+                </>
+              )}
             </div>
-          ) : searched && universities.length === 0 ? (
-            <Empty
-              description={
-                <span className="text-gray-500 dark:text-gray-400">
-                  Không tìm thấy trường nào phù hợp
-                </span>
-              }
-              className="py-16"
-            />
-          ) : universities.length > 0 ? (
+          )}
+
+          {/* Search by name tab */}
+          {tab === "search" && (
+            <div className="mb-5 relative">
+              <div className="flex gap-2">
+                <div className="relative flex-1">
+                  <input
+                    type="text"
+                    value={nameQuery}
+                    onChange={handleNameInput}
+                    onKeyDown={(e) => e.key === "Enter" && handleNameSearch()}
+                    placeholder="Nhập tên hoặc mã trường..."
+                    className="w-full px-4 py-2.5 pr-10 rounded-xl border border-gray-200 dark:border-neutral-600 bg-white dark:bg-neutral-800 text-sm text-gray-900 dark:text-gray-100 placeholder-gray-400 outline-none focus:border-green-500 dark:focus:border-green-500"
+                  />
+                  {suggestLoading && (
+                    <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                      <Spin size="small" />
+                    </div>
+                  )}
+                  {/* Suggestions dropdown */}
+                  {suggestions.length > 0 && (
+                    <div className="absolute top-full left-0 right-0 z-50 mt-1 bg-white dark:bg-neutral-800 border border-gray-200 dark:border-neutral-700 rounded-xl shadow-lg overflow-hidden">
+                      {suggestions.map((s, i) => (
+                        <button
+                          key={i}
+                          onClick={() => {
+                            setNameQuery(s.name);
+                            setSuggestions([]);
+                            handleNameSearch(s.name);
+                          }}
+                          className="w-full text-left px-4 py-2.5 text-sm text-gray-800 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-neutral-700 border-b border-gray-100 dark:border-neutral-700 last:border-0"
+                        >
+                          <span className="font-medium">{s.name}</span>
+                          {s.universityCode && (
+                            <span className="ml-2 text-xs text-gray-400">({s.universityCode})</span>
+                          )}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                <button
+                  onClick={() => handleNameSearch()}
+                  disabled={!nameQuery.trim() || nameLoading}
+                  className="px-5 py-2.5 rounded-xl bg-green-600 hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-medium transition-colors flex items-center gap-1.5"
+                >
+                  <Search size={14} />
+                  Tìm
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Results - filter tab */}
+          {tab === "filter" && (
             <>
-              <Text className="text-sm text-gray-500 dark:text-gray-400 mb-4 block">
-                Tìm thấy{" "}
-                <span className="font-semibold text-gray-700 dark:text-gray-300">
-                  {universities.length}
-                </span>{" "}
-                trường
-              </Text>
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                {universities.map((uni, i) => (
-                  <UniversityCard key={uni.universityCode ?? i} uni={uni} />
-                ))}
-              </div>
-            </>
-          ) : (
-            !searched && (
-              <div className="flex flex-col items-center justify-center py-16 text-center">
-                <GraduationCap
-                  size={48}
-                  className="text-gray-300 dark:text-gray-600 mb-4"
+              {loading ? (
+                <div className="flex justify-center py-16"><Spin size="large" /></div>
+              ) : searched && universities.length === 0 ? (
+                <Empty
+                  description={<span className="text-gray-500 dark:text-gray-400">Không tìm thấy trường nào phù hợp</span>}
+                  className="py-16"
                 />
-                <Text className="text-gray-400 dark:text-gray-500 text-base">
-                  Chọn tỉnh thành và nhóm ngành để bắt đầu tìm kiếm
-                </Text>
-              </div>
-            )
+              ) : universities.length > 0 ? (
+                <>
+                  <div className="flex items-center justify-between mb-3">
+                    <Text className="text-sm text-gray-500 dark:text-gray-400">
+                      Tìm thấy{" "}
+                      <span className="font-semibold text-gray-800 dark:text-gray-200">{universities.length}</span>{" "}
+                      trường · Trang {currentPage}/{maxPage}
+                    </Text>
+                  </div>
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                    {universities.map((uni, i) => (
+                      <UniversityCard key={uni.universityCode ?? i} uni={uni} />
+                    ))}
+                  </div>
+                  {maxPage > 1 && (
+                    <div className="flex justify-center gap-2 mt-6">
+                      {Array.from({ length: maxPage }, (_, i) => i + 1).map((p) => (
+                        <button
+                          key={p}
+                          onClick={() => handlePage(p)}
+                          className={`w-9 h-9 rounded-lg text-sm font-medium transition-colors ${
+                            p === currentPage
+                              ? "bg-green-600 text-white"
+                              : "bg-gray-100 dark:bg-neutral-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-neutral-600"
+                          }`}
+                        >
+                          {p}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </>
+              ) : (
+                !searched && (
+                  <div className="flex flex-col items-center justify-center py-16 text-center">
+                    <GraduationCap size={48} className="text-gray-300 dark:text-gray-600 mb-3" />
+                    <Text className="text-gray-400 dark:text-gray-500">
+                      Chọn bộ lọc rồi nhấn Tìm kiếm
+                    </Text>
+                  </div>
+                )
+              )}
+            </>
+          )}
+
+          {/* Results - search by name tab */}
+          {tab === "search" && (
+            <>
+              {nameLoading ? (
+                <div className="flex justify-center py-16"><Spin size="large" /></div>
+              ) : nameSearched && nameResults.length === 0 ? (
+                <Empty
+                  description={<span className="text-gray-500 dark:text-gray-400">Không tìm thấy trường nào</span>}
+                  className="py-16"
+                />
+              ) : nameResults.length > 0 ? (
+                <>
+                  <Text className="text-sm text-gray-500 dark:text-gray-400 mb-3 block">
+                    Tìm thấy <span className="font-semibold text-gray-800 dark:text-gray-200">{nameResults.length}</span> trường
+                  </Text>
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                    {nameResults.map((uni, i) => (
+                      <UniversityCard key={uni.universityCode ?? i} uni={uni} />
+                    ))}
+                  </div>
+                </>
+              ) : (
+                !nameSearched && (
+                  <div className="flex flex-col items-center justify-center py-16 text-center">
+                    <Search size={48} className="text-gray-300 dark:text-gray-600 mb-3" />
+                    <Text className="text-gray-400 dark:text-gray-500">
+                      Nhập tên hoặc mã trường để tìm kiếm
+                    </Text>
+                  </div>
+                )
+              )}
+            </>
           )}
         </main>
       </div>
