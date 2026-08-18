@@ -126,16 +126,24 @@ function UniversityCard({ uni }) {
         </div>
       )}
 
-      {uni.url && (
-        <a
-          href={uni.url.trim().split(/\s+/)[0]}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="mt-3 inline-block text-xs text-green-600 dark:text-green-400 hover:underline"
-        >
-          Xem trang tuyển sinh →
-        </a>
-      )}
+      {uni.url && (() => {
+        const urls = uni.url.trim().split(/\s+/).filter((u) => u.startsWith("http"));
+        return urls.length > 0 ? (
+          <div className="mt-3 flex flex-col gap-1">
+            {urls.map((u, i) => (
+              <a
+                key={i}
+                href={u}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-xs text-green-600 dark:text-green-400 hover:underline truncate"
+              >
+                {i === 0 ? "Xem trang tuyển sinh →" : `Trang tuyển sinh ${i + 1} →`}
+              </a>
+            ))}
+          </div>
+        ) : null;
+      })()}
     </div>
   );
 }
@@ -324,7 +332,7 @@ export default function UniversitiesClient() {
                 </div>
               ) : (
                 <>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div id="uni-filter-container" className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <Select
                       placeholder="TP / Tỉnh"
                       allowClear
@@ -334,7 +342,9 @@ export default function UniversitiesClient() {
                       value={cityIdx}
                       onChange={setCityIdx}
                       options={cityOptions}
-                      className="w-full"
+                      className="w-full uni-select"
+                      getPopupContainer={() => document.getElementById("uni-filter-container") || document.body}
+                      listHeight={220}
                     />
                     <Select
                       placeholder="Loại hình"
@@ -343,7 +353,8 @@ export default function UniversitiesClient() {
                       value={typeIdx}
                       onChange={setTypeIdx}
                       options={typeOptions}
-                      className="w-full"
+                      className="w-full uni-select"
+                      getPopupContainer={() => document.getElementById("uni-filter-container") || document.body}
                     />
                     <Select
                       placeholder="Ngành học"
@@ -354,7 +365,9 @@ export default function UniversitiesClient() {
                       value={majorIdx}
                       onChange={setMajorIdx}
                       options={majorOptions}
-                      className="w-full"
+                      className="w-full uni-select"
+                      getPopupContainer={() => document.getElementById("uni-filter-container") || document.body}
+                      listHeight={220}
                     />
                     <Select
                       placeholder="Khối thi"
@@ -365,7 +378,9 @@ export default function UniversitiesClient() {
                       value={subjectIdx}
                       onChange={setSubjectIdx}
                       options={subjectOptions}
-                      className="w-full"
+                      className="w-full uni-select"
+                      getPopupContainer={() => document.getElementById("uni-filter-container") || document.body}
+                      listHeight={220}
                     />
                     <Select
                       placeholder="Điểm chuẩn"
@@ -373,6 +388,8 @@ export default function UniversitiesClient() {
                       size="large"
                       value={scoreRange ? `${scoreRange[0]},${scoreRange[1]}` : null}
                       onChange={(v) => setScoreRange(v ? v.split(",").map(Number) : null)}
+                      className="w-full uni-select"
+                      getPopupContainer={() => document.getElementById("uni-filter-container") || document.body}
                       options={SCORE_OPTIONS.map((o) => ({
                         value: `${o.value[0]},${o.value[1]}`,
                         label: o.label,

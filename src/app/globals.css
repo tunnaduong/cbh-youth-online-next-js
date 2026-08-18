@@ -1066,3 +1066,15 @@ body.has-email-verification-alert [class*="mt-\\[4\\.3rem\\]"] {
 .quiz-editor-content .ProseMirror p:last-child {
   margin-bottom: 0;
 }
+
+/* University search — kill browser blue focus ring on Ant Design Select inner input */
+.uni-select .ant-select-selection-search-input:focus,
+.uni-select .ant-select-selection-search-input {
+  outline: none !important;
+  box-shadow: none !important;
+  caret-color: #319527;
+}
+.uni-select.ant-select-focused .ant-select-selector {
+  border-color: #319527 !important;
+  box-shadow: 0 0 0 2px rgba(49, 149, 39, 0.15) !important;
+}
