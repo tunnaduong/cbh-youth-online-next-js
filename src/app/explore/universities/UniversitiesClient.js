@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import { Select, Spin, Empty, Typography, Tag, Tooltip } from "antd";
-import { Globe, Phone, MapPin, GraduationCap, ChevronDown, ChevronUp, Search, SlidersHorizontal } from "lucide-react";
+import { Globe, Phone, MapPin, GraduationCap, ChevronDown, ChevronUp, Search, SlidersHorizontal, ChevronRight } from "lucide-react";
 import HomeLayout from "@/layouts/HomeLayout";
 import { EXPLORE_FEATURES } from "@/data/exploreFeatures";
 
@@ -154,6 +154,7 @@ export default function UniversitiesClient() {
   // filter options — start with hardcoded data immediately, no loading needed
   const [filterOptions, setFilterOptions] = useState(STATIC_OPTIONS);
   const [optionsLoading, setOptionsLoading] = useState(false);
+  const [generalInfo, setGeneralInfo] = useState([]);
 
   // filter state
   const [cityIdx, setCityIdx] = useState(null);
@@ -178,13 +179,14 @@ export default function UniversitiesClient() {
   const [nameSearched, setNameSearched] = useState(false);
   const suggestTimer = useRef(null);
 
-  // Silently refresh filter options from API (static data is already loaded above)
+  // Silently refresh filter options + load generalInfo from API
   useEffect(() => {
     fetch("/api/universities?mode=options")
       .then((r) => r.json())
       .then((d) => {
         const uh = d?.verticals_university_hub?.university_hub;
         if (uh && uh.city?.length > 0) setFilterOptions(uh);
+        if (uh?.generalInfo?.length > 0) setGeneralInfo(uh.generalInfo);
       })
       .catch(() => {});
   }, []);
@@ -547,6 +549,35 @@ export default function UniversitiesClient() {
                 )
               )}
             </>
+          )}
+          {/* Quy chế tuyển sinh section — shown below the school list */}
+          {generalInfo.length > 0 && (
+            <div className="mt-10">
+              <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 text-center mb-4">
+                Quy chế tuyển sinh đại học
+              </h2>
+              <div className="rounded-2xl border border-gray-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 overflow-hidden">
+                {generalInfo.map((item, i) => (
+                  <a
+                    key={i}
+                    href={item.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center justify-between gap-3 px-4 py-3.5 hover:bg-gray-50 dark:hover:bg-neutral-700 transition-colors border-b border-gray-100 dark:border-neutral-700 last:border-0"
+                  >
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm text-gray-800 dark:text-gray-200 font-medium leading-snug">
+                        {item.title}
+                      </p>
+                      {item.publishDate && (
+                        <p className="text-xs text-gray-400 mt-0.5">{item.publishDate}</p>
+                      )}
+                    </div>
+                    <ChevronRight size={16} className="flex-shrink-0 text-gray-400" />
+                  </a>
+                ))}
+              </div>
+            </div>
           )}
         </main>
       </div>
