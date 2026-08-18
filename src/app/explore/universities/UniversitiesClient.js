@@ -123,7 +123,7 @@ function UniversityCard({ uni }) {
 
       {uni.url && (
         <a
-          href={uni.url}
+          href={uni.url.trim().split(/\s+/)[0]}
           target="_blank"
           rel="noopener noreferrer"
           className="mt-3 inline-block text-xs text-green-600 dark:text-green-400 hover:underline"
