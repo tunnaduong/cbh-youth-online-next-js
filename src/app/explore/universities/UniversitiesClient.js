@@ -8,6 +8,14 @@ import { EXPLORE_FEATURES } from "@/data/exploreFeatures";
 
 const { Text, Title } = Typography;
 
+// Hardcoded filter data from /composer/university_hub?offset=all (2025-08)
+const STATIC_OPTIONS = {
+  city: ["Hà Nội","Hồ Chí Minh","An Giang","Bà Rịa - Vũng Tàu","Bắc Giang","Bạc Liêu","Bắc Ninh","Bến Tre","Bình Định","Bình Dương","Bình Thuận","Cà Mau","Cần Thơ","Đà Nẵng","Đắk Lắk","Điện Biên","Đồng Nai","Đồng Tháp","Gia Lai","Hà Nam","Hà Tĩnh","Hải Dương","Hải Phòng","Hậu Giang","Hòa Bình","Huế","Hưng Yên","Khánh Hòa","Kiên Giang","Kon Tum","Lai Châu","Lâm Đồng","Lạng Sơn","Lào Cai","Long An","Nam Định","Nghệ An","Ninh Bình","Ninh Thuận","Phú Thọ","Phú Yên","Quảng Bình","Quảng Nam","Quảng Ngãi","Quảng Ninh","Quảng Trị","Sơn La","Thái Bình","Thái Nguyên","Thanh Hóa","Tiền Giang","Trà Vinh","Tuyên Quang","Vĩnh Long","Vĩnh Phúc"],
+  major: ["Báo chí và thông tin","Công nghệ kỹ thuật","Du lịch, khách sạn, thể thao và dịch vụ cá nhân","Dịch vụ vận tải","Dịch vụ xã hội","Khoa học giáo dục và đào tạo giáo viên","Khoa học sự sống","Khoa học tự nhiên","Khoa học xã hội và hành vi","Kinh doanh và quản lý","Kiến trúc và xây dựng","Kỹ thuật","Máy tính và công nghệ thông tin","Môi trường và bảo vệ môi trường","Nghệ thuật","Nhân văn","Nông, lâm nghiệp và thuỷ sản","Pháp luật","Sản xuất và chế biến","Sức khoẻ","Thú y","Toán và thống kê"],
+  type: ["Công lập","Dân lập"],
+  subjectComposition: ["A00","A01","A02","A04","A07","A08","A09","A10","A12","A16","A18","B00","B01","B03","B04","B08","C00","C01","C02","C03","C04","C05","C08","C13","C14","C15","C19","C20","D01","D02","D03","D04","D06","D07","D08","D09","D10","D11","D12","D14","D15","D16","D28","D66","D72","D78","D80","D90","D96","H00","H01","H05","H06","H07","H08","M00","M01","M02","M03","M04","M05","M06","M07","M08","M11","M14","N00","N01","N02","N03","N04","N05","S00","T00","T01","T02","T03","T05","V00","V01"],
+};
+
 const SCORE_OPTIONS = [
   { label: "Dưới 15", value: [0, 15] },
   { label: "15 – 18", value: [15, 18] },
@@ -130,9 +138,9 @@ function UniversityCard({ uni }) {
 export default function UniversitiesClient() {
   const [tab, setTab] = useState("filter"); // "filter" | "search"
 
-  // filter options loaded from API
-  const [filterOptions, setFilterOptions] = useState({ city: [], major: [], type: [], subjectComposition: [] });
-  const [optionsLoading, setOptionsLoading] = useState(true);
+  // filter options — start with hardcoded data immediately, no loading needed
+  const [filterOptions, setFilterOptions] = useState(STATIC_OPTIONS);
+  const [optionsLoading, setOptionsLoading] = useState(false);
 
   // filter state
   const [cityIdx, setCityIdx] = useState(null);
@@ -157,16 +165,15 @@ export default function UniversitiesClient() {
   const [nameSearched, setNameSearched] = useState(false);
   const suggestTimer = useRef(null);
 
-  // Load filter options on mount
+  // Silently refresh filter options from API (static data is already loaded above)
   useEffect(() => {
     fetch("/api/universities?mode=options")
       .then((r) => r.json())
       .then((d) => {
         const uh = d?.verticals_university_hub?.university_hub;
-        if (uh) setFilterOptions(uh);
+        if (uh && uh.city?.length > 0) setFilterOptions(uh);
       })
-      .catch(() => {})
-      .finally(() => setOptionsLoading(false));
+      .catch(() => {});
   }, []);
 
   const fetchUniversities = useCallback(
