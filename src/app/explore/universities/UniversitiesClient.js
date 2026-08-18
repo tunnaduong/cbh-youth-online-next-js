@@ -191,7 +191,7 @@ export default function UniversitiesClient() {
 
   const fetchUniversities = useCallback(
     async (page = 1) => {
-      const params = new URLSearchParams({ page: String(page) });
+      const params = new URLSearchParams({ offset: String(page) });
       if (cityIdx !== null) params.set("city", String(cityIdx));
       if (typeIdx !== null) params.set("type", String(typeIdx));
       if (majorIdx !== null) params.set("major", String(majorIdx));
