@@ -49,7 +49,7 @@ export const EXPLORE_FEATURES = [
     sidebarIcon: Map,
     title: "Tìm trường ĐH-CĐ",
     key: "universities",
-    href: "#",
+    href: "/explore/universities",
   },
   {
     icon: PrintOutline,
