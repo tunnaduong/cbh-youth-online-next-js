@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 
-const BASE = "https://hoctap.coccoc.com/composer/university_hub";
+const CBH_BASE =
+  (process.env.NEXT_PUBLIC_API_URL || "https://api.chuyenbienhoa.com") +
+  "/v1.0/universities";
 
 export async function GET(request) {
   const { searchParams } = new URL(request.url);
@@ -8,27 +10,24 @@ export async function GET(request) {
 
   try {
     let url;
+    const params = new URLSearchParams();
+
     if (mode === "options") {
-      url = `${BASE}?offset=all`;
+      url = `${CBH_BASE}/options`;
     } else if (mode === "search") {
+      url = `${CBH_BASE}/search`;
       const q = searchParams.get("q") ?? "";
-      const autocomplete = searchParams.get("autocomplete");
-      url = `${BASE}/search?q=${encodeURIComponent(q)}${autocomplete ? "&autocomplete=1" : ""}`;
+      params.set("q", q);
+      if (searchParams.get("autocomplete")) params.set("autocomplete", "1");
     } else {
-      const params = new URLSearchParams();
+      url = CBH_BASE;
       for (const [k, v] of searchParams.entries()) {
         if (k !== "mode") params.set(k, v);
       }
-      url = `${BASE}?${params.toString()}`;
     }
 
-    const res = await fetch(url, {
-      headers: {
-        "User-Agent":
-          "Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Mobile Safari/537.36",
-        "Accept-Language": "vi-VN,vi;q=0.9,en;q=0.8",
-        Referer: "https://hoctap.coccoc.com/tim-truong-dh-cd",
-      },
+    const fullUrl = params.toString() ? `${url}?${params}` : url;
+    const res = await fetch(fullUrl, {
       ...(mode === "options" ? { next: { revalidate: 86400 } } : { cache: "no-store" }),
     });
     const data = await res.json();
