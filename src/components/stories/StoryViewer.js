@@ -250,6 +250,7 @@ const StoryContent = ({ story, isActive, isPaused, onNext, isMuted }) => {
         audioRef.current.pause();
       }
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isActive, isPaused, story?.type]);
 
   // Cleanup effect to stop all media when component unmounts
@@ -549,6 +550,7 @@ const StorySlide = ({
           console.error("Failed to mark story as viewed:", error);
         });
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentStory?.id, currentStory?.is_muted]);
 
   const handleReact = useCallback(async (reactionType) => {

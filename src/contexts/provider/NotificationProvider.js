@@ -268,7 +268,8 @@ const NotificationProvider = ({ children }) => {
         isPollingRef.current = false;
       }
     };
-  }, [loggedIn, fetchUnreadCount]); // Removed fetchNotifications from dependencies
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loggedIn, fetchUnreadCount]);
 
   // Refresh notifications - memoized to prevent infinite loops
   const refresh = useCallback(() => {

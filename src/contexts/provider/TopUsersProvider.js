@@ -47,6 +47,7 @@ export const TopUsersProvider = ({ children }) => {
     if (topUsers.length === 0 || !lastFetched) {
       fetchTopUsers();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const value = {

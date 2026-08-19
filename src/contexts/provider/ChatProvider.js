@@ -1006,12 +1006,8 @@ const ChatProvider = ({ children }) => {
     if (loggedIn) {
       await loadConversations();
     }
-  }, [
-    loggedIn,
-    loadConversations,
-    requestNotificationPermission,
-    // subscribeToChatPush is stable (useCallback with empty deps), no need in array
-  ]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loggedIn, loadConversations, requestNotificationPermission]);
 
   const closeChat = useCallback(() => {
     setIsOpen(false);
@@ -1127,12 +1123,8 @@ const ChatProvider = ({ children }) => {
       // Unsubscribe when logged out
       unsubscribeFromChatPush();
     }
-  }, [
-    loggedIn,
-    loadConversations,
-    // Note: subscribeToChatPush and unsubscribeFromChatPush are useCallback,
-    // so they're stable and don't need to be in dependencies
-  ]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loggedIn, loadConversations]);
 
   const value = {
     // State

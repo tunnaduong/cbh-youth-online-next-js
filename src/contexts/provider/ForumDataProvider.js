@@ -191,7 +191,7 @@ export const ForumDataProvider = ({ children }) => {
         setForumCategories(Array.isArray(categories) ? categories : []);
       });
     },
-    [] // Remove fetchWithCache dependency
+    [] // eslint-disable-line react-hooks/exhaustive-deps
   );
 
   const fetchPostDetail = useCallback(
@@ -208,7 +208,7 @@ export const ForumDataProvider = ({ children }) => {
         return data;
       });
     },
-    [] // Remove fetchWithCache dependency
+    [] // eslint-disable-line react-hooks/exhaustive-deps
   );
 
   const fetchSubforumTopics = useCallback(
@@ -227,7 +227,7 @@ export const ForumDataProvider = ({ children }) => {
         return topics;
       });
     },
-    [] // Remove fetchWithCache dependency
+    [] // eslint-disable-line react-hooks/exhaustive-deps
   );
 
   // --- Initial fetch (reduced for SSR) ---
@@ -262,7 +262,8 @@ export const ForumDataProvider = ({ children }) => {
       fetchHomeData("latest", true); // Force refresh (includes stats)
       fetchForumCategories(true); // Force refresh
     }
-  }, [refreshTrigger]); // Only depend on refreshTrigger
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [refreshTrigger]);
 
   // --- Cache clearing ---
   const clearCache = useCallback(() => {
