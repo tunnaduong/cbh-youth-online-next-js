@@ -85,9 +85,9 @@ function UniversityCard({ uni }) {
         {uni.address && (
           <div className="flex items-start gap-2 text-xs text-gray-500 dark:text-gray-400">
             <MapPin size={12} className="flex-shrink-0 mt-0.5" />
-            <span>
+            <span className="whitespace-pre-line">
               {uni.address
-                .replace(/<br\s*\/?>/gi, " · ")
+                .replace(/<br\s*\/?>/gi, "\n")
                 .replace(/<[^>]+>/g, "")
                 .trim()}
             </span>
