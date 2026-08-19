@@ -25,34 +25,6 @@ const API_BASE =
   (process.env.NEXT_PUBLIC_API_URL || "https://api.chuyenbienhoa.com") +
   "/v1.0/universities";
 
-// Hardcoded from /composer/university_hub?offset=all (2025-08)
-const STATIC_GENERAL_INFO = [
-  {
-    title: "Hướng dẫn tuyển sinh đại học, tuyển sinh cao đẳng",
-    url: "https://xaydungchinhsach.chinhphu.vn/cong-van-2457-bgddt-gddh-huong-dan-tuyen-sinh-dai-hoc-cao-dang-nam-2025-119250519205051545.htm",
-    publishDate: "Bộ GDĐT ban hành ngày 19/05/2025",
-  },
-  {
-    title: "Sửa đổi, bổ sung một số điều của Quy chế tuyển sinh đại học, cao đẳng ngành GDMN",
-    url: "https://datafiles.chinhphu.vn/cpp/files/vbpq/2025/3/06-bgddt.pdf",
-    publishDate: "Bộ GDĐT ban hành ngày 19/03/2025",
-  },
-  {
-    title: "Quy chế tuyển sinh THCS và tuyển sinh THPT",
-    url: "https://thuvienphapluat.vn/van-ban/Giao-duc/Thong-tu-30-2024-TT-BGDDT-Quy-che-tuyen-sinh-trung-hoc-co-so-va-tuyen-sinh-trung-hoc-pho-thong-628767.aspx",
-    publishDate: "Bộ GDĐT ban hành ngày 30/12/2024",
-  },
-  {
-    title: "Quy chế thi tốt nghiệp THPT",
-    url: "https://xaydungchinhsach.chinhphu.vn/toan-van-thong-tu-24-2024-tt-bgddt-ban-hanh-quy-che-thi-tot-nghiep-thpt-119250109172801928.htm",
-    publishDate: "Bộ GDĐT ban hành ngày 24/12/2024",
-  },
-  {
-    title: "Quy chế tuyển sinh ĐH, CĐ ngành GDMN năm 2024",
-    url: "https://thuvienphapluat.vn/cong-van/Giao-duc/Cong-van-1957-BGDDT-GDDH-2024-huong-dan-tuyen-sinh-dai-hoc-Giao-duc-Mam-non-608595.aspx",
-    publishDate: "Bộ GDĐT ban hành ngày 26/04/2024",
-  },
-];
 
 function UniversityCard({ uni }) {
   const [expanded, setExpanded] = useState(false);
@@ -172,7 +144,7 @@ export default function UniversitiesClient() {
 
   const [filterOptions, setFilterOptions] = useState(EMPTY_OPTIONS);
   const [optionsLoading, setOptionsLoading] = useState(true);
-  const [generalInfo, setGeneralInfo] = useState(STATIC_GENERAL_INFO);
+  const [generalInfo, setGeneralInfo] = useState([]);
 
   // filter state
   const [cityIdx, setCityIdx] = useState(null);
