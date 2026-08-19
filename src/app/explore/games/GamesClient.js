@@ -139,6 +139,100 @@ function GameCard({ game, rank, fixedWidth = false }) {
   );
 }
 
+function SidebarPanels({ leaderboard, nowPlaying }) {
+  return (
+    <>
+      <div className="bg-white dark:bg-neutral-800 rounded-xl border border-gray-100 dark:border-neutral-700 p-4">
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="font-semibold text-gray-900 dark:text-white flex items-center gap-1.5">
+            <Trophy className="w-4 h-4 text-yellow-500" />
+            Bảng xếp hạng
+          </h3>
+          <span className="text-xs text-gray-400">Tuần này</span>
+        </div>
+        {leaderboard.length === 0 ? (
+          <p className="text-sm text-gray-400 py-4 text-center">
+            Chưa có dữ liệu
+          </p>
+        ) : (
+          <div className="space-y-2">
+            {leaderboard.slice(0, 5).map((u, i) => (
+              <Link
+                href={`/${u.username}`}
+                key={u.id}
+                className="flex items-center gap-2.5 hover:bg-gray-50 dark:hover:bg-neutral-700 rounded-lg p-1.5 -mx-1.5"
+              >
+                <span
+                  className={`w-5 text-center text-sm font-bold ${
+                    i === 0
+                      ? "text-yellow-500"
+                      : i === 1
+                      ? "text-gray-400"
+                      : i === 2
+                      ? "text-amber-700"
+                      : "text-gray-400"
+                  }`}
+                >
+                  {i + 1}
+                </span>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={u.avatar_url}
+                  alt={u.username}
+                  className="w-8 h-8 rounded-full"
+                />
+                <span className="flex-1 text-sm text-gray-800 dark:text-gray-200 truncate">
+                  {u.profile_name}
+                </span>
+                <span className="text-xs font-semibold text-[#319527]">
+                  {u.xp} XP
+                </span>
+              </Link>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Who's playing right now */}
+      <div className="bg-white dark:bg-neutral-800 rounded-xl border border-gray-100 dark:border-neutral-700 p-4">
+        <h3 className="font-semibold text-gray-900 dark:text-white flex items-center gap-1.5 mb-3">
+          <Radio className="w-4 h-4 text-[#319527]" />
+          Đang chơi
+        </h3>
+        {nowPlaying.length === 0 ? (
+          <p className="text-sm text-gray-400 py-4 text-center">
+            Chưa có ai đang chơi
+          </p>
+        ) : (
+          <div className="space-y-2">
+            {nowPlaying.slice(0, 8).map((p) => (
+              <div
+                key={`${p.user_id}-${p.game_slug}`}
+                className="flex items-center gap-2.5"
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={p.avatar_url}
+                  alt={p.username}
+                  className="w-8 h-8 rounded-full"
+                />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm text-gray-800 dark:text-gray-200 truncate">
+                    {p.profile_name}
+                  </p>
+                  <p className="text-xs text-gray-400 truncate">
+                    đang chơi {p.game_name}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </>
+  );
+}
+
 function SmallGameCard({ game }) {
   return (
     <Link
@@ -390,98 +484,19 @@ export default function GamesClient() {
               filteredGames.map((g) => <GameCard key={g.id} game={g} />)
             )}
           </div>
+
+          {/* Below the grid on screens narrower than xl - same leaderboard
+              and now-playing panels shown in the sticky sidebar, just
+              stacked in normal flow instead of pinned to the side. */}
+          <div className="xl:hidden mt-8 flex flex-col gap-4">
+            <SidebarPanels leaderboard={leaderboard} nowPlaying={nowPlaying} />
+          </div>
         </div>
 
-        {/* Right column: leaderboard */}
+        {/* Right column: leaderboard (xl+ screens only) */}
         <div className="hidden xl:block w-[280px] flex-shrink-0">
           <div className="sticky top-[90px] flex flex-col gap-4">
-          <div className="bg-white dark:bg-neutral-800 rounded-xl border border-gray-100 dark:border-neutral-700 p-4">
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="font-semibold text-gray-900 dark:text-white flex items-center gap-1.5">
-                <Trophy className="w-4 h-4 text-yellow-500" />
-                Bảng xếp hạng
-              </h3>
-              <span className="text-xs text-gray-400">Tuần này</span>
-            </div>
-            {leaderboard.length === 0 ? (
-              <p className="text-sm text-gray-400 py-4 text-center">
-                Chưa có dữ liệu
-              </p>
-            ) : (
-              <div className="space-y-2">
-                {leaderboard.slice(0, 5).map((u, i) => (
-                  <Link
-                    href={`/${u.username}`}
-                    key={u.id}
-                    className="flex items-center gap-2.5 hover:bg-gray-50 dark:hover:bg-neutral-700 rounded-lg p-1.5 -mx-1.5"
-                  >
-                    <span
-                      className={`w-5 text-center text-sm font-bold ${
-                        i === 0
-                          ? "text-yellow-500"
-                          : i === 1
-                          ? "text-gray-400"
-                          : i === 2
-                          ? "text-amber-700"
-                          : "text-gray-400"
-                      }`}
-                    >
-                      {i + 1}
-                    </span>
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={u.avatar_url}
-                      alt={u.username}
-                      className="w-8 h-8 rounded-full"
-                    />
-                    <span className="flex-1 text-sm text-gray-800 dark:text-gray-200 truncate">
-                      {u.profile_name}
-                    </span>
-                    <span className="text-xs font-semibold text-[#319527]">
-                      {u.xp} XP
-                    </span>
-                  </Link>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* Who's playing right now */}
-          <div className="bg-white dark:bg-neutral-800 rounded-xl border border-gray-100 dark:border-neutral-700 p-4">
-            <h3 className="font-semibold text-gray-900 dark:text-white flex items-center gap-1.5 mb-3">
-              <Radio className="w-4 h-4 text-[#319527]" />
-              Đang chơi
-            </h3>
-            {nowPlaying.length === 0 ? (
-              <p className="text-sm text-gray-400 py-4 text-center">
-                Chưa có ai đang chơi
-              </p>
-            ) : (
-              <div className="space-y-2">
-                {nowPlaying.slice(0, 8).map((p) => (
-                  <div
-                    key={`${p.user_id}-${p.game_slug}`}
-                    className="flex items-center gap-2.5"
-                  >
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={p.avatar_url}
-                      alt={p.username}
-                      className="w-8 h-8 rounded-full"
-                    />
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm text-gray-800 dark:text-gray-200 truncate">
-                        {p.profile_name}
-                      </p>
-                      <p className="text-xs text-gray-400 truncate">
-                        đang chơi {p.game_name}
-                      </p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
+            <SidebarPanels leaderboard={leaderboard} nowPlaying={nowPlaying} />
           </div>
         </div>
       </div>
