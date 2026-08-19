@@ -43,6 +43,9 @@ function UniversityCard({ uni }) {
             {uni.acronym ? ` (${uni.acronym})` : ""}
           </p>
           <div className="flex flex-wrap gap-1">
+            {uni.universityCode && (
+              <Tag color="orange" className="text-xs !m-0">Mã: {uni.universityCode}</Tag>
+            )}
             {uni.type && <Tag color={typeColor} className="text-xs !m-0">{uni.type}</Tag>}
             {uni.city?.map((c) => (
               <Tag key={c} className="text-xs !m-0">{c}</Tag>
