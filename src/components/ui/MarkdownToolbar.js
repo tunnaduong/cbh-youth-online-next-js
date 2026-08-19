@@ -123,6 +123,7 @@ const MarkdownToolbar = ({
         <Tooltip title="Tiêu đề cấp 1" placement="bottom">
           <button
             type="button"
+            onMouseDown={(e) => e.preventDefault()}
             onClick={() => handleHeading(1)}
             className="p-1 rounded hover:bg-gray-200 dark:hover:bg-neutral-500 transition-colors"
           >
@@ -133,6 +134,7 @@ const MarkdownToolbar = ({
         <Tooltip title="Tiêu đề cấp 2" placement="bottom">
           <button
             type="button"
+            onMouseDown={(e) => e.preventDefault()}
             onClick={() => handleHeading(2)}
             className="p-1 rounded hover:bg-gray-200 dark:hover:bg-neutral-500 transition-colors"
           >
@@ -143,6 +145,7 @@ const MarkdownToolbar = ({
         <Tooltip title="Tiêu đề cấp 3" placement="bottom">
           <button
             type="button"
+            onMouseDown={(e) => e.preventDefault()}
             onClick={() => handleHeading(3)}
             className="p-1 rounded hover:bg-gray-200 dark:hover:bg-neutral-500 transition-colors"
           >
@@ -153,6 +156,7 @@ const MarkdownToolbar = ({
         <Tooltip title="Tiêu đề cấp 4" placement="bottom">
           <button
             type="button"
+            onMouseDown={(e) => e.preventDefault()}
             onClick={() => handleHeading(4)}
             className="p-1 rounded hover:bg-gray-200 dark:hover:bg-neutral-500 transition-colors"
           >
@@ -165,6 +169,7 @@ const MarkdownToolbar = ({
         <Tooltip title="In đậm" placement="bottom">
           <button
             type="button"
+            onMouseDown={(e) => e.preventDefault()}
             onClick={handleBold}
             className="p-1.5 rounded hover:bg-gray-200 dark:hover:bg-neutral-500 transition-colors"
           >
@@ -175,6 +180,7 @@ const MarkdownToolbar = ({
         <Tooltip title="In nghiêng" placement="bottom">
           <button
             type="button"
+            onMouseDown={(e) => e.preventDefault()}
             onClick={handleItalic}
             className="p-1.5 rounded hover:bg-gray-200 dark:hover:bg-neutral-500 transition-colors"
           >
@@ -185,6 +191,7 @@ const MarkdownToolbar = ({
         <Tooltip title="Liên kết" placement="bottom">
           <button
             type="button"
+            onMouseDown={(e) => e.preventDefault()}
             onClick={handleLink}
             className="p-1.5 rounded hover:bg-gray-200 dark:hover:bg-neutral-500 transition-colors"
           >
@@ -195,6 +202,7 @@ const MarkdownToolbar = ({
         <Tooltip title="Mã code" placement="bottom">
           <button
             type="button"
+            onMouseDown={(e) => e.preventDefault()}
             onClick={handleCode}
             className="p-1.5 rounded hover:bg-gray-200 dark:hover:bg-neutral-500 transition-colors"
           >
@@ -207,6 +215,7 @@ const MarkdownToolbar = ({
         <Tooltip title="Trích dẫn" placement="bottom">
           <button
             type="button"
+            onMouseDown={(e) => e.preventDefault()}
             onClick={handleQuote}
             className="p-1.5 rounded hover:bg-gray-200 dark:hover:bg-neutral-500 transition-colors"
           >
@@ -217,6 +226,7 @@ const MarkdownToolbar = ({
         <Tooltip title="Danh sách có dấu đầu dòng" placement="bottom">
           <button
             type="button"
+            onMouseDown={(e) => e.preventDefault()}
             onClick={handleBulletList}
             className="p-1.5 rounded hover:bg-gray-200 dark:hover:bg-neutral-500 transition-colors"
           >
@@ -227,6 +237,7 @@ const MarkdownToolbar = ({
         <Tooltip title="Danh sách có số thứ tự" placement="bottom">
           <button
             type="button"
+            onMouseDown={(e) => e.preventDefault()}
             onClick={handleNumberedList}
             className="p-1.5 rounded hover:bg-gray-200 dark:hover:bg-neutral-500 transition-colors"
           >

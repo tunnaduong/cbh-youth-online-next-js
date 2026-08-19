@@ -29,7 +29,7 @@ export async function GET(request) {
         "Accept-Language": "vi-VN,vi;q=0.9,en;q=0.8",
         Referer: "https://hoctap.coccoc.com/tim-truong-dh-cd",
       },
-      next: { revalidate: mode === "options" ? 86400 : 3600 },
+      ...(mode === "options" ? { next: { revalidate: 86400 } } : { cache: "no-store" }),
     });
     const data = await res.json();
     return NextResponse.json(data);
