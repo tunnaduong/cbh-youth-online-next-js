@@ -27,6 +27,10 @@ const SCORE_OPTIONS = [
 
 const TYPE_MAP = { "Công lập": 0, "Dân lập": 1 };
 
+const API_BASE =
+  (process.env.NEXT_PUBLIC_API_URL || "https://api.chuyenbienhoa.com") +
+  "/v1.0/universities";
+
 // Hardcoded from /composer/university_hub?offset=all (2025-08)
 const STATIC_GENERAL_INFO = [
   {
@@ -210,7 +214,7 @@ export default function UniversitiesClient() {
 
   // Silently refresh filter options + load generalInfo from API
   useEffect(() => {
-    fetch("/api/universities?mode=options")
+    fetch(`${API_BASE}/options`)
       .then((r) => r.json())
       .then((d) => {
         const uh = d?.verticals_university_hub?.university_hub;
@@ -232,7 +236,7 @@ export default function UniversitiesClient() {
       setLoading(true);
       setSearched(true);
       try {
-        const res = await fetch(`/api/universities?${params}`);
+        const res = await fetch(`${API_BASE}?${params}`);
         const data = await res.json();
         const uh = data?.verticals_university_hub?.university_hub;
         setUniversities(uh?.universityResponses ?? []);
@@ -269,7 +273,7 @@ export default function UniversitiesClient() {
     suggestTimer.current = setTimeout(async () => {
       setSuggestLoading(true);
       try {
-        const res = await fetch(`/api/universities?mode=search&q=${encodeURIComponent(q)}&autocomplete=1`);
+        const res = await fetch(`${API_BASE}/search?q=${encodeURIComponent(q)}&autocomplete=1`);
         const data = await res.json();
         const uh = data?.verticals_university_hub?.university_hub;
         setSuggestions(Array.isArray(uh) ? uh.slice(0, 8) : []);
@@ -287,7 +291,7 @@ export default function UniversitiesClient() {
     setNameLoading(true);
     setNameSearched(true);
     try {
-      const res = await fetch(`/api/universities?mode=search&q=${encodeURIComponent(q)}`);
+      const res = await fetch(`${API_BASE}/search?q=${encodeURIComponent(q)}`);
       const data = await res.json();
       const uh = data?.verticals_university_hub?.university_hub;
       setNameResults(Array.isArray(uh) ? uh : []);
