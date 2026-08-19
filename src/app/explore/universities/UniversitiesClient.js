@@ -83,12 +83,7 @@ function UniversityCard({ uni }) {
         {uni.address && (
           <div className="flex items-start gap-2 text-xs text-gray-500 dark:text-gray-400">
             <MapPin size={12} className="flex-shrink-0 mt-0.5" />
-            <span className="whitespace-pre-line">
-              {uni.address
-                .replace(/<br\s*\/?>/gi, "\n")
-                .replace(/<[^>]+>/g, "")
-                .trim()}
-            </span>
+            <span className="whitespace-pre-line">{uni.address}</span>
           </div>
         )}
         {uni.phone && (
@@ -153,24 +148,21 @@ function UniversityCard({ uni }) {
         </div>
       )}
 
-      {uni.url && (() => {
-        const urls = [...new Set(uni.url.trim().split(/\s+/).filter((u) => u.startsWith("http")))];
-        return urls.length > 0 ? (
-          <div className="mt-3 flex flex-col gap-1">
-            {urls.map((u, i) => (
-              <a
-                key={i}
-                href={u}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-xs text-green-600 dark:text-green-400 hover:underline truncate"
-              >
-                {i === 0 ? "Xem trang tuyển sinh →" : `Trang tuyển sinh ${i + 1} →`}
-              </a>
-            ))}
-          </div>
-        ) : null;
-      })()}
+      {uni.urls?.length > 0 && (
+        <div className="mt-3 flex flex-col gap-1">
+          {uni.urls.map((u, i) => (
+            <a
+              key={i}
+              href={u}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-xs text-green-600 dark:text-green-400 hover:underline truncate"
+            >
+              {i === 0 ? "Xem trang tuyển sinh →" : `Trang tuyển sinh ${i + 1} →`}
+            </a>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
@@ -210,9 +202,8 @@ export default function UniversitiesClient() {
     fetch(`${API_BASE}/options`)
       .then((r) => r.json())
       .then((d) => {
-        const uh = d?.verticals_university_hub?.university_hub;
-        if (uh?.city?.length > 0) setFilterOptions(uh);
-        if (uh?.generalInfo?.length > 0) setGeneralInfo(uh.generalInfo);
+        if (d?.city?.length > 0) setFilterOptions(d);
+        if (d?.generalInfo?.length > 0) setGeneralInfo(d.generalInfo);
       })
       .catch(() => {})
       .finally(() => setOptionsLoading(false));
@@ -232,10 +223,9 @@ export default function UniversitiesClient() {
       try {
         const res = await fetch(`${API_BASE}?${params}`);
         const data = await res.json();
-        const uh = data?.verticals_university_hub?.university_hub;
-        setUniversities(uh?.universityResponses ?? []);
-        setCurrentPage(uh?.currentPage ?? page);
-        setMaxPage(uh?.maxPage ?? 1);
+        setUniversities(data?.universities ?? []);
+        setCurrentPage(data?.currentPage ?? page);
+        setMaxPage(data?.maxPage ?? 1);
       } catch {
         setUniversities([]);
       } finally {
@@ -269,8 +259,7 @@ export default function UniversitiesClient() {
       try {
         const res = await fetch(`${API_BASE}/search?q=${encodeURIComponent(q)}&autocomplete=1`);
         const data = await res.json();
-        const uh = data?.verticals_university_hub?.university_hub;
-        setSuggestions(Array.isArray(uh) ? uh.slice(0, 8) : []);
+        setSuggestions(Array.isArray(data) ? data.slice(0, 8) : []);
       } catch {
         setSuggestions([]);
       } finally {
@@ -287,8 +276,7 @@ export default function UniversitiesClient() {
     try {
       const res = await fetch(`${API_BASE}/search?q=${encodeURIComponent(q)}`);
       const data = await res.json();
-      const uh = data?.verticals_university_hub?.university_hub;
-      setNameResults(Array.isArray(uh) ? uh : []);
+      setNameResults(Array.isArray(data) ? data : []);
     } catch {
       setNameResults([]);
     } finally {
