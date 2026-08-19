@@ -425,7 +425,6 @@ export default function UniversitiesClient() {
                         value: `${o.value[0]},${o.value[1]}`,
                         label: o.label,
                       }))}
-                      className="w-full"
                     />
                   </div>
                   <button
