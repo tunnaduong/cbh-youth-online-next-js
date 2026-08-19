@@ -394,7 +394,8 @@ export default function GamesClient() {
 
         {/* Right column: leaderboard */}
         <div className="hidden xl:block w-[280px] flex-shrink-0">
-          <div className="sticky top-[90px] bg-white dark:bg-neutral-800 rounded-xl border border-gray-100 dark:border-neutral-700 p-4">
+          <div className="sticky top-[90px] flex flex-col gap-4">
+          <div className="bg-white dark:bg-neutral-800 rounded-xl border border-gray-100 dark:border-neutral-700 p-4">
             <div className="flex items-center justify-between mb-3">
               <h3 className="font-semibold text-gray-900 dark:text-white flex items-center gap-1.5">
                 <Trophy className="w-4 h-4 text-yellow-500" />
@@ -446,7 +447,7 @@ export default function GamesClient() {
           </div>
 
           {/* Who's playing right now */}
-          <div className="bg-white dark:bg-neutral-800 rounded-xl border border-gray-100 dark:border-neutral-700 p-4 mt-4">
+          <div className="bg-white dark:bg-neutral-800 rounded-xl border border-gray-100 dark:border-neutral-700 p-4">
             <h3 className="font-semibold text-gray-900 dark:text-white flex items-center gap-1.5 mb-3">
               <Radio className="w-4 h-4 text-[#319527]" />
               Đang chơi
@@ -480,6 +481,7 @@ export default function GamesClient() {
                 ))}
               </div>
             )}
+          </div>
           </div>
         </div>
       </div>
