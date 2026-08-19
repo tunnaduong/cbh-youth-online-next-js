@@ -279,7 +279,7 @@ export default function UniversitiesClient() {
       sidebarWidth="306px"
     >
       <div className="px-2.5">
-        <main className="px-1 py-4 md:max-w-[936px] mx-auto">
+        <main className="px-1 py-4 md:max-w-[936px] xl:max-w-[1320px] mx-auto">
           {/* Header */}
           <div className="mb-5">
             <Title level={3} className="!text-gray-900 dark:!text-gray-100 !mb-1">
@@ -467,7 +467,7 @@ export default function UniversitiesClient() {
                       trường · Trang {currentPage}/{maxPage}
                     </Text>
                   </div>
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
                     {universities.map((uni, i) => (
                       <UniversityCard key={uni.universityCode ?? i} uni={uni} />
                     ))}
@@ -518,7 +518,7 @@ export default function UniversitiesClient() {
                   <Text className="text-sm text-gray-500 dark:text-gray-400 mb-3 block">
                     Tìm thấy <span className="font-semibold text-gray-800 dark:text-gray-200">{nameResults.length}</span> trường
                   </Text>
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
                     {nameResults.map((uni, i) => (
                       <UniversityCard key={uni.universityCode ?? i} uni={uni} />
                     ))}
