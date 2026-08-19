@@ -156,7 +156,7 @@ function UniversityCard({ uni }) {
       )}
 
       {uni.url && (() => {
-        const urls = uni.url.trim().split(/\s+/).filter((u) => u.startsWith("http"));
+        const urls = [...new Set(uni.url.trim().split(/\s+/).filter((u) => u.startsWith("http")))];
         return urls.length > 0 ? (
           <div className="mt-3 flex flex-col gap-1">
             {urls.map((u, i) => (
