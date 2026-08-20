@@ -15,7 +15,17 @@ export function setAuthCookie(token, options = {}) {
 
   const defaultOptions = {
     path: "/",
-    // No maxAge or expires - cookie will persist until browser is cleared
+    // Without an explicit max-age this was a *session* cookie, not a
+    // persistent one, despite this comment previously claiming otherwise -
+    // browsers (Safari's Intelligent Tracking Prevention especially, but
+    // also plain tab/process lifecycle handling on mobile) can and do drop
+    // session cookies well before the browser actually "closes", which
+    // showed up as "refreshing the giftshop signs me out even though I'm
+    // still logged in on the main site". Sanctum tokens don't expire
+    // server-side by default (config/sanctum.php `expiration` => null), so
+    // there's nothing to stay in sync with - 30 days keeps people signed in
+    // across normal use without living forever if a device is ever shared.
+    maxAge: 60 * 60 * 24 * 30,
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax",
     // Leading-dot domain shares this cookie with every *.chuyenbienhoa.com
