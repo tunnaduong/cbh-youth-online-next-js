@@ -942,7 +942,7 @@ export default function ChatConversation({
                     onContextMenu={(e) => e.preventDefault()}
                   >
                     <img
-                      src={resolveFileUrl(message.file_url)}
+                      src={resolveFileUrl(message.metadata?.thumbnail_url) || resolveFileUrl(message.file_url)}
                       alt={message.content || "image"}
                       className="w-full h-auto max-h-[300px] object-cover"
                     />
