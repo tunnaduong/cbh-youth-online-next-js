@@ -752,7 +752,6 @@ export default function PostItem({ post, single = false, onVote, onRefresh = nul
                 <video
                   key={`video-${post.id}-${index}`}
                   src={url}
-                  poster={post.video_thumbnail_urls?.[index]}
                   controls
                   preload="metadata"
                   className="w-full rounded-lg border dark:!border-neutral-500 bg-black max-h-[480px]"

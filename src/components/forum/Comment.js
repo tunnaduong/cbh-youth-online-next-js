@@ -426,7 +426,7 @@ export default function Comment({
                       {comment.image_urls.map((url, idx) => (
                         <img
                           key={idx}
-                          src={comment.image_thumbnail_urls?.[idx] || url}
+                          src={url}
                           alt={`Ảnh ${idx + 1}`}
                           className="max-h-48 max-w-[200px] rounded-lg border object-cover cursor-pointer"
                           onClick={() => setLightboxMedia({ type: "image", url })}
