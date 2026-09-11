@@ -1049,6 +1049,7 @@ export default function ProfileClient({ initialProfile, activeTab, username }) {
                   </>
                 )}
               </div>
+              <div className="flex-1 min-w-[280px]" />
               <div className="flex-1 min-w-0 order-3" />
               <div className="flex flex-row order-2">
                 <Link
