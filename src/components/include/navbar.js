@@ -50,7 +50,7 @@ function Logo({ compact = false }) {
           compact ? "hidden sm:block" : "block"
         }`}
       >
-        <span className="block font-normal">Diễn đàn học sinh</span>
+        <span className="block font-light">Diễn đàn học sinh</span>
         <span className="block font-bold">Chuyên Biên Hòa</span>
       </span>
     </Link>
