@@ -46,11 +46,11 @@ function Logo({ compact = false }) {
     <Link href="/" className="flex min-w-max items-center gap-2" aria-label="Trang chủ">
       <img src="/images/logo.png" alt="" className="h-10 w-10" />
       <span
-        className={`text-[14px] leading-[18px] text-gray-900 dark:text-neutral-100 ${
+        className={`text-[14px] leading-[18px] text-[#319527] ${
           compact ? "hidden sm:block" : "block"
         }`}
       >
-        <span className="block font-medium">Diễn đàn học sinh</span>
+        <span className="block font-thin">Diễn đàn học sinh</span>
         <span className="block font-bold">Chuyên Biên Hòa</span>
       </span>
     </Link>
