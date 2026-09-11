@@ -1049,8 +1049,8 @@ export default function ProfileClient({ initialProfile, activeTab, username }) {
                   </>
                 )}
               </div>
-              <div className="flex-1 min-w-[280px]" />
-              <div className="flex flex-row">
+              <div className="flex-1 min-w-0 order-3" />
+              <div className="flex flex-row order-2">
                 <Link
                   href={`/${profile.username}`}
                   className="select-none cursor-pointer h-full flex flex-col items-center justify-center px-3 box-border min-w-max"
@@ -1126,7 +1126,7 @@ export default function ProfileClient({ initialProfile, activeTab, username }) {
                   </p>
                 </div>
               </div>
-              <div className="flex-1 flex justify-end items-center gap-2">
+              <div className="flex-1 flex justify-end items-center gap-2 order-4">
                 {currentUser && currentUser.username == profile.username ? (
                   <Link href="/settings" className="flex items-center gap-x-2">
                     <Button className="rounded-full text-[#6c757d] px-4">
