@@ -51,18 +51,18 @@ export default function Footer() {
                 <IoLogoFacebook color={"white"} />
               </a>
               <a
-                href="https://github.com/tunnaduong/cbh-youth-online-next-js"
-                target="_blank"
-                className="rounded-full h-[35px] w-[35px] flex justify-center items-center bg-black text-white"
-              >
-                <IoLogoGithub color={"white"} />
-              </a>
-              <a
                 href="https://discord.chuyenbienhoa.com"
                 target="_blank"
                 className="rounded-full h-[35px] w-[35px] flex justify-center items-center bg-[#7289da] text-white"
               >
                 <FaDiscord color={"white"} />
+              </a>
+              <a
+                href="https://github.com/tunnaduong/cbh-youth-online-next-js"
+                target="_blank"
+                className="rounded-full h-[35px] w-[35px] flex justify-center items-center bg-black text-white"
+              >
+                <IoLogoGithub color={"white"} />
               </a>
             </div>
             <p className="text-[13px] mt-5">

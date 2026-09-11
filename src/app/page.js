@@ -21,26 +21,21 @@ async function getHomeDataServer(sort = "latest") {
   }
 }
 
-// "Bài mới" ("latest") always comes from the live, uncached ?mode=latest
+// "Bài viết mới nhất" always comes from the live, uncached ?mode=latest
 // feed (ordered strictly by created_at desc) rather than /home's own
 // latestPosts, so a brand-new post shows up immediately even on the very
-// first server-rendered load of the page — same fix as the client-side
-// refetch in ForumDataProvider, just applied to the SSR path too.
-async function getLatestFeedPostsServer() {
+// first server-rendered load of the page. Guests get the same ordering
+// (the feed endpoint falls back to the public topic list).
+async function getLatestFeedPageServer(page) {
   try {
-    const data = await getServer("/v1.0/topics/feed?mode=latest&page=1");
-    const topics = data?.data || [];
-    return topics.map((topic) => ({
-      id: topic.id,
-      title: topic.title,
-      anonymous: topic.anonymous,
-      username: topic.author?.username,
-      author_name: topic.author?.profile_name || topic.author?.username,
-      time: topic.time,
-    }));
+    const data = await getServer(`/v1.0/topics/feed?mode=latest&page=${page}`);
+    return {
+      posts: data?.data || [],
+      hasMore: Number(data?.current_page) < Number(data?.last_page),
+    };
   } catch (error) {
-    console.error("Error fetching latest feed posts:", error);
-    return [];
+    console.error(`Error fetching latest feed page ${page}:`, error);
+    return { posts: [], hasMore: false };
   }
 }
 
@@ -71,26 +66,27 @@ export async function generateMetadata() {
 }
 
 export default async function Home() {
-  // Fetch data on the server
-  const [homeData, latestFeedPosts] = await Promise.all([
+  // Page 2 doubles as a wider pool for "Bài viết nổi bật" and is handed to
+  // the latest-posts list so its first "Tải thêm" needs no extra request.
+  const [homeData, firstPage, secondPage] = await Promise.all([
     getHomeDataServer("latest"),
-    getLatestFeedPostsServer(),
+    getLatestFeedPageServer(1),
+    getLatestFeedPageServer(2),
   ]);
 
-  // Extract data for components
-  const initialLatestPosts = {
-    latest: latestFeedPosts,
+  const initialFeed = {
+    posts: firstPage.posts,
+    hasMore: firstPage.hasMore,
+    nextPosts: firstPage.hasMore && secondPage.posts.length > 0 ? secondPage : null,
   };
-  const initialMainCategories = homeData.mainCategories || [];
-  const initialStats = homeData.stats || null;
 
   return (
-    <HomeLayout activeNav="home">
+    <HomeLayout activeNav="home" showRightSidebar={false}>
       <HomeClient
-        initialHomeData={homeData}
-        initialMainCategories={initialMainCategories}
-        initialLatestPosts={initialLatestPosts}
-        initialStats={initialStats}
+        initialMainCategories={homeData.mainCategories || []}
+        initialStats={homeData.stats || null}
+        initialFeed={initialFeed}
+        featuredPool={[...firstPage.posts, ...secondPage.posts]}
       />
     </HomeLayout>
   );

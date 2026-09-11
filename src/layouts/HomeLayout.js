@@ -55,7 +55,7 @@ function HomeLayoutContent({
   };
   return (
     <div>
-      <Navbar activeNav={activeNav} />
+      <Navbar hasSidebar={showLeftSidebar} />
       <div>
         <div className="flex flex-col xl:flex-row flex-1">
           {showLeftSidebar && (

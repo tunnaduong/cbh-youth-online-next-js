@@ -1,8 +1,11 @@
-export default function SEOContent({ seoDescription }) {
+export default function SEOContent({
+  seoDescription,
+  className = "max-w-[775px] rounded-lg long-shadow",
+}) {
   return (
     <div className={seoDescription ? "mx-2.5" : ""}>
       <div
-        className={`bg-gray-50 dark:bg-[#3c3c3c] rounded-lg p-6 long-shadow max-w-[775px] mx-auto ${
+        className={`bg-gray-50 dark:bg-[#3c3c3c] p-6 mx-auto ${className} ${
           seoDescription ? "mb-5" : ""
         }`}
       >

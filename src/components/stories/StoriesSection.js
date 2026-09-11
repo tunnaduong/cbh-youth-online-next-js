@@ -170,7 +170,7 @@ function StoriesSection() {
 
   const CreateStoryButton = () => (
     <div
-      className="overflow-hidden rounded-xl shadow-sm w-[90px] h-[160px] sm:w-[115px] sm:h-[195px] flex flex-col cursor-pointer hover:opacity-90 transition-opacity flex-shrink-0"
+      className="overflow-hidden rounded-xl border shadow-sm w-[90px] h-[160px] sm:w-[115px] sm:h-[195px] flex flex-col cursor-pointer hover:opacity-90 transition-opacity flex-shrink-0"
       onClick={handleCreateStory}
     >
       <img

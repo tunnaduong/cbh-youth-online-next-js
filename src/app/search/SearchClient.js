@@ -391,7 +391,7 @@ export default function SearchClient() {
               <br />
               Thử bắt đầu bằng cách tìm kiếm người
               <br />
-              dùng, bài viết, loa lớn...
+              dùng, bài viết...
             </div>
           )}
         </div>

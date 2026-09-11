@@ -1,229 +1,34 @@
 "use client";
 
-import Link from "next/link";
-import { useRouter } from "@bprogress/next/app";
-import { message } from "antd";
-import {
-  ChatboxEllipses,
-  Telescope,
-  Megaphone,
-  Newspaper,
-  Bookmark,
-  HelpCircle,
-  Chatbubbles,
-} from "react-ionicons";
 import { useAuthContext } from "@/contexts/Support";
+import SidebarNav, { MAIN_NAV_ITEMS } from "./SidebarNav";
 
 export default function LeftSidebar({
   activeBar = "forum",
-  type = "default",
   width = "260px",
-  items = [
-    {
-      key: "forum",
-      href: "/",
-      label: "Diễn đàn",
-      Icon: ChatboxEllipses,
-      isExternal: false,
-    },
-    {
-      key: "feed",
-      href: "/feed",
-      label: "Bảng tin",
-      Icon: Telescope,
-    },
-    {
-      key: "recordings",
-      href: "/recordings",
-      label: "Loa lớn",
-      Icon: Megaphone,
-    },
-    {
-      key: "news",
-      href: "/youth-news",
-      label: "Tin tức Đoàn",
-      Icon: Newspaper,
-    },
-    {
-      key: "saved",
-      href: "/saved",
-      label: "Đã lưu",
-      Icon: Bookmark,
-    },
-    // help and feedback later
-    {
-      key: "help",
-      href: "/help",
-      label: "Trợ giúp",
-      Icon: HelpCircle,
-    },
-    {
-      key: "feedback",
-      href: "https://forms.gle/XJ3v1vN82BxLUVWo9",
-      label: "Góp ý",
-      Icon: Chatbubbles,
-      isExternal: true,
-    },
-  ],
+  items = MAIN_NAV_ITEMS,
 }) {
-  const router = useRouter();
   const { loggedIn, currentUser } = useAuthContext();
-  const iconColor = "#CACACA";
-  const activeIconColor = "#319527";
-  const iconSize = "18px";
 
-  const handleSavedClick = (e) => {
-    if (!loggedIn) {
-      e.preventDefault();
-      message.error("Vui lòng đăng nhập để xem các bài viết đã lưu của bạn.");
-      router.push(
-        "/login?continue=" +
-          encodeURIComponent(window.location.origin + "/saved")
-      );
-    }
-  };
-
-  const baseLinkClass =
-    "mb-3 text-base font-semibold flex items-center w-full text-left rounded-xl p-2.5";
-  const activeLinkClass =
-    "hover:text-[#319527] text-[#319527] bg-[#E4EEE3] dark:bg-[#495648]";
-  const inactiveLinkClass =
-    "text-[#6B6B6B] dark:text-[#CACACA] hover:text-[#6B6B6B] dark:hover:text-white";
-
-  const activeIconWrapper =
-    "text-lg rounded-lg w-[30px] h-[30px] mr-3 menu-border flex items-center justify-center !border-[#BFE5BB] dark:!border-[#4f7b50] bg-[#CDEBCA] dark:bg-[#1d2a1c]";
-  const inactiveIconWrapper =
-    "text-lg rounded-lg w-[30px] h-[30px] mr-3 menu-border flex items-center justify-center border-[#ECECEC] dark:!border-neutral-500";
-
-  // Calculate sticky top position based on alert visibility
-  const stickyTop =
-    loggedIn && !currentUser?.email_verified_at ? "calc(69px + 30px)" : "69px";
+  // Keep the sidebar below the fixed navbar (and the email verification alert).
+  // It's applied as both margin and sticky `top`, so short pages that never
+  // scroll don't leave the sidebar tucked under the navbar.
+  const offset = loggedIn && !currentUser?.email_verified_at ? 99 : 69;
 
   return (
-    <>
-      {/* Left side bar */}
-      <div
-        className={`w-[${width}] hidden xl:flex flex-col !p-6 sticky h-min`}
-        id="left-sidebar"
-        style={{ top: stickyTop, minWidth: width }}
-      >
-        <p className="text-sm font-semibold text-[#6b6b6b] dark:text-neutral-400 pb-3 ml-2.5">
-          MENU
-        </p>
-
-        {(type === "default" ? items.slice(0, 5) : items).map((it, idx) => {
-          if (it.type === "divider") {
-            return (
-              <hr key={`hr-${idx}`} className="my-3 dark:border-neutral-600" />
-            );
-          }
-
-          const isActive = activeBar === it.key;
-          const LinkComp = it.isExternal ? "a" : Link;
-          const props = it.isExternal
-            ? { href: it.href, target: "_blank", rel: "noopener noreferrer" }
-            : { href: it.href };
-
-          // Add click handler for saved posts or custom handler
-          const handleClick =
-            it.onClick || (it.key === "saved" ? handleSavedClick : undefined);
-
-          return (
-            <LinkComp
-              key={it.key}
-              {...props}
-              onClick={handleClick}
-              className={`${baseLinkClass} ${
-                isActive ? activeLinkClass : inactiveLinkClass
-              }`}
-            >
-              <div
-                className={isActive ? activeIconWrapper : inactiveIconWrapper}
-              >
-                <it.Icon
-                  color={isActive ? activeIconColor : iconColor}
-                  height={iconSize}
-                  width={iconSize}
-                />
-              </div>
-              <div
-                className={
-                  isActive
-                    ? "text-[#319527]"
-                    : "text-[#6B6B6B] dark:text-[#CACACA]"
-                }
-              >
-                {it.label}
-              </div>
-            </LinkComp>
-          );
-        })}
-
-        {type === "default" && (
-          <>
-            <hr className="my-3 dark:border-neutral-600" />
-
-            {items
-              .filter((it) => it.key === "help")
-              .map((it) => {
-                const isActive = activeBar === it.key;
-                return (
-                  <Link
-                    key={it.key}
-                    href={it.href}
-                    className={`${baseLinkClass} ${
-                      isActive ? activeLinkClass : inactiveLinkClass
-                    }`}
-                  >
-                    <div
-                      className={
-                        isActive ? activeIconWrapper : inactiveIconWrapper
-                      }
-                    >
-                      <it.Icon
-                        color={isActive ? activeIconColor : iconColor}
-                        height={iconSize}
-                        width={iconSize}
-                      />
-                    </div>
-                    <div
-                      className={
-                        isActive
-                          ? "text-[#319527]"
-                          : "text-[#6B6B6B] dark:text-[#CACACA]"
-                      }
-                    >
-                      {it.label}
-                    </div>
-                  </Link>
-                );
-              })}
-
-            {items
-              .filter((it) => it.key === "feedback")
-              .map((it) => (
-                <a
-                  key={it.key}
-                  href={it.href}
-                  className={`${baseLinkClass} ${inactiveLinkClass}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  <div className={inactiveIconWrapper}>
-                    <it.Icon
-                      color={iconColor}
-                      height={iconSize}
-                      width={iconSize}
-                    />
-                  </div>
-                  <div className="text-[#6B6B6B] dark:text-[#CACACA]">
-                    {it.label}
-                  </div>
-                </a>
-              ))}
-          </>
-        )}
-      </div>
-    </>
+    <aside
+      id="left-sidebar"
+      className="scrollbar-hide sticky hidden flex-col overflow-y-auto px-4 pb-5 pt-6 xl:flex"
+      style={{
+        top: `${offset}px`,
+        marginTop: `${offset}px`,
+        height: `calc(100vh - ${offset}px)`,
+        width,
+        minWidth: width,
+        borderRight: "1px"
+      }}
+    >
+      <SidebarNav items={items} activeKey={activeBar} />
+    </aside>
   );
 }
