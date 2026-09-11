@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useAuthContext } from "@/contexts/Support";
 import {
   getPublicChatMessages,
@@ -153,6 +153,7 @@ export default function PublicChat() {
   const [forwardingMessage, setForwardingMessage] = useState(null);
   const messagesContainerRef = useRef(null);
   const longPressTimerRef = useRef(null);
+  const isLoadingMoreRef = useRef(false);
 
   const clearLongPressTimer = () => {
     if (longPressTimerRef.current) {
@@ -186,6 +187,40 @@ export default function PublicChat() {
       history.scrollRestoration = "manual";
     }
   }, []);
+
+  // Load older messages when user scrolls to top
+  const loadOlderMessages = useCallback(async () => {
+    if (isLoadingMoreRef.current || !hasMorePages) return;
+    const container = messagesContainerRef.current;
+    const prevScrollHeight = container?.scrollHeight || 0;
+    isLoadingMoreRef.current = true;
+    setIsLoadingMore(true);
+    try {
+      const nextPage = currentPage + 1;
+      await loadMessages(nextPage, false, true);
+      requestAnimationFrame(() => {
+        if (container) {
+          container.scrollTop = container.scrollHeight - prevScrollHeight;
+        }
+      });
+    } finally {
+      isLoadingMoreRef.current = false;
+      setIsLoadingMore(false);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hasMorePages, currentPage]);
+
+  useEffect(() => {
+    const container = messagesContainerRef.current;
+    if (!container) return;
+    const handleScroll = () => {
+      if (container.scrollTop < 60) {
+        loadOlderMessages();
+      }
+    };
+    container.addEventListener("scroll", handleScroll, { passive: true });
+    return () => container.removeEventListener("scroll", handleScroll);
+  }, [loadOlderMessages]);
 
   // Function to scroll chat container to bottom
   const scrollToBottom = () => {
@@ -391,8 +426,9 @@ export default function PublicChat() {
       return;
     }
 
-    if (isLoadingMore) return;
+    if (isLoadingMoreRef.current) return;
 
+    isLoadingMoreRef.current = true;
     setIsLoadingMore(true);
     try {
       let page = currentPage;
@@ -422,6 +458,7 @@ export default function PublicChat() {
     } catch (error) {
       console.error("[PublicChat] Error loading older messages to scroll to reply:", error);
     } finally {
+      isLoadingMoreRef.current = false;
       setIsLoadingMore(false);
     }
 
