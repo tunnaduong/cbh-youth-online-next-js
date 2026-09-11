@@ -1049,7 +1049,7 @@ export default function ProfileClient({ initialProfile, activeTab, username }) {
                   </>
                 )}
               </div>
-              <div className="flex-1 min-w-[280px]" />
+              <div className="w-[110px] flex-shrink-0" />
               <div className="flex flex-row">
                 <Link
                   href={`/${profile.username}`}
