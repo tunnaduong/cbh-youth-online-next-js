@@ -17,7 +17,7 @@ import { getForumData, createPost, updatePost, getPostDetail } from "@/app/Api";
 import { useForumData } from "@/contexts/ForumDataContext";
 import { useMentionInput } from "@/hooks/useMentionInput";
 import MentionSuggestionsDropdown from "../ui/MentionSuggestionsDropdown";
-import { buildHtml, getCaretOffset, setCaretOffset, getContentText, makeProxyRef, needsRichRebuild } from "@/utils/richInput";
+import { buildHtml, getCaretOffset, setCaretOffset, getContentText, makeProxyRef, applyHighlights } from "@/utils/richInput";
 
 const CreatePostModal = ({ open, onClose, isEditMode = false, postData = null, onSuccess = null }) => {
   const { currentUser, refreshUser } = useAuthContext();
@@ -171,7 +171,8 @@ const CreatePostModal = ({ open, onClose, isEditMode = false, postData = null, o
     if (isComposingRef.current) return;
     const el = divRef.current;
     if (!el) return;
-    el.innerHTML = buildHtml(data.description, false);
+    el.innerHTML = buildHtml(data.description);
+    applyHighlights(el, data.description, false);
   }, [data.description, isPreviewMode]);
 
   // Handle auto-continuation for lists
@@ -829,12 +830,14 @@ const CreatePostModal = ({ open, onClose, isEditMode = false, postData = null, o
                   </div>
                 ) : (
                   <>
-                    {/* contentEditable instead of a textarea+overlay pair - the
-                        overlay approach kept drifting out of sync with the real
-                        textarea's own text/caret metrics (padding, selection
-                        rendering, font width rounding) across multiple attempts,
-                        so mentions are now colored directly on the real content
-                        via .ce-mention, same technique as ChatMessageInput. */}
+                    {/* contentEditable instead of a textarea+overlay pair - an
+                        earlier textarea+overlay attempt kept drifting out of
+                        sync with the real textarea's own text/caret metrics
+                        (padding, selection rendering, font width rounding).
+                        Mentions are colored via the CSS Custom Highlight API
+                        (applyHighlights/richInput.js) instead of DOM spans, so
+                        it never interferes with any IME - same technique as
+                        ChatMessageInput. */}
                     <div
                       ref={divRef}
                       contentEditable
@@ -849,19 +852,18 @@ const CreatePostModal = ({ open, onClose, isEditMode = false, postData = null, o
                         const text = getContentText(el);
                         setData((prev) => ({ ...prev, description: text }));
                         handleDescriptionMentionChange(text, offset);
-                        // Don't touch the DOM mid-IME-composition (Vietnamese
-                        // Unikey/ibus/fcitx etc.) - rebuilding innerHTML cancels
-                        // the composition and drops/duplicates the diacritic.
-                        // Some IMEs (ibus-unikey/Lotus in "X11 uinput" mode)
-                        // never fire composition events at all - they synthesize
-                        // a raw backspace+retype instead - so also skip the
-                        // rebuild whenever there's nothing to highlight (and
-                        // nothing already highlighted that needs clearing).
-                        if (isComposingRef.current) return;
-                        const hadHighlight = el.querySelector(".ce-mention, .ce-ai-command");
-                        if (!needsRichRebuild(text) && !hadHighlight) return;
-                        el.innerHTML = buildHtml(text, false);
-                        setCaretOffset(el, offset);
+                        // The DOM itself is never touched here - only the
+                        // CSS Custom Highlight API is updated (see
+                        // applyHighlights/richInput.js), which colors text
+                        // without mutating the contenteditable's node tree.
+                        // That means normal typing, real IME composition,
+                        // AND non-composition-event Linux input methods
+                        // (ibus-unikey/fcitx5-Lotus's "X11 uinput" modes,
+                        // which insert a Vietnamese tone mark via a
+                        // synthesized raw backspace+retype outside any
+                        // composition event) are all left completely
+                        // undisturbed - there is no rebuild left to race with.
+                        applyHighlights(el, text, false);
                       }}
                       onCompositionStart={() => {
                         isComposingRef.current = true;
@@ -873,8 +875,7 @@ const CreatePostModal = ({ open, onClose, isEditMode = false, postData = null, o
                         const text = getContentText(el);
                         setData((prev) => ({ ...prev, description: text }));
                         handleDescriptionMentionChange(text, offset);
-                        el.innerHTML = buildHtml(text, false);
-                        setCaretOffset(el, offset);
+                        applyHighlights(el, text, false);
                       }}
                       onKeyDown={handleTextareaKeyDown}
                     />

@@ -1,9 +1,23 @@
 /**
  * Shared utilities for contenteditable mention-aware inputs.
- * Used by ChatMessageInput, MessageInput, CommentInput.
+ * Used by ChatMessageInput, MessageInput, CommentInput, CreatePostModal.
+ *
+ * Highlighting (mentions, /ai /summary /help) is done with the CSS Custom
+ * Highlight API (CSS.highlights / window.Highlight) instead of wrapping
+ * matched text in <span> elements inside the contenteditable. Two previous
+ * attempts at the span approach (including a zero-width-space "escape
+ * hatch" trick) still broke typing with Linux input methods that don't use
+ * the standard composition-event protocol - notably ibus-unikey/fcitx5-Lotus
+ * in their "X11 uinput" modes, which insert a Vietnamese tone mark via a
+ * synthesized raw backspace+retype outside any composition event, racing
+ * with the innerHTML rebuilds that adding/removing spans requires. The
+ * Custom Highlight API colors arbitrary text Ranges purely at the paint
+ * layer - it never touches the DOM tree - so nothing about it can ever
+ * interfere with any IME, uinput-based or otherwise: the contenteditable
+ * itself is left as plain, boring text the whole time.
  */
 
-const MENTION_RE = /(@[\w.\-À-ɏ]+)/gu;
+const MENTION_RE = /@[\w.\-À-ɏ]+/gu;
 // Only counts as the Chat with AI trigger when it's the very first thing in
 // the message (matches the backend's leading-prefix check).
 const AI_COMMAND_RE = /^\/(ai|summary|help)\b/i;
@@ -12,76 +26,12 @@ function esc(s) {
   return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
 
-// Whether buildHtml() would actually add any highlight spans for this text -
-// i.e. whether rebuilding the contenteditable's innerHTML is worth doing at
-// all. Some Linux IMEs (e.g. ibus-unikey/Lotus in its "X11 uinput" mode)
-// don't fire real compositionstart/compositionend events like normal IMEs -
-// they insert a Vietnamese tone mark by synthesizing a raw backspace
-// keystroke followed by the retyped character, entirely outside the
-// composition API our isComposingRef guard relies on. Rebuilding
-// innerHTML + resetting the caret on every single keystroke (as this app
-// already skips only during real composition) fights with that rapid
-// synthetic backspace-then-retype sequence and drops/garbles characters.
-// Skipping the rebuild whenever there's nothing to highlight anyway lets
-// the browser's native contenteditable editing handle plain typing
-// undisturbed, which covers the vast majority of keystrokes.
-export function needsRichRebuild(text) {
-  return /@|^\//.test(text);
-}
-
-// Zero-width space, used as an invisible "escape hatch" text node right
-// after every highlight span (see buildLineHtml below). Stripped back out
-// in getContentText/getCaretOffset/getSelectionStartOffset so it never
-// leaks into the actual message content - it only ever exists in the DOM.
-const ZWSP = "​";
-
-function buildLineHtml(line, allowAllMention, enableAiCommands, isFirstLine) {
-  let commandHtml = "";
-  let rest = line;
-
-  if (enableAiCommands && isFirstLine) {
-    const match = line.match(AI_COMMAND_RE);
-    if (match) {
-      // The trailing ZWSP gives the browser a real (if invisible) plain text
-      // node to plant the caret/next typed character in. Without it, a
-      // caret sitting at the exact boundary right after this span - which
-      // is exactly where it ends up after every rebuild - has browsers
-      // extend the span itself instead of starting fresh plain text, so
-      // everything typed afterward keeps inheriting the highlight color.
-      commandHtml = `<span class="ce-ai-command">${esc(match[0])}</span>${ZWSP}`;
-      rest = line.slice(match[0].length);
-    }
-  }
-
-  const restHtml = rest
-    .split(MENTION_RE)
-    .map((part, i) => {
-      if (i % 2 !== 1) return esc(part);
-      if (!allowAllMention && part.slice(1).toLowerCase() === "all") return esc(part);
-      // Same reasoning as the AI-command ZWSP above.
-      return `<span class="ce-mention">${esc(part)}</span>${ZWSP}`;
-    })
-    .join("");
-
-  return commandHtml + restHtml;
-}
-
 // Newlines (from Shift+Enter) need to become <br> - a bare "\n" inside a
-// contenteditable's HTML is collapsed/ignored by the browser.
-export function buildHtml(text, allowAllMention = true, enableAiCommands = false) {
+// contenteditable's HTML is collapsed/ignored by the browser. No spans, no
+// styling here at all - see the module docblock for why.
+export function buildHtml(text) {
   if (!text) return "";
-  return text
-    .split("\n")
-    .map((line, i) => buildLineHtml(line, allowAllMention, enableAiCommands, i === 0))
-    .join("<br>");
-}
-
-// Strip the invisible ZWSP boundary markers (see buildLineHtml) so offsets/
-// content stay in the same coordinate space as the real message text -
-// without this, every offset computed here would be inflated by however
-// many ZWSP markers precede it, throwing off mention-query slicing etc.
-function stripZwsp(s) {
-  return s.replace(new RegExp(ZWSP, "g"), "");
+  return text.split("\n").map(esc).join("<br>");
 }
 
 export function getCaretOffset(el) {
@@ -90,7 +40,7 @@ export function getCaretOffset(el) {
   const pre = sel.getRangeAt(0).cloneRange();
   pre.selectNodeContents(el);
   pre.setEnd(sel.getRangeAt(0).endContainer, sel.getRangeAt(0).endOffset);
-  return stripZwsp(pre.toString()).length;
+  return pre.toString().length;
 }
 
 // Same as getCaretOffset but for the *start* of the current selection - the
@@ -101,20 +51,7 @@ export function getSelectionStartOffset(el) {
   const pre = sel.getRangeAt(0).cloneRange();
   pre.selectNodeContents(el);
   pre.setEnd(sel.getRangeAt(0).startContainer, sel.getRangeAt(0).startOffset);
-  return stripZwsp(pre.toString()).length;
-}
-
-// Maps a ZWSP-stripped ("visible") character offset within a text node's raw
-// content to the real index inside that raw content (which may contain ZWSP
-// markers the offset doesn't count).
-function realIndexForVisibleOffset(raw, visibleOffset) {
-  let seen = 0;
-  for (let i = 0; i < raw.length; i++) {
-    if (raw[i] === ZWSP) continue;
-    if (seen === visibleOffset) return i;
-    seen++;
-  }
-  return raw.length;
+  return pre.toString().length;
 }
 
 export function setCaretOffset(el, offset) {
@@ -122,18 +59,16 @@ export function setCaretOffset(el, offset) {
   let rem = offset;
   let node;
   while ((node = tw.nextNode())) {
-    const raw = node.textContent;
-    const visibleLength = stripZwsp(raw).length;
-    if (rem <= visibleLength) {
+    if (rem <= node.textContent.length) {
       const r = document.createRange();
-      r.setStart(node, realIndexForVisibleOffset(raw, rem));
+      r.setStart(node, rem);
       r.collapse(true);
       const sel = window.getSelection();
       sel.removeAllRanges();
       sel.addRange(r);
       return;
     }
-    rem -= visibleLength;
+    rem -= node.textContent.length;
   }
   const r = document.createRange();
   r.selectNodeContents(el);
@@ -153,7 +88,7 @@ export function getContentText(el) {
 
   function walk(node, isFirstBlockChild) {
     if (node.nodeType === Node.TEXT_NODE) {
-      out += stripZwsp(node.textContent);
+      out += node.textContent;
       return;
     }
     if (node.nodeType !== Node.ELEMENT_NODE) return;
@@ -181,6 +116,95 @@ export function getContentText(el) {
   return out;
 }
 
+// Character ranges (within the plain getContentText() string) that should
+// be colored, split by highlight "kind" (mention vs ai-command) so the
+// caller can register them under separate CSS.highlights names.
+function computeHighlightRanges(text, allowAllMention, enableAiCommands) {
+  const mentionRanges = [];
+  const commandRanges = [];
+
+  if (enableAiCommands) {
+    const match = text.match(AI_COMMAND_RE);
+    if (match) {
+      commandRanges.push([0, match[0].length]);
+    }
+  }
+
+  let m;
+  MENTION_RE.lastIndex = 0;
+  while ((m = MENTION_RE.exec(text)) !== null) {
+    if (!allowAllMention && m[0].toLowerCase() === "@all") continue;
+    mentionRanges.push([m.index, m.index + m[0].length]);
+  }
+
+  return { mentionRanges, commandRanges };
+}
+
+const HIGHLIGHT_SUPPORTED =
+  typeof CSS !== "undefined" && "highlights" in CSS && typeof Highlight !== "undefined";
+
+// Finds the (node, offsetWithinNode) pair for a plain-text character index
+// inside el, by walking its text nodes cumulatively - the Range-based
+// equivalent of setCaretOffset, but returning a position instead of
+// selecting it.
+function locate(el, charIndex) {
+  const tw = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
+  let rem = charIndex;
+  let node;
+  let last = null;
+  while ((node = tw.nextNode())) {
+    last = node;
+    if (rem <= node.textContent.length) {
+      return { node, offset: rem };
+    }
+    rem -= node.textContent.length;
+  }
+  return last ? { node: last, offset: last.textContent.length } : null;
+}
+
+/**
+ * Colors mentions/@all and a leading /ai /summary /help command inside a
+ * contenteditable div, using CSS.highlights instead of touching the DOM -
+ * see the module docblock. No-ops (silently) on browsers without the
+ * Custom Highlight API (older Firefox, Safari < 17.2): those browsers just
+ * don't get live coloring while typing, which is a harmless visual
+ * degradation - the sent message still renders colored correctly either
+ * way, since that's done by unrelated, already-safe render code.
+ */
+export function applyHighlights(el, text, allowAllMention = true, enableAiCommands = false) {
+  if (!HIGHLIGHT_SUPPORTED || !el) return;
+
+  const { mentionRanges, commandRanges } = computeHighlightRanges(text, allowAllMention, enableAiCommands);
+
+  const toRanges = (pairs) =>
+    pairs
+      .map(([start, end]) => {
+        const from = locate(el, start);
+        const to = locate(el, end);
+        if (!from || !to) return null;
+        const r = new Range();
+        r.setStart(from.node, from.offset);
+        r.setEnd(to.node, to.offset);
+        return r;
+      })
+      .filter(Boolean);
+
+  const mentionRs = toRanges(mentionRanges);
+  const commandRs = toRanges(commandRanges);
+
+  if (mentionRs.length) {
+    CSS.highlights.set("ce-mention", new Highlight(...mentionRs));
+  } else {
+    CSS.highlights.delete("ce-mention");
+  }
+
+  if (commandRs.length) {
+    CSS.highlights.set("ce-ai-command", new Highlight(...commandRs));
+  } else {
+    CSS.highlights.delete("ce-ai-command");
+  }
+}
+
 /**
  * Creates a proxy ref object compatible with useMentionInput and MarkdownToolbar.
  * Pass a getter for divRef so the proxy always references the current DOM element.
@@ -202,7 +226,8 @@ export function makeProxyRef(getDivEl, onValueSet, allowAllMention = true, enabl
     set value(newText) {
       const el = getDivEl();
       if (el) {
-        el.innerHTML = buildHtml(newText, allowAllMention, enableAiCommands);
+        el.innerHTML = buildHtml(newText);
+        applyHighlights(el, newText, allowAllMention, enableAiCommands);
         onValueSet?.(newText);
       }
     },

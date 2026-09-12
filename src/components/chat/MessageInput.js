@@ -10,7 +10,7 @@ import MentionSuggestionsDropdown from "@/components/ui/MentionSuggestionsDropdo
 import SlashCommandSuggestionsDropdown from "@/components/ui/SlashCommandSuggestionsDropdown";
 import { useMentionInput } from "@/hooks/useMentionInput";
 import { useSlashCommandInput } from "@/hooks/useSlashCommandInput";
-import { buildHtml, getCaretOffset, setCaretOffset, getContentText, makeProxyRef, needsRichRebuild } from "@/utils/richInput";
+import { buildHtml, getCaretOffset, setCaretOffset, getContentText, makeProxyRef, applyHighlights } from "@/utils/richInput";
 
 function EditComposerBar({ editingMessage, onCancel }) {
   if (!editingMessage) return null;
@@ -127,8 +127,9 @@ export default function MessageInput({
     if (isComposingRef.current) return;
     const el = divRef.current;
     if (!el) return;
-    el.innerHTML = buildHtml(message, true, true);
+    el.innerHTML = buildHtml(message);
     if (message) setCaretOffset(el, message.length);
+    applyHighlights(el, message, true, true);
   }, [message]);
 
   useEffect(() => {
@@ -193,19 +194,15 @@ export default function MessageInput({
     setMessage(text);
     handleMentionChange(text, offset);
     handleSlashChange(text);
-    // Don't touch the DOM while an IME composition (Vietnamese Unikey/ibus/fcitx
-    // etc.) is in progress — rebuilding innerHTML mid-composition cancels it and
-    // drops/duplicates the diacritic being typed. Some IMEs (ibus-unikey/Lotus
-    // in "X11 uinput" mode) never fire composition events at all - they
-    // synthesize a raw backspace+retype instead - so also skip the rebuild
-    // whenever there's nothing to highlight (and nothing already highlighted
-    // that needs clearing), which covers plain typing regardless of which
-    // IME/method produced it.
-    if (isComposingRef.current) return;
-    const hadHighlight = el.querySelector(".ce-mention, .ce-ai-command");
-    if (!needsRichRebuild(text) && !hadHighlight) return;
-    el.innerHTML = buildHtml(text, true, true);
-    setCaretOffset(el, offset);
+    // The DOM itself is never touched here - only the CSS Custom Highlight
+    // API is updated (see applyHighlights/richInput.js), which colors text
+    // without mutating the contenteditable's node tree. That means normal
+    // typing, real IME composition, AND non-composition-event Linux input
+    // methods (ibus-unikey/fcitx5-Lotus's "X11 uinput" modes, which insert a
+    // Vietnamese tone mark via a synthesized raw backspace+retype outside
+    // any composition event) are all left completely undisturbed - there is
+    // no rebuild left to race with.
+    applyHighlights(el, text, true, true);
   }, [handleMentionChange, handleSlashChange]);
 
   const handleCompositionStart = useCallback(() => {
@@ -259,9 +256,10 @@ export default function MessageInput({
     const offset = getCaretOffset(el);
     const text = getContentText(el);
     const newText = text.slice(0, offset) + emoji + text.slice(offset);
-    el.innerHTML = buildHtml(newText, true, true);
+    el.innerHTML = buildHtml(newText);
     const newOffset = offset + emoji.length;
     setCaretOffset(el, newOffset);
+    applyHighlights(el, newText, true, true);
     setMessage(newText);
     handleMentionChange(newText, newOffset);
   }, [handleMentionChange]);

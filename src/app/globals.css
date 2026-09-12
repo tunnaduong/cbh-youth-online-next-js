@@ -1054,19 +1054,25 @@ body.has-email-verification-alert [class*="mt-\\[4\\.3rem\\]"] {
   pointer-events: none;
 }
 .dark .ce-input:empty::before { color: #6b7280; }
-.ce-mention {
-  font-weight: 600;
+/* Composer live-typing highlight only (mentions, /ai /summary /help) - via
+   the CSS Custom Highlight API (see applyHighlights() in richInput.js)
+   instead of wrapping matched text in real DOM elements, so it can never
+   interfere with any IME (including uinput-based Linux input methods).
+   ::highlight() only supports a small property set (no font-weight),
+   unlike the .ce-mention/.ce-ai-command classes this replaces - the actual
+   sent-message rendering (a normal React element, not this contenteditable)
+   is unaffected and keeps its bold styling. */
+::highlight(ce-mention) {
   color: #319527;
   text-decoration: underline;
   text-decoration-thickness: 2px;
   text-underline-offset: 2px;
 }
-.dark .ce-mention { color: #6bcf60; }
-.ce-ai-command {
-  font-weight: 600;
+.dark ::highlight(ce-mention) { color: #6bcf60; }
+::highlight(ce-ai-command) {
   color: #3b82f6;
 }
-.dark .ce-ai-command { color: #60a5fa; }
+.dark ::highlight(ce-ai-command) { color: #60a5fa; }
 
 .dark .mention-tag {
   color: #6bcf60;
