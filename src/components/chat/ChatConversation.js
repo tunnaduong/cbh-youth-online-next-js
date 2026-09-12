@@ -72,8 +72,13 @@ function linkifyText(text, linkClassName, isOwn = false, validMentions = null) {
     ? "font-medium underline underline-offset-2 text-white/90 hover:text-white break-words"
     : "font-medium underline underline-offset-2 text-[#319527] dark:text-[#6bcf60] hover:opacity-75 break-words";
   // Blue - distinct from the green @mention color - so the /ai and /summary
-  // triggers read as a different kind of thing in a sent message too.
-  const commandClass = "font-semibold text-blue-600 dark:text-blue-400 break-words";
+  // triggers read as a different kind of thing in a sent message too. Own
+  // bubbles are solid green (bg-[#319527]) where blue-600/400 have poor
+  // contrast, so use a much lighter blue there, mirroring how mentionClass
+  // switches to white on own bubbles.
+  const commandClass = isOwn
+    ? "font-semibold text-blue-100 break-words"
+    : "font-semibold text-blue-600 dark:text-blue-400 break-words";
 
   let commandNode = null;
   const commandMatch = text.match(AI_COMMAND_RE);
