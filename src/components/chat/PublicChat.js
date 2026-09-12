@@ -20,6 +20,9 @@ import { Popover, message as antdMessage } from "antd";
 
 const URL_RE = /(https?:\/\/[^\s]+)/g;
 const MENTION_RE = /(@[\w.-]+)/g;
+// Only counts as the Chat with AI trigger when it's the very first thing in
+// the message (matches the backend's leading-prefix check).
+const AI_COMMAND_RE = /^\/(ai|summary|help)\b/i;
 
 // Fallback: resolve @mentions in freshly-sent/edited content against the known
 // participants list, in case the server response doesn't include a resolved
@@ -79,8 +82,20 @@ function formatFileSize(bytes) {
 // wrapping.
 function linkifyText(text, validMentions = null) {
   if (!text) return text;
+
+  let commandNode = null;
+  const commandMatch = text.match(AI_COMMAND_RE);
+  if (commandMatch) {
+    commandNode = (
+      <span key="ai-command" className="font-semibold text-blue-600 dark:text-blue-400 break-words">
+        {commandMatch[0]}
+      </span>
+    );
+    text = text.slice(commandMatch[0].length);
+  }
+
   const parts = text.split(URL_RE);
-  return parts.flatMap((part, i) => {
+  const rest = parts.flatMap((part, i) => {
     if (i % 2 === 1) {
       return (
         <a
@@ -131,6 +146,8 @@ function linkifyText(text, validMentions = null) {
       return <span key={`${i}-${j}`} className="break-words">{mp}</span>;
     });
   });
+
+  return commandNode ? [commandNode, ...rest] : rest;
 }
 
 export default function PublicChat() {

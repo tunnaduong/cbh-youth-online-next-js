@@ -7,7 +7,9 @@ import { RiEmojiStickerLine } from "react-icons/ri";
 import Picker from "@emoji-mart/react";
 import { useTheme } from "@/contexts/themeContext";
 import MentionSuggestionsDropdown from "@/components/ui/MentionSuggestionsDropdown";
+import SlashCommandSuggestionsDropdown from "@/components/ui/SlashCommandSuggestionsDropdown";
 import { useMentionInput } from "@/hooks/useMentionInput";
+import { useSlashCommandInput } from "@/hooks/useSlashCommandInput";
 import { buildHtml, getCaretOffset, setCaretOffset, getContentText, makeProxyRef } from "@/utils/richInput";
 
 function EditComposerBar({ editingMessage, onCancel }) {
@@ -80,7 +82,7 @@ export default function MessageInput({
   const { theme } = useTheme();
 
   // Proxy ref compatible with useMentionInput
-  const textareaRef = useRef(makeProxyRef(() => divRef.current, setMessage));
+  const textareaRef = useRef(makeProxyRef(() => divRef.current, setMessage, true, true));
 
   const {
     handleChange: handleMentionChange,
@@ -95,6 +97,14 @@ export default function MessageInput({
     inputRef: textareaRef,
   });
 
+  const {
+    handleChange: handleSlashChange,
+    selectCommand,
+    showSuggestions: showSlashSuggestions,
+    suggestions: slashSuggestions,
+    closeSuggestions: closeSlashSuggestions,
+  } = useSlashCommandInput({ value: message, onChange: setMessage });
+
   // Sync div when message changes externally (edit mode, submit clear)
   useEffect(() => {
     if (isComposingRef.current) return;
@@ -102,7 +112,7 @@ export default function MessageInput({
     if (!el) return;
     const current = getContentText(el);
     if (current !== message) {
-      el.innerHTML = buildHtml(message);
+      el.innerHTML = buildHtml(message, true, true);
       if (message) setCaretOffset(el, message.length);
     }
   }, [message]);
@@ -165,13 +175,14 @@ export default function MessageInput({
     const text = getContentText(el);
     setMessage(text);
     handleMentionChange(text, offset);
+    handleSlashChange(text);
     // Don't touch the DOM while an IME composition (Vietnamese Unikey/ibus/fcitx
     // etc.) is in progress — rebuilding innerHTML mid-composition cancels it and
     // drops/duplicates the diacritic being typed.
     if (isComposingRef.current) return;
-    el.innerHTML = buildHtml(text);
+    el.innerHTML = buildHtml(text, true, true);
     setCaretOffset(el, offset);
-  }, [handleMentionChange]);
+  }, [handleMentionChange, handleSlashChange]);
 
   const handleCompositionStart = useCallback(() => {
     isComposingRef.current = true;
@@ -224,7 +235,7 @@ export default function MessageInput({
     const offset = getCaretOffset(el);
     const text = getContentText(el);
     const newText = text.slice(0, offset) + emoji + text.slice(offset);
-    el.innerHTML = buildHtml(newText);
+    el.innerHTML = buildHtml(newText, true, true);
     const newOffset = offset + emoji.length;
     setCaretOffset(el, newOffset);
     setMessage(newText);
@@ -288,6 +299,14 @@ export default function MessageInput({
               suggestions={suggestions}
               onSelect={insertMention}
               onClose={closeSuggestions}
+              anchorRef={divRef}
+            />
+          )}
+          {showSlashSuggestions && (
+            <SlashCommandSuggestionsDropdown
+              suggestions={slashSuggestions}
+              onSelect={selectCommand}
+              onClose={closeSlashSuggestions}
               anchorRef={divRef}
             />
           )}
