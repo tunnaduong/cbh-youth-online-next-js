@@ -58,7 +58,7 @@ const URL_RE = /(https?:\/\/[^\s]+)/g;
 const MENTION_RE = /(@[\w.-]+)/g;
 // Only counts as the Chat with AI trigger when it's the very first thing in
 // the message (matches the backend's leading-prefix check).
-const AI_COMMAND_RE = /^\/(ai|summary)\b/i;
+const AI_COMMAND_RE = /^\/(ai|summary|help)\b/i;
 
 // Plain text wraps at word boundaries (break-words) so Vietnamese diacritics
 // never get split mid-character. URLs have no word boundaries to wrap at, so

@@ -6,7 +6,7 @@
 const MENTION_RE = /(@[\w.\-À-ɏ]+)/gu;
 // Only counts as the Chat with AI trigger when it's the very first thing in
 // the message (matches the backend's leading-prefix check).
-const AI_COMMAND_RE = /^\/(ai|summary)\b/i;
+const AI_COMMAND_RE = /^\/(ai|summary|help)\b/i;
 
 function esc(s) {
   return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");

@@ -5,6 +5,7 @@ import { useState, useCallback } from "react";
 export const AI_COMMANDS = [
   { command: "/ai", description: "Hỏi Yoyo AI về tin nhắn này" },
   { command: "/summary", description: "Tóm tắt cuộc trò chuyện gần đây" },
+  { command: "/help", description: "Xem hướng dẫn sử dụng Yoyo AI" },
 ];
 
 /**
