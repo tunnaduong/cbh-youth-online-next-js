@@ -12,6 +12,23 @@ function esc(s) {
   return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
 
+// Whether buildHtml() would actually add any highlight spans for this text -
+// i.e. whether rebuilding the contenteditable's innerHTML is worth doing at
+// all. Some Linux IMEs (e.g. ibus-unikey/Lotus in its "X11 uinput" mode)
+// don't fire real compositionstart/compositionend events like normal IMEs -
+// they insert a Vietnamese tone mark by synthesizing a raw backspace
+// keystroke followed by the retyped character, entirely outside the
+// composition API our isComposingRef guard relies on. Rebuilding
+// innerHTML + resetting the caret on every single keystroke (as this app
+// already skips only during real composition) fights with that rapid
+// synthetic backspace-then-retype sequence and drops/garbles characters.
+// Skipping the rebuild whenever there's nothing to highlight anyway lets
+// the browser's native contenteditable editing handle plain typing
+// undisturbed, which covers the vast majority of keystrokes.
+export function needsRichRebuild(text) {
+  return /@|^\//.test(text);
+}
+
 function buildLineHtml(line, allowAllMention, enableAiCommands, isFirstLine) {
   let commandHtml = "";
   let rest = line;

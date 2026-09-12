@@ -10,7 +10,7 @@ import MentionSuggestionsDropdown from "@/components/ui/MentionSuggestionsDropdo
 import SlashCommandSuggestionsDropdown from "@/components/ui/SlashCommandSuggestionsDropdown";
 import { useMentionInput } from "@/hooks/useMentionInput";
 import { useSlashCommandInput } from "@/hooks/useSlashCommandInput";
-import { buildHtml, getCaretOffset, setCaretOffset, getContentText, makeProxyRef } from "@/utils/richInput";
+import { buildHtml, getCaretOffset, setCaretOffset, getContentText, makeProxyRef, needsRichRebuild } from "@/utils/richInput";
 
 function EditComposerBar({ editingMessage, onCancel }) {
   if (!editingMessage) return null;
@@ -178,8 +178,15 @@ export default function MessageInput({
     handleSlashChange(text);
     // Don't touch the DOM while an IME composition (Vietnamese Unikey/ibus/fcitx
     // etc.) is in progress — rebuilding innerHTML mid-composition cancels it and
-    // drops/duplicates the diacritic being typed.
+    // drops/duplicates the diacritic being typed. Some IMEs (ibus-unikey/Lotus
+    // in "X11 uinput" mode) never fire composition events at all - they
+    // synthesize a raw backspace+retype instead - so also skip the rebuild
+    // whenever there's nothing to highlight (and nothing already highlighted
+    // that needs clearing), which covers plain typing regardless of which
+    // IME/method produced it.
     if (isComposingRef.current) return;
+    const hadHighlight = el.querySelector(".ce-mention, .ce-ai-command");
+    if (!needsRichRebuild(text) && !hadHighlight) return;
     el.innerHTML = buildHtml(text, true, true);
     setCaretOffset(el, offset);
   }, [handleMentionChange, handleSlashChange]);

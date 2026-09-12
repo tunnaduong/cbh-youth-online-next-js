@@ -11,7 +11,7 @@ import MarkdownToolbar from "@/components/ui/MarkdownToolbar";
 import MarkdownRenderer from "@/components/ui/MarkdownRenderer";
 import MentionSuggestionsDropdown from "@/components/ui/MentionSuggestionsDropdown";
 import { useMentionInput } from "@/hooks/useMentionInput";
-import { buildHtml, getCaretOffset, setCaretOffset, getContentText, makeProxyRef } from "@/utils/richInput";
+import { buildHtml, getCaretOffset, setCaretOffset, getContentText, makeProxyRef, needsRichRebuild } from "@/utils/richInput";
 
 const MAX_IMAGES = 10;
 
@@ -228,8 +228,14 @@ export function CommentInput({
                     // Don't touch the DOM while an IME composition (Vietnamese
                     // Unikey/ibus/fcitx etc.) is in progress — rebuilding innerHTML
                     // mid-composition cancels it and drops/duplicates the diacritic
-                    // being typed.
+                    // being typed. Some IMEs (ibus-unikey/Lotus in "X11 uinput"
+                    // mode) never fire composition events at all - they synthesize
+                    // a raw backspace+retype instead - so also skip the rebuild
+                    // whenever there's nothing to highlight (and nothing already
+                    // highlighted that needs clearing).
                     if (isComposingRef.current) return;
+                    const hadHighlight = el.querySelector(".ce-mention, .ce-ai-command");
+                    if (!needsRichRebuild(text) && !hadHighlight) return;
                     el.innerHTML = buildHtml(text);
                     setCaretOffset(el, offset);
                   }}
