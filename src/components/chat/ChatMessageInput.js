@@ -4,7 +4,9 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import { message as antdMessage } from "antd";
 import { FileText, Paperclip, Pencil, Send, Video, X } from "lucide-react";
 import MentionSuggestionsDropdown from "@/components/ui/MentionSuggestionsDropdown";
+import SlashCommandSuggestionsDropdown from "@/components/ui/SlashCommandSuggestionsDropdown";
 import { useMentionInput } from "@/hooks/useMentionInput";
+import { useSlashCommandInput } from "@/hooks/useSlashCommandInput";
 import { buildHtml, getCaretOffset, setCaretOffset, getContentText, makeProxyRef } from "@/utils/richInput";
 
 function EditComposerBar({ editingMessage, onCancel }) {
@@ -133,6 +135,14 @@ export default function ChatMessageInput({
     closeSuggestions,
   } = useMentionInput({ value: message, onChange: setMessage, conversationId, inputRef, allowAllMention });
 
+  const {
+    handleChange: handleSlashChange,
+    selectCommand,
+    showSuggestions: showSlashSuggestions,
+    suggestions: slashSuggestions,
+    closeSuggestions: closeSlashSuggestions,
+  } = useSlashCommandInput({ value: message, onChange: setMessage });
+
   // Sync div content when message changes from outside (edit mode, submit clear)
   useEffect(() => {
     if (isComposingRef.current) return;
@@ -177,6 +187,7 @@ export default function ChatMessageInput({
 
       setMessage(text);
       handleMentionChange(text, offset);
+      handleSlashChange(text);
       onTyping?.();
 
       // Don't touch the DOM while an IME composition (Vietnamese Unikey/ibus/fcitx
@@ -332,6 +343,14 @@ export default function ChatMessageInput({
               suggestions={suggestions}
               onSelect={insertMention}
               onClose={closeSuggestions}
+              anchorRef={divRef}
+            />
+          )}
+          {showSlashSuggestions && (
+            <SlashCommandSuggestionsDropdown
+              suggestions={slashSuggestions}
+              onSelect={selectCommand}
+              onClose={closeSlashSuggestions}
               anchorRef={divRef}
             />
           )}

@@ -13,6 +13,7 @@ import ReplyPreviewBubble from "./ReplyPreviewBubble";
 import ChatMediaLightbox from "./ChatMediaLightbox";
 import ForwardMessageModal from "./ForwardMessageModal";
 import Modal from "@/components/ui/Modal";
+import MarkdownRenderer from "@/components/ui/MarkdownRenderer";
 import { CornerUpLeft, FileText, Download, PlayCircle, Forward, Loader2, AlertCircle, RotateCw, X } from "lucide-react";
 import NextLink from "next/link";
 import { recallMessage, editMessage, getGroupSeenReceipts, getNotificationSettings } from "@/app/Api";
@@ -807,7 +808,7 @@ export default function ChatConversation({
               <div className={`flex flex-col min-w-0 max-w-[260px] ${message.is_myself ? "items-end" : "items-start"}`}>
               <div className="flex items-center gap-2 mb-1 min-w-0 max-w-full overflow-hidden">
                 {!message.is_myself &&
-                  (message.sender?.username ? (
+                  (message.sender?.username && !message.sender?.is_ai ? (
                     <Link
                       href={`/${message.sender.username}`}
                       className="text-xs font-medium dark:text-white truncate hover:underline"
@@ -1151,9 +1152,11 @@ export default function ChatConversation({
                 ) : (
                   <div
                     className={`rounded-lg px-3 py-2 text-sm whitespace-pre-wrap break-words [overflow-wrap:anywhere] w-fit max-w-[260px] min-w-0 ${
-                      message.is_myself
-                        ? "bg-[#319527] text-white"
-                        : "bg-gray-200 dark:bg-neutral-600 dark:text-white"
+                      message.sender?.is_ai
+                        ? "bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800 dark:text-white"
+                        : message.is_myself
+                          ? "bg-[#319527] text-white"
+                          : "bg-gray-200 dark:bg-neutral-600 dark:text-white"
                     }`}
                     onMouseDown={(e) => { if (e.button === 0) startLongPress(message.id); }}
                     onMouseMove={clearLongPressTimer}
@@ -1164,13 +1167,17 @@ export default function ChatConversation({
                     onTouchMove={clearLongPressTimer}
                     onContextMenu={(e) => e.preventDefault()}
                   >
-                    {linkifyText(
-                      message.content,
-                      "",
-                      message.is_myself,
-                      Array.isArray(message.mentions)
-                        ? new Set(message.mentions.map((m) => m.username.toLowerCase()))
-                        : null
+                    {message.sender?.is_ai ? (
+                      <MarkdownRenderer content={message.content} className="text-sm [&_p]:my-0" />
+                    ) : (
+                      linkifyText(
+                        message.content,
+                        "",
+                        message.is_myself,
+                        Array.isArray(message.mentions)
+                          ? new Set(message.mentions.map((m) => m.username.toLowerCase()))
+                          : null
+                      )
                     )}
                   </div>
                 )}
