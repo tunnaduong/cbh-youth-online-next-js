@@ -3,12 +3,12 @@
 import { useState, useCallback } from "react";
 
 export const AI_COMMANDS = [
-  { command: "/ai", description: "Hỏi CYO AI về tin nhắn này" },
+  { command: "/ai", description: "Hỏi Yoyo AI về tin nhắn này" },
   { command: "/summary", description: "Tóm tắt cuộc trò chuyện gần đây" },
 ];
 
 /**
- * Hook that shows the CYO AI command palette whenever the composer content
+ * Hook that shows the Yoyo AI command palette whenever the composer content
  * starts with "/" and nothing else has been typed yet. Local/static list,
  * so no debounced network fetch is needed like @mentions.
  *
