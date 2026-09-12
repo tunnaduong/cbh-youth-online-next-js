@@ -125,7 +125,7 @@ export default function ChatMessageInput({
   const isComposingRef = useRef(false);
 
   // Proxy ref that useMentionInput uses for focus/setSelectionRange
-  const inputRef = useRef(makeProxyRef(() => divRef.current, setMessage, allowAllMention));
+  const inputRef = useRef(makeProxyRef(() => divRef.current, setMessage, allowAllMention, true));
 
   const {
     handleChange: handleMentionChange,
@@ -150,7 +150,7 @@ export default function ChatMessageInput({
     if (!el) return;
     const current = getContentText(el);
     if (current !== message) {
-      el.innerHTML = buildHtml(message, allowAllMention);
+      el.innerHTML = buildHtml(message, allowAllMention, true);
       if (message) setCaretOffset(el, message.length);
     }
   }, [message]);
@@ -194,7 +194,7 @@ export default function ChatMessageInput({
       // etc.) is in progress — rebuilding innerHTML mid-composition cancels it and
       // drops/duplicates the diacritic being typed.
       if (isComposingRef.current) return;
-      el.innerHTML = buildHtml(text, allowAllMention);
+      el.innerHTML = buildHtml(text, allowAllMention, true);
       setCaretOffset(el, offset);
     },
     [handleMentionChange, onTyping, allowAllMention]
@@ -248,7 +248,7 @@ export default function ChatMessageInput({
       const offset = getCaretOffset(el);
       const current = getContentText(el);
       const newText = current.slice(0, offset) + text + current.slice(offset);
-      el.innerHTML = buildHtml(newText, allowAllMention);
+      el.innerHTML = buildHtml(newText, allowAllMention, true);
       const newOffset = offset + text.length;
       setCaretOffset(el, newOffset);
       setMessage(newText);

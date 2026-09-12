@@ -66,14 +66,14 @@ export default function SlashCommandSuggestionsDropdown({ suggestions, onSelect,
             e.preventDefault();
             onSelect(item);
           }}
-          className="w-full flex items-center gap-2.5 px-3 py-2 text-left hover:bg-gray-50 dark:hover:bg-neutral-700 transition-colors"
+          className="w-full flex flex-col items-start px-3 py-2 text-left hover:bg-gray-50 dark:hover:bg-neutral-700 transition-colors"
         >
-          <span className="text-sm font-semibold text-blue-600 dark:text-blue-400 shrink-0">
+          <p className="text-sm font-semibold text-blue-600 dark:text-blue-400 truncate">
             {item.command}
-          </span>
-          <span className="text-xs text-gray-500 dark:text-gray-400 truncate">
+          </p>
+          <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
             {item.description}
-          </span>
+          </p>
         </button>
       ))}
     </div>

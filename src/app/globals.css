@@ -1062,6 +1062,11 @@ body.has-email-verification-alert [class*="mt-\\[4\\.3rem\\]"] {
   text-underline-offset: 2px;
 }
 .dark .ce-mention { color: #6bcf60; }
+.ce-ai-command {
+  font-weight: 600;
+  color: #3b82f6;
+}
+.dark .ce-ai-command { color: #60a5fa; }
 
 .dark .mention-tag {
   color: #6bcf60;

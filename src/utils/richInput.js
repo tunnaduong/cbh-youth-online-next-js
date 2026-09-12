@@ -4,13 +4,27 @@
  */
 
 const MENTION_RE = /(@[\w.\-À-ɏ]+)/gu;
+// Only counts as the Chat with AI trigger when it's the very first thing in
+// the message (matches the backend's leading-prefix check).
+const AI_COMMAND_RE = /^\/(ai|summary)\b/i;
 
 function esc(s) {
   return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
 
-function buildLineHtml(line, allowAllMention) {
-  return line
+function buildLineHtml(line, allowAllMention, enableAiCommands, isFirstLine) {
+  let commandHtml = "";
+  let rest = line;
+
+  if (enableAiCommands && isFirstLine) {
+    const match = line.match(AI_COMMAND_RE);
+    if (match) {
+      commandHtml = `<span class="ce-ai-command">${esc(match[0])}</span>`;
+      rest = line.slice(match[0].length);
+    }
+  }
+
+  const restHtml = rest
     .split(MENTION_RE)
     .map((part, i) => {
       if (i % 2 !== 1) return esc(part);
@@ -18,15 +32,17 @@ function buildLineHtml(line, allowAllMention) {
       return `<span class="ce-mention">${esc(part)}</span>`;
     })
     .join("");
+
+  return commandHtml + restHtml;
 }
 
 // Newlines (from Shift+Enter) need to become <br> - a bare "\n" inside a
 // contenteditable's HTML is collapsed/ignored by the browser.
-export function buildHtml(text, allowAllMention = true) {
+export function buildHtml(text, allowAllMention = true, enableAiCommands = false) {
   if (!text) return "";
   return text
     .split("\n")
-    .map((line) => buildLineHtml(line, allowAllMention))
+    .map((line, i) => buildLineHtml(line, allowAllMention, enableAiCommands, i === 0))
     .join("<br>");
 }
 
@@ -116,7 +132,7 @@ export function getContentText(el) {
  * Creates a proxy ref object compatible with useMentionInput and MarkdownToolbar.
  * Pass a getter for divRef so the proxy always references the current DOM element.
  */
-export function makeProxyRef(getDivEl, onValueSet, allowAllMention = true) {
+export function makeProxyRef(getDivEl, onValueSet, allowAllMention = true, enableAiCommands = false) {
   return {
     get selectionStart() {
       const el = getDivEl();
@@ -133,7 +149,7 @@ export function makeProxyRef(getDivEl, onValueSet, allowAllMention = true) {
     set value(newText) {
       const el = getDivEl();
       if (el) {
-        el.innerHTML = buildHtml(newText, allowAllMention);
+        el.innerHTML = buildHtml(newText, allowAllMention, enableAiCommands);
         onValueSet?.(newText);
       }
     },

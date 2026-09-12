@@ -56,6 +56,9 @@ const IMAGE_EXTENSION_RE = /\.(png|jpe?g|gif|webp|bmp|svg|heic|heif)$/i;
 
 const URL_RE = /(https?:\/\/[^\s]+)/g;
 const MENTION_RE = /(@[\w.-]+)/g;
+// Only counts as the Chat with AI trigger when it's the very first thing in
+// the message (matches the backend's leading-prefix check).
+const AI_COMMAND_RE = /^\/(ai|summary)\b/i;
 
 // Plain text wraps at word boundaries (break-words) so Vietnamese diacritics
 // never get split mid-character. URLs have no word boundaries to wrap at, so
@@ -68,9 +71,23 @@ function linkifyText(text, linkClassName, isOwn = false, validMentions = null) {
   const mentionClass = isOwn
     ? "font-medium underline underline-offset-2 text-white/90 hover:text-white break-words"
     : "font-medium underline underline-offset-2 text-[#319527] dark:text-[#6bcf60] hover:opacity-75 break-words";
+  // Blue - distinct from the green @mention color - so the /ai and /summary
+  // triggers read as a different kind of thing in a sent message too.
+  const commandClass = "font-semibold text-blue-600 dark:text-blue-400 break-words";
+
+  let commandNode = null;
+  const commandMatch = text.match(AI_COMMAND_RE);
+  if (commandMatch) {
+    commandNode = (
+      <span key="ai-command" className={commandClass}>
+        {commandMatch[0]}
+      </span>
+    );
+    text = text.slice(commandMatch[0].length);
+  }
 
   const parts = text.split(URL_RE);
-  return parts.flatMap((part, i) => {
+  const rest = parts.flatMap((part, i) => {
     if (i % 2 === 1) {
       return (
         <a
@@ -127,6 +144,8 @@ function linkifyText(text, linkClassName, isOwn = false, validMentions = null) {
       );
     });
   });
+
+  return commandNode ? [commandNode, ...rest] : rest;
 }
 
 // Some attachments got persisted with type: "file" even though they're really
