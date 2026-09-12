@@ -29,6 +29,12 @@ export function needsRichRebuild(text) {
   return /@|^\//.test(text);
 }
 
+// Zero-width space, used as an invisible "escape hatch" text node right
+// after every highlight span (see buildLineHtml below). Stripped back out
+// in getContentText/getCaretOffset/getSelectionStartOffset so it never
+// leaks into the actual message content - it only ever exists in the DOM.
+const ZWSP = "​";
+
 function buildLineHtml(line, allowAllMention, enableAiCommands, isFirstLine) {
   let commandHtml = "";
   let rest = line;
@@ -36,7 +42,13 @@ function buildLineHtml(line, allowAllMention, enableAiCommands, isFirstLine) {
   if (enableAiCommands && isFirstLine) {
     const match = line.match(AI_COMMAND_RE);
     if (match) {
-      commandHtml = `<span class="ce-ai-command">${esc(match[0])}</span>`;
+      // The trailing ZWSP gives the browser a real (if invisible) plain text
+      // node to plant the caret/next typed character in. Without it, a
+      // caret sitting at the exact boundary right after this span - which
+      // is exactly where it ends up after every rebuild - has browsers
+      // extend the span itself instead of starting fresh plain text, so
+      // everything typed afterward keeps inheriting the highlight color.
+      commandHtml = `<span class="ce-ai-command">${esc(match[0])}</span>${ZWSP}`;
       rest = line.slice(match[0].length);
     }
   }
@@ -46,7 +58,8 @@ function buildLineHtml(line, allowAllMention, enableAiCommands, isFirstLine) {
     .map((part, i) => {
       if (i % 2 !== 1) return esc(part);
       if (!allowAllMention && part.slice(1).toLowerCase() === "all") return esc(part);
-      return `<span class="ce-mention">${esc(part)}</span>`;
+      // Same reasoning as the AI-command ZWSP above.
+      return `<span class="ce-mention">${esc(part)}</span>${ZWSP}`;
     })
     .join("");
 
@@ -63,13 +76,21 @@ export function buildHtml(text, allowAllMention = true, enableAiCommands = false
     .join("<br>");
 }
 
+// Strip the invisible ZWSP boundary markers (see buildLineHtml) so offsets/
+// content stay in the same coordinate space as the real message text -
+// without this, every offset computed here would be inflated by however
+// many ZWSP markers precede it, throwing off mention-query slicing etc.
+function stripZwsp(s) {
+  return s.replace(new RegExp(ZWSP, "g"), "");
+}
+
 export function getCaretOffset(el) {
   const sel = window.getSelection();
   if (!sel?.rangeCount) return 0;
   const pre = sel.getRangeAt(0).cloneRange();
   pre.selectNodeContents(el);
   pre.setEnd(sel.getRangeAt(0).endContainer, sel.getRangeAt(0).endOffset);
-  return pre.toString().length;
+  return stripZwsp(pre.toString()).length;
 }
 
 // Same as getCaretOffset but for the *start* of the current selection - the
@@ -80,7 +101,20 @@ export function getSelectionStartOffset(el) {
   const pre = sel.getRangeAt(0).cloneRange();
   pre.selectNodeContents(el);
   pre.setEnd(sel.getRangeAt(0).startContainer, sel.getRangeAt(0).startOffset);
-  return pre.toString().length;
+  return stripZwsp(pre.toString()).length;
+}
+
+// Maps a ZWSP-stripped ("visible") character offset within a text node's raw
+// content to the real index inside that raw content (which may contain ZWSP
+// markers the offset doesn't count).
+function realIndexForVisibleOffset(raw, visibleOffset) {
+  let seen = 0;
+  for (let i = 0; i < raw.length; i++) {
+    if (raw[i] === ZWSP) continue;
+    if (seen === visibleOffset) return i;
+    seen++;
+  }
+  return raw.length;
 }
 
 export function setCaretOffset(el, offset) {
@@ -88,16 +122,18 @@ export function setCaretOffset(el, offset) {
   let rem = offset;
   let node;
   while ((node = tw.nextNode())) {
-    if (rem <= node.textContent.length) {
+    const raw = node.textContent;
+    const visibleLength = stripZwsp(raw).length;
+    if (rem <= visibleLength) {
       const r = document.createRange();
-      r.setStart(node, rem);
+      r.setStart(node, realIndexForVisibleOffset(raw, rem));
       r.collapse(true);
       const sel = window.getSelection();
       sel.removeAllRanges();
       sel.addRange(r);
       return;
     }
-    rem -= node.textContent.length;
+    rem -= visibleLength;
   }
   const r = document.createRange();
   r.selectNodeContents(el);
@@ -117,7 +153,7 @@ export function getContentText(el) {
 
   function walk(node, isFirstBlockChild) {
     if (node.nodeType === Node.TEXT_NODE) {
-      out += node.textContent;
+      out += stripZwsp(node.textContent);
       return;
     }
     if (node.nodeType !== Node.ELEMENT_NODE) return;
