@@ -50,6 +50,7 @@ export function CommentInput({
   const handleSubmit = () => {
     if (comment.trim() || selectedImages.length > 0) {
       onSubmit?.(comment.trim(), isAnonymous, selectedImages.map((i) => i.file));
+      programmaticChangeRef.current = true;
       setComment("");
       setIsAnonymous(false);
       setIsPreviewMode(false);
@@ -59,6 +60,7 @@ export function CommentInput({
   };
 
   const handleCancel = () => {
+    programmaticChangeRef.current = true;
     setComment("");
     setIsFocused(false);
     setIsAnonymous(false);
@@ -165,15 +167,29 @@ export function CommentInput({
     }
   }, [focus]);
 
-  // Sync div when comment changes externally
+  // Set right before every setComment() call that changes the text from
+  // *outside* the div's own native editing (submit clear, cancel clear) -
+  // emoji/mention insertion already write directly to el.innerHTML
+  // themselves before calling setComment, and normal typing obviously
+  // shouldn't trigger a resync of what the user just typed. This effect
+  // used to instead compare getContentText(el) against `comment` to infer
+  // whether a resync was needed, but that comparison can race: some Linux
+  // IMEs (ibus-unikey/Lotus in "X11 uinput" mode) fire a very fast native
+  // backspace-then-retype sequence outside any composition event, and if a
+  // second native edit lands on the DOM before this effect's read, it sees
+  // content newer than the `comment` closure it's about to force back in -
+  // reverting the second edit and dropping/corrupting the character. An
+  // explicit flag has no such race: it's true if and only if this effect is
+  // the one that's actually supposed to act.
+  const programmaticChangeRef = useRef(false);
+
   useEffect(() => {
+    if (!programmaticChangeRef.current) return;
+    programmaticChangeRef.current = false;
     if (isComposingRef.current) return;
     const el = divRef.current;
     if (!el) return;
-    const current = getContentText(el);
-    if (current !== comment) {
-      el.innerHTML = buildHtml(comment);
-    }
+    el.innerHTML = buildHtml(comment);
   }, [comment]);
 
   return (

@@ -61,6 +61,7 @@ const CreatePostModal = ({ open, onClose, isEditMode = false, postData = null, o
       getPostDetail(postData.id)
         .then((response) => {
           const fetchedPost = response.data.post;
+          programmaticChangeRef.current = true;
           setData({
             title: fetchedPost.title || "",
             description: fetchedPost.description || fetchedPost.content || "", // Prioritize description (raw content)
@@ -141,19 +142,36 @@ const CreatePostModal = ({ open, onClose, isEditMode = false, postData = null, o
     allowAllMention: false,
   });
 
-  // Sync the div when description changes from outside typing (edit-mode
-  // preload, reset on close, etc.), and also when toggling back out of
-  // preview mode - the contentEditable div unmounts while isPreviewMode is
-  // true (a different branch renders there), so it comes back empty unless
-  // re-synced even if the description text itself didn't change meanwhile.
+  // Set right before every setData({..., description}) call that changes
+  // the text from *outside* the div's own native editing (edit-mode
+  // preload, reset, list auto-continuation - which already syncs via the
+  // textareaRef proxy setter, so it doesn't need this), and whenever
+  // isPreviewMode toggles back to false (the contentEditable div unmounts
+  // while true, so it needs a resync on return even if the text itself
+  // didn't change meanwhile). Normal typing obviously shouldn't trigger a
+  // resync of what the user just typed. This effect used to instead compare
+  // getContentText(el) against `data.description` to infer whether a resync
+  // was needed, but that comparison can race: some Linux IMEs (ibus-unikey/
+  // Lotus in "X11 uinput" mode) fire a very fast native backspace-then-retype
+  // sequence outside any composition event, and if a second native edit
+  // lands on the DOM before this effect's read, it sees content newer than
+  // the `data.description` closure it's about to force back in - reverting
+  // the second edit and dropping/corrupting the character. An explicit flag
+  // has no such race: it's true if and only if this effect is the one
+  // that's actually supposed to act.
+  const programmaticChangeRef = useRef(false);
+
   useEffect(() => {
+    programmaticChangeRef.current = true;
+  }, [isPreviewMode]);
+
+  useEffect(() => {
+    if (!programmaticChangeRef.current) return;
+    programmaticChangeRef.current = false;
     if (isComposingRef.current) return;
     const el = divRef.current;
     if (!el) return;
-    const current = getContentText(el);
-    if (current !== data.description) {
-      el.innerHTML = buildHtml(data.description, false);
-    }
+    el.innerHTML = buildHtml(data.description, false);
   }, [data.description, isPreviewMode]);
 
   // Handle auto-continuation for lists
@@ -215,6 +233,7 @@ const CreatePostModal = ({ open, onClose, isEditMode = false, postData = null, o
   };
 
   const reset = () => {
+    programmaticChangeRef.current = true;
     setData({
       title: "",
       description: "",

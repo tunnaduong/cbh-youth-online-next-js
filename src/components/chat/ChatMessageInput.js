@@ -143,20 +143,35 @@ export default function ChatMessageInput({
     closeSuggestions: closeSlashSuggestions,
   } = useSlashCommandInput({ value: message, onChange: setMessage });
 
-  // Sync div content when message changes from outside (edit mode, submit clear)
+  // Set right before every setMessage() call that changes the text from
+  // *outside* the div's own native editing (edit-mode prefill/clear,
+  // post-submit clear) - mention insertion and paste already write directly
+  // to el.innerHTML themselves before calling setMessage, and normal typing
+  // obviously shouldn't trigger a resync of what the user just typed. This
+  // effect used to instead compare getContentText(el) against `message` to
+  // infer whether a resync was needed, but that comparison can race: some
+  // Linux IMEs (ibus-unikey/Lotus in "X11 uinput" mode) fire a very fast
+  // native backspace-then-retype sequence outside any composition event, and
+  // if a second native edit lands on the DOM before this effect's read, it
+  // sees content newer than the `message` closure it's about to force back
+  // in - reverting the second edit and dropping/corrupting the character.
+  // An explicit flag has no such race: it's true if and only if this effect
+  // is the one that's actually supposed to act.
+  const programmaticChangeRef = useRef(false);
+
   useEffect(() => {
+    if (!programmaticChangeRef.current) return;
+    programmaticChangeRef.current = false;
     if (isComposingRef.current) return;
     const el = divRef.current;
     if (!el) return;
-    const current = getContentText(el);
-    if (current !== message) {
-      el.innerHTML = buildHtml(message, allowAllMention, true);
-      if (message) setCaretOffset(el, message.length);
-    }
+    el.innerHTML = buildHtml(message, allowAllMention, true);
+    if (message) setCaretOffset(el, message.length);
   }, [message]);
 
   // Pre-fill when entering edit mode
   useEffect(() => {
+    programmaticChangeRef.current = true;
     if (editingMessage) {
       setMessage(editingMessage.content || "");
       setTimeout(() => divRef.current?.focus(), 0);
@@ -173,6 +188,7 @@ export default function ChatMessageInput({
       } else {
         await onSend(message.trim());
       }
+      programmaticChangeRef.current = true;
       setMessage("");
     } catch (error) {
       console.error("[ChatMessageInput] Error:", error);
