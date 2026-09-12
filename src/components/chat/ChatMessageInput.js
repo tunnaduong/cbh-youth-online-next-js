@@ -362,7 +362,10 @@ export default function ChatMessageInput({
           {showSuggestions && (
             <MentionSuggestionsDropdown
               suggestions={suggestions}
-              onSelect={insertMention}
+              onSelect={(user) => {
+                programmaticChangeRef.current = true;
+                insertMention(user);
+              }}
               onClose={closeSuggestions}
               anchorRef={divRef}
             />
@@ -370,7 +373,10 @@ export default function ChatMessageInput({
           {showSlashSuggestions && (
             <SlashCommandSuggestionsDropdown
               suggestions={slashSuggestions}
-              onSelect={selectCommand}
+              onSelect={(item) => {
+                programmaticChangeRef.current = true;
+                selectCommand(item);
+              }}
               onClose={closeSlashSuggestions}
               anchorRef={divRef}
             />

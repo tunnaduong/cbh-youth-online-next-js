@@ -282,7 +282,10 @@ export function CommentInput({
                 {showSuggestions && (
                   <MentionSuggestionsDropdown
                     suggestions={suggestions}
-                    onSelect={insertMention}
+                    onSelect={(user) => {
+                      programmaticChangeRef.current = true;
+                      insertMention(user);
+                    }}
                     onClose={closeSuggestions}
                     anchorRef={divRef}
                   />

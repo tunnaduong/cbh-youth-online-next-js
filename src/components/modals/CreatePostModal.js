@@ -882,7 +882,10 @@ const CreatePostModal = ({ open, onClose, isEditMode = false, postData = null, o
                     {showDescriptionSuggestions && (
                       <MentionSuggestionsDropdown
                         suggestions={descriptionSuggestions}
-                        onSelect={insertDescriptionMention}
+                        onSelect={(user) => {
+                          programmaticChangeRef.current = true;
+                          insertDescriptionMention(user);
+                        }}
                         onClose={closeDescriptionSuggestions}
                         anchorRef={divRef}
                       />
