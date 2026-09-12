@@ -13,7 +13,6 @@ import ReplyPreviewBubble from "./ReplyPreviewBubble";
 import ChatMediaLightbox from "./ChatMediaLightbox";
 import ForwardMessageModal from "./ForwardMessageModal";
 import Modal from "@/components/ui/Modal";
-import MarkdownRenderer from "@/components/ui/MarkdownRenderer";
 import { CornerUpLeft, FileText, Download, PlayCircle, Forward, Loader2, AlertCircle, RotateCw, X } from "lucide-react";
 import NextLink from "next/link";
 import { recallMessage, editMessage, getGroupSeenReceipts, getNotificationSettings } from "@/app/Api";
@@ -1167,17 +1166,13 @@ export default function ChatConversation({
                     onTouchMove={clearLongPressTimer}
                     onContextMenu={(e) => e.preventDefault()}
                   >
-                    {message.sender?.is_ai ? (
-                      <MarkdownRenderer content={message.content} className="text-sm [&_p]:my-0" />
-                    ) : (
-                      linkifyText(
-                        message.content,
-                        "",
-                        message.is_myself,
-                        Array.isArray(message.mentions)
-                          ? new Set(message.mentions.map((m) => m.username.toLowerCase()))
-                          : null
-                      )
+                    {linkifyText(
+                      message.content,
+                      "",
+                      message.is_myself,
+                      Array.isArray(message.mentions)
+                        ? new Set(message.mentions.map((m) => m.username.toLowerCase()))
+                        : null
                     )}
                   </div>
                 )}
