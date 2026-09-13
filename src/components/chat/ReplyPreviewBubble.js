@@ -1,6 +1,6 @@
 "use client";
 
-import { FileText, Video } from "lucide-react";
+import { FileText, Video, Undo2 } from "lucide-react";
 
 function resolveFileUrl(url) {
   if (!url) return url;
@@ -16,6 +16,15 @@ export default function ReplyPreviewBubble({ replyTo, isOwn, onClick }) {
     replyTo.sender?.profile_name || replyTo.sender?.username || "Ai đó";
 
   const renderContent = () => {
+    if (replyTo.is_recalled) {
+      return (
+        <span className="flex items-center gap-1 truncate">
+          <Undo2 className="w-4 h-4 flex-shrink-0 opacity-70" />
+          <span className="truncate opacity-80">Tin nhắn đã bị thu hồi</span>
+        </span>
+      );
+    }
+
     const type = replyTo.type;
     if (type === "image") {
       return (

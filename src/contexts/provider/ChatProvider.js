@@ -620,6 +620,31 @@ const ChatProvider = ({ children }) => {
     }
   }, []);
 
+  // Realtime: a message was recalled/edited in `conversationId`. A full refetch
+  // (not a local patch) is used deliberately - a locally patched message would
+  // still leave any OTHER message's embedded reply_to snapshot pointing at the
+  // old content, since that snapshot is just a denormalized copy taken when
+  // the reply was sent. Refetching gets the server's fresh copy of both the
+  // message itself and everyone else's reply_to snapshots of it. If the
+  // conversation isn't open, refresh the list instead so its last-message
+  // preview doesn't keep showing stale/recalled content either.
+  const handleMessageRecalledOrEdited = useCallback((conversationId) => {
+    const isViewingThisConversation =
+      isOpenRef.current &&
+      !isMinimizedRef.current &&
+      String(selectedConversationIdRef.current) === String(conversationId);
+
+    if (isViewingThisConversation) {
+      loadMessagesRef.current?.(conversationId).then((result) => {
+        if (result?.messages) {
+          setMessages((prev) => ({ ...prev, [conversationId]: result.messages }));
+        }
+      });
+    } else {
+      loadConversationsRef.current?.();
+    }
+  }, []);
+
   // Realtime: someone whispered that they're typing in `conversationId` - show it for
   // a few seconds, auto-clearing if no further whisper arrives (no explicit "stopped").
   // Sets/refreshes one user's "typing" entry for a conversation, keyed by
@@ -692,6 +717,8 @@ const ChatProvider = ({ children }) => {
         .listen(".message.sent", () => handleMessageSent(conversationId))
         .listen(".message.read", () => handleMessageMutated(conversationId))
         .listen(".message.deleted", () => handleMessageMutated(conversationId))
+        .listen(".message.recalled", () => handleMessageRecalledOrEdited(conversationId))
+        .listen(".message.edited", () => handleMessageRecalledOrEdited(conversationId))
         .listen(".message.reacted", (data) =>
           handleMessageReacted(conversationId, data)
         )
@@ -702,7 +729,14 @@ const ChatProvider = ({ children }) => {
 
       channelsRef.current[conversationId] = channel;
     },
-    [handleMessageSent, handleMessageMutated, handleMessageReacted, handleTypingWhisper, handleAiTyping]
+    [
+      handleMessageSent,
+      handleMessageMutated,
+      handleMessageRecalledOrEdited,
+      handleMessageReacted,
+      handleTypingWhisper,
+      handleAiTyping,
+    ]
   );
 
   const unsubscribeFromConversation = useCallback((conversationId) => {
