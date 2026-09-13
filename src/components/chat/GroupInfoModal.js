@@ -57,6 +57,7 @@ export default function GroupInfoModal({ conversationId, show, onClose, onGroupU
   const [showBackgroundModal, setShowBackgroundModal] = useState(false);
   const [showPermissions, setShowPermissions] = useState(false);
   const [savingPermission, setSavingPermission] = useState(null);
+  const [showOwnerLeavePicker, setShowOwnerLeavePicker] = useState(false);
   const avatarInputRef = useRef(null);
 
   useEffect(() => {
@@ -164,6 +165,46 @@ export default function GroupInfoModal({ conversationId, show, onClose, onGroupU
     } finally {
       setLeaving(false);
     }
+  };
+
+  // The owner can't just vanish - the group always needs one. The backend's
+  // random-succession fallback (used when an owner is removed by someone
+  // else) is a fine default, but a voluntary leave is a good moment to let
+  // the owner actually choose their successor instead of leaving it to
+  // chance - "Skip" below falls back to exactly that random assignment.
+  const otherParticipants = (group?.participants || []).filter(
+    (p) => p.id !== currentUser?.id
+  );
+
+  const handleLeaveClick = () => {
+    if (group?.is_owner && otherParticipants.length > 0) {
+      setShowOwnerLeavePicker(true);
+      return;
+    }
+    handleLeave();
+  };
+
+  const handleTransferThenLeave = async (participant) => {
+    setShowOwnerLeavePicker(false);
+    setLeaving(true);
+    try {
+      await transferGroupOwnership(conversationId, participant.id);
+      await leaveGroup(conversationId);
+      antdMessage.success("Đã rời nhóm");
+      onLeftGroup?.(conversationId);
+      onClose();
+    } catch (error) {
+      antdMessage.error(
+        error?.response?.data?.message || "Không thể rời nhóm"
+      );
+    } finally {
+      setLeaving(false);
+    }
+  };
+
+  const handleSkipTransferAndLeave = () => {
+    setShowOwnerLeavePicker(false);
+    handleLeave();
   };
 
   const handleDeleteGroup = async () => {
@@ -539,20 +580,35 @@ export default function GroupInfoModal({ conversationId, show, onClose, onGroupU
                     )}
                   </div>
                   <div className="flex gap-2">
-                    <Popconfirm
-                      title="Bạn có chắc muốn rời nhóm này?"
-                      okText="Rời nhóm"
-                      cancelText="Hủy"
-                      onConfirm={handleLeave}
-                    >
+                    {group.is_owner && otherParticipants.length > 0 ? (
+                      // Owner with other members: leaving needs a successor
+                      // picked first (or an explicit skip) - see
+                      // showOwnerLeavePicker below - instead of the plain
+                      // yes/no Popconfirm used otherwise.
                       <Button
                         danger
                         loading={leaving}
                         className="flex-1 inline-flex items-center justify-center gap-1.5"
+                        onClick={handleLeaveClick}
                       >
                         <LogOut className="w-4 h-4" /> Rời nhóm
                       </Button>
-                    </Popconfirm>
+                    ) : (
+                      <Popconfirm
+                        title="Bạn có chắc muốn rời nhóm này?"
+                        okText="Rời nhóm"
+                        cancelText="Hủy"
+                        onConfirm={handleLeave}
+                      >
+                        <Button
+                          danger
+                          loading={leaving}
+                          className="flex-1 inline-flex items-center justify-center gap-1.5"
+                        >
+                          <LogOut className="w-4 h-4" /> Rời nhóm
+                        </Button>
+                      </Popconfirm>
+                    )}
                     {group.is_owner && (
                       <Popconfirm
                         title="Xóa nhóm và toàn bộ tin nhắn vĩnh viễn?"
@@ -582,6 +638,42 @@ export default function GroupInfoModal({ conversationId, show, onClose, onGroupU
         onClose={() => setShowBackgroundModal(false)}
         onBackgroundChanged={onBackgroundChanged}
       />
+      <Modal show={showOwnerLeavePicker} onClose={() => setShowOwnerLeavePicker(false)} maxWidth="sm">
+        <div className="p-6">
+          <h3 className="text-base font-semibold mb-1">Chọn trưởng nhóm mới</h3>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+            Bạn là trưởng nhóm - hãy chọn một thành viên để chuyển quyền trưởng nhóm trước khi rời nhóm.
+          </p>
+          <div className="max-h-64 overflow-y-auto -mx-2">
+            {otherParticipants.map((p) => (
+              <button
+                key={p.id}
+                type="button"
+                onClick={() => handleTransferThenLeave(p)}
+                className="w-full flex items-center gap-3 px-2 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-neutral-700 text-left"
+              >
+                <Avatar className="w-8 h-8">
+                  <AvatarImage src={p.avatar_url} alt={p.profile_name || p.username} />
+                  <AvatarFallback>{(p.profile_name || p.username || "?")[0]?.toUpperCase()}</AvatarFallback>
+                </Avatar>
+                <span className="text-sm truncate">{p.profile_name || p.username}</span>
+              </button>
+            ))}
+          </div>
+          <div className="flex gap-2 mt-4">
+            <Button
+              className="flex-1"
+              loading={leaving}
+              onClick={handleSkipTransferAndLeave}
+            >
+              Bỏ qua (chọn ngẫu nhiên)
+            </Button>
+            <Button className="flex-1" onClick={() => setShowOwnerLeavePicker(false)}>
+              Hủy
+            </Button>
+          </div>
+        </div>
+      </Modal>
     </Modal>
   );
 }
