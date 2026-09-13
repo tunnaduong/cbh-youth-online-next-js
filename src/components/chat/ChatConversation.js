@@ -206,8 +206,22 @@ export default function ChatConversation({
     ? messages[conversationId] || []
     : [];
   const isGroupChat = conversation?.type === "group";
-  const typingUser = conversationId ? typingUsers[conversationId] : null;
+  const conversationTypingUsers = conversationId ? typingUsers[conversationId] : null;
+  const typingEntries = conversationTypingUsers ? Object.values(conversationTypingUsers) : [];
   const messageCount = conversationMessages.length;
+
+  // Typing entries only carry a user_id (see ChatProvider.js's sendTyping) -
+  // avatars are resolved locally from the most recent message we've already
+  // loaded from that sender, so the whisper/broadcast payload stays minimal.
+  // The AI's entry is the exception: it carries its own avatarUrl directly
+  // since it broadcasts a real event instead of piggybacking on messages.
+  const resolveTypingAvatar = (entry) => {
+    if (entry.isAi) return { avatar_url: entry.avatarUrl, profile_name: "Yoyo AI" };
+    const fromMessage = [...conversationMessages]
+      .reverse()
+      .find((m) => String(m.sender?.id) === String(entry.userId))?.sender;
+    return fromMessage || { avatar_url: null, profile_name: null };
+  };
 
   // Chat background (Messenger-style): defaults to the conversation's stored
   // background_url, but a live "background_changed" system message (from
@@ -1271,11 +1285,37 @@ export default function ChatConversation({
         </div>
       </div>
 
-      {typingUser && (
-        <div className="px-4 py-1 text-xs text-gray-500 dark:text-gray-400 italic">
-          {isGroupChat
-            ? `${typingUser.name || "Ai đó"} đang nhập...`
-            : "Đang nhập..."}
+      {typingEntries.length > 0 && (
+        <div className="flex items-center gap-1.5 px-4 py-1">
+          <div className="flex -space-x-1.5">
+            {typingEntries.slice(0, 3).map((entry) => {
+              const avatarInfo = resolveTypingAvatar(entry);
+              return (
+                <Avatar
+                  key={entry.userId}
+                  className="w-5 h-5 border border-white dark:border-neutral-800"
+                >
+                  <AvatarImage
+                    src={avatarInfo.avatar_url}
+                    alt={avatarInfo.profile_name || ""}
+                  />
+                  <AvatarFallback className="text-[9px]">
+                    {avatarInfo.profile_name?.[0]?.toUpperCase() || "?"}
+                  </AvatarFallback>
+                </Avatar>
+              );
+            })}
+            {typingEntries.length > 3 && (
+              <div className="w-5 h-5 rounded-full border border-white dark:border-neutral-800 bg-gray-200 dark:bg-neutral-700 flex items-center justify-center text-[9px] text-gray-600 dark:text-gray-300">
+                +{typingEntries.length - 3}
+              </div>
+            )}
+          </div>
+          <div className="flex items-end gap-0.5 rounded-full bg-gray-200 dark:bg-neutral-700 px-2.5 py-1.5">
+            <span className="typing-dot w-1.5 h-1.5 rounded-full bg-gray-500 dark:bg-gray-300" />
+            <span className="typing-dot w-1.5 h-1.5 rounded-full bg-gray-500 dark:bg-gray-300" />
+            <span className="typing-dot w-1.5 h-1.5 rounded-full bg-gray-500 dark:bg-gray-300" />
+          </div>
         </div>
       )}
 

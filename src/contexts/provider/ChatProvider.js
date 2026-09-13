@@ -38,7 +38,7 @@ const ChatProvider = ({ children }) => {
   const [messages, setMessages] = useState({}); // { conversationId: [messages] }
   const [loading, setLoading] = useState(false);
   const [sending, setSending] = useState(false);
-  const [typingUsers, setTypingUsers] = useState({}); // { conversationId: { userId, name } }
+  const [typingUsers, setTypingUsers] = useState({}); // { conversationId: { [userId]: { userId, isAi } } }
   const [highlightMessageId, setHighlightMessageId] = useState(null);
 
   const previousConversationsRef = useRef([]); // Track previous conversations to detect new messages
@@ -48,7 +48,7 @@ const ChatProvider = ({ children }) => {
 
   // Realtime (Reverb/Echo) plumbing
   const channelsRef = useRef({}); // { conversationId: Echo presence channel }
-  const typingTimeoutsRef = useRef({}); // { conversationId: auto-clear timer }
+  const typingTimeoutsRef = useRef({}); // { conversationId: { [userId]: auto-clear timer } }
   const typingLastSentRef = useRef({}); // { conversationId: timestamp of last whisper sent }
   const isOpenRef = useRef(isOpen);
   const isMinimizedRef = useRef(isMinimized);
@@ -622,24 +622,56 @@ const ChatProvider = ({ children }) => {
 
   // Realtime: someone whispered that they're typing in `conversationId` - show it for
   // a few seconds, auto-clearing if no further whisper arrives (no explicit "stopped").
-  const handleTypingWhisper = useCallback((conversationId, data) => {
-    console.log("[ChatProvider] typing whisper received on", conversationId, data);
-    if (!data || String(data.user_id) === String(currentUser?.id)) return;
-
+  // Sets/refreshes one user's "typing" entry for a conversation, keyed by
+  // userId so multiple people (or the AI) can be shown typing at once
+  // instead of the most recent one clobbering everyone else.
+  const setTypingEntry = useCallback((conversationId, userId, entry) => {
     setTypingUsers((prev) => ({
       ...prev,
-      [conversationId]: { userId: data.user_id, name: data.name },
+      [conversationId]: { ...prev[conversationId], [userId]: entry },
     }));
 
-    clearTimeout(typingTimeoutsRef.current[conversationId]);
-    typingTimeoutsRef.current[conversationId] = setTimeout(() => {
-      setTypingUsers((prev) => {
-        const next = { ...prev };
-        delete next[conversationId];
-        return next;
-      });
+    const convTimeouts = typingTimeoutsRef.current[conversationId] || {};
+    clearTimeout(convTimeouts[userId]);
+    convTimeouts[userId] = setTimeout(() => {
+      clearTypingEntry(conversationId, userId);
     }, TYPING_EXPIRY_MS);
-  }, [currentUser?.id]);
+    typingTimeoutsRef.current[conversationId] = convTimeouts;
+  }, []);
+
+  const clearTypingEntry = useCallback((conversationId, userId) => {
+    clearTimeout(typingTimeoutsRef.current[conversationId]?.[userId]);
+    if (typingTimeoutsRef.current[conversationId]) {
+      delete typingTimeoutsRef.current[conversationId][userId];
+    }
+    setTypingUsers((prev) => {
+      if (!prev[conversationId]?.[userId]) return prev;
+      const nextConv = { ...prev[conversationId] };
+      delete nextConv[userId];
+      return { ...prev, [conversationId]: nextConv };
+    });
+  }, []);
+
+  const handleTypingWhisper = useCallback((conversationId, data) => {
+    if (!data || String(data.user_id) === String(currentUser?.id)) return;
+    setTypingEntry(conversationId, data.user_id, { userId: data.user_id, isAi: false });
+  }, [currentUser?.id, setTypingEntry]);
+
+  // Yoyo AI has no client to whisper from, so its typing state arrives as a
+  // real broadcast (see AiTyping.php) with an explicit start/stop instead of
+  // a whisper that just expires - `starting` tells us which.
+  const handleAiTyping = useCallback((conversationId, data) => {
+    if (!data?.user_id) return;
+    if (data.starting) {
+      setTypingEntry(conversationId, data.user_id, {
+        userId: data.user_id,
+        isAi: true,
+        avatarUrl: data.avatar_url,
+      });
+    } else {
+      clearTypingEntry(conversationId, data.user_id);
+    }
+  }, [setTypingEntry, clearTypingEntry]);
 
   // Realtime: someone reacted (or unreacted) to a message in `conversationId` -
   // patch that message's reaction summary directly, no need to refetch.
@@ -665,18 +697,19 @@ const ChatProvider = ({ children }) => {
         )
         .listenForWhisper("typing", (data) =>
           handleTypingWhisper(conversationId, data)
-        );
+        )
+        .listen(".ai.typing", (data) => handleAiTyping(conversationId, data));
 
       channelsRef.current[conversationId] = channel;
     },
-    [handleMessageSent, handleMessageMutated, handleMessageReacted, handleTypingWhisper]
+    [handleMessageSent, handleMessageMutated, handleMessageReacted, handleTypingWhisper, handleAiTyping]
   );
 
   const unsubscribeFromConversation = useCallback((conversationId) => {
     if (!channelsRef.current[conversationId]) return;
     getEcho()?.leave(`chat.${conversationId}`);
     delete channelsRef.current[conversationId];
-    clearTimeout(typingTimeoutsRef.current[conversationId]);
+    Object.values(typingTimeoutsRef.current[conversationId] || {}).forEach(clearTimeout);
     delete typingTimeoutsRef.current[conversationId];
     delete typingLastSentRef.current[conversationId];
   }, []);
@@ -693,12 +726,9 @@ const ChatProvider = ({ children }) => {
       const channel = channelsRef.current[conversationId];
       if (!channel) return;
 
-      channel.whisper("typing", {
-        user_id: currentUser.id,
-        name: currentUser.profile_name || currentUser.username,
-      });
+      channel.whisper("typing", { user_id: currentUser.id });
     },
-    [currentUser?.id, currentUser?.profile_name, currentUser?.username]
+    [currentUser?.id]
   );
 
   // Keep one presence-channel subscription per conversation the user is part of, so
