@@ -162,6 +162,13 @@ export const getMessages = (conversationId, page = 1) => {
   });
 };
 
+export const getConversationMedia = (conversationId, type, page = 1) => {
+  return Api.getRequest(`/v1.0/chat/conversations/${conversationId}/media`, {
+    type,
+    page,
+  });
+};
+
 export const sendMessage = (conversationId, params) => {
   return Api.postRequest(
     `/v1.0/chat/conversations/${conversationId}/messages`,

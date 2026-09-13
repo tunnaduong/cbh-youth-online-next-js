@@ -10,6 +10,7 @@ import {
   ChevronLeft,
   X,
   Flag,
+  LayoutGrid,
 } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
@@ -22,6 +23,7 @@ export default function ChatHeader({
   onNewGroup,
   onSettings,
   onBackground,
+  onGallery,
   onMinimize,
   onClose,
   onBack,
@@ -182,6 +184,15 @@ export default function ChatHeader({
             title="Đổi hình nền đoạn chat"
           >
             <ImageIcon className="w-4 h-4 text-gray-600 dark:text-gray-300" />
+          </button>
+        )}
+        {conversation?.id && (
+          <button
+            onClick={onGallery}
+            className="p-1.5 hover:bg-gray-100 dark:hover:bg-neutral-600 rounded transition-colors"
+            title="Bộ sưu tập"
+          >
+            <LayoutGrid className="w-4 h-4 text-gray-600 dark:text-gray-300" />
           </button>
         )}
         {conversation?.id && conversation?.type !== "group" && otherParticipant?.id && (

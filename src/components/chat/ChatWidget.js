@@ -9,6 +9,7 @@ import NewChatDialog from "./NewChatDialog";
 import NewGroupDialog from "./NewGroupDialog";
 import GroupInfoModal from "./GroupInfoModal";
 import ChatBackgroundModal from "./ChatBackgroundModal";
+import ChatGalleryModal from "./ChatGalleryModal";
 
 export default function ChatWidget() {
   const {
@@ -28,6 +29,7 @@ export default function ChatWidget() {
   const [showNewGroupDialog, setShowNewGroupDialog] = useState(false);
   const [showGroupInfo, setShowGroupInfo] = useState(false);
   const [showBackgroundModal, setShowBackgroundModal] = useState(false);
+  const [showGallery, setShowGallery] = useState(false);
   const [previewParticipant, setPreviewParticipant] = useState(null); // For new conversation preview
 
   if (!isOpen) return null;
@@ -135,6 +137,7 @@ export default function ChatWidget() {
         onNewGroup={handleNewGroup}
         onSettings={handleSettings}
         onBackground={() => setShowBackgroundModal(true)}
+        onGallery={() => setShowGallery(true)}
         onMinimize={handleMinimize}
         onClose={handleClose}
         onBack={
@@ -201,6 +204,12 @@ export default function ChatWidget() {
         show={showBackgroundModal && !!selectedConversationId}
         onClose={() => setShowBackgroundModal(false)}
         onBackgroundChanged={handleBackgroundChanged}
+      />
+
+      <ChatGalleryModal
+        conversationId={selectedConversationId}
+        show={showGallery && !!selectedConversationId}
+        onClose={() => setShowGallery(false)}
       />
     </div>
   );
