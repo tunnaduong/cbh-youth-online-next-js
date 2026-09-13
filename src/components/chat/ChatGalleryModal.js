@@ -185,23 +185,49 @@ export default function ChatGalleryModal({ conversationId, isPublic = false, sho
             ) : activeTab === "image" ? (
               <div className="grid grid-cols-3 gap-1">
                 {currentItems.map((item, index) => (
-                  <button
+                  <Dropdown
                     key={`${item.message_id}-${index}`}
-                    type="button"
-                    className="relative aspect-square bg-gray-100 dark:bg-neutral-700 overflow-hidden"
-                    onClick={() => openLightbox(index)}
+                    trigger={["contextMenu"]}
+                    menu={{
+                      items: [
+                        {
+                          key: "share",
+                          label: "Chia sẻ",
+                          icon: <Share2 className="w-4 h-4" />,
+                          onClick: () => setForwardingMessage({ id: item.message_id }),
+                        },
+                        {
+                          key: "download",
+                          label: "Tải xuống",
+                          icon: <Download className="w-4 h-4" />,
+                          onClick: () =>
+                            downloadFile(item.file_url, `media-${item.message_id}.${item.type === "video" ? "mp4" : "jpg"}`)
+                              .then(() => antdMessage.success("Đã tải xuống"))
+                              .catch(() => {
+                                window.open(item.file_url, "_blank");
+                                antdMessage.error("Không thể tải xuống, đã mở tệp ở tab mới");
+                              }),
+                        },
+                      ],
+                    }}
                   >
-                    <img
-                      src={item.thumbnail_url || item.file_url}
-                      alt=""
-                      className="w-full h-full object-cover"
-                    />
-                    {item.type === "video" && (
-                      <div className="absolute inset-0 flex items-center justify-center">
-                        <PlayCircle className="w-7 h-7 text-white drop-shadow" />
-                      </div>
-                    )}
-                  </button>
+                    <button
+                      type="button"
+                      className="relative aspect-square bg-gray-100 dark:bg-neutral-700 overflow-hidden"
+                      onClick={() => openLightbox(index)}
+                    >
+                      <img
+                        src={item.thumbnail_url || item.file_url}
+                        alt=""
+                        className="w-full h-full object-cover"
+                      />
+                      {item.type === "video" && (
+                        <div className="absolute inset-0 flex items-center justify-center">
+                          <PlayCircle className="w-7 h-7 text-white drop-shadow" />
+                        </div>
+                      )}
+                    </button>
+                  </Dropdown>
                 ))}
               </div>
             ) : activeTab === "file" ? (
@@ -242,9 +268,12 @@ export default function ChatGalleryModal({ conversationId, isPublic = false, sho
                             label: "Tải xuống",
                             icon: <Download className="w-4 h-4" />,
                             onClick: () =>
-                              downloadFile(item.file_url, item.content).catch(() =>
-                                window.open(item.file_url, "_blank")
-                              ),
+                              downloadFile(item.file_url, item.content)
+                                .then(() => antdMessage.success("Đã tải xuống"))
+                                .catch(() => {
+                                  window.open(item.file_url, "_blank");
+                                  antdMessage.error("Không thể tải xuống, đã mở tệp ở tab mới");
+                                }),
                           },
                         ],
                       }}

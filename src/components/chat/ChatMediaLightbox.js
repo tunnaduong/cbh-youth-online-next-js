@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { message as antdMessage } from "antd";
 import { ChevronLeft, ChevronRight, X, ZoomIn, ZoomOut, Download, Share2 } from "lucide-react";
 
 // Forces a save-as download even for a cross-origin file URL (a plain
@@ -141,9 +142,12 @@ export default function ChatMediaLightbox({ media, onClose, onForward }) {
           className="p-2 rounded-full bg-black/50 hover:bg-black/70 text-white transition-colors"
           onClick={(e) => {
             e.stopPropagation();
-            downloadFile(current.url, current.url?.split("/").pop()).catch(() => {
-              window.open(current.url, "_blank");
-            });
+            downloadFile(current.url, current.url?.split("/").pop())
+              .then(() => antdMessage.success("Đã tải xuống"))
+              .catch(() => {
+                window.open(current.url, "_blank");
+                antdMessage.error("Không thể tải xuống, đã mở tệp ở tab mới");
+              });
           }}
           title="Tải xuống"
         >
