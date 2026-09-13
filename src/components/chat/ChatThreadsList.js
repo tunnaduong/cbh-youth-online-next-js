@@ -60,7 +60,7 @@ export default function ChatThreadsList({ onSelectConversation }) {
   const getLatestMessagePreview = (conversation) => {
     if (!conversation.latest_message) return "Không có tin nhắn";
 
-    const { is_myself, type } = conversation.latest_message;
+    const { is_myself, type, sender_is_ai, sender_profile_name } = conversation.latest_message;
 
     if (type === "story_reply") {
       const partnerName = getThreadDisplayName(conversation);
@@ -75,7 +75,12 @@ export default function ChatThreadsList({ onSelectConversation }) {
       );
     }
 
-    const prefix = is_myself ? "Bạn: " : "";
+    // A 1-on-1 thread's header already names "the other person", so a plain
+    // "not me" message here normally gets no sender prefix at all - that
+    // stops being right the moment Yoyo AI also posts into that same
+    // conversation (e.g. replying to someone's /ai), since its message
+    // would otherwise read as if the human partner said it.
+    const prefix = is_myself ? "Bạn: " : sender_is_ai ? `${sender_profile_name || "Yoyo AI"}: ` : "";
 
     if (type === "image") {
       return (
