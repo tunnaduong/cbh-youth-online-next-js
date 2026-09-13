@@ -52,6 +52,10 @@ export default function ChatGalleryModal({ conversationId, isPublic = false, sho
   const [loading, setLoading] = useState(false);
   const [lightboxMedia, setLightboxMedia] = useState(null);
   const [forwardingMessage, setForwardingMessage] = useState(null);
+  // Remembers the lightbox that was open when "Share" (forward) was tapped
+  // from it, so closing the forward dialog reopens it instead of just
+  // leaving everything closed.
+  const [suspendedLightboxMedia, setSuspendedLightboxMedia] = useState(null);
 
   const fetchMedia = useCallback(
     (type, page) =>
@@ -337,13 +341,24 @@ export default function ChatGalleryModal({ conversationId, isPublic = false, sho
         onClose={() => setLightboxMedia(null)}
         onForward={(messageId) => {
           // Close the lightbox first - ForwardMessageModal is a lower
-          // z-index dialog and would otherwise be hidden behind it.
+          // z-index dialog and would otherwise be hidden behind it - but
+          // remember it so closing the forward dialog can bring it back.
+          setSuspendedLightboxMedia(lightboxMedia);
           setLightboxMedia(null);
           setForwardingMessage({ id: messageId });
         }}
       />
 
-      <ForwardMessageModal message={forwardingMessage} onClose={() => setForwardingMessage(null)} />
+      <ForwardMessageModal
+        message={forwardingMessage}
+        onClose={() => {
+          setForwardingMessage(null);
+          if (suspendedLightboxMedia) {
+            setLightboxMedia(suspendedLightboxMedia);
+            setSuspendedLightboxMedia(null);
+          }
+        }}
+      />
     </>
   );
 }
