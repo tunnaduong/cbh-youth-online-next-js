@@ -184,6 +184,7 @@ export default function RightSidebar({ onHandleCreatePost }) {
                     <img
                       src={
                         user.oauth_profile_picture ||
+                        user.avatar_url ||
                         `${process.env.NEXT_PUBLIC_API_URL}/v1.0/users/${user.username}/avatar`
                       }
                       className="w-8 h-8 bg-gray-300 rounded-full border object-cover"
@@ -219,7 +220,7 @@ export default function RightSidebar({ onHandleCreatePost }) {
                 <div className="flex flex-row items-center mt-2">
                   <Link href={`/${currentUser.username}`}>
                     <img
-                      src={`${process.env.NEXT_PUBLIC_API_URL}/v1.0/users/${currentUser.username}/avatar`}
+                      src={currentUser.avatar_url || `${process.env.NEXT_PUBLIC_API_URL}/v1.0/users/${currentUser.username}/avatar`}
                       className="w-8 h-8 bg-gray-300 rounded-full border object-cover"
                       alt={`${currentUser.profile_name || currentUser.username
                         } avatar`}

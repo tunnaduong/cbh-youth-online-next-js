@@ -274,7 +274,7 @@ export default function Navbar({ hasSidebar = false }) {
                     >
                       <Avatar className="h-9 w-9 border border-gray-200 dark:border-neutral-600">
                         <AvatarImage
-                          src={`${process.env.NEXT_PUBLIC_API_URL}/v1.0/users/${currentUser?.username}/avatar`}
+                          src={currentUser?.avatar_url || `${process.env.NEXT_PUBLIC_API_URL}/v1.0/users/${currentUser?.username}/avatar`}
                           alt=""
                           className="object-cover"
                         />
