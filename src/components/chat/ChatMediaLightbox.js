@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { ChevronLeft, ChevronRight, X, ZoomIn, ZoomOut, ExternalLink, Download, Share2 } from "lucide-react";
+import { ChevronLeft, ChevronRight, X, ZoomIn, ZoomOut, Download, Share2 } from "lucide-react";
 
 // Forces a save-as download even for a cross-origin file URL (a plain
 // `<a href download>` only works same-origin - cross-origin, the browser
@@ -40,11 +40,10 @@ const formatMediaTimestamp = (timestamp) => {
 // multi-attachment chat messages so the user can navigate between images.
 //
 // An item (top-level `media` or an entry of `list`) may optionally also
-// carry `sender` ({ profile_name, username, avatar_url }), `createdAt`, and
-// `messageId` - when present (currently only from the Gallery), a small
-// info bar renders with the sender/time and a "go to original message"
-// button; callers that don't pass these simply don't get the bar.
-export default function ChatMediaLightbox({ media, onClose, onJumpToMessage }) {
+// carry `sender` ({ profile_name, username, avatar_url }) and `createdAt` -
+// when present (currently only from the Gallery), a small info bar renders
+// with the sender/time; callers that don't pass these simply don't get it.
+export default function ChatMediaLightbox({ media, onClose }) {
   const [scale, setScale] = useState(1);
   const [dragging, setDragging] = useState(false);
   const [pos, setPos] = useState({ x: 0, y: 0 });
@@ -177,15 +176,6 @@ export default function ChatMediaLightbox({ media, onClose, onJumpToMessage }) {
             </p>
             <p className="text-white/70 text-[10px]">{formatMediaTimestamp(current.createdAt)}</p>
           </div>
-          {current.messageId && onJumpToMessage && (
-            <button
-              className="ml-1 flex items-center gap-1 text-white/90 hover:text-white text-xs flex-shrink-0"
-              onClick={() => onJumpToMessage(current.messageId)}
-              title="Đi đến tin nhắn gốc"
-            >
-              <ExternalLink className="w-3.5 h-3.5" />
-            </button>
-          )}
         </div>
       )}
 

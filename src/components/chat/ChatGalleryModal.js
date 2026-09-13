@@ -6,7 +6,6 @@ import { Dropdown, message as antdMessage } from "antd";
 import Modal from "@/components/ui/Modal";
 import { X, FileText, Link as LinkIcon, PlayCircle, MoreVertical, Share2, Download, ExternalLink, Copy } from "lucide-react";
 import { getConversationMedia, getPublicChatMedia } from "@/app/Api";
-import { useChatContext } from "@/contexts/Support";
 import ChatMediaLightbox from "./ChatMediaLightbox";
 
 // Same cross-origin-safe download used by the lightbox.
@@ -45,7 +44,6 @@ const formatTimestamp = (timestamp) => {
 // (already supports a { list, index } gallery shape) for the Photos/Videos
 // tab instead of building a new viewer.
 export default function ChatGalleryModal({ conversationId, isPublic = false, show, onClose }) {
-  const { setHighlightMessageId } = useChatContext();
   const [activeTab, setActiveTab] = useState("image");
   const [itemsByTab, setItemsByTab] = useState({ image: [], file: [], link: [] });
   const [pageByTab, setPageByTab] = useState({ image: 1, file: 1, link: 1 });
@@ -131,20 +129,9 @@ export default function ChatGalleryModal({ conversationId, isPublic = false, sho
         poster: m.thumbnail_url,
         sender: m.user,
         createdAt: m.created_at,
-        messageId: m.message_id,
       })),
       index,
     });
-  };
-
-  // Jump back to where this photo/video was actually sent, so it's not just
-  // a floating attachment with no context. Only scrolls if the message is
-  // already in the currently loaded page of the conversation (same
-  // limitation as other highlightMessageId jumps in this app).
-  const handleJumpToMessage = (messageId) => {
-    setLightboxMedia(null);
-    onClose();
-    setHighlightMessageId(messageId);
   };
 
   return (
@@ -260,12 +247,6 @@ export default function ChatGalleryModal({ conversationId, isPublic = false, sho
                                 window.open(item.file_url, "_blank")
                               ),
                           },
-                          {
-                            key: "jump",
-                            label: "Xem tin nhắn gốc",
-                            icon: <ExternalLink className="w-4 h-4" />,
-                            onClick: () => handleJumpToMessage(item.message_id),
-                          },
                         ],
                       }}
                     >
@@ -333,12 +314,6 @@ export default function ChatGalleryModal({ conversationId, isPublic = false, sho
                               }
                             },
                           },
-                          {
-                            key: "jump",
-                            label: "Xem tin nhắn gốc",
-                            icon: <ExternalLink className="w-4 h-4" />,
-                            onClick: () => handleJumpToMessage(item.message_id),
-                          },
                         ],
                       }}
                     >
@@ -369,11 +344,7 @@ export default function ChatGalleryModal({ conversationId, isPublic = false, sho
         </div>
       </Modal>
 
-      <ChatMediaLightbox
-        media={lightboxMedia}
-        onClose={() => setLightboxMedia(null)}
-        onJumpToMessage={handleJumpToMessage}
-      />
+      <ChatMediaLightbox media={lightboxMedia} onClose={() => setLightboxMedia(null)} />
     </>
   );
 }
