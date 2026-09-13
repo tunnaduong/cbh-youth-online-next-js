@@ -12,7 +12,8 @@ import MessageInput from "./MessageInput";
 import ParticipantsList from "./ParticipantsList";
 import ChatMediaLightbox from "./ChatMediaLightbox";
 import ForwardMessageModal from "./ForwardMessageModal";
-import { Menu, FileText, Download, PlayCircle, Forward, CornerUpLeft, Undo2, Pencil } from "lucide-react";
+import ChatGalleryModal from "./ChatGalleryModal";
+import { Menu, FileText, Download, PlayCircle, Forward, CornerUpLeft, Undo2, Pencil, LayoutGrid } from "lucide-react";
 import MessageReactions from "./MessageReactions";
 import ReplyPreviewBubble from "./ReplyPreviewBubble";
 import { reactToMessage, removeMessageReaction, recallMessage, editMessage, deleteMessage } from "@/app/Api";
@@ -161,6 +162,7 @@ export default function PublicChat() {
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
   const [showParticipants, setShowParticipants] = useState(false); // Default: hide on mobile, can toggle on desktop
+  const [showGallery, setShowGallery] = useState(false);
   const [lightboxMedia, setLightboxMedia] = useState(null);
   const [openReactionMessageId, setOpenReactionMessageId] = useState(null);
   const [localReactions, setLocalReactions] = useState({});
@@ -873,6 +875,13 @@ export default function PublicChat() {
         </div>
         <div className="flex items-center gap-2">
           <button
+            onClick={() => setShowGallery(true)}
+            className="p-2 rounded-lg transition hover:bg-gray-200 dark:hover:bg-neutral-700"
+            title="Bộ sưu tập"
+          >
+            <LayoutGrid className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+          </button>
+          <button
             onClick={() => setShowParticipants(!showParticipants)}
             className={`p-2 rounded-lg transition ${
               showParticipants
@@ -884,6 +893,8 @@ export default function PublicChat() {
           </button>
         </div>
       </div>
+
+      <ChatGalleryModal isPublic show={showGallery} onClose={() => setShowGallery(false)} />
 
       {/* Main Chat Area */}
       <div className="flex flex-col lg:flex-row">

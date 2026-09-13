@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import moment from "moment";
 import Modal from "@/components/ui/Modal";
 import { X, FileText, Link as LinkIcon, PlayCircle } from "lucide-react";
-import { getConversationMedia } from "@/app/Api";
+import { getConversationMedia, getPublicChatMedia } from "@/app/Api";
 import ChatMediaLightbox from "./ChatMediaLightbox";
 
 const TABS = [
@@ -28,7 +28,7 @@ const formatTimestamp = (timestamp) => {
 // GroupInfoModal's modal shell and reuses the existing ChatMediaLightbox
 // (already supports a { list, index } gallery shape) for the Photos/Videos
 // tab instead of building a new viewer.
-export default function ChatGalleryModal({ conversationId, show, onClose }) {
+export default function ChatGalleryModal({ conversationId, isPublic = false, show, onClose }) {
   const [activeTab, setActiveTab] = useState("image");
   const [itemsByTab, setItemsByTab] = useState({ image: [], file: [], link: [] });
   const [pageByTab, setPageByTab] = useState({ image: 1, file: 1, link: 1 });
@@ -36,15 +36,21 @@ export default function ChatGalleryModal({ conversationId, show, onClose }) {
   const [loading, setLoading] = useState(false);
   const [lightboxMedia, setLightboxMedia] = useState(null);
 
+  const fetchMedia = useCallback(
+    (type, page) =>
+      isPublic ? getPublicChatMedia(type, page) : getConversationMedia(conversationId, type, page),
+    [isPublic, conversationId]
+  );
+
   const fetchTab = useCallback(
     async (tab, page = 1) => {
-      if (!conversationId) return;
+      if (!isPublic && !conversationId) return;
       setLoading(true);
       try {
         if (tab === "image") {
           const [imagesRes, videosRes] = await Promise.all([
-            getConversationMedia(conversationId, "image", page),
-            getConversationMedia(conversationId, "video", page),
+            fetchMedia("image", page),
+            fetchMedia("video", page),
           ]);
           const merged = [...(imagesRes.data.data || []), ...(videosRes.data.data || [])].sort(
             (a, b) => new Date(b.created_at) - new Date(a.created_at)
@@ -58,7 +64,7 @@ export default function ChatGalleryModal({ conversationId, show, onClose }) {
             image: Math.max(imagesRes.data.last_page, videosRes.data.last_page),
           }));
         } else {
-          const res = await getConversationMedia(conversationId, tab, page);
+          const res = await fetchMedia(tab, page);
           setItemsByTab((prev) => ({
             ...prev,
             [tab]: page === 1 ? res.data.data : [...prev[tab], ...res.data.data],
@@ -72,12 +78,12 @@ export default function ChatGalleryModal({ conversationId, show, onClose }) {
         setLoading(false);
       }
     },
-    [conversationId]
+    [isPublic, conversationId, fetchMedia]
   );
 
   // Reset and fetch fresh whenever the modal is (re)opened for a conversation.
   useEffect(() => {
-    if (!show || !conversationId) return;
+    if (!show || (!isPublic && !conversationId)) return;
     setActiveTab("image");
     setItemsByTab({ image: [], file: [], link: [] });
     setPageByTab({ image: 1, file: 1, link: 1 });

@@ -335,6 +335,10 @@ export const getPublicChatMessages = (page = 1) => {
   return Api.getRequest(`/v1.0/chat/public/messages?page=${page}`);
 };
 
+export const getPublicChatMedia = (type, page = 1) => {
+  return Api.getRequest(`/v1.0/chat/public/media`, { type, page });
+};
+
 export const sendPublicMessage = (params) => {
   return Api.postRequest("/v1.0/chat/public/messages", params);
 };
