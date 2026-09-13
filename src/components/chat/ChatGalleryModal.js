@@ -119,7 +119,11 @@ export default function ChatGalleryModal({ conversationId, isPublic = false, sho
 
   return (
     <>
-      <Modal show={show} onClose={onClose} maxWidth="lg">
+      {/* Hide the modal itself while the lightbox is open, rather than relying
+          on z-index to keep it from covering the image - headlessui's Dialog
+          portals its content in a way that can still paint over a plain
+          fixed-position sibling like ChatMediaLightbox regardless of z-index. */}
+      <Modal show={show && !lightboxMedia} onClose={onClose} maxWidth="lg">
         <div className="p-4">
           <div className="flex items-center justify-between mb-3">
             <h3 className="font-medium text-gray-900 dark:text-white">Bộ sưu tập</h3>
