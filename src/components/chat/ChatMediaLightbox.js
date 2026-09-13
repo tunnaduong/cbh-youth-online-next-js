@@ -40,10 +40,12 @@ const formatMediaTimestamp = (timestamp) => {
 // multi-attachment chat messages so the user can navigate between images.
 //
 // An item (top-level `media` or an entry of `list`) may optionally also
-// carry `sender` ({ profile_name, username, avatar_url }) and `createdAt` -
-// when present (currently only from the Gallery), a small info bar renders
-// with the sender/time; callers that don't pass these simply don't get it.
-export default function ChatMediaLightbox({ media, onClose }) {
+// carry `sender` ({ profile_name, username, avatar_url }), `createdAt`, and
+// `messageId` - when present (currently only from the Gallery), a small
+// info bar renders with the sender/time, and a "Forward" button appears
+// alongside Download/Close (only when `onForward` is also passed - it opens
+// the app's existing forward-to-conversation flow, not an OS share sheet).
+export default function ChatMediaLightbox({ media, onClose, onForward }) {
   const [scale, setScale] = useState(1);
   const [dragging, setDragging] = useState(false);
   const [pos, setPos] = useState({ x: 0, y: 0 });
@@ -121,14 +123,14 @@ export default function ChatMediaLightbox({ media, onClose }) {
       onMouseMove={handleMouseMove}
       onMouseUp={handleMouseUp}
     >
-      {/* Close + share/download */}
+      {/* Close + forward/download */}
       <div className="absolute top-4 right-4 z-10 flex items-center gap-2">
-        {typeof navigator !== "undefined" && navigator.share && (
+        {current.messageId && onForward && (
           <button
             className="p-2 rounded-full bg-black/50 hover:bg-black/70 text-white transition-colors"
             onClick={(e) => {
               e.stopPropagation();
-              navigator.share({ url: current.url }).catch(() => {});
+              onForward(current.messageId);
             }}
             title="Chia sẻ"
           >
@@ -156,18 +158,23 @@ export default function ChatMediaLightbox({ media, onClose }) {
         </button>
       </div>
 
-      {/* Sender/time + jump-to-message, only present when the caller (currently
-          just the Gallery) supplies this metadata on the current item. */}
+      {/* Sender/time, only present when the caller (currently just the
+          Gallery) supplies this metadata on the current item. */}
       {(current.sender || current.createdAt) && (
         <div
           className="absolute top-4 left-4 z-10 flex items-center gap-2 bg-black/50 rounded-full pl-1.5 pr-3 py-1.5 max-w-[70vw]"
           onClick={(e) => e.stopPropagation()}
         >
           {current.sender?.avatar_url && (
+            // Keyed by URL so switching photos mounts a brand-new <img> instead
+            // of reusing the old element - otherwise the browser keeps showing
+            // the PREVIOUS sender's avatar bitmap on screen until the new
+            // image finishes loading, which reads as "wrong avatar" for a beat.
             <img
+              key={current.sender.avatar_url}
               src={current.sender.avatar_url}
               alt=""
-              className="w-6 h-6 rounded-full flex-shrink-0 object-cover"
+              className="w-6 h-6 rounded-full flex-shrink-0 object-cover bg-white/20"
             />
           )}
           <div className="min-w-0">

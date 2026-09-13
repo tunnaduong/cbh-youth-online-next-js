@@ -7,6 +7,7 @@ import Modal from "@/components/ui/Modal";
 import { X, FileText, Link as LinkIcon, PlayCircle, MoreVertical, Share2, Download, ExternalLink, Copy } from "lucide-react";
 import { getConversationMedia, getPublicChatMedia } from "@/app/Api";
 import ChatMediaLightbox from "./ChatMediaLightbox";
+import ForwardMessageModal from "./ForwardMessageModal";
 
 // Same cross-origin-safe download used by the lightbox.
 async function downloadFile(url, filename) {
@@ -50,6 +51,7 @@ export default function ChatGalleryModal({ conversationId, isPublic = false, sho
   const [lastPageByTab, setLastPageByTab] = useState({ image: 1, file: 1, link: 1 });
   const [loading, setLoading] = useState(false);
   const [lightboxMedia, setLightboxMedia] = useState(null);
+  const [forwardingMessage, setForwardingMessage] = useState(null);
 
   const fetchMedia = useCallback(
     (type, page) =>
@@ -129,6 +131,7 @@ export default function ChatGalleryModal({ conversationId, isPublic = false, sho
         poster: m.thumbnail_url,
         sender: m.user,
         createdAt: m.created_at,
+        messageId: m.message_id,
       })),
       index,
     });
@@ -228,15 +231,7 @@ export default function ChatGalleryModal({ conversationId, isPublic = false, sho
                             key: "share",
                             label: "Chia sẻ",
                             icon: <Share2 className="w-4 h-4" />,
-                            onClick: () => {
-                              if (typeof navigator !== "undefined" && navigator.share) {
-                                navigator.share({ url: item.file_url }).catch(() => {});
-                              } else {
-                                downloadFile(item.file_url, item.content).catch(() =>
-                                  window.open(item.file_url, "_blank")
-                                );
-                              }
-                            },
+                            onClick: () => setForwardingMessage({ id: item.message_id }),
                           },
                           {
                             key: "download",
@@ -305,14 +300,7 @@ export default function ChatGalleryModal({ conversationId, isPublic = false, sho
                             key: "share",
                             label: "Chia sẻ",
                             icon: <Share2 className="w-4 h-4" />,
-                            onClick: () => {
-                              if (typeof navigator !== "undefined" && navigator.share) {
-                                navigator.share({ url: item.url }).catch(() => {});
-                              } else {
-                                navigator.clipboard?.writeText(item.url);
-                                antdMessage.success("Đã sao chép");
-                              }
-                            },
+                            onClick: () => setForwardingMessage({ id: item.message_id }),
                           },
                         ],
                       }}
@@ -344,7 +332,18 @@ export default function ChatGalleryModal({ conversationId, isPublic = false, sho
         </div>
       </Modal>
 
-      <ChatMediaLightbox media={lightboxMedia} onClose={() => setLightboxMedia(null)} />
+      <ChatMediaLightbox
+        media={lightboxMedia}
+        onClose={() => setLightboxMedia(null)}
+        onForward={(messageId) => {
+          // Close the lightbox first - ForwardMessageModal is a lower
+          // z-index dialog and would otherwise be hidden behind it.
+          setLightboxMedia(null);
+          setForwardingMessage({ id: messageId });
+        }}
+      />
+
+      <ForwardMessageModal message={forwardingMessage} onClose={() => setForwardingMessage(null)} />
     </>
   );
 }
