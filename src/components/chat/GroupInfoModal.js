@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import Modal from "@/components/ui/Modal";
 import Input from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -492,14 +493,16 @@ export default function GroupInfoModal({ conversationId, show, onClose, onGroupU
                   key={participant.id}
                   className="flex items-center gap-3 p-3 border-b dark:border-neutral-600 last:border-b-0"
                 >
-                  <Avatar className="w-9 h-9 flex-shrink-0">
-                    <AvatarImage src={participant.avatar_url} alt={participant.username} />
-                    <AvatarFallback>
-                      {participant.username?.[0]?.toUpperCase() || "?"}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm dark:text-white truncate">
+                  <Link href={`/${participant.username}`} className="flex-shrink-0">
+                    <Avatar className="w-9 h-9">
+                      <AvatarImage src={participant.avatar_url} alt={participant.username} />
+                      <AvatarFallback>
+                        {participant.username?.[0]?.toUpperCase() || "?"}
+                      </AvatarFallback>
+                    </Avatar>
+                  </Link>
+                  <Link href={`/${participant.username}`} className="flex-1 min-w-0">
+                    <p className="text-sm dark:text-white truncate hover:underline">
                       {participant.profile_name || participant.username}
                     </p>
                     {participant.role === "owner" && (
@@ -508,7 +511,7 @@ export default function GroupInfoModal({ conversationId, show, onClose, onGroupU
                     {participant.role === "deputy" && (
                       <p className="text-xs text-gray-500 dark:text-gray-400">Phó nhóm</p>
                     )}
-                  </div>
+                  </Link>
                   {(() => {
                     const menuItems = getParticipantMenuItems(participant);
                     if (menuItems.length === 0) return null;
