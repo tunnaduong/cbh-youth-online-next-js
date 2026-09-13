@@ -1357,18 +1357,20 @@ export default function ChatConversation({
             ) : (
               seenModalParticipants.map((p) => (
                 <div key={p.id} className="flex items-center gap-3">
-                  <Avatar className="w-8 h-8 flex-shrink-0">
-                    <AvatarImage src={p.avatar_url} alt={p.profile_name || p.username} />
-                    <AvatarFallback>{(p.profile_name || p.username)?.[0]?.toUpperCase()}</AvatarFallback>
-                  </Avatar>
-                  <div className="min-w-0 flex-1">
-                    <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                  <Link href={`/${p.username}`} onClick={() => setSeenModalParticipants(null)} className="flex-shrink-0">
+                    <Avatar className="w-8 h-8">
+                      <AvatarImage src={p.avatar_url} alt={p.profile_name || p.username} />
+                      <AvatarFallback>{(p.profile_name || p.username)?.[0]?.toUpperCase()}</AvatarFallback>
+                    </Avatar>
+                  </Link>
+                  <Link href={`/${p.username}`} onClick={() => setSeenModalParticipants(null)} className="min-w-0 flex-1">
+                    <p className="text-sm font-medium text-gray-900 dark:text-white truncate hover:underline">
                       {p.profile_name || p.username}
                     </p>
                     <p className="text-xs text-gray-500 dark:text-gray-400">
                       {formatTimestamp(p.last_read_at)}
                     </p>
-                  </div>
+                  </Link>
                 </div>
               ))
             )}
