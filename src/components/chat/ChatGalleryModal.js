@@ -2,10 +2,26 @@
 
 import { useEffect, useState, useCallback } from "react";
 import moment from "moment";
+import { Dropdown, message as antdMessage } from "antd";
 import Modal from "@/components/ui/Modal";
-import { X, FileText, Link as LinkIcon, PlayCircle } from "lucide-react";
+import { X, FileText, Link as LinkIcon, PlayCircle, MoreVertical, Share2, Download, ExternalLink, Copy } from "lucide-react";
 import { getConversationMedia, getPublicChatMedia } from "@/app/Api";
+import { useChatContext } from "@/contexts/Support";
 import ChatMediaLightbox from "./ChatMediaLightbox";
+
+// Same cross-origin-safe download used by the lightbox.
+async function downloadFile(url, filename) {
+  const response = await fetch(url);
+  const blob = await response.blob();
+  const blobUrl = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = blobUrl;
+  link.download = filename || "download";
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(blobUrl);
+}
 
 const TABS = [
   { key: "image", label: "Ảnh/Video" },
@@ -29,6 +45,7 @@ const formatTimestamp = (timestamp) => {
 // (already supports a { list, index } gallery shape) for the Photos/Videos
 // tab instead of building a new viewer.
 export default function ChatGalleryModal({ conversationId, isPublic = false, show, onClose }) {
+  const { setHighlightMessageId } = useChatContext();
   const [activeTab, setActiveTab] = useState("image");
   const [itemsByTab, setItemsByTab] = useState({ image: [], file: [], link: [] });
   const [pageByTab, setPageByTab] = useState({ image: 1, file: 1, link: 1 });
@@ -112,9 +129,22 @@ export default function ChatGalleryModal({ conversationId, isPublic = false, sho
         type: m.type,
         url: m.file_url,
         poster: m.thumbnail_url,
+        sender: m.user,
+        createdAt: m.created_at,
+        messageId: m.message_id,
       })),
       index,
     });
+  };
+
+  // Jump back to where this photo/video was actually sent, so it's not just
+  // a floating attachment with no context. Only scrolls if the message is
+  // already in the currently loaded page of the conversation (same
+  // limitation as other highlightMessageId jumps in this app).
+  const handleJumpToMessage = (messageId) => {
+    setLightboxMedia(null);
+    onClose();
+    setHighlightMessageId(messageId);
   };
 
   return (
@@ -183,43 +213,144 @@ export default function ChatGalleryModal({ conversationId, isPublic = false, sho
             ) : activeTab === "file" ? (
               <div className="flex flex-col gap-1">
                 {currentItems.map((item, index) => (
-                  <a
+                  <div
                     key={`${item.message_id}-${index}`}
-                    href={item.file_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
                     className="flex items-center gap-3 p-2 rounded hover:bg-gray-100 dark:hover:bg-neutral-700"
                   >
-                    <FileText className="w-6 h-6 flex-shrink-0 text-gray-500 dark:text-gray-300" />
-                    <div className="min-w-0 flex-1">
-                      <p className="text-sm text-gray-900 dark:text-white truncate">
-                        {item.content || "Tệp đính kèm"}
-                      </p>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">
-                        {formatTimestamp(item.created_at)}
-                      </p>
-                    </div>
-                  </a>
+                    <a
+                      href={item.file_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-3 min-w-0 flex-1"
+                    >
+                      <FileText className="w-6 h-6 flex-shrink-0 text-gray-500 dark:text-gray-300" />
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm text-gray-900 dark:text-white truncate">
+                          {item.content || "Tệp đính kèm"}
+                        </p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">
+                          {formatTimestamp(item.created_at)}
+                        </p>
+                      </div>
+                    </a>
+                    <Dropdown
+                      trigger={["click"]}
+                      menu={{
+                        items: [
+                          {
+                            key: "share",
+                            label: "Chia sẻ",
+                            icon: <Share2 className="w-4 h-4" />,
+                            onClick: () => {
+                              if (typeof navigator !== "undefined" && navigator.share) {
+                                navigator.share({ url: item.file_url }).catch(() => {});
+                              } else {
+                                downloadFile(item.file_url, item.content).catch(() =>
+                                  window.open(item.file_url, "_blank")
+                                );
+                              }
+                            },
+                          },
+                          {
+                            key: "download",
+                            label: "Tải xuống",
+                            icon: <Download className="w-4 h-4" />,
+                            onClick: () =>
+                              downloadFile(item.file_url, item.content).catch(() =>
+                                window.open(item.file_url, "_blank")
+                              ),
+                          },
+                          {
+                            key: "jump",
+                            label: "Xem tin nhắn gốc",
+                            icon: <ExternalLink className="w-4 h-4" />,
+                            onClick: () => handleJumpToMessage(item.message_id),
+                          },
+                        ],
+                      }}
+                    >
+                      <button
+                        type="button"
+                        onClick={(e) => e.stopPropagation()}
+                        className="p-1 rounded-full hover:bg-gray-200 dark:hover:bg-neutral-600 text-gray-400 flex-shrink-0"
+                      >
+                        <MoreVertical className="w-4 h-4" />
+                      </button>
+                    </Dropdown>
+                  </div>
                 ))}
               </div>
             ) : (
               <div className="flex flex-col gap-1">
                 {currentItems.map((item, index) => (
-                  <a
+                  <div
                     key={`${item.message_id}-${index}`}
-                    href={item.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
                     className="flex items-center gap-3 p-2 rounded hover:bg-gray-100 dark:hover:bg-neutral-700"
                   >
-                    <LinkIcon className="w-5 h-5 flex-shrink-0 text-gray-500 dark:text-gray-300" />
-                    <div className="min-w-0 flex-1">
-                      <p className="text-sm text-[#319527] dark:text-[#6bcf60] truncate">{item.url}</p>
-                      <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
-                        {item.user?.profile_name || item.user?.username} · {formatTimestamp(item.created_at)}
-                      </p>
-                    </div>
-                  </a>
+                    <a
+                      href={item.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-3 min-w-0 flex-1"
+                    >
+                      <LinkIcon className="w-5 h-5 flex-shrink-0 text-gray-500 dark:text-gray-300" />
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm text-[#319527] dark:text-[#6bcf60] truncate">{item.url}</p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                          {item.user?.profile_name || item.user?.username} · {formatTimestamp(item.created_at)}
+                        </p>
+                      </div>
+                    </a>
+                    <Dropdown
+                      trigger={["click"]}
+                      menu={{
+                        items: [
+                          {
+                            key: "open",
+                            label: "Mở liên kết",
+                            icon: <ExternalLink className="w-4 h-4" />,
+                            onClick: () => window.open(item.url, "_blank"),
+                          },
+                          {
+                            key: "copy",
+                            label: "Sao chép liên kết",
+                            icon: <Copy className="w-4 h-4" />,
+                            onClick: () => {
+                              navigator.clipboard?.writeText(item.url);
+                              antdMessage.success("Đã sao chép");
+                            },
+                          },
+                          {
+                            key: "share",
+                            label: "Chia sẻ",
+                            icon: <Share2 className="w-4 h-4" />,
+                            onClick: () => {
+                              if (typeof navigator !== "undefined" && navigator.share) {
+                                navigator.share({ url: item.url }).catch(() => {});
+                              } else {
+                                navigator.clipboard?.writeText(item.url);
+                                antdMessage.success("Đã sao chép");
+                              }
+                            },
+                          },
+                          {
+                            key: "jump",
+                            label: "Xem tin nhắn gốc",
+                            icon: <ExternalLink className="w-4 h-4" />,
+                            onClick: () => handleJumpToMessage(item.message_id),
+                          },
+                        ],
+                      }}
+                    >
+                      <button
+                        type="button"
+                        onClick={(e) => e.stopPropagation()}
+                        className="p-1 rounded-full hover:bg-gray-200 dark:hover:bg-neutral-600 text-gray-400 flex-shrink-0"
+                      >
+                        <MoreVertical className="w-4 h-4" />
+                      </button>
+                    </Dropdown>
+                  </div>
                 ))}
               </div>
             )}
@@ -238,7 +369,11 @@ export default function ChatGalleryModal({ conversationId, isPublic = false, sho
         </div>
       </Modal>
 
-      <ChatMediaLightbox media={lightboxMedia} onClose={() => setLightboxMedia(null)} />
+      <ChatMediaLightbox
+        media={lightboxMedia}
+        onClose={() => setLightboxMedia(null)}
+        onJumpToMessage={handleJumpToMessage}
+      />
     </>
   );
 }

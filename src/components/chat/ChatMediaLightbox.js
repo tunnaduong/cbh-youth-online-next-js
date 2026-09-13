@@ -1,13 +1,50 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { ChevronLeft, ChevronRight, X, ZoomIn, ZoomOut } from "lucide-react";
+import { ChevronLeft, ChevronRight, X, ZoomIn, ZoomOut, ExternalLink, Download, Share2 } from "lucide-react";
+
+// Forces a save-as download even for a cross-origin file URL (a plain
+// `<a href download>` only works same-origin - cross-origin, the browser
+// just navigates to it instead of downloading).
+async function downloadFile(url, filename) {
+  const response = await fetch(url);
+  const blob = await response.blob();
+  const blobUrl = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = blobUrl;
+  link.download = filename || "download";
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(blobUrl);
+}
+
+const formatMediaTimestamp = (timestamp) => {
+  if (!timestamp) return "";
+  try {
+    return new Date(timestamp).toLocaleString("vi-VN", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  } catch {
+    return "";
+  }
+};
 
 // `media` is either a single-item shape { type, url, poster } (unchanged
 // behavior) or a gallery shape that additionally carries `list` (an array of
 // { type, url, poster } items) and `index` (which item was tapped), used for
 // multi-attachment chat messages so the user can navigate between images.
-export default function ChatMediaLightbox({ media, onClose }) {
+//
+// An item (top-level `media` or an entry of `list`) may optionally also
+// carry `sender` ({ profile_name, username, avatar_url }), `createdAt`, and
+// `messageId` - when present (currently only from the Gallery), a small
+// info bar renders with the sender/time and a "go to original message"
+// button; callers that don't pass these simply don't get the bar.
+export default function ChatMediaLightbox({ media, onClose, onJumpToMessage }) {
   const [scale, setScale] = useState(1);
   const [dragging, setDragging] = useState(false);
   const [pos, setPos] = useState({ x: 0, y: 0 });
@@ -85,14 +122,72 @@ export default function ChatMediaLightbox({ media, onClose }) {
       onMouseMove={handleMouseMove}
       onMouseUp={handleMouseUp}
     >
-      {/* Close */}
-      <button
-        className="absolute top-4 right-4 z-10 p-2 rounded-full bg-black/50 hover:bg-black/70 text-white transition-colors"
-        onClick={onClose}
-        title="Đóng (Esc)"
-      >
-        <X className="w-6 h-6" />
-      </button>
+      {/* Close + share/download */}
+      <div className="absolute top-4 right-4 z-10 flex items-center gap-2">
+        {typeof navigator !== "undefined" && navigator.share && (
+          <button
+            className="p-2 rounded-full bg-black/50 hover:bg-black/70 text-white transition-colors"
+            onClick={(e) => {
+              e.stopPropagation();
+              navigator.share({ url: current.url }).catch(() => {});
+            }}
+            title="Chia sẻ"
+          >
+            <Share2 className="w-5 h-5" />
+          </button>
+        )}
+        <button
+          className="p-2 rounded-full bg-black/50 hover:bg-black/70 text-white transition-colors"
+          onClick={(e) => {
+            e.stopPropagation();
+            downloadFile(current.url, current.url?.split("/").pop()).catch(() => {
+              window.open(current.url, "_blank");
+            });
+          }}
+          title="Tải xuống"
+        >
+          <Download className="w-5 h-5" />
+        </button>
+        <button
+          className="p-2 rounded-full bg-black/50 hover:bg-black/70 text-white transition-colors"
+          onClick={onClose}
+          title="Đóng (Esc)"
+        >
+          <X className="w-6 h-6" />
+        </button>
+      </div>
+
+      {/* Sender/time + jump-to-message, only present when the caller (currently
+          just the Gallery) supplies this metadata on the current item. */}
+      {(current.sender || current.createdAt) && (
+        <div
+          className="absolute top-4 left-4 z-10 flex items-center gap-2 bg-black/50 rounded-full pl-1.5 pr-3 py-1.5 max-w-[70vw]"
+          onClick={(e) => e.stopPropagation()}
+        >
+          {current.sender?.avatar_url && (
+            <img
+              src={current.sender.avatar_url}
+              alt=""
+              className="w-6 h-6 rounded-full flex-shrink-0 object-cover"
+            />
+          )}
+          <div className="min-w-0">
+            <p className="text-white text-xs font-medium truncate">
+              {current.sender?.profile_name || current.sender?.username}
+            </p>
+            <p className="text-white/70 text-[10px]">{formatMediaTimestamp(current.createdAt)}</p>
+          </div>
+          {current.messageId && onJumpToMessage && (
+            <button
+              className="ml-1 flex items-center gap-1 text-white/90 hover:text-white text-xs flex-shrink-0"
+              onClick={() => onJumpToMessage(current.messageId)}
+              title="Đi đến tin nhắn gốc"
+            >
+              <ExternalLink className="w-3.5 h-3.5" />
+            </button>
+          )}
+        </div>
+      )}
 
       {/* Gallery navigation */}
       {list && (
