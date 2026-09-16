@@ -61,12 +61,11 @@ const CreatePostModal = ({ open, onClose, isEditMode = false, postData = null, o
       getPostDetail(postData.id)
         .then((response) => {
           const fetchedPost = response.data.post;
+          const fetchedDescription = fetchedPost.description || fetchedPost.content || "";
           programmaticChangeRef.current = true;
           setData({
             title: fetchedPost.title || "",
-            description: fetchedPost.description || fetchedPost.content || "", // Prioritize description (raw content)
-            title: fetchedPost.title || "",
-            description: fetchedPost.description || fetchedPost.content || "", // Prioritize description (raw content)
+            description: fetchedDescription, // Prioritize description (raw content)
             subforum_id: fetchedPost.subforum_id || null,
             image_files: [],
             document_files: [],
@@ -75,6 +74,9 @@ const CreatePostModal = ({ open, onClose, isEditMode = false, postData = null, o
             privacy: fetchedPost.privacy || "public",
             anonymous: fetchedPost.anonymous || false,
           });
+          descriptionHistoryRef.current = { undo: [], redo: [] };
+          lastCommittedRef.current = { text: fetchedDescription, offset: 0 };
+          lastEditTimeRef.current = 0;
           setExistingImages(fetchedPost.images || []);
           setExistingDocuments(fetchedPost.documents || []);
           setExistingVideos(fetchedPost.videos || []);
@@ -119,8 +121,28 @@ const CreatePostModal = ({ open, onClose, isEditMode = false, postData = null, o
   // textarea underneath.
   const divRef = useRef(null);
   const isComposingRef = useRef(false);
+  // Manual undo/redo history for the description field. Native browser undo
+  // doesn't work reliably here because onInput rebuilds the contentEditable's
+  // innerHTML on every keystroke (for mention highlighting), which resets
+  // the browser's own undo stack. Rapid keystrokes within EDIT_COALESCE_MS
+  // are coalesced into a single undo step, like most text editors do.
+  const descriptionHistoryRef = useRef({ undo: [], redo: [] });
+  const lastCommittedRef = useRef({ text: "", offset: 0 });
+  const lastEditTimeRef = useRef(0);
+  const pendingCaretRef = useRef(null);
+  const EDIT_COALESCE_MS = 600;
   const textareaRef = useRef(
-    makeProxyRef(() => divRef.current, (value) => setData((prev) => ({ ...prev, description: value })), false)
+    makeProxyRef(
+      () => divRef.current,
+      (value) => {
+        // Also reached by MarkdownToolbar / mention insertion, which set
+        // .value directly instead of going through onInput - record those
+        // as history boundaries too so undo covers them.
+        recordDescriptionEdit(value, value.length);
+        setData((prev) => ({ ...prev, description: value }));
+      },
+      false
+    )
   );
   const imageInputRef = useRef(null);
   const documentInputRef = useRef(null);
@@ -173,10 +195,59 @@ const CreatePostModal = ({ open, onClose, isEditMode = false, postData = null, o
     if (!el) return;
     el.innerHTML = buildHtml(data.description);
     applyHighlights(el, data.description, false);
+    // Undo/redo restores data.description from a history snapshot, which
+    // also needs its caret position restored explicitly - unlike the other
+    // callers of this effect (preload, reset, preview toggle), which don't
+    // care where the caret ends up.
+    if (pendingCaretRef.current != null) {
+      setCaretOffset(el, pendingCaretRef.current);
+      pendingCaretRef.current = null;
+    }
   }, [data.description, isPreviewMode]);
 
-  // Handle auto-continuation for lists
+  // Coalesce rapid keystrokes into a single undo step, like most editors do,
+  // instead of pushing a history entry per character.
+  const recordDescriptionEdit = (text, offset) => {
+    const now = Date.now();
+    if (now - lastEditTimeRef.current > EDIT_COALESCE_MS) {
+      const { undo } = descriptionHistoryRef.current;
+      undo.push(lastCommittedRef.current);
+      if (undo.length > 100) undo.shift();
+      descriptionHistoryRef.current.redo = [];
+    }
+    lastEditTimeRef.current = now;
+    lastCommittedRef.current = { text, offset };
+  };
+
+  // Handle undo/redo and auto-continuation for lists
   const handleTextareaKeyDown = (e) => {
+    const isUndo =
+      (e.metaKey || e.ctrlKey) && !e.shiftKey && e.key.toLowerCase() === "z";
+    const isRedo =
+      (e.metaKey || e.ctrlKey) &&
+      (e.key.toLowerCase() === "y" || (e.shiftKey && e.key.toLowerCase() === "z"));
+
+    if ((isUndo || isRedo) && !isComposingRef.current) {
+      e.preventDefault();
+      const el = divRef.current;
+      if (!el) return;
+
+      const { undo, redo } = descriptionHistoryRef.current;
+      const source = isUndo ? undo : redo;
+      const dest = isUndo ? redo : undo;
+      if (source.length === 0) return;
+
+      const currentSnapshot = { text: getContentText(el), offset: getCaretOffset(el) };
+      dest.push(currentSnapshot);
+      const restored = source.pop();
+
+      lastCommittedRef.current = restored;
+      pendingCaretRef.current = restored.offset;
+      programmaticChangeRef.current = true;
+      setData((prev) => ({ ...prev, description: restored.text }));
+      return;
+    }
+
     if (e.key === "Enter") {
       const textarea =
         textareaRef.current?.resizableTextArea?.textArea || textareaRef.current;
@@ -190,8 +261,15 @@ const CreatePostModal = ({ open, onClose, isEditMode = false, postData = null, o
       const lines = text.substring(0, start).split("\n");
       const currentLine = lines[lines.length - 1];
 
+      // Only auto-continue the list when the cursor is at the end of the
+      // line - otherwise pressing Enter in the middle of a bullet's text
+      // (e.g. while fixing a typo) would inject a stray "- " right at the
+      // cursor and fracture whatever word is there.
+      const restOfLine = text.substring(end).split("\n")[0];
+      const atLineEnd = restOfLine.trim() === "";
+
       // Check if current line is a bullet list
-      const bulletMatch = currentLine.match(/^(\s*)(-\s)/);
+      const bulletMatch = atLineEnd && currentLine.match(/^(\s*)(-\s)/);
       if (bulletMatch) {
         e.preventDefault();
         const indent = bulletMatch[1];
@@ -201,6 +279,7 @@ const CreatePostModal = ({ open, onClose, isEditMode = false, postData = null, o
         const newCursorPos = start + newLine.length;
 
         textarea.value = newText;
+        recordDescriptionEdit(newText, newCursorPos);
         setData((prev) => ({ ...prev, description: newText }));
 
         setTimeout(() => {
@@ -211,7 +290,7 @@ const CreatePostModal = ({ open, onClose, isEditMode = false, postData = null, o
       }
 
       // Check if current line is a numbered list
-      const numberedMatch = currentLine.match(/^(\s*)(\d+\.\s)/);
+      const numberedMatch = atLineEnd && currentLine.match(/^(\s*)(\d+\.\s)/);
       if (numberedMatch) {
         e.preventDefault();
         const indent = numberedMatch[1];
@@ -222,6 +301,7 @@ const CreatePostModal = ({ open, onClose, isEditMode = false, postData = null, o
         const newCursorPos = start + newLine.length;
 
         textarea.value = newText;
+        recordDescriptionEdit(newText, newCursorPos);
         setData((prev) => ({ ...prev, description: newText }));
 
         setTimeout(() => {
@@ -235,6 +315,9 @@ const CreatePostModal = ({ open, onClose, isEditMode = false, postData = null, o
 
   const reset = () => {
     programmaticChangeRef.current = true;
+    descriptionHistoryRef.current = { undo: [], redo: [] };
+    lastCommittedRef.current = { text: "", offset: 0 };
+    lastEditTimeRef.current = 0;
     setData({
       title: "",
       description: "",
@@ -850,6 +933,12 @@ const CreatePostModal = ({ open, onClose, isEditMode = false, postData = null, o
                         const el = e.currentTarget;
                         const offset = getCaretOffset(el);
                         const text = getContentText(el);
+                        // Don't record history mid-IME-composition - the
+                        // composing text isn't final yet, so it'd push a
+                        // half-typed snapshot onto the undo stack.
+                        if (!isComposingRef.current) {
+                          recordDescriptionEdit(text, offset);
+                        }
                         setData((prev) => ({ ...prev, description: text }));
                         handleDescriptionMentionChange(text, offset);
                         // The DOM itself is never touched here - only the
@@ -873,6 +962,7 @@ const CreatePostModal = ({ open, onClose, isEditMode = false, postData = null, o
                         const el = e.currentTarget;
                         const offset = getCaretOffset(el);
                         const text = getContentText(el);
+                        recordDescriptionEdit(text, offset);
                         setData((prev) => ({ ...prev, description: text }));
                         handleDescriptionMentionChange(text, offset);
                         applyHighlights(el, text, false);
