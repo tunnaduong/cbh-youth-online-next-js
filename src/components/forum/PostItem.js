@@ -725,7 +725,7 @@ export default function PostItem({ post, single = false, onVote, onRefresh = nul
                           <polyline points="14 2 14 8 20 8" />
                         </svg>
                         <span className="text-xs text-center line-clamp-2 w-full px-2 mb-1 dark:text-neutral-300">
-                          {fileNameWithoutExt.slice(25)}
+                          {fileNameWithoutExt.slice(0, 25)}
                         </span>
                         <span className="text-xs text-gray-500 text-center">
                           {fileSize}

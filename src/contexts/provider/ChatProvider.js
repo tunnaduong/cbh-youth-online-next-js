@@ -289,6 +289,19 @@ const ChatProvider = ({ children }) => {
     checkForNewMessages,
   ]);
 
+  // getMessages()'s page 1 is always the newest page (see the backend's
+  // offset math), so anything already in `existing` that ISN'T in the fresh
+  // page-1 result must be older history loaded from a later page - keep it
+  // instead of dropping it. Without this, re-fetching just page 1 (as every
+  // realtime "something changed, refresh" handler below does) wholesale
+  // replaced the whole message list, throwing away any older pages the user
+  // had already scrolled up to load.
+  const mergeLatestPage = (existing = [], freshPage1 = []) => {
+    const freshIds = new Set(freshPage1.map((m) => m.id));
+    const preservedOlder = existing.filter((m) => !freshIds.has(m.id));
+    return [...preservedOlder, ...freshPage1];
+  };
+
   // Load messages for a conversation - called on selection and whenever a realtime chat event arrives
   const loadMessages = useCallback(
     async (conversationId, page = 1, append = false) => {
@@ -352,7 +365,7 @@ const ChatProvider = ({ children }) => {
         if (result && result.messages) {
           setMessages((prev) => ({
             ...prev,
-            [conversationId]: result.messages,
+            [conversationId]: mergeLatestPage(prev[conversationId], result.messages),
           }));
         }
 
@@ -595,7 +608,7 @@ const ChatProvider = ({ children }) => {
     if (isViewingThisConversation) {
       loadMessagesRef.current?.(conversationId).then((result) => {
         if (result?.messages) {
-          setMessages((prev) => ({ ...prev, [conversationId]: result.messages }));
+          setMessages((prev) => ({ ...prev, [conversationId]: mergeLatestPage(prev[conversationId], result.messages) }));
         }
       });
       markAsReadRef.current?.(conversationId); // also refreshes the conversation list
@@ -614,20 +627,26 @@ const ChatProvider = ({ children }) => {
     if (isViewingThisConversation) {
       loadMessagesRef.current?.(conversationId).then((result) => {
         if (result?.messages) {
-          setMessages((prev) => ({ ...prev, [conversationId]: result.messages }));
+          setMessages((prev) => ({ ...prev, [conversationId]: mergeLatestPage(prev[conversationId], result.messages) }));
         }
       });
     }
   }, []);
 
-  // Realtime: a message was recalled/edited in `conversationId`. A full refetch
-  // (not a local patch) is used deliberately - a locally patched message would
-  // still leave any OTHER message's embedded reply_to snapshot pointing at the
-  // old content, since that snapshot is just a denormalized copy taken when
-  // the reply was sent. Refetching gets the server's fresh copy of both the
-  // message itself and everyone else's reply_to snapshots of it. If the
-  // conversation isn't open, refresh the list instead so its last-message
-  // preview doesn't keep showing stale/recalled content either.
+  // Realtime: a message was recalled/edited in `conversationId`. A refetch
+  // (not a local patch) is used deliberately - a locally patched message
+  // would still leave any OTHER message's embedded reply_to snapshot
+  // pointing at the old content, since that snapshot is just a denormalized
+  // copy taken when the reply was sent. Refetching gets the server's fresh
+  // copy of both the message itself and everyone else's reply_to snapshots
+  // of it - but only for page 1 (see mergeLatestPage): if the edited/
+  // recalled message is further back in history the user already scrolled
+  // up to load, its stale copy there won't be refreshed by this until they
+  // re-paginate that far again. Preferred over wiping all of that older,
+  // already-loaded history just to guarantee this one edge case, which is
+  // what happened before mergeLatestPage existed. If the conversation isn't
+  // open, refresh the list instead so its last-message preview doesn't keep
+  // showing stale/recalled content either.
   const handleMessageRecalledOrEdited = useCallback((conversationId) => {
     const isViewingThisConversation =
       isOpenRef.current &&
@@ -637,7 +656,7 @@ const ChatProvider = ({ children }) => {
     if (isViewingThisConversation) {
       loadMessagesRef.current?.(conversationId).then((result) => {
         if (result?.messages) {
-          setMessages((prev) => ({ ...prev, [conversationId]: result.messages }));
+          setMessages((prev) => ({ ...prev, [conversationId]: mergeLatestPage(prev[conversationId], result.messages) }));
         }
       });
     } else {
@@ -1102,7 +1121,7 @@ const ChatProvider = ({ children }) => {
         if (result && result.messages) {
           setMessages((prev) => ({
             ...prev,
-            [selectedConversationId]: result.messages,
+            [selectedConversationId]: mergeLatestPage(prev[selectedConversationId], result.messages),
           }));
         }
       });

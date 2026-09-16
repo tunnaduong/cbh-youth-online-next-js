@@ -258,10 +258,22 @@ export default function ChatConversation({
   const chatBackgroundUrl =
     backgroundOverride !== undefined ? backgroundOverride : conversation?.background_url || null;
 
-  // Reset initial load flag when conversation changes
+  // Reset per-conversation state when the conversation changes.
   useEffect(() => {
     if (conversationId) {
       setIsInitialLoad(true);
+      // Without these two resets, switching conversations kept whatever
+      // pagination state the previous one had reached (e.g. hasMorePages
+      // already false after fully paginating conversation A disabled
+      // scroll-to-load-more entirely in conversation B; a stale currentPage
+      // could also request the wrong page number), and any group-management
+      // menu items already loaded for a shared member kept their onClick
+      // handlers closed over the OLD conversationId - clicking "Xóa khỏi
+      // nhóm" for that same person in the new conversation could fire
+      // against the wrong group.
+      setCurrentPage(1);
+      setHasMorePages(true);
+      setSenderGroupMenuItems({});
     }
   }, [conversationId]);
 
