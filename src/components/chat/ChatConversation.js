@@ -2,7 +2,8 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { message as antdMessage } from "antd";
+import { useRouter } from "next/navigation";
+import { message as antdMessage, Dropdown } from "antd";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useChatContext } from "@/contexts/Support";
 import moment from "moment";
@@ -15,7 +16,17 @@ import ForwardMessageModal from "./ForwardMessageModal";
 import Modal from "@/components/ui/Modal";
 import { CornerUpLeft, FileText, Download, PlayCircle, Forward, Loader2, AlertCircle, RotateCw, X } from "lucide-react";
 import NextLink from "next/link";
-import { recallMessage, editMessage, getGroupSeenReceipts, getNotificationSettings } from "@/app/Api";
+import {
+  recallMessage,
+  editMessage,
+  getGroupSeenReceipts,
+  getNotificationSettings,
+  getGroupDetails,
+  addGroupDeputy,
+  removeGroupDeputy,
+  removeGroupParticipant,
+  blockUser,
+} from "@/app/Api";
 
 // How often to refresh read receipts for the "seen by" avatars while a group
 // chat is open, to catch another participant reading without necessarily
@@ -187,6 +198,7 @@ export default function ChatConversation({
     updateMessageLocally,
     removeMessageLocally,
   } = useChatContext();
+  const router = useRouter();
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [hasMorePages, setHasMorePages] = useState(true); // Start as true to allow loading
@@ -450,6 +462,140 @@ export default function ChatConversation({
   };
 
   const handleCancelReply = () => setReplyingTo(null);
+
+  // Messenger-style per-sender menu, opened by clicking the avatar next to
+  // someone else's message bubble (see the message list render below).
+  // Only ever offers actions this app actually has - no calling. Doesn't
+  // apply to Yoyo AI's avatar - it isn't a real participant.
+  const getSenderMenuItems = (sender) => {
+    if (!sender?.id || sender.is_ai) return [];
+
+    const items = [];
+
+    // Doesn't apply in a private 1-1 - we're already messaging this exact
+    // person, there's nowhere else to send "Message" to.
+    if (conversation?.type !== "private") {
+      items.push({
+        key: "message",
+        label: "Nhắn tin",
+        onClick: () => createConversation(sender.id),
+      });
+    }
+    items.push({
+      key: "profile",
+      label: "Xem trang cá nhân",
+      onClick: () => router.push(`/${sender.username}`),
+    });
+
+    if (isGroupChat) {
+      // Placeholder swapped out for the real (lazily-loaded, permission-
+      // gated) items in resolveSenderMenuItems below - never reaches antd
+      // as-is, so its shape doesn't need to look like a real menu item.
+      items.push({ key: "group-actions", __placeholder: true });
+    }
+
+    items.push({
+      key: "block",
+      label: <span className="text-red-500">Chặn</span>,
+      onClick: async () => {
+        try {
+          await blockUser(sender.id);
+          antdMessage.success("Đã chặn người dùng");
+        } catch (error) {
+          antdMessage.error(
+            error?.response?.data?.message || "Không thể chặn người dùng"
+          );
+        }
+      },
+    });
+
+    return items;
+  };
+
+  // Group management items (make/remove deputy, remove from group) need a
+  // permissions check that only makes sense in a real group - loaded lazily
+  // per sender when their menu is actually opened, rather than fetching
+  // getGroupDetails for every message sender up front.
+  const [senderGroupMenuItems, setSenderGroupMenuItems] = useState({});
+
+  const loadSenderGroupMenuItems = async (sender) => {
+    if (!isGroupChat || !conversationId || !sender?.id) return;
+    try {
+      const response = await getGroupDetails(conversationId);
+      const group = response?.data || response;
+      const participant = group?.participants?.find((p) => p.id === sender.id);
+      if (!group || !participant || participant.role === "owner") {
+        setSenderGroupMenuItems((prev) => ({ ...prev, [sender.id]: [] }));
+        return;
+      }
+
+      const items = [];
+      if (group.is_owner) {
+        items.push(
+          participant.role === "deputy"
+            ? {
+                key: "remove-deputy",
+                label: "Gỡ vai trò phó nhóm",
+                onClick: async () => {
+                  try {
+                    await removeGroupDeputy(conversationId, sender.id);
+                    antdMessage.success("Đã gỡ vai trò phó nhóm");
+                  } catch (error) {
+                    antdMessage.error(
+                      error?.response?.data?.message || "Không thể gỡ vai trò phó nhóm"
+                    );
+                  }
+                },
+              }
+            : {
+                key: "make-deputy",
+                label: "Chỉ định làm phó nhóm",
+                onClick: async () => {
+                  try {
+                    await addGroupDeputy(conversationId, sender.id);
+                    antdMessage.success("Đã chỉ định phó nhóm");
+                  } catch (error) {
+                    antdMessage.error(
+                      error?.response?.data?.message || "Không thể chỉ định phó nhóm"
+                    );
+                  }
+                },
+              }
+        );
+      }
+      if (group.permissions?.can?.perm_remove_members) {
+        items.push({
+          key: "kick",
+          label: <span className="text-red-500">Xóa khỏi nhóm</span>,
+          onClick: async () => {
+            try {
+              await removeGroupParticipant(conversationId, sender.id);
+              antdMessage.success("Đã xóa thành viên khỏi nhóm");
+            } catch (error) {
+              antdMessage.error(
+                error?.response?.data?.message || "Không thể xóa thành viên"
+              );
+            }
+          },
+        });
+      }
+      setSenderGroupMenuItems((prev) => ({ ...prev, [sender.id]: items }));
+    } catch (error) {
+      setSenderGroupMenuItems((prev) => ({ ...prev, [sender.id]: [] }));
+    }
+  };
+
+  // Splices the lazily-loaded group items (see above) in where the
+  // "group-actions" placeholder sits, once they've arrived - keeps the
+  // always-available items (message/profile/block) visible immediately
+  // instead of waiting on the getGroupDetails round trip.
+  const resolveSenderMenuItems = (sender) => {
+    const items = getSenderMenuItems(sender);
+    const groupItems = senderGroupMenuItems[sender?.id] || [];
+    return items.flatMap((item) =>
+      item.key === "group-actions" ? groupItems : [item]
+    );
+  };
 
   const scrollToAndHighlightElement = (el) => {
     el.scrollIntoView({ behavior: "smooth", block: "center" });
@@ -833,12 +979,28 @@ export default function ChatConversation({
             {/* Row: avatar + bubble */}
             <div className={`flex items-end gap-1 ${message.is_myself ? "justify-end" : "justify-start"}`}>
 
-              {/* Avatar (others only) */}
+              {/* Avatar (others only) - click opens a per-sender action menu,
+                  same as the mobile app (doesn't apply to Yoyo AI). */}
               {!message.is_myself && (
-                <Avatar className="w-8 h-8 flex-shrink-0 self-end mb-2">
-                  <AvatarImage src={message.sender?.avatar_url} alt={message.sender?.profile_name || message.sender?.username} />
-                  <AvatarFallback>{message.sender?.username?.[0]?.toUpperCase() || "?"}</AvatarFallback>
-                </Avatar>
+                message.sender?.is_ai ? (
+                  <Avatar className="w-8 h-8 flex-shrink-0 self-end mb-2">
+                    <AvatarImage src={message.sender?.avatar_url} alt={message.sender?.profile_name || message.sender?.username} />
+                    <AvatarFallback>{message.sender?.username?.[0]?.toUpperCase() || "?"}</AvatarFallback>
+                  </Avatar>
+                ) : (
+                  <Dropdown
+                    menu={{ items: resolveSenderMenuItems(message.sender) }}
+                    trigger={["click"]}
+                    onOpenChange={(open) => open && loadSenderGroupMenuItems(message.sender)}
+                  >
+                    <button type="button" className="flex-shrink-0 self-end mb-2">
+                      <Avatar className="w-8 h-8">
+                        <AvatarImage src={message.sender?.avatar_url} alt={message.sender?.profile_name || message.sender?.username} />
+                        <AvatarFallback>{message.sender?.username?.[0]?.toUpperCase() || "?"}</AvatarFallback>
+                      </Avatar>
+                    </button>
+                  </Dropdown>
+                )
               )}
 
               {/* Bubble column */}
