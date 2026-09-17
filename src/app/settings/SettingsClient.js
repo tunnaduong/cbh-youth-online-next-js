@@ -129,6 +129,7 @@ export default function SettingsClient({ initialUser, hasAuthError }) {
     email_social: true,
     email_security: true, // Always true, cannot be changed
     chat_read_receipts: true,
+    hide_email: false,
     // Delete account
     password: "",
     confirm_text: "",
@@ -191,6 +192,7 @@ export default function SettingsClient({ initialUser, hasAuthError }) {
             email_marketing: true,
             email_social: true,
             email_security: true,
+            hide_email: fullUser?.hide_email ?? false,
             password: "",
             confirm_text: "",
           });
@@ -227,6 +229,7 @@ export default function SettingsClient({ initialUser, hasAuthError }) {
             email_marketing: true,
             email_social: true,
             email_security: true,
+            hide_email: user?.hide_email ?? false,
             password: "",
             confirm_text: "",
           });
@@ -1232,6 +1235,28 @@ export default function SettingsClient({ initialUser, hasAuthError }) {
                       await updateNotificationSettings({ chat_read_receipts: checked });
                     } catch {
                       updateData("chat_read_receipts", !checked);
+                    }
+                  }}
+                  className="ml-4"
+                />
+              </div>
+              <div className="flex items-center justify-between py-2">
+                <div>
+                  <h4 className="text-sm font-medium text-gray-800 dark:text-gray-200">
+                    Ẩn email trên trang cá nhân
+                  </h4>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                    Người khác sẽ không thấy email của bạn khi xem trang cá nhân.
+                  </p>
+                </div>
+                <Switch
+                  checked={data.hide_email}
+                  onChange={async (checked) => {
+                    updateData("hide_email", checked);
+                    try {
+                      await updateProfile(currentUser.username, { hide_email: checked });
+                    } catch {
+                      updateData("hide_email", !checked);
                     }
                   }}
                   className="ml-4"
