@@ -31,6 +31,8 @@ import { useAuthContext, useChatContext } from "@/contexts/Support";
 import { useTheme } from "@/contexts/themeContext";
 import useCreatePostGate from "@/hooks/useCreatePostGate";
 import { logoutRequest } from "@/app/Api";
+import AccountSwitcher from "./AccountSwitcher";
+import { getSavedAccounts, removeSavedAccount, activateSavedAccount } from "@/utils/savedAccounts";
 import { NAV_BADGE_CLASS, NAV_ICON_BUTTON_CLASS } from "./navStyles";
 
 // Only fetched the first time someone opens the composer from the navbar.
@@ -139,9 +141,18 @@ export default function Navbar({ hasSidebar = false }) {
     router.push(`/login?continue=${encodeURIComponent(window.location.href)}`);
   };
 
-  const onLogout = (ev) => {
+  const onLogout = async (ev) => {
     ev.preventDefault();
-    logoutRequest();
+    // Wait for it: the axios interceptor reads the token asynchronously, so
+    // swapping accounts first would revoke the next account's token instead.
+    await logoutRequest().catch(() => {});
+    // Forget this account on the device; fall back to another signed-in one if any
+    if (currentUser?.id) removeSavedAccount(currentUser.id);
+    const next = getSavedAccounts()[0];
+    if (next) {
+      activateSavedAccount(next);
+      return;
+    }
     setCurrentUser({});
     setUserToken(null); // This will now clear both localStorage and cookies
     localStorage.removeItem("CURRENT_USER");
@@ -153,7 +164,7 @@ export default function Navbar({ hasSidebar = false }) {
 
   return (
     <>
-      <nav className="fixed inset-x-0 top-0 z-50 h-[69px] border-b border-gray-200/80 bg-white/90 backdrop-blur-xl dark:border-neutral-700 dark:bg-[#2c2f2e]/90">
+      <nav style={{ top: "var(--app-banner-offset, 0px)" }} className="fixed inset-x-0 z-50 h-[69px] border-b border-gray-200/80 bg-white/90 backdrop-blur-xl dark:border-neutral-700 dark:bg-[#2c2f2e]/90">
         <div className="flex h-full items-center gap-2 px-3 sm:gap-3 sm:px-6">
           {/* Width lines the search box up with the page content next to the 260px sidebar. */}
           <div className="flex shrink-0 items-center gap-1 sm:gap-2 xl:w-[228px]">
@@ -313,6 +324,7 @@ export default function Navbar({ hasSidebar = false }) {
                         </span>
                       </button>
                     </div>
+                    <AccountSwitcher currentUserId={currentUser?.id} itemClassName={MENU_ITEM_CLASS} />
                     <div className="border-t border-gray-100 pt-1 dark:border-neutral-600">
                       <button type="button" onClick={onLogout} className={MENU_ITEM_CLASS}>
                         <LogOut className="h-4 w-4" /> Đăng xuất
@@ -358,7 +370,7 @@ export default function Navbar({ hasSidebar = false }) {
           banner
           type="warning"
           className="fixed w-full left-0 z-40"
-          style={{ top: "69px" }}
+          style={{ top: "calc(69px + var(--app-banner-offset, 0px))" }}
           action={
             <Link
               href="/settings"

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { usePathname } from "next/navigation";
 import Link from "next/link";
 import { IoCloseCircle } from "react-icons/io5";
 import { useAuthContext } from "@/contexts/Support";
@@ -8,6 +9,8 @@ import { useAuthContext } from "@/contexts/Support";
 export default function BottomCTA() {
   const [isVisible, setIsVisible] = useState(true);
   const { currentUser } = useAuthContext();
+  // Same value on server and client, so hydration matches
+  const continueParam = encodeURIComponent(usePathname() || "/");
 
   if (currentUser || !isVisible) {
     return null;
@@ -37,21 +40,13 @@ export default function BottomCTA() {
             </p>
             <div className="flex gap-2 sm:!gap-10">
               <Link
-                href={`/login?continue=${
-                  typeof window !== "undefined"
-                    ? encodeURIComponent(window.location.href)
-                    : "/"
-                }`}
+                href={`/login?continue=${continueParam}`}
                 className="mt-3 px-4 py-2 bg-gray-500 !text-white rounded-lg zoom-btn"
               >
                 Đã có tài khoản?
               </Link>
               <Link
-                href={`/register?continue=${
-                  typeof window !== "undefined"
-                    ? encodeURIComponent(window.location.href)
-                    : "/"
-                }`}
+                href={`/register?continue=${continueParam}`}
                 className="mt-3 px-4 py-2 bg-primary-500 !text-white rounded-lg zoom-btn"
               >
                 Tham gia ngay

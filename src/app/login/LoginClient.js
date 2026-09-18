@@ -10,6 +10,7 @@ import { Input } from "antd";
 import { LockOutlined, UserOutlined } from "@ant-design/icons";
 import { useAuthContext } from "@/contexts/Support";
 import { loginRequest } from "../Api";
+import { activateSavedAccount, getSavedAccounts } from "@/utils/savedAccounts";
 
 function LoginClientInner() {
   const { setCurrentUser, setUserToken, loggedIn } = useAuthContext();
@@ -26,6 +27,11 @@ function LoginClientInner() {
   const [errors, setErrors] = useState({});
   const [processing, setProcessing] = useState(false);
   const [error, setError] = useState(null);
+  const [savedAccounts, setSavedAccounts] = useState([]);
+
+  useEffect(() => {
+    setSavedAccounts(getSavedAccounts());
+  }, []);
 
   // Check if user is already logged in
   // Skip redirect if we're processing or if we manually handled redirect
@@ -155,6 +161,44 @@ function LoginClientInner() {
             </div>
           </div>
           <div className="p-6 pt-0">
+            {savedAccounts.length > 0 && !loggedIn && (
+              <div className="mb-4 space-y-1.5">
+                <p className="text-xs font-medium text-gray-500 dark:text-neutral-400">
+                  Tiếp tục với tài khoản đã đăng nhập
+                </p>
+                {savedAccounts.map((account) => (
+                  <button
+                    key={account.user.id}
+                    type="button"
+                    onClick={() =>
+                      activateSavedAccount(
+                        account,
+                        decodeURIComponent(searchParams.get("continue") || "/")
+                      )
+                    }
+                    className="flex w-full items-center gap-3 rounded-lg border px-3 py-2 text-left transition-colors hover:bg-gray-50 dark:border-neutral-500 dark:hover:bg-neutral-600"
+                  >
+                    <img
+                      src={
+                        account.user.avatar_url ||
+                        `${process.env.NEXT_PUBLIC_API_URL}/v1.0/users/${account.user.username}/avatar`
+                      }
+                      alt=""
+                      className="h-8 w-8 rounded-full object-cover"
+                    />
+                    <span className="min-w-0">
+                      <span className="block truncate text-sm font-medium dark:text-neutral-100">
+                        {account.user.profile_name || account.user.username}
+                      </span>
+                      <span className="block truncate text-xs text-gray-500 dark:text-neutral-400">
+                        @{account.user.username}
+                      </span>
+                    </span>
+                  </button>
+                ))}
+                <p className="pt-2 text-center text-xs text-gray-400">hoặc đăng nhập tài khoản khác</p>
+              </div>
+            )}
             {/* if error then show */}
             <form className="space-y-4" onSubmit={submit}>
               <input type="hidden" name="_token" defaultValue="" />

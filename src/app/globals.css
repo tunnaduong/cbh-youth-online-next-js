@@ -1116,3 +1116,8 @@ body.has-email-verification-alert [class*="mt-\\[4\\.3rem\\]"] {
   border-color: #319527 !important;
   box-shadow: 0 0 0 2px rgba(49, 149, 39, 0.15) !important;
 }
+
+/* Mobile "open in app" banner sits in the page flow above the fixed navbar */
+body {
+  padding-top: var(--app-banner-h, 0px);
+}

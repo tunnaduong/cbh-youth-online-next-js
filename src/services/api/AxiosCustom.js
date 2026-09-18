@@ -43,6 +43,25 @@ axiosInstance.interceptors.response.use(
       if (typeof window !== "undefined") {
         if (error.response && error.response.status === 401) {
           // WHEN: ERROR 401 (Unauthorized)
+          // Drop the dead token from the account switcher too. Use the token
+          // this request actually carried - by the time a slow 401 comes back
+          // the active account may already have been switched.
+          const sentAuth = error.config?.headers?.Authorization || "";
+          const deadToken = sentAuth.startsWith("Bearer ") ? sentAuth.slice(7) : null;
+          if (deadToken) {
+            try {
+              const saved = JSON.parse(localStorage.getItem("SAVED_ACCOUNTS") || "[]");
+              localStorage.setItem(
+                "SAVED_ACCOUNTS",
+                JSON.stringify(saved.filter((a) => a?.token !== deadToken))
+              );
+            } catch {}
+          }
+          // A stale request from an account that is no longer active must not
+          // sign out whoever is active now.
+          if (deadToken && deadToken !== getTokenFromAnywhere()) {
+            return Promise.reject(error);
+          }
           localStorage.removeItem("TOKEN");
           localStorage.removeItem("CURRENT_USER");
           // Also clear cookies

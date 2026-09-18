@@ -11,6 +11,7 @@ import {
   migrateTokenToCookies,
   getTokenFromAnywhere,
 } from "@/utils/cookies";
+import { upsertSavedAccount } from "@/utils/savedAccounts";
 
 const AuthProvider = ({ children }) => {
   const [currentUser, setCurrentUser] = useState(null);
@@ -61,8 +62,13 @@ const AuthProvider = ({ children }) => {
     const storedUser = localStorage.getItem("CURRENT_USER");
     const storedToken = getTokenFromAnywhere(); // Try cookies first, then localStorage
 
-    if (storedUser) {
+    // A cached user without a token is a leftover (e.g. rewritten while the
+    // page was navigating away during "add account") - ignore it, otherwise
+    // the login page thinks the old account is still signed in.
+    if (storedUser && storedToken) {
       setCurrentUser(JSON.parse(storedUser));
+    } else if (storedUser) {
+      localStorage.removeItem("CURRENT_USER");
     }
     if (storedToken) {
       _setUserToken(storedToken);
@@ -95,6 +101,11 @@ const AuthProvider = ({ children }) => {
       // localStorage.removeItem("CURRENT_USER");
     }
   }, [currentUser]);
+
+  // Remember every signed-in account on this browser for the account switcher
+  useEffect(() => {
+    if (userToken && currentUser?.id) upsertSavedAccount(userToken, currentUser);
+  }, [userToken, currentUser]);
 
   // Update loggedIn state based on token or currentUser
   useEffect(() => {

@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
+import { X } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { openDeepLink, isIOSDevice } from "@/lib/deepLink";
 
@@ -8,6 +9,32 @@ export default function AppBanner() {
   const pathname = usePathname();
   const [visible, setVisible] = useState(false);
   const [appUrl, setAppUrl] = useState("");
+  const bannerRef = useRef(null);
+
+  // The banner sits in the page flow above the fixed navbar. Publish its
+  // height (--app-banner-h pads the body) and how much of it is still on
+  // screen (--app-banner-offset pushes the navbar down) so the navbar rides
+  // under it and then sticks to the top once it has scrolled away.
+  useEffect(() => {
+    const root = document.documentElement;
+    if (!visible || !bannerRef.current) return;
+    const el = bannerRef.current;
+    const update = () => {
+      const h = el.offsetHeight;
+      root.style.setProperty("--app-banner-h", `${h}px`);
+      root.style.setProperty("--app-banner-offset", `${Math.max(0, h - window.scrollY)}px`);
+    };
+    update();
+    const ro = new ResizeObserver(update);
+    ro.observe(el);
+    window.addEventListener("scroll", update, { passive: true });
+    return () => {
+      ro.disconnect();
+      window.removeEventListener("scroll", update);
+      root.style.removeProperty("--app-banner-h");
+      root.style.removeProperty("--app-banner-offset");
+    };
+  }, [visible]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -98,79 +125,47 @@ export default function AppBanner() {
 
   if (!visible) return null;
 
+  const subtitle = appUrl.includes("story")
+    ? "Xem tin này trong ứng dụng"
+    : appUrl.includes("post")
+    ? "Xem bài viết này trong ứng dụng"
+    : "Mở ứng dụng để trải nghiệm tốt hơn";
+
   return (
     <div
       id="app-banner"
-      style={{
-        position: "fixed",
-        top: 0,
-        left: 0,
-        right: 0,
-        zIndex: 9999,
-        background: "#1a1a2e",
-        color: "#fff",
-        padding: "12px 16px",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "space-between",
-        fontFamily: "sans-serif",
-        fontSize: "14px",
-        boxShadow: "0 2px 8px rgba(0,0,0,0.3)",
-      }}
+      ref={bannerRef}
+      className="absolute inset-x-0 top-0 z-[60] border-b border-gray-200 bg-white dark:border-neutral-700 dark:bg-[#232625]"
     >
-      <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+      <div className="flex items-center gap-3 px-3 py-2.5">
+        <button
+          type="button"
+          onClick={handleClose}
+          aria-label="Đóng"
+          className="-ml-1 flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600 dark:text-neutral-500 dark:hover:bg-neutral-700 dark:hover:text-neutral-300"
+        >
+          <X className="h-4 w-4" />
+        </button>
         <img
           src="/images/logo.png"
-          alt="App Icon"
-          style={{ width: "32px", height: "32px", borderRadius: "8px", objectFit: "cover" }}
+          alt=""
+          className="h-11 w-11 shrink-0 rounded-xl border border-gray-200 bg-white object-contain p-1 shadow-sm dark:border-neutral-600"
           onError={(e) => {
             e.target.src = "/favicon.ico";
           }}
         />
-        <div style={{ textAlign: "left" }}>
-          <div style={{ fontWeight: "600", color: "#ffffff" }}>CBH Youth Online</div>
-          <div style={{ fontSize: "12px", opacity: 0.7, color: "#cccccc" }}>
-            {appUrl.includes("story")
-              ? "Xem tin này trong ứng dụng"
-              : appUrl.includes("post")
-              ? "Xem bài viết này trong ứng dụng"
-              : "Mở ứng dụng để trải nghiệm tốt hơn"}
-          </div>
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-sm font-semibold text-gray-900 dark:text-neutral-100">
+            CBH Youth Online
+          </p>
+          <p className="truncate text-xs text-gray-500 dark:text-neutral-400">{subtitle}</p>
         </div>
-      </div>
-      <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
         <button
+          type="button"
           onClick={handleOpenInApp}
-          style={{
-            background: "#4f46e5",
-            color: "#fff",
-            border: "none",
-            borderRadius: "8px",
-            padding: "8px 16px",
-            cursor: "pointer",
-            fontWeight: "600",
-            fontSize: "13px",
-          }}
+          className="shrink-0 rounded-full bg-primary-500 px-4 py-1.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-primary-600 active:bg-primary-700 dark:bg-primary-600 dark:hover:bg-primary-500"
         >
-          Mở App
-        </button>
-        <button
-          onClick={handleClose}
-          aria-label="Đóng"
-          style={{
-            background: "transparent",
-            color: "#fff",
-            border: "none",
-            cursor: "pointer",
-            fontSize: "16px",
-            padding: "6px 8px",
-            lineHeight: 1,
-            minWidth: "32px",
-            minHeight: "32px",
-            borderRadius: "8px",
-          }}
-        >
-          ✕
+          Mở app
         </button>
       </div>
     </div>
