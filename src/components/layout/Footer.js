@@ -3,7 +3,6 @@ import Link from "next/link";
 import { IoLogoFacebook, IoLogoGithub } from "react-icons/io5";
 import { FaDiscord } from "react-icons/fa";
 
-
 export default function Footer() {
   return (
     <footer className="footer text-[#6B6B6B] dark:!text-white bg-white dark:!bg-[var(--main-white)] relative z-30 mt-4">
@@ -165,14 +164,22 @@ export default function Footer() {
                 </a>
               </li>
               <li className="mt-3 flex gap-2">
-                <a href="https://apps.apple.com/vn/app/cbh-online-chuy%C3%AAn-bi%C3%AAn-h%C3%B2a/id6746458139?l=vi" target="_blank" rel="noopener noreferrer">
+                <a
+                  href="https://apps.apple.com/vn/app/cbh-online-chuy%C3%AAn-bi%C3%AAn-h%C3%B2a/id6746458139?l=vi"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
                   <img
                     src="/images/appstore.png"
                     alt="App Store"
                     className="h-10 inline"
                   />
                 </a>
-                <a href="https://play.google.com/store/apps/details?id=com.fatties.youth" target="_blank" rel="noopener noreferrer">
+                <a
+                  href="https://play.google.com/store/apps/details?id=com.fatties.youth"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
                   <img
                     src="/images/googleplay.png"
                     alt="Google Play"
@@ -191,6 +198,10 @@ export default function Footer() {
                 Công ty TNHH Giải pháp Giáo dục Fatties Software
               </a>{" "}
               - Được phát triển bởi học sinh, dành cho học sinh.
+              <br />
+              Website đang trong quá trình hoàn thiện kỹ thuật và thực hiện thủ
+              tục xin cấp Giấy phép thiết lập Mạng xã hội theo quy định của pháp
+              luật.
             </p>
           </div>
         </div>
