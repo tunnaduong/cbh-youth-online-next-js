@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import Link from "next/link";
 import {
   Table,
   Tag,
@@ -18,8 +17,6 @@ import {
   Col,
   Statistic,
 } from "antd";
-import DefaultLayout from "@/layouts/DefaultLayout";
-import { useAuthContext } from "@/contexts/Support";
 import { getReports, getReportStats, reviewReport } from "@/app/Api";
 
 const { RangePicker } = DatePicker;
@@ -145,7 +142,6 @@ function ReviewModal({ report, open, onClose, onSuccess }) {
 }
 
 export default function AdminReportsPage() {
-  const { currentUser, authLoading } = useAuthContext();
   const [reports, setReports] = useState([]);
   const [pagination, setPagination] = useState({ current: 1, pageSize: 15, total: 0 });
   const [loading, setLoading] = useState(false);
@@ -153,8 +149,6 @@ export default function AdminReportsPage() {
   const [dateRange, setDateRange] = useState(null);
   const [stats, setStats] = useState(null);
   const [reviewTarget, setReviewTarget] = useState(null);
-
-  const isAdmin = currentUser?.role === "admin";
 
   const fetchReports = useCallback(
     async (page = 1) => {
@@ -195,35 +189,11 @@ export default function AdminReportsPage() {
   }, []);
 
   useEffect(() => {
-    if (!isAdmin) return;
     fetchReports(1);
     fetchStats();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isAdmin, statusFilter, dateRange]);
+  }, [statusFilter, dateRange]);
 
-  if (authLoading) {
-    return (
-      <DefaultLayout activeNav="admin">
-        <div className="p-8 text-center text-gray-500">Đang tải...</div>
-      </DefaultLayout>
-    );
-  }
-
-  if (!currentUser || !isAdmin) {
-    return (
-      <DefaultLayout activeNav="admin">
-        <div className="p-8 text-center">
-          <h1 className="text-xl font-semibold mb-2">Không có quyền truy cập</h1>
-          <p className="text-gray-500 mb-4">
-            Bạn cần quyền quản trị viên để xem trang này.
-          </p>
-          <Link href="/" className="text-primary-500 underline">
-            Về trang chủ
-          </Link>
-        </div>
-      </DefaultLayout>
-    );
-  }
 
   const columns = [
     { title: "ID", dataIndex: "id", key: "id", width: 70 },
@@ -236,7 +206,7 @@ export default function AdminReportsPage() {
       title: "Người bị báo cáo",
       key: "reportedUser",
       render: (_, r) =>
-        r.reportedUser?.username || r.reportedUser?.profile_name || "-",
+        r.reported_user?.username || r.reported_user?.profile_name || "-",
     },
     {
       title: "Nội dung liên quan",
@@ -244,7 +214,7 @@ export default function AdminReportsPage() {
       render: (_, r) => {
         if (r.topic_id) return `Bài viết #${r.topic_id}`;
         if (r.story_id) return `Tin #${r.story_id}`;
-        return "Người dùng";
+        return r.reported_user_id ? `Người dùng #${r.reported_user_id}` : "Người dùng";
       },
     },
     {
@@ -281,9 +251,9 @@ export default function AdminReportsPage() {
   ];
 
   return (
-    <DefaultLayout activeNav="admin">
-      <div className="max-w-[1100px] mx-auto w-full px-4 py-6">
-        <h1 className="text-xl font-semibold mb-4">Quản lý báo cáo</h1>
+    <div>
+      <div className="max-w-[1280px] mx-auto w-full px-4 sm:px-6 py-6">
+        <h1 className="text-2xl font-bold text-gray-900 tracking-tight mb-5">Quản lý báo cáo</h1>
 
         {stats && (
           <Row gutter={[16, 16]} className="mb-6">
@@ -314,8 +284,8 @@ export default function AdminReportsPage() {
               {stats.most_reported_users.map((r, idx) => (
                 <div key={r.reported_user_id || idx} className="flex justify-between text-sm">
                   <span>
-                    {r.reportedUser?.username ||
-                      r.reportedUser?.profile_name ||
+                    {r.reported_user?.username ||
+                      r.reported_user?.profile_name ||
                       `#${r.reported_user_id}`}
                   </span>
                   <span className="text-gray-500">{r.total} lượt</span>
@@ -366,6 +336,6 @@ export default function AdminReportsPage() {
           fetchStats();
         }}
       />
-    </DefaultLayout>
+    </div>
   );
 }

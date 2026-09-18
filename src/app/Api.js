@@ -791,3 +791,47 @@ export const restartQuiz = (quizSetId) => {
 export const createCustomQuiz = (formData) => {
   return Api.postFormDataRequest("/v1.0/quiz/custom", formData);
 };
+
+// Admin panel
+export const adminGetOverview = () => Api.getRequest("/v1.0/admin/overview");
+
+export const adminGetTopics = (params) => Api.getRequest("/v1.0/admin/topics", params);
+export const adminUpdateTopic = (id, params) => Api.patchRequest(`/v1.0/admin/topics/${id}`, params);
+export const adminDeleteTopic = (id) => Api.deleteRequest(`/v1.0/admin/topics/${id}`);
+
+export const adminGetComments = (params) => Api.getRequest("/v1.0/admin/comments", params);
+export const adminDeleteComment = (id) => Api.deleteRequest(`/v1.0/admin/comments/${id}`);
+
+export const adminGetUsers = (params) => Api.getRequest("/v1.0/admin/users", params);
+export const adminUpdateUser = (id, params) => Api.patchRequest(`/v1.0/admin/users/${id}`, params);
+export const adminBanUser = (id, params) => Api.postRequest(`/v1.0/admin/users/${id}/ban`, params);
+export const adminUnbanUser = (id) => Api.postRequest(`/v1.0/admin/users/${id}/unban`);
+
+export const adminGetPendingDeposits = (params) => Api.getRequest("/v1.0/admin/pending-deposits", params);
+export const adminApproveDeposit = (id) => Api.postRequest(`/v1.0/admin/pending-deposits/${id}/approve`);
+export const adminExpireDeposit = (id) => Api.postRequest(`/v1.0/admin/pending-deposits/${id}/expire`);
+
+export const adminGetWithdrawals = (params) => Api.getRequest("/v1.0/admin/withdrawal-requests", params);
+export const adminApproveWithdrawal = (id, params) => Api.postRequest(`/v1.0/admin/withdrawal-requests/${id}/approve`, params);
+export const adminRejectWithdrawal = (id, params) => Api.postRequest(`/v1.0/admin/withdrawal-requests/${id}/reject`, params);
+
+export const adminGetShopCategories = (params) => Api.getRequest("/v1.0/admin/shop/categories", params);
+export const adminSaveShopCategory = (id, params) =>
+  id ? Api.putRequest(`/v1.0/admin/shop/categories/${id}`, params) : Api.postRequest("/v1.0/admin/shop/categories", params);
+export const adminDeleteShopCategory = (id) => Api.deleteRequest(`/v1.0/admin/shop/categories/${id}`);
+
+export const adminGetShopProducts = (params) => Api.getRequest("/v1.0/admin/shop/products", params);
+export const adminSaveShopProduct = (id, params) =>
+  id ? Api.putRequest(`/v1.0/admin/shop/products/${id}`, params) : Api.postRequest("/v1.0/admin/shop/products", params);
+export const adminDeleteShopProduct = (id) => Api.deleteRequest(`/v1.0/admin/shop/products/${id}`);
+
+export const adminGetShopOrders = (params) => Api.getRequest("/v1.0/admin/shop/orders", params);
+export const adminUpdateShopOrder = (id, params) => Api.patchRequest(`/v1.0/admin/shop/orders/${id}`, params);
+
+export const adminGetStudyMaterials = (params) => Api.getRequest("/v1.0/admin/study-materials", params);
+export const adminUpdateStudyMaterial = (id, params) => Api.patchRequest(`/v1.0/admin/study-materials/${id}`, params);
+export const adminDeleteStudyMaterial = (id) => Api.deleteRequest(`/v1.0/admin/study-materials/${id}`);
+
+export const adminGetBroadcasts = (params) => Api.getRequest("/v1.0/admin/broadcasts", params);
+export const adminGetBroadcastAudience = (params) => Api.getRequest("/v1.0/admin/broadcasts/audience", params);
+export const adminSendBroadcast = (params) => Api.postRequest("/v1.0/admin/broadcasts", params);

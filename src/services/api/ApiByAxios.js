@@ -15,6 +15,11 @@ export const putRequest = (endpoint, params = {}) => {
   return axiosInstance.put(endpoint, params);
 };
 
+// Patch Data with optional data
+export const patchRequest = (endpoint, params = {}) => {
+  return axiosInstance.patch(endpoint, params);
+};
+
 // Delete Data with optional data
 export const deleteRequest = (endpoint, params = {}) => {
   return axiosInstance.delete(endpoint, params);
