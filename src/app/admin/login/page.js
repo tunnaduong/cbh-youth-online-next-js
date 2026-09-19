@@ -1,40 +1,79 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 import { Input, Button } from "antd";
 import { LockOutlined, UserOutlined } from "@ant-design/icons";
 import { ADMIN_SESSION_KEY } from "../AdminShell";
-
-const ADMIN_CREDENTIALS = { username: "admin", password: "anhphatdeptrai" };
+import * as Api from "@/app/Api";
+import { setAuthCookie, getAuthCookie } from "@/utils/cookies";
 
 export default function AdminLoginPage() {
   const router = useRouter();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
 
-  const handleSubmit = (e) => {
+  // Check if user is already logged in via cookies
+  useEffect(() => {
+    const authToken = getAuthCookie();
+    if (authToken) {
+      sessionStorage.setItem(ADMIN_SESSION_KEY, "1");
+      router.replace("/admin");
+    } else {
+      setLoading(false);
+    }
+  }, [router]);
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
     setLoading(true);
 
-    setTimeout(() => {
-      if (
-        username === ADMIN_CREDENTIALS.username &&
-        password === ADMIN_CREDENTIALS.password
-      ) {
-        sessionStorage.setItem(ADMIN_SESSION_KEY, "1");
-        router.replace("/admin");
-      } else {
-        setError("Tên đăng nhập hoặc mật khẩu không đúng.");
+    try {
+      const response = await Api.loginRequest({ username, password });
+      const user = response?.data?.user || response?.user;
+      const token = response?.data?.token || response?.token;
+
+      if (!user || !token) {
+        setError("Phản hồi từ server không hợp lệ.");
         setLoading(false);
+        return;
       }
-    }, 400);
+
+      // Check if user is admin
+      if (user.role !== "admin") {
+        setError("Tài khoản của bạn không có quyền truy cập quản trị viên.");
+        setLoading(false);
+        return;
+      }
+
+      // Save token to cookies and session
+      setAuthCookie(token);
+      sessionStorage.setItem(ADMIN_SESSION_KEY, "1");
+      localStorage.setItem("CURRENT_USER", JSON.stringify(user));
+
+      router.replace("/admin");
+    } catch (err) {
+      const errorMessage = err.response?.data?.message || err.message || "Tên đăng nhập hoặc mật khẩu không đúng.";
+      setError(errorMessage);
+      setLoading(false);
+    }
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[#eaf3ef] dark:bg-neutral-800">
+        <div className="flex flex-col items-center gap-4">
+          <div className="h-12 w-12 animate-spin rounded-full border-4 border-gray-200 border-t-[#319527]" />
+          <p className="text-gray-600 dark:text-gray-300">Đang kiểm tra...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-[#eaf3ef] dark:bg-neutral-800 px-4">
@@ -66,6 +105,7 @@ export default function AdminLoginPage() {
               status={error ? "error" : ""}
               autoComplete="username"
               autoFocus
+              disabled={loading}
             />
           </div>
 
@@ -80,6 +120,7 @@ export default function AdminLoginPage() {
               onChange={(e) => setPassword(e.target.value)}
               status={error ? "error" : ""}
               autoComplete="current-password"
+              disabled={loading}
             />
           </div>
 
