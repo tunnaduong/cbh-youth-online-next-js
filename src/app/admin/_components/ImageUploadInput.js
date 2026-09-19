@@ -15,6 +15,14 @@ const currentUserId = () => {
   }
 };
 
+// Uploads are stored on the API host (api.chuyenbienhoa.com/storage/...), but the backend
+// builds the URL from APP_URL, which points at the main site. Keep only the /storage/... part
+// and put it under the API host.
+const toApiStorageUrl = (path) => {
+  const storagePath = String(path).replace(/^https?:\/\/[^/]+/, "");
+  return `${process.env.NEXT_PUBLIC_API_URL}${storagePath.startsWith("/") ? "" : "/"}${storagePath}`;
+};
+
 /**
  * Image URL field with an upload button (via /v1.0/upload) and a preview.
  * Works as an antd Form control (value/onChange) or standalone.
@@ -37,7 +45,7 @@ export default function ImageUploadInput({ value, onChange, size, compact = fals
       formData.append("file", file);
       formData.append("uid", currentUserId());
       const res = await uploadFile(formData);
-      onChange?.(res.data.path);
+      onChange?.(toApiStorageUrl(res.data.path));
     } catch (err) {
       message.error(err?.response?.data?.message || "Tải ảnh lên thất bại");
     } finally {
