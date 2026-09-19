@@ -11,6 +11,7 @@ import {
   adminGetShopCategories,
 } from "@/app/Api";
 import VariantEditor from "./VariantEditor";
+import ImageUploadInput from "../../_components/ImageUploadInput";
 
 export default function AdminShopProductsPage() {
   const tableRef = useRef();
@@ -224,8 +225,8 @@ export default function AdminShopProductsPage() {
           <Form.Item label="Phân loại hàng" extra="VD: Size (S, M, L), Màu (Đen, Trắng) — mỗi tổ hợp có giá và kho riêng">
             <VariantEditor value={variantData} onChange={setVariantData} basePrice={form.getFieldValue("price") || 0} />
           </Form.Item>
-          <Form.Item name="image_url" label="URL ảnh">
-            <Input />
+          <Form.Item name="image_url" label="Ảnh sản phẩm">
+            <ImageUploadInput />
           </Form.Item>
           <Form.Item name="description" label="Mô tả">
             <Input.TextArea rows={3} />

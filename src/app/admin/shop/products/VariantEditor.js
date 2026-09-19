@@ -3,6 +3,7 @@
 import { Button, Input, InputNumber, Select, Table } from "antd";
 import { DeleteOutlined, PlusOutlined } from "@ant-design/icons";
 import { fmtNumber, vndToPoints } from "../../_components/ResourceTable";
+import ImageUploadInput from "../../_components/ImageUploadInput";
 
 const MAX_OPTIONS = 3;
 
@@ -97,11 +98,11 @@ export default function VariantEditor({ value, onChange, basePrice = 0 }) {
       ),
     },
     {
-      title: "URL ảnh",
+      title: "Ảnh",
       key: "image_url",
-      width: 140,
+      width: 120,
       render: (_, v, i) => (
-        <Input size="small" value={v.image_url || ""} onChange={(e) => setVariant(i, { image_url: e.target.value })} />
+        <ImageUploadInput compact size="small" value={v.image_url} onChange={(image_url) => setVariant(i, { image_url })} />
       ),
     },
   ];
