@@ -835,3 +835,8 @@ export const adminDeleteStudyMaterial = (id) => Api.deleteRequest(`/v1.0/admin/s
 export const adminGetBroadcasts = (params) => Api.getRequest("/v1.0/admin/broadcasts", params);
 export const adminGetBroadcastAudience = (params) => Api.getRequest("/v1.0/admin/broadcasts/audience", params);
 export const adminSendBroadcast = (params) => Api.postRequest("/v1.0/admin/broadcasts", params);
+
+export const adminGetConversations = (params) => Api.getRequest("/v1.0/admin/conversations", params);
+export const adminGetConversationMessages = (id, params) => Api.getRequest(`/v1.0/admin/conversations/${id}/messages`, params);
+export const adminSearchMessages = (params) => Api.getRequest("/v1.0/admin/messages/search", params);
+export const adminGetMessageAccessLogs = (params) => Api.getRequest("/v1.0/admin/messages/access-logs", params);

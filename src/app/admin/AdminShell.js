@@ -19,6 +19,7 @@ import {
   ShoppingCartOutlined,
   BookOutlined,
   NotificationOutlined,
+  MessageOutlined,
   LogoutOutlined,
   MenuOutlined,
   HomeOutlined,
@@ -70,6 +71,7 @@ export const NAV_GROUPS = [
     label: "NGƯỜI DÙNG & VÍ",
     children: [
       { key: "/admin/users", icon: <UserOutlined />, label: "Người dùng" },
+      { key: "/admin/messages", icon: <MessageOutlined />, label: "Tin nhắn" },
       { key: "/admin/notifications", icon: <NotificationOutlined />, label: "Gửi thông báo" },
       { key: "/admin/deposits", icon: <DownloadOutlined />, label: "Nạp tiền" },
       { key: "/admin/withdrawals", icon: <UploadOutlined />, label: "Rút tiền" },
