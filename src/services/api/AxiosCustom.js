@@ -1,6 +1,7 @@
 import axios from "axios";
 import { getTokenFromAnywhere } from "@/utils/cookies";
 import { getSocketId } from "@/lib/echo";
+import { isApiDownError, notifyApiDown } from "@/components/maintenance/apiStatus";
 
 // Hàm tạo một instance của axios với cấu hình tùy chỉnh
 const axiosInstance = axios.create({
@@ -41,6 +42,7 @@ axiosInstance.interceptors.response.use(
   (error) => {
     try {
       if (typeof window !== "undefined") {
+        if (isApiDownError(error)) notifyApiDown();
         if (error.response && error.response.status === 401) {
           // WHEN: ERROR 401 (Unauthorized)
           // Drop the dead token from the account switcher too. Use the token
