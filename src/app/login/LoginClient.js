@@ -129,13 +129,13 @@ function LoginClientInner() {
     } catch (error) {
       setProcessing(false);
 
-      // Handle backend validation errors
-      if (error.response && error.response.data && error.response.data.errors) {
-        setErrors(error.response.data.errors);
-        console.log("err1", error.response.data.errors);
+      const data = error.response?.data;
+      if (data?.banned) {
+        setError(data.message);
+      } else if (data?.errors) {
+        setErrors(data.errors);
       } else {
         setError(error.message);
-        console.log("err2", error);
       }
     }
   };
