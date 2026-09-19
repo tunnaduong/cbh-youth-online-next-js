@@ -1,7 +1,7 @@
 "use client";
 
 import { Select, Tag, message } from "antd";
-import ResourceTable, { fmtDate, fmtNumber, errMsg } from "../../_components/ResourceTable";
+import ResourceTable, { fmtDate, fmtVndPoints, errMsg } from "../../_components/ResourceTable";
 import { adminGetShopOrders, adminUpdateShopOrder } from "@/app/Api";
 
 const STATUS = {
@@ -27,7 +27,7 @@ export default function AdminShopOrdersPage() {
         </div>
       ),
     },
-    { title: "Tổng (điểm)", dataIndex: "total_amount", render: fmtNumber },
+    { title: "Tổng (VND)", dataIndex: "total_amount", render: fmtVndPoints },
     {
       title: "Trạng thái",
       key: "status",
@@ -69,7 +69,8 @@ export default function AdminShopOrdersPage() {
           <div className="text-sm">
             {(o.items || []).map((it) => (
               <div key={it.id}>
-                {it.product?.name || `Sản phẩm #${it.product_id}`} × {it.quantity} — {fmtNumber(it.price)} điểm
+                {it.product?.name || `Sản phẩm #${it.product_id}`}
+                {it.variant_label ? ` (${it.variant_label})` : ""} × {it.quantity} — {fmtVndPoints(it.price)}
               </div>
             ))}
             {o.note && <div className="mt-2 text-gray-500">Ghi chú: {o.note}</div>}

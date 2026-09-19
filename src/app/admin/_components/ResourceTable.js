@@ -5,6 +5,10 @@ import { Table, Input, Select, message } from "antd";
 
 export const fmtDate = (v) => (v ? new Date(v).toLocaleString("vi-VN") : "-");
 export const fmtNumber = (v) => (v == null ? "-" : Number(v).toLocaleString("vi-VN"));
+// Shop prices are stored in VND; 1.000đ = 10 điểm (PointsService::convertVNDToPoints).
+export const vndToPoints = (vnd) => Math.round((Number(vnd) / 1000) * 10);
+export const fmtVndPoints = (v) =>
+  v == null ? "-" : `${fmtNumber(v)}đ (${fmtNumber(vndToPoints(v))} điểm)`;
 export const errMsg = (err, fallback) => err?.response?.data?.message || fallback;
 
 /**
