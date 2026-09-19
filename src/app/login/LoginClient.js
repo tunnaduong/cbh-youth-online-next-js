@@ -162,7 +162,7 @@ function LoginClientInner() {
           </div>
           <div className="p-6 pt-0">
             {savedAccounts.length > 0 && !loggedIn && (
-              <div className="mb-4 space-y-1.5">
+              <div className="mb-5 mt-6 space-y-2">
                 <p className="text-xs font-medium text-gray-500 dark:text-neutral-400">
                   Tiếp tục với tài khoản đã đăng nhập
                 </p>
@@ -196,7 +196,11 @@ function LoginClientInner() {
                     </span>
                   </button>
                 ))}
-                <p className="pt-2 text-center text-xs text-gray-400">hoặc đăng nhập tài khoản khác</p>
+                <div className="flex items-center gap-3 pt-3 text-xs text-gray-400">
+                  <span className="h-px flex-1 bg-gray-200 dark:bg-neutral-500" />
+                  hoặc đăng nhập tài khoản khác
+                  <span className="h-px flex-1 bg-gray-200 dark:bg-neutral-500" />
+                </div>
               </div>
             )}
             {/* if error then show */}
