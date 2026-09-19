@@ -1456,42 +1456,47 @@ export default function ChatConversation({
           </div>
           );
         })}
+
+        {/* Rendered as the last item of the scrollable message list (not as
+            a sibling after it) so it sits on this container's transparent
+            background - the same one the messages themselves float over -
+            instead of the plain page background below, which looked like
+            an ugly opaque white box cutting across the chat wallpaper. */}
+        {typingEntries.length > 0 && (
+          <div className="flex items-center gap-1.5">
+            <div className="flex -space-x-1.5">
+              {typingEntries.slice(0, 3).map((entry) => {
+                const avatarInfo = resolveTypingAvatar(entry);
+                return (
+                  <Avatar
+                    key={entry.userId}
+                    className="w-5 h-5 border border-white dark:border-neutral-800"
+                  >
+                    <AvatarImage
+                      src={avatarInfo.avatar_url}
+                      alt={avatarInfo.profile_name || ""}
+                    />
+                    <AvatarFallback className="text-[9px]">
+                      {avatarInfo.profile_name?.[0]?.toUpperCase() || "?"}
+                    </AvatarFallback>
+                  </Avatar>
+                );
+              })}
+              {typingEntries.length > 3 && (
+                <div className="w-5 h-5 rounded-full border border-white dark:border-neutral-800 bg-gray-200 dark:bg-neutral-700 flex items-center justify-center text-[9px] text-gray-600 dark:text-gray-300">
+                  +{typingEntries.length - 3}
+                </div>
+              )}
+            </div>
+            <div className="flex items-end gap-0.5 rounded-full bg-gray-200 dark:bg-neutral-700 px-2.5 py-1.5">
+              <span className="typing-dot w-1.5 h-1.5 rounded-full bg-gray-500 dark:bg-gray-300" />
+              <span className="typing-dot w-1.5 h-1.5 rounded-full bg-gray-500 dark:bg-gray-300" />
+              <span className="typing-dot w-1.5 h-1.5 rounded-full bg-gray-500 dark:bg-gray-300" />
+            </div>
+          </div>
+        )}
         </div>
       </div>
-
-      {typingEntries.length > 0 && (
-        <div className="flex items-center gap-1.5 px-4 py-1">
-          <div className="flex -space-x-1.5">
-            {typingEntries.slice(0, 3).map((entry) => {
-              const avatarInfo = resolveTypingAvatar(entry);
-              return (
-                <Avatar
-                  key={entry.userId}
-                  className="w-5 h-5 border border-white dark:border-neutral-800"
-                >
-                  <AvatarImage
-                    src={avatarInfo.avatar_url}
-                    alt={avatarInfo.profile_name || ""}
-                  />
-                  <AvatarFallback className="text-[9px]">
-                    {avatarInfo.profile_name?.[0]?.toUpperCase() || "?"}
-                  </AvatarFallback>
-                </Avatar>
-              );
-            })}
-            {typingEntries.length > 3 && (
-              <div className="w-5 h-5 rounded-full border border-white dark:border-neutral-800 bg-gray-200 dark:bg-neutral-700 flex items-center justify-center text-[9px] text-gray-600 dark:text-gray-300">
-                +{typingEntries.length - 3}
-              </div>
-            )}
-          </div>
-          <div className="flex items-end gap-0.5 rounded-full bg-gray-200 dark:bg-neutral-700 px-2.5 py-1.5">
-            <span className="typing-dot w-1.5 h-1.5 rounded-full bg-gray-500 dark:bg-gray-300" />
-            <span className="typing-dot w-1.5 h-1.5 rounded-full bg-gray-500 dark:bg-gray-300" />
-            <span className="typing-dot w-1.5 h-1.5 rounded-full bg-gray-500 dark:bg-gray-300" />
-          </div>
-        </div>
-      )}
 
       {/* Input */}
       <ChatMessageInput
