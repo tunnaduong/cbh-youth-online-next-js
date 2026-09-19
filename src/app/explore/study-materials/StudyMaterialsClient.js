@@ -291,19 +291,25 @@ export default function StudyMaterialsClient() {
                 <Input
                   size="large"
                   placeholder="Tìm kiếm tài liệu..."
-                  prefix={<SearchIcon size={16} className="text-gray-400" />}
+                  prefix={<SearchIcon size={16} className="text-white/60" />}
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   allowClear
-                  className="rounded-xl"
+                  className="[&.ant-input-affix-wrapper]:!bg-white [&.ant-input-affix-wrapper]:!border-white/40 [&.ant-input-affix-wrapper]:!text-gray-900 [&.ant-input]:!text-gray-900 rounded-xl"
+                  style={{
+                    "--ant-color-text-placeholder": "rgba(255, 255, 255, 0.6)",
+                  }}
                 />
                 <Select
                   size="large"
                   placeholder="Tất cả môn học"
-                  className="w-full"
+                  className="w-full [&.ant-select-selector]:!bg-white [&.ant-select-selector]:!border-white/40 [&.ant-select-selector_.ant-select-selection-item]:!text-gray-900 [&.ant-select-selector_.ant-select-placeholder]:!text-white/60"
                   value={categoryId}
                   onChange={(value) => setCategoryId(value)}
                   allowClear
+                  style={{
+                    "--ant-color-text-placeholder": "rgba(255, 255, 255, 0.6)",
+                  }}
                 >
                   <Select.Option value={null}>Tất cả môn học</Select.Option>
                   {categories.map((cat) => (
