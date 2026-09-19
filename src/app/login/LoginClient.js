@@ -131,10 +131,7 @@ function LoginClientInner() {
 
       const data = error.response?.data;
       if (data?.banned) {
-        const msg = data.ban_reason
-          ? `${data.message}\nLý do: ${data.ban_reason}`
-          : data.message;
-        setError(msg);
+        setError(data.message);
       } else if (data?.errors) {
         setErrors(data.errors);
       } else {
@@ -270,7 +267,7 @@ function LoginClientInner() {
             </form>
           </div>
           {error && (
-            <div className="text-red-500 text-center mb-3 whitespace-pre-line">{error}</div>
+            <div className="text-red-500 text-center mb-3">{error}</div>
           )}
           <div className="flex items-center p-6 pt-0">
             <div className="w-full space-y-2">
