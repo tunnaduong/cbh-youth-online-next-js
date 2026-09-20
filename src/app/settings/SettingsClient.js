@@ -80,8 +80,14 @@ export default function SettingsClient({ initialUser, hasAuthError }) {
       const selfieForm = new FormData(); selfieForm.append("file", selfieFile); selfieForm.append("uid", uid);
       const cardForm = new FormData(); cardForm.append("file", cardFile); cardForm.append("uid", uid);
       const [selfieRes, cardRes] = await Promise.all([uploadFile(selfieForm), uploadFile(cardForm)]);
-      const selfieUrl = selfieRes.data?.path || selfieRes.data?.url || selfieRes.data?.file_url;
-      const cardUrl = cardRes.data?.path || cardRes.data?.url || cardRes.data?.file_url;
+      const toFullUrl = (res) => {
+        const path = res.data?.path || res.data?.url || res.data?.file_url;
+        if (!path) return null;
+        if (path.startsWith("http")) return path;
+        return `${process.env.NEXT_PUBLIC_API_URL}${path}`;
+      };
+      const selfieUrl = toFullUrl(selfieRes);
+      const cardUrl = toFullUrl(cardRes);
       await submitStudentVerification({ selfie_url: selfieUrl, student_card_url: cardUrl });
       message.success("Gửi yêu cầu xác minh thành công! Admin sẽ xét duyệt trong 24 giờ.");
       const res = await getStudentVerificationStatus();
