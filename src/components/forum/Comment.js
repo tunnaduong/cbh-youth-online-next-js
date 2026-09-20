@@ -22,6 +22,7 @@ import { CommentInput } from "./CommentInput";
 import CommentVotesModal from "./CommentVotesModal";
 import { useRouter } from "@bprogress/next/app";
 import Badges from "../ui/Badges";
+import MemberTierBadge from "../ui/MemberTierBadge";
 import MarkdownRenderer from "../ui/MarkdownRenderer";
 import ChatMediaLightbox from "../chat/ChatMediaLightbox";
 import { linkifyMentionsInHtml } from "@/utils/mentionRender";
@@ -319,6 +320,7 @@ export default function Comment({
                     {comment.author.verified && (
                       <Badges className="ml-1 mb-[1.9px]" />
                     )}
+                    <MemberTierBadge tier={comment.author?.member_tier} />
                   </span>
                 </Link>
               )}

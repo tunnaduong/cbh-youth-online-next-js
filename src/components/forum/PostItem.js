@@ -13,6 +13,7 @@ import {
 import { generatePostSlug } from "@/utils/slugify";
 import dynamic from "next/dynamic";
 import VerifiedBadge from "@/components/ui/Badges";
+import MemberTierBadge from "@/components/ui/MemberTierBadge";
 import getCollageSetting from "@/utils/getCollageSetting";
 import { useState, useEffect, useMemo } from "react";
 import { extractHeadingsAndInjectIds } from "@/utils/toc";
@@ -804,6 +805,7 @@ export default function PostItem({ post, single = false, onVote, onRefresh = nul
                     post.author?.profile?.verified === "1") && (
                       <VerifiedBadge className="inline-verified__badge" />
                     )}
+                  <MemberTierBadge tier={post.author?.member_tier} />
                 </Link>
               </>
             )}
