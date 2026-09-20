@@ -856,12 +856,12 @@ export default function ProfileClient({ initialProfile, activeTab, username }) {
                       {profile.stats.posts}
                     </span>
                   </Link>
-                  <div className="px-3">
+                  <button className="px-3" onClick={() => setShowMilestonesModal(true)}>
                     <span className={mobileMutedTextClass}>Điểm: </span>
                     <span className={`font-bold ${mobileTextClass}`}>
                       {profile.stats.points}
                     </span>
-                  </div>
+                  </button>
                 </div>
                 <div className="flex flex-wrap justify-center gap-y-1">
                   <Link
