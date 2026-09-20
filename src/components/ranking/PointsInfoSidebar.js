@@ -12,6 +12,11 @@ import {
   CheckCircle2,
   Flame,
   ChevronRight,
+  Gift,
+  Trophy,
+  Ticket,
+  ShoppingBag,
+  TrendingUp,
 } from "lucide-react";
 import { dailyCheckin, getCheckinStatus } from "@/app/Api";
 import { useAuthContext } from "@/contexts/Support";
@@ -178,6 +183,49 @@ export default function PointsInfoSidebar() {
         <p className="text-xs text-gray-400 dark:text-gray-500 mt-2">
           Mỗi mốc mở khóa đặc quyền và huy hiệu riêng.
         </p>
+      </div>
+
+      {/* Lợi ích khi tích lũy điểm */}
+      <div className="bg-white dark:bg-neutral-800 rounded-xl border border-gray-100 dark:border-neutral-700 p-4">
+        <div className="flex items-center gap-2 mb-3">
+          <Gift className="w-4 h-4 text-pink-500" />
+          <h3 className="font-semibold text-sm text-gray-900 dark:text-white">Điểm dùng để làm gì?</h3>
+        </div>
+        <div className="flex flex-col gap-3">
+          <div className="flex gap-2.5">
+            <TrendingUp className="w-4 h-4 text-green-500 shrink-0 mt-0.5" />
+            <p className="text-xs text-gray-600 dark:text-gray-300 leading-relaxed">
+              Tăng thứ hạng trong <span className="font-medium text-gray-800 dark:text-gray-100">bảng xếp hạng</span> thành viên.
+            </p>
+          </div>
+          <div className="flex gap-2.5">
+            <Trophy className="w-4 h-4 text-yellow-500 shrink-0 mt-0.5" />
+            <p className="text-xs text-gray-600 dark:text-gray-300 leading-relaxed">
+              Nhận <span className="font-medium text-gray-800 dark:text-gray-100">huy hiệu và danh hiệu</span> đặc biệt khi đạt mốc điểm quan trọng.
+            </p>
+          </div>
+          <div className="flex gap-2.5">
+            <Ticket className="w-4 h-4 text-blue-500 shrink-0 mt-0.5" />
+            <p className="text-xs text-gray-600 dark:text-gray-300 leading-relaxed">
+              Tham gia <span className="font-medium text-gray-800 dark:text-gray-100">sự kiện & nhận quà</span> dành riêng cho thành viên tích cực.
+            </p>
+          </div>
+          <div className="flex gap-2.5">
+            <ShoppingBag className="w-4 h-4 text-purple-500 shrink-0 mt-0.5" />
+            <p className="text-xs text-gray-600 dark:text-gray-300 leading-relaxed">
+              Quy đổi điểm lấy{" "}
+              <a
+                href="https://giftshop.chuyenbienhoa.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-medium text-[#319527] hover:underline"
+              >
+                vật phẩm quà tặng vật lý
+              </a>{" "}
+              trên Gift Shop CBH.
+            </p>
+          </div>
+        </div>
       </div>
     </div>
   );
