@@ -10,7 +10,8 @@ import FollowButton from "@/components/profile/FollowButton";
 import { BsFillGearFill } from "react-icons/bs";
 import { IoChatbubbleEllipsesOutline } from "react-icons/io5";
 import { IoCalendarOutline, IoLocationOutline } from "react-icons/io5";
-import { Edit2Icon, Flag } from "lucide-react";
+import { Edit2Icon, Flag, X } from "lucide-react";
+import MemberTierBadge from "@/components/ui/MemberTierBadge";
 import { useAuthContext, useChatContext } from "@/contexts/Support";
 import ReportModal from "@/components/ReportModal";
 import {
@@ -68,6 +69,8 @@ export default function ProfileClient({ initialProfile, activeTab, username }) {
         user.profile?.profile_picture ||
         `${process.env.NEXT_PUBLIC_API_URL}/v1.0/users/${user.username}/avatar`,
       cover_photo_url: user.profile?.cover_photo_url || null,
+      member_tier: user.profile?.member_tier || null,
+      points_milestones: user.profile?.points_milestones || [],
       stats: {
         posts: user.stats?.posts_count || user.stats?.posts || 0,
         followers: user.stats?.followers || 0,
@@ -132,6 +135,7 @@ export default function ProfileClient({ initialProfile, activeTab, username }) {
   }, [profile?.isFollowing]);
   const [loading, setLoading] = useState(false);
   const [messaging, setMessaging] = useState(false);
+  const [showMilestonesModal, setShowMilestonesModal] = useState(false);
   const [followingList, setFollowingList] = useState(profile?.following || []);
   const [followersList, setFollowersList] = useState(profile?.followers || []);
   const [posts, setPosts] = useState(profile?.posts || []);
@@ -836,6 +840,7 @@ export default function ProfileClient({ initialProfile, activeTab, username }) {
                         </svg>
                       </span>
                     )}
+                    <MemberTierBadge tier={profile.member_tier} className="text-xl" />
                   </span>
                 </h1>
                 <p className={`text-sm ${mobileMutedTextClass}`}>
@@ -973,6 +978,7 @@ export default function ProfileClient({ initialProfile, activeTab, username }) {
                       <path fillRule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                     </svg>
                   )}
+                  <MemberTierBadge tier={profile.member_tier} className="text-xl" />
                 </h1>
                 <p className="text-sm text-gray-500 dark:text-gray-400 break-words max-w-full">@{profile.username}</p>
               </div>
@@ -1114,8 +1120,9 @@ export default function ProfileClient({ initialProfile, activeTab, username }) {
                     {profile.stats.likes}
                   </p>
                 </div>
-                <div
-                  className="select-none h-full flex flex-col items-center justify-center px-3 box-border min-w-max"
+                <button
+                  onClick={() => setShowMilestonesModal(true)}
+                  className="select-none h-full flex flex-col items-center justify-center px-3 box-border min-w-max cursor-pointer hover:bg-gray-50 dark:hover:bg-neutral-800 transition-colors rounded-lg"
                   style={{ borderBottom: "3px solid transparent" }}
                 >
                   <p className="font-semibold text-sm text-slate-600 dark:text-neutral-400">
@@ -1124,7 +1131,7 @@ export default function ProfileClient({ initialProfile, activeTab, username }) {
                   <p className="font-bold text-xl text-primary-500">
                     {profile.stats.points}
                   </p>
-                </div>
+                </button>
               </div>
               <div className="flex-1 flex justify-end items-center gap-2 order-4">
                 {currentUser && currentUser.username == profile.username ? (
@@ -1224,5 +1231,63 @@ export default function ProfileClient({ initialProfile, activeTab, username }) {
         </div>
       </div>
     </DefaultLayout>
+
+    {/* Milestones modal */}
+    {showMilestonesModal && (
+      <div
+        className="fixed inset-0 z-50 flex items-center justify-center p-4"
+        style={{ background: "rgba(0,0,0,0.5)" }}
+        onClick={() => setShowMilestonesModal(false)}
+      >
+        <div
+          className="bg-white dark:bg-neutral-900 rounded-2xl w-full max-w-sm shadow-xl overflow-hidden"
+          onClick={(e) => e.stopPropagation()}
+        >
+          {/* Header */}
+          <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-neutral-700">
+            <h2 className="font-bold text-base text-gray-900 dark:text-white">Điểm thành tích</h2>
+            <button
+              onClick={() => setShowMilestonesModal(false)}
+              className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+
+          {/* Milestone list */}
+          <div className="divide-y divide-gray-100 dark:divide-neutral-700">
+            {(profile.points_milestones || []).map((m) => (
+              <div key={m.id} className={`flex items-center gap-4 px-5 py-4 ${!m.achieved_at ? "opacity-40" : ""}`}>
+                {/* Points badge */}
+                <div className="w-10 text-center shrink-0">
+                  <span className={`text-2xl font-bold ${m.achieved_at ? "text-[#319527]" : "text-gray-400"}`}>
+                    {m.min_points}
+                  </span>
+                </div>
+                {/* Info */}
+                <div className="flex-1 min-w-0">
+                  <p className="font-semibold text-sm text-gray-900 dark:text-white">{m.name}</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                    {m.achieved_at ? `Đạt được ngày ${m.achieved_at}` : "Chưa đạt được"}
+                  </p>
+                </div>
+                {/* Tier badge icon */}
+                <span className="text-xl shrink-0">
+                  <MemberTierBadge tier={m.achieved_at ? { id: m.id } : null} className="text-xl" />
+                </span>
+              </div>
+            ))}
+          </div>
+
+          {/* Footer */}
+          <div className="px-5 py-3 bg-gray-50 dark:bg-neutral-800 text-center">
+            <p className="text-xs text-gray-500 dark:text-gray-400">
+              Tổng điểm hiện tại:{" "}
+              <span className="font-bold text-[#319527]">{profile.stats.points} điểm</span>
+            </p>
+          </div>
+        </div>
+      </div>
+    )}
   );
 }
