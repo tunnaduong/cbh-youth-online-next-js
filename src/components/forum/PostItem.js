@@ -766,7 +766,7 @@ export default function PostItem({ post, single = false, onVote, onRefresh = nul
               <>
                 <span className="relative flex shrink-0 overflow-hidden rounded-full w-8 h-8">
                   <div className="border rounded-full aspect-square h-full w-full bg-[#e9f1e9] dark:bg-[#1d281b] dark:!border-gray-500 flex items-center justify-center">
-                    <span className="text-lg font-bold text-white dark:text-gray-300">
+                    <span className="text-lg font-bold text-primary-500 dark:text-gray-300">
                       ?
                     </span>
                   </div>

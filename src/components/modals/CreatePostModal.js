@@ -821,7 +821,7 @@ const CreatePostModal = ({ open, onClose, isEditMode = false, postData = null, o
           <hr className="absolute right-0 left-0 w-full" />
           <div className="flex flex-row items-center py-3">
             {data.anonymous ? (
-              <div className="w-11 h-11 rounded-full bg-[#e9f1e9] dark:bg-[#1d281b] flex items-center justify-center text-[27px] font-semibold text-white">
+              <div className="w-11 h-11 rounded-full bg-[#e9f1e9] dark:bg-[#1d281b] flex items-center justify-center text-[27px] font-semibold text-primary-500 dark:text-neutral-300">
                 ?
               </div>
             ) : (
