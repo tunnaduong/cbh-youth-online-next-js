@@ -12,6 +12,7 @@ import { useIsDarkMode } from "@/hooks/useIsDarkMode";
 import {
   DashboardOutlined,
   FlagOutlined,
+  RobotOutlined,
   FileTextOutlined,
   CommentOutlined,
   UserOutlined,
@@ -85,6 +86,7 @@ export const NAV_GROUPS = [
       { key: "/admin/posts", icon: <FileTextOutlined />, label: "Bài viết" },
       { key: "/admin/comments", icon: <CommentOutlined />, label: "Bình luận" },
       { key: "/admin/reports", icon: <FlagOutlined />, label: "Báo cáo" },
+      { key: "/admin/moderation", icon: <RobotOutlined />, label: "Kiểm duyệt AI" },
       { key: "/admin/study-materials", icon: <BookOutlined />, label: "Tài liệu học tập" },
     ],
   },

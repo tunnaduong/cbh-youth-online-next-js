@@ -695,6 +695,12 @@ export const adminApproveStudentVerification = (id) => Api.postRequest(`/v1.0/ad
 export const adminRejectStudentVerification = (id, params) => Api.postRequest(`/v1.0/admin/student-verifications/${id}/reject`, params);
 export const adminRevokeStudentVerification = (userId) => Api.postRequest(`/v1.0/admin/student-verifications/revoke/${userId}`);
 
+// AI moderation queue
+export const adminGetModerationQueue = (params) => Api.getRequest("/v1.0/admin/moderation", params);
+export const adminGetModerationStats = () => Api.getRequest("/v1.0/admin/moderation/stats");
+export const adminApproveModeration = (id, params) => Api.postRequest(`/v1.0/admin/moderation/${id}/approve`, params);
+export const adminRejectModeration = (id, params) => Api.postRequest(`/v1.0/admin/moderation/${id}/reject`, params);
+
 // Mention suggestions
 export const getMentionSuggestions = (query) => {
   return Api.getRequest(`/v1.0/mention-suggestions?q=${encodeURIComponent(query)}`);

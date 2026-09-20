@@ -451,7 +451,15 @@ export default function PostClient({ params, initialPost = null }) {
 
         return updateCommentInTree(prevComments);
       });
-      message.success("Đã trả lời bình luận thành công");
+      if (response.data?.moderation?.status === "pending") {
+        message.warning(
+          response.data.moderation.message ||
+            "Bình luận của bạn đang chờ kiểm duyệt.",
+          6
+        );
+      } else {
+        message.success("Đã trả lời bình luận thành công");
+      }
 
       // Refresh points and ranking
       refreshUser();
@@ -459,7 +467,12 @@ export default function PostClient({ params, initialPost = null }) {
     } catch (error) {
       // Rollback on error
       setComments(originalComments);
-      message.error("Có lỗi xảy ra khi trả lời bình luận. Vui lòng thử lại.");
+      message.error(
+        // A 422 from AI moderation carries the rejection reason - show it
+        // instead of a generic failure, so the user knows what to change.
+        error.response?.data?.message ||
+          "Có lỗi xảy ra khi trả lời bình luận. Vui lòng thử lại."
+      );
       console.error("Comment reply error:", error);
     }
   };
@@ -539,7 +552,15 @@ export default function PostClient({ params, initialPost = null }) {
         return updated;
       });
 
-      message.success("Bình luận đã được đăng thành công");
+      if (response.data?.moderation?.status === "pending") {
+        message.warning(
+          response.data.moderation.message ||
+            "Bình luận của bạn đang chờ kiểm duyệt.",
+          6
+        );
+      } else {
+        message.success("Bình luận đã được đăng thành công");
+      }
 
       // Refresh points and ranking
       refreshUser();
@@ -551,7 +572,12 @@ export default function PostClient({ params, initialPost = null }) {
           (comment) => !(comment.id === placeholderId && comment.isPending)
         )
       );
-      message.error("Có lỗi xảy ra khi đăng bình luận. Vui lòng thử lại.");
+      message.error(
+        // A 422 from AI moderation carries the rejection reason - show it
+        // instead of a generic failure, so the user knows what to change.
+        error.response?.data?.message ||
+          "Có lỗi xảy ra khi đăng bình luận. Vui lòng thử lại."
+      );
       console.error("Comment submission error:", error);
     }
   };
