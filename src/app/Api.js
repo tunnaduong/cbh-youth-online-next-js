@@ -121,6 +121,10 @@ export const getTopUsers = (limit = 8) => {
   return Api.getRequest(`/v1.0/users/ranking?limit=${limit}`);
 };
 
+export const dailyCheckin = () => Api.postRequest("/v1.0/checkin");
+export const getCheckinStatus = () => Api.getRequest("/v1.0/checkin/status");
+export const getMemberTiers = () => Api.getRequest("/v1.0/member-tiers");
+
 export const getYouthNews = (page = 1) => {
   return Api.getRequest(`/v1.0/youth-news?page=${page}`);
 };
