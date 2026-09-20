@@ -738,6 +738,7 @@ export default function ProfileClient({ initialProfile, activeTab, username }) {
   const mobileMutedTextClass = coverIsLight ? "text-gray-600" : "text-white/75";
 
   return (
+    <>
     <DefaultLayout activeNav="home">
       <ReportModal
         open={showReportModal}
@@ -1289,5 +1290,6 @@ export default function ProfileClient({ initialProfile, activeTab, username }) {
         </div>
       </div>
     )}
+    </>
   );
 }
