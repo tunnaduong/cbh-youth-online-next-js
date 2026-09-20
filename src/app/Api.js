@@ -681,6 +681,16 @@ export const getMyShopOrders = (params = "") => {
   return Api.getRequest(`/v1.0/shop/my-orders${params ? `?${params}` : ""}`);
 };
 
+// Student Verification (eKYC)
+export const getStudentVerificationStatus = () => Api.getRequest("/v1.0/student-verification/status");
+export const submitStudentVerification = (params) => Api.postRequest("/v1.0/student-verification", params);
+
+// Admin - Student Verifications
+export const adminGetStudentVerifications = (params) => Api.getRequest("/v1.0/admin/student-verifications", params);
+export const adminApproveStudentVerification = (id) => Api.postRequest(`/v1.0/admin/student-verifications/${id}/approve`);
+export const adminRejectStudentVerification = (id, params) => Api.postRequest(`/v1.0/admin/student-verifications/${id}/reject`, params);
+export const adminRevokeStudentVerification = (userId) => Api.postRequest(`/v1.0/admin/student-verifications/revoke/${userId}`);
+
 // Mention suggestions
 export const getMentionSuggestions = (query) => {
   return Api.getRequest(`/v1.0/mention-suggestions?q=${encodeURIComponent(query)}`);

@@ -3,7 +3,9 @@
 import { useState, useEffect } from "react";
 import HomeLayout from "@/layouts/HomeLayout";
 import ShopCard from "@/components/shop/ShopCard";
-import { getShopProducts, getShopCategories } from "@/app/Api";
+import { getShopProducts, getShopCategories, getStudentVerificationStatus } from "@/app/Api";
+import { GraduationCap } from "lucide-react";
+import Link from "next/link";
 import { Package, Filter, Search, ShoppingBag, Sparkles } from "lucide-react";
 import { Skeleton, Input, Tabs, Empty } from "antd";
 
@@ -13,9 +15,13 @@ export default function ShopClient() {
   const [loading, setLoading] = useState(true);
   const [activeCategory, setActiveCategory] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
+  const [studentDiscount, setStudentDiscount] = useState(0);
 
   useEffect(() => {
     fetchInitialData();
+    getStudentVerificationStatus().then((res) => {
+      setStudentDiscount(res.data?.discount_percent || 0);
+    }).catch(() => {});
   }, []);
 
   const fetchInitialData = async () => {
@@ -75,6 +81,25 @@ export default function ShopClient() {
           <div className="absolute top-0 right-0 w-1/2 h-full bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10"></div>
         </div>
 
+        {/* Student discount banner */}
+        {studentDiscount > 0 && (
+          <div className="mb-6 flex items-center gap-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-2xl px-5 py-3">
+            <GraduationCap size={20} className="text-green-600 flex-shrink-0" />
+            <p className="text-sm font-medium text-green-800 dark:text-green-300">
+              Bạn đang được hưởng <strong>giảm giá {studentDiscount}%</strong> học sinh CBH trên toàn bộ sản phẩm.
+            </p>
+          </div>
+        )}
+        {studentDiscount === 0 && (
+          <div className="mb-6 flex items-center gap-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-2xl px-5 py-3">
+            <GraduationCap size={20} className="text-blue-600 flex-shrink-0" />
+            <p className="text-sm text-blue-800 dark:text-blue-300">
+              Học sinh CBH được giảm <strong>10%</strong> tất cả sản phẩm.{" "}
+              <Link href="/settings?tab=student-kyc" className="font-semibold underline">Xác minh ngay</Link>
+            </p>
+          </div>
+        )}
+
         {/* Filters and Search */}
         <div className="sticky top-[4.3rem] z-20 bg-[#F8F8F8]/80 dark:bg-neutral-800/80 backdrop-blur-xl py-4 mb-8 border-b border-neutral-200 dark:border-neutral-700">
           <div className="flex flex-col md:flex-row items-center justify-between gap-6">
@@ -129,7 +154,7 @@ export default function ShopClient() {
         ) : filteredProducts.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
             {filteredProducts.map((product) => (
-              <ShopCard key={product.id} product={product} />
+              <ShopCard key={product.id} product={product} studentDiscount={studentDiscount} />
             ))}
           </div>
         ) : (

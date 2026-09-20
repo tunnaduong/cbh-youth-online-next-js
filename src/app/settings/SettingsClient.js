@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { Button, DatePicker, Radio, Select, Switch, message } from "antd";
-import { Edit2Icon, User, Bell, Shield, Trash2, UserX } from "lucide-react";
+import { Edit2Icon, User, Bell, Shield, Trash2, UserX, GraduationCap, CheckCircle2, Clock, XCircle } from "lucide-react";
 import Input from "@/components/ui/input";
 import DefaultLayout from "@/layouts/DefaultLayout";
 import dayjs from "dayjs";
@@ -21,6 +21,9 @@ import {
   updateNotificationSettings,
   getBlockedUsers,
   unblockUser,
+  getStudentVerificationStatus,
+  submitStudentVerification,
+  uploadFile,
 } from "@/app/Api";
 import axiosInstance from "@/services/api/AxiosCustom";
 
@@ -38,6 +41,56 @@ export default function SettingsClient({ initialUser, hasAuthError }) {
   const [blockedUsers, setBlockedUsers] = useState([]);
   const [blockedUsersLoading, setBlockedUsersLoading] = useState(false);
   const [unblockingId, setUnblockingId] = useState(null);
+  const [kycStatus, setKycStatus] = useState(null);
+  const [kycLoading, setKycLoading] = useState(false);
+  const [kycSubmitting, setKycSubmitting] = useState(false);
+  const [selfieFile, setSelfieFile] = useState(null);
+  const [cardFile, setCardFile] = useState(null);
+  const [selfiePreview, setSelfiePreview] = useState(null);
+  const [cardPreview, setCardPreview] = useState(null);
+
+  useEffect(() => {
+    if (activeTab !== "student-kyc") return;
+    let cancelled = false;
+    setKycLoading(true);
+    getStudentVerificationStatus()
+      .then((res) => { if (!cancelled) setKycStatus(res.data); })
+      .catch(() => {})
+      .finally(() => { if (!cancelled) setKycLoading(false); });
+    return () => { cancelled = true; };
+  }, [activeTab]);
+
+  const handleKycFileChange = (e, type) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const preview = URL.createObjectURL(file);
+    if (type === "selfie") { setSelfieFile(file); setSelfiePreview(preview); }
+    else { setCardFile(file); setCardPreview(preview); }
+  };
+
+  const handleKycSubmit = async () => {
+    if (!selfieFile || !cardFile) {
+      message.warning("Vui lòng chọn cả ảnh selfie và thẻ học sinh.");
+      return;
+    }
+    setKycSubmitting(true);
+    try {
+      const selfieForm = new FormData(); selfieForm.append("file", selfieFile);
+      const cardForm = new FormData(); cardForm.append("file", cardFile);
+      const [selfieRes, cardRes] = await Promise.all([uploadFile(selfieForm), uploadFile(cardForm)]);
+      const selfieUrl = selfieRes.data?.url || selfieRes.data?.file_url;
+      const cardUrl = cardRes.data?.url || cardRes.data?.file_url;
+      await submitStudentVerification({ selfie_url: selfieUrl, student_card_url: cardUrl });
+      message.success("Gửi yêu cầu xác minh thành công! Admin sẽ xét duyệt trong 24 giờ.");
+      const res = await getStudentVerificationStatus();
+      setKycStatus(res.data);
+      setSelfieFile(null); setCardFile(null); setSelfiePreview(null); setCardPreview(null);
+    } catch (err) {
+      message.error(err?.response?.data?.message || "Gửi yêu cầu thất bại. Vui lòng thử lại.");
+    } finally {
+      setKycSubmitting(false);
+    }
+  };
 
   useEffect(() => {
     if (activeTab !== "blocked") return;
@@ -1572,6 +1625,126 @@ export default function SettingsClient({ initialUser, hasAuthError }) {
           </div>
         );
 
+      case "student-kyc":
+        return (
+          <div className="space-y-6">
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                Xác minh học sinh CBH
+              </h3>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mb-6">
+                Xác minh tài khoản học sinh để nhận <span className="font-semibold text-green-600">giảm giá 10%</span> tại Gift Shop. Admin sẽ xét duyệt trong vòng 24 giờ.
+              </p>
+            </div>
+
+            {kycLoading ? (
+              <p className="text-sm text-gray-500 dark:text-gray-400">Đang tải...</p>
+            ) : kycStatus?.is_verified ? (
+              <div className="flex items-start gap-4 p-4 bg-green-50 dark:bg-green-900/20 rounded-xl border border-green-200 dark:border-green-800">
+                <CheckCircle2 size={24} className="text-green-500 mt-0.5 flex-shrink-0" />
+                <div>
+                  <p className="font-semibold text-green-800 dark:text-green-300">Tài khoản đã được xác minh học sinh</p>
+                  <p className="text-sm text-green-700 dark:text-green-400 mt-1">
+                    Bạn đang được hưởng giảm giá <strong>10%</strong> tại Gift Shop.
+                    Xác minh từ: {new Date(kycStatus.verified_at).toLocaleDateString("vi-VN")}
+                  </p>
+                </div>
+              </div>
+            ) : kycStatus?.verification?.status === "pending" ? (
+              <div className="flex items-start gap-4 p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-xl border border-yellow-200 dark:border-yellow-800">
+                <Clock size={24} className="text-yellow-500 mt-0.5 flex-shrink-0" />
+                <div>
+                  <p className="font-semibold text-yellow-800 dark:text-yellow-300">Đang chờ xét duyệt</p>
+                  <p className="text-sm text-yellow-700 dark:text-yellow-400 mt-1">
+                    Yêu cầu của bạn đã được gửi và đang được xem xét. Vui lòng đợi admin duyệt trong 24 giờ.
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-6">
+                {kycStatus?.verification?.status === "rejected" && (
+                  <div className="flex items-start gap-4 p-4 bg-red-50 dark:bg-red-900/20 rounded-xl border border-red-200 dark:border-red-800">
+                    <XCircle size={24} className="text-red-500 mt-0.5 flex-shrink-0" />
+                    <div>
+                      <p className="font-semibold text-red-800 dark:text-red-300">Yêu cầu đã bị từ chối</p>
+                      {kycStatus.verification.rejection_reason && (
+                        <p className="text-sm text-red-700 dark:text-red-400 mt-1">
+                          Lý do: {kycStatus.verification.rejection_reason}
+                        </p>
+                      )}
+                      <p className="text-sm text-red-600 dark:text-red-400 mt-1">Bạn có thể gửi lại yêu cầu bên dưới.</p>
+                    </div>
+                  </div>
+                )}
+
+                <div className="grid md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Ảnh selfie cầm thẻ học sinh <span className="text-red-500">*</span>
+                    </label>
+                    <div
+                      className="border-2 border-dashed border-gray-300 dark:border-neutral-600 rounded-xl p-4 text-center cursor-pointer hover:border-green-400 transition-colors"
+                      onClick={() => document.getElementById("selfie-input").click()}
+                    >
+                      {selfiePreview ? (
+                        <img src={selfiePreview} alt="Selfie preview" className="mx-auto max-h-40 rounded-lg object-cover" />
+                      ) : (
+                        <div className="py-4">
+                          <GraduationCap size={32} className="mx-auto text-gray-400 mb-2" />
+                          <p className="text-sm text-gray-500 dark:text-gray-400">Click để chọn ảnh selfie</p>
+                          <p className="text-xs text-gray-400 mt-1">Chụp rõ mặt và thẻ học sinh</p>
+                        </div>
+                      )}
+                    </div>
+                    <input id="selfie-input" type="file" accept="image/*" className="hidden" onChange={(e) => handleKycFileChange(e, "selfie")} />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Ảnh thẻ học sinh (mặt trước) <span className="text-red-500">*</span>
+                    </label>
+                    <div
+                      className="border-2 border-dashed border-gray-300 dark:border-neutral-600 rounded-xl p-4 text-center cursor-pointer hover:border-green-400 transition-colors"
+                      onClick={() => document.getElementById("card-input").click()}
+                    >
+                      {cardPreview ? (
+                        <img src={cardPreview} alt="Card preview" className="mx-auto max-h-40 rounded-lg object-cover" />
+                      ) : (
+                        <div className="py-4">
+                          <Shield size={32} className="mx-auto text-gray-400 mb-2" />
+                          <p className="text-sm text-gray-500 dark:text-gray-400">Click để chọn ảnh thẻ</p>
+                          <p className="text-xs text-gray-400 mt-1">Chụp rõ thông tin trên thẻ</p>
+                        </div>
+                      )}
+                    </div>
+                    <input id="card-input" type="file" accept="image/*" className="hidden" onChange={(e) => handleKycFileChange(e, "card")} />
+                  </div>
+                </div>
+
+                <div className="bg-blue-50 dark:bg-blue-900/20 rounded-xl p-4 text-sm text-blue-800 dark:text-blue-300">
+                  <p className="font-semibold mb-1">Lưu ý khi chụp ảnh:</p>
+                  <ul className="list-disc list-inside space-y-1 text-blue-700 dark:text-blue-400">
+                    <li>Ảnh selfie: Chụp rõ mặt cùng thẻ học sinh Chuyên Biên Hòa</li>
+                    <li>Thẻ học sinh: Chụp rõ tên, lớp, năm học trên thẻ</li>
+                    <li>Ảnh phải rõ nét, không bị mờ hay che khuất</li>
+                  </ul>
+                </div>
+
+                <Button
+                  type="primary"
+                  size="large"
+                  loading={kycSubmitting}
+                  onClick={handleKycSubmit}
+                  disabled={!selfieFile || !cardFile}
+                  className="!bg-green-600 !border-green-600 hover:!bg-green-700"
+                >
+                  Gửi yêu cầu xác minh
+                </Button>
+              </div>
+            )}
+          </div>
+        );
+
       default:
         return null;
     }
@@ -1666,6 +1839,16 @@ export default function SettingsClient({ initialUser, hasAuthError }) {
                 >
                   <UserX className="w-5 h-5 mr-3" />
                   Đã chặn
+                </button>
+                <button
+                  onClick={() => setActiveTab("student-kyc")}
+                  className={`w-full flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors ${activeTab === "student-kyc"
+                      ? "bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 border-r-2 border-green-600 dark:border-green-400"
+                      : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-neutral-800"
+                    }`}
+                >
+                  <GraduationCap className="w-5 h-5 mr-3" />
+                  Xác minh học sinh
                 </button>
               </nav>
             </div>

@@ -2,13 +2,12 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { ShoppingCart } from "lucide-react";
+import { ShoppingCart, GraduationCap } from "lucide-react";
 
-export default function ShopCard({ product }) {
-  const formattedPrice = new Intl.NumberFormat("vi-VN", {
-    style: "currency",
-    currency: "VND",
-  }).format(product.price);
+const fmt = (v) => new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(v);
+
+export default function ShopCard({ product, studentDiscount = 0 }) {
+  const discountedPrice = studentDiscount > 0 ? Math.round(product.price * (1 - studentDiscount / 100)) : null;
 
   return (
     <div className="bg-white dark:bg-neutral-900 rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 group overflow-hidden border border-neutral-100 dark:border-neutral-800">
@@ -26,6 +25,12 @@ export default function ShopCard({ product }) {
             </span>
           </div>
         )}
+        {studentDiscount > 0 && (
+          <div className="absolute top-2 left-2 bg-green-500 text-white text-xs font-bold px-2 py-1 rounded-full flex items-center gap-1">
+            <GraduationCap size={12} />
+            -{studentDiscount}%
+          </div>
+        )}
       </div>
 
       <div className="p-4">
@@ -40,9 +45,20 @@ export default function ShopCard({ product }) {
         </p>
 
         <div className="flex items-center justify-between mt-auto">
-          <span className="text-xl font-black text-neutral-900 dark:text-white">
-            {formattedPrice}
-          </span>
+          <div>
+            {discountedPrice ? (
+              <div>
+                <span className="text-xl font-black text-green-600 dark:text-green-400">
+                  {fmt(discountedPrice)}
+                </span>
+                <span className="text-sm text-neutral-400 line-through ml-2">{fmt(product.price)}</span>
+              </div>
+            ) : (
+              <span className="text-xl font-black text-neutral-900 dark:text-white">
+                {fmt(product.price)}
+              </span>
+            )}
+          </div>
           <button
             disabled={product.stock <= 0}
             className="flex items-center gap-2 bg-primary-500 hover:bg-primary-600 disabled:bg-neutral-300 disabled:cursor-not-allowed text-white px-4 py-2 rounded-xl font-bold transition-all shadow-lg shadow-primary-500/30 active:scale-95"

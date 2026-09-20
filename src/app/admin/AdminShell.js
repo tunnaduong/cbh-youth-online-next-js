@@ -23,6 +23,7 @@ import {
   LogoutOutlined,
   MenuOutlined,
   HomeOutlined,
+  SafetyCertificateOutlined,
 } from "@ant-design/icons";
 
 const { Sider, Content, Header } = Layout;
@@ -83,6 +84,7 @@ export const NAV_GROUPS = [
       { key: "/admin/shop/orders", icon: <ShoppingCartOutlined />, label: "Đơn hàng" },
       { key: "/admin/shop/products", icon: <ShopOutlined />, label: "Sản phẩm" },
       { key: "/admin/shop/categories", icon: <AppstoreOutlined />, label: "Danh mục" },
+      { key: "/admin/student-verifications", icon: <SafetyCertificateOutlined />, label: "Xác minh HS" },
     ],
   },
 ];
