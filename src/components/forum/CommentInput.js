@@ -274,6 +274,7 @@ export function CommentInput({
                     ce-input
                     w-full bg-transparent border-none outline-none resize-none
                     text-sm min-h-[24px] leading-6
+                    text-gray-900 dark:text-gray-100
                     focus:outline-none focus:ring-0
                     whitespace-pre-wrap break-words overflow-y-auto
                   "
