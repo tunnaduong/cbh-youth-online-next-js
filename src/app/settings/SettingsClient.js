@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Button, DatePicker, Radio, Select, Switch, message } from "antd";
 import { Edit2Icon, User, Bell, Shield, Trash2, UserX, GraduationCap, CheckCircle2, Clock, XCircle } from "lucide-react";
 import Input from "@/components/ui/input";
@@ -32,7 +32,8 @@ export default function SettingsClient({ initialUser, hasAuthError }) {
     useAuthContext();
   const { theme, changeTheme } = useTheme();
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState("profile");
+  const searchParams = useSearchParams();
+  const [activeTab, setActiveTab] = useState(() => searchParams.get("tab") || "profile");
   const [loading, setLoading] = useState(false);
   const [resendingEmail, setResendingEmail] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
