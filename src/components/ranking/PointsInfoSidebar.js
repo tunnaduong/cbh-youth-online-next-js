@@ -75,7 +75,7 @@ export default function PointsInfoSidebar() {
   };
 
   return (
-    <div className="w-[300px] shrink-0 hidden xl:flex flex-col gap-4 pt-6 pr-4 pb-6">
+    <div className="w-[280px] shrink-0 hidden xl:flex flex-col gap-3 pt-6 pb-6">
       {/* Điểm danh hàng ngày */}
       {loggedIn && (
         <div className="bg-white dark:bg-neutral-800 rounded-xl border border-gray-100 dark:border-neutral-700 p-4">

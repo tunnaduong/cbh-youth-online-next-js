@@ -46,9 +46,9 @@ export default function RankingClient() {
       sidebarWidth="306px"
       showRightSidebar={false}
     >
-      <div className="flex gap-0 max-w-[1000px] mx-auto px-4 py-6">
+      <div className="flex gap-6 max-w-[1060px] mx-auto px-4 py-6">
         {/* Main ranking list */}
-        <div className="flex-1 min-w-0">
+        <div className="flex-1 min-w-0 max-w-[700px]">
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2 mb-1">
             <Trophy className="w-6 h-6 text-yellow-500" />
             Xếp hạng thành viên
