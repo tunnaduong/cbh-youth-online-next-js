@@ -12,6 +12,19 @@ export const fmtVndPoints = (v) =>
 export const errMsg = (err, fallback) => err?.response?.data?.message || fallback;
 
 /**
+ * A username cell that links to the public profile, falling back to the bare
+ * id when the account is gone or wasn't loaded.
+ */
+export const UserLink = ({ user, userId }) =>
+  user?.username ? (
+    <a href={`/${user.username}`} target="_blank" rel="noreferrer">
+      {user.username}
+    </a>
+  ) : (
+    <span className="text-gray-400 dark:text-gray-500">#{userId ?? "-"}</span>
+  );
+
+/**
  * Paginated, filterable admin table backed by a Laravel paginator endpoint.
  *
  * filters: [{ key, type: "search" | "select", placeholder, options, width }]

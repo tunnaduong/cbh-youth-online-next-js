@@ -2,7 +2,7 @@
 
 import { useRef, useState } from "react";
 import { Button, Input, Modal, Space, Tag, message } from "antd";
-import ResourceTable, { fmtDate, fmtNumber, errMsg } from "../_components/ResourceTable";
+import ResourceTable, { fmtDate, fmtNumber, errMsg, UserLink } from "../_components/ResourceTable";
 import { adminGetWithdrawals, adminApproveWithdrawal, adminRejectWithdrawal } from "@/app/Api";
 
 const STATUS = {
@@ -41,7 +41,7 @@ export default function AdminWithdrawalsPage() {
 
   const columns = [
     { title: "ID", dataIndex: "id", width: 70 },
-    { title: "Người dùng", key: "user", render: (_, w) => w.user?.username || `#${w.user_id}` },
+    { title: "Người dùng", key: "user", render: (_, w) => <UserLink user={w.user} userId={w.user_id} /> },
     { title: "Số điểm", dataIndex: "amount", render: fmtNumber },
     {
       title: "Tài khoản nhận",

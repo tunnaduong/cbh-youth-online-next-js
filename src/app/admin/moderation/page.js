@@ -10,7 +10,7 @@ import {
   adminApproveModeration,
   adminRejectModeration,
 } from "@/app/Api";
-import { generatePostSlug } from "@/utils/slugify";
+import { generatePostUrl } from "@/utils/slugify";
 
 const STATUS_COLOR = { pending: "gold", approved: "green", rejected: "red" };
 const STATUS_LABEL = { pending: "Chờ duyệt", approved: "Đã duyệt", rejected: "Đã từ chối" };
@@ -32,17 +32,6 @@ const parseSnapshot = (raw) => {
   } catch {
     return { body: String(raw) };
   }
-};
-
-/**
- * Link to the live content. Comments have no page of their own, so they link
- * to the post they sit on. Null when the content is gone (auto-rejected posts
- * are hard-deleted, leaving only the snapshot).
- */
-const contentUrl = (row) => {
-  const topic = row.topic;
-  if (!topic?.id) return null;
-  return `/${topic.username || "anonymous"}/posts/${generatePostSlug(topic.id, topic.title)}`;
 };
 
 function StatCard({ label, value, tone = "default" }) {
@@ -140,7 +129,7 @@ export default function AdminModerationPage() {
       key: "content",
       render: (_, r) => {
         const snap = parseSnapshot(r.content_snapshot);
-        const url = contentUrl(r);
+        const url = generatePostUrl(r.topic);
         return (
           <div className="max-w-[420px]">
             {snap.title && <div className="font-medium mb-0.5">{snap.title}</div>}

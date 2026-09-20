@@ -1,7 +1,7 @@
 "use client";
 
 import { Select, Tag, message } from "antd";
-import ResourceTable, { fmtDate, fmtVndPoints, errMsg } from "../../_components/ResourceTable";
+import ResourceTable, { fmtDate, fmtVndPoints, errMsg, UserLink } from "../../_components/ResourceTable";
 import { adminGetShopOrders, adminUpdateShopOrder } from "@/app/Api";
 
 const STATUS = {
@@ -16,7 +16,7 @@ const STATUS_OPTIONS = Object.entries(STATUS).map(([value, s]) => ({ value, labe
 export default function AdminShopOrdersPage() {
   const columns = (reload) => [
     { title: "ID", dataIndex: "id", width: 70 },
-    { title: "Người đặt", key: "user", render: (_, o) => o.user?.username || `#${o.user_id}` },
+    { title: "Người đặt", key: "user", render: (_, o) => <UserLink user={o.user} userId={o.user_id} /> },
     {
       title: "Giao đến",
       key: "shipping",

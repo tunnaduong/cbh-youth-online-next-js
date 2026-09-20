@@ -18,6 +18,7 @@ import {
   Statistic,
 } from "antd";
 import { getReports, getReportStats, reviewReport } from "@/app/Api";
+import { generatePostUrl } from "@/utils/slugify";
 
 const { RangePicker } = DatePicker;
 const { TextArea } = Input;
@@ -212,9 +213,31 @@ export default function AdminReportsPage() {
       title: "Nội dung liên quan",
       key: "content",
       render: (_, r) => {
-        if (r.topic_id) return `Bài viết #${r.topic_id}`;
+        if (r.topic_id) {
+          const url = generatePostUrl(r.topic);
+          return url ? (
+            <a href={url} target="_blank" rel="noreferrer">
+              Bài viết #{r.topic_id}
+            </a>
+          ) : (
+            // The post is gone - a reviewed report often outlives it.
+            <span className="text-gray-400 dark:text-gray-500">
+              Bài viết #{r.topic_id} (đã xoá)
+            </span>
+          );
+        }
+        // Stories have no public page to link to, so they stay plain text.
         if (r.story_id) return `Tin #${r.story_id}`;
-        return r.reported_user_id ? `Người dùng #${r.reported_user_id}` : "Người dùng";
+        if (!r.reported_user_id) return "Người dùng";
+
+        const username = r.reported_user?.username;
+        return username ? (
+          <a href={`/${username}`} target="_blank" rel="noreferrer">
+            @{username}
+          </a>
+        ) : (
+          `Người dùng #${r.reported_user_id}`
+        );
       },
     },
     {

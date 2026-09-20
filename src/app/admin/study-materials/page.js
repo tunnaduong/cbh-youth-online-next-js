@@ -18,12 +18,30 @@ export default function AdminStudyMaterialsPage() {
       key: "title",
       render: (_, m) => (
         <div className="max-w-[340px]">
-          <div className="font-medium">{m.title}</div>
+          <a
+            href={`/explore/study-materials/${m.id}`}
+            target="_blank"
+            rel="noreferrer"
+            className="font-medium"
+          >
+            {m.title}
+          </a>
           <div className="text-xs text-gray-500 dark:text-gray-400 truncate">{m.description}</div>
         </div>
       ),
     },
-    { title: "Người đăng", key: "user", render: (_, m) => m.user?.username || "-" },
+    {
+      title: "Người đăng",
+      key: "user",
+      render: (_, m) =>
+        m.user?.username ? (
+          <a href={`/${m.user.username}`} target="_blank" rel="noreferrer">
+            {m.user.username}
+          </a>
+        ) : (
+          "-"
+        ),
+    },
     { title: "Danh mục", key: "category", render: (_, m) => m.category?.name || "-" },
     {
       title: "Giá",

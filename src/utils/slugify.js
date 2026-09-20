@@ -36,3 +36,22 @@ export const generateSlug = (title) => {
 export const generatePostSlug = (id, title) => {
   return `${id}-${generateSlug(title)}`;
 };
+
+/**
+ * Build the public URL of a post from whatever shape the API handed back.
+ * Different admin endpoints name the author relation differently (`author`
+ * on some, `user` on others), and anonymous posts live under the literal
+ * /anonymous/ segment.
+ *
+ * @param {Object} topic - A topic-ish object: { id, title, anonymous, author|user }
+ * @returns {string|null} The post URL, or null when there's no post to link to
+ */
+export const generatePostUrl = (topic) => {
+  if (!topic?.id) return null;
+
+  const username = topic.anonymous
+    ? "anonymous"
+    : topic.author?.username || topic.user?.username || topic.username;
+
+  return `/${username || "anonymous"}/posts/${generatePostSlug(topic.id, topic.title)}`;
+};
