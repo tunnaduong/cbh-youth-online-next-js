@@ -29,7 +29,9 @@ export default function AdminCommentsPage() {
       key: "topic",
       render: (_, c) => {
         // A comment has no page of its own, so link to the post holding it.
-        const url = generatePostUrl(c.topic);
+        // topic_id is always on the row, so the link survives even if the
+        // topic relation wasn't loaded.
+        const url = generatePostUrl(c.topic, c.topic_id);
         return (
           <div className="max-w-[240px]">
             {url ? (

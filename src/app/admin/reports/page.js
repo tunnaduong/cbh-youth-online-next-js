@@ -214,16 +214,15 @@ export default function AdminReportsPage() {
       key: "content",
       render: (_, r) => {
         if (r.topic_id) {
-          const url = generatePostUrl(r.topic);
-          return url ? (
-            <a href={url} target="_blank" rel="noreferrer">
+          // topic_id alone is enough to link: the post page resolves by id.
+          return (
+            <a
+              href={generatePostUrl(r.topic, r.topic_id)}
+              target="_blank"
+              rel="noreferrer"
+            >
               Bài viết #{r.topic_id}
             </a>
-          ) : (
-            // The post is gone - a reviewed report often outlives it.
-            <span className="text-gray-400 dark:text-gray-500">
-              Bài viết #{r.topic_id} (đã xoá)
-            </span>
           );
         }
         // Stories have no public page to link to, so they stay plain text.

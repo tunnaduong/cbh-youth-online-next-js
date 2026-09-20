@@ -129,7 +129,13 @@ export default function AdminModerationPage() {
       key: "content",
       render: (_, r) => {
         const snap = parseSnapshot(r.content_snapshot);
-        const url = generatePostUrl(r.topic);
+        // The queue resolves `topic` for us, but the id is on the row either
+        // way, so don't make the link depend on that resolution. An explicit
+        // null means the backend looked and the post is genuinely gone
+        // (auto-rejected posts are hard-deleted); `undefined` just means it
+        // wasn't sent.
+        const topicId = r.content_type === "topic" ? r.content_id : snap.topic_id;
+        const url = r.topic === null ? null : generatePostUrl(r.topic, topicId);
         return (
           <div className="max-w-[420px]">
             {snap.title && <div className="font-medium mb-0.5">{snap.title}</div>}

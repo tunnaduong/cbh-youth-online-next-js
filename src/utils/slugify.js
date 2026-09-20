@@ -39,19 +39,28 @@ export const generatePostSlug = (id, title) => {
 
 /**
  * Build the public URL of a post from whatever shape the API handed back.
- * Different admin endpoints name the author relation differently (`author`
- * on some, `user` on others), and anonymous posts live under the literal
- * /anonymous/ segment.
  *
- * @param {Object} topic - A topic-ish object: { id, title, anonymous, author|user }
- * @returns {string|null} The post URL, or null when there's no post to link to
+ * Only the numeric id actually matters: the post page looks the post up by id
+ * and then redirects to its canonical URL, so a missing username or title just
+ * costs one redirect rather than breaking the link. That's why `fallbackId`
+ * exists - rows like comments and reports always carry a `topic_id` even when
+ * the topic object itself wasn't loaded, and those must still link somewhere.
+ *
+ * Different endpoints name the author relation differently (`author` on some,
+ * `user` on others, a flat `username` on the moderation queue), and anonymous
+ * posts live under the literal /anonymous/ segment.
+ *
+ * @param {Object} [topic] - A topic-ish object: { id, title, anonymous, author|user }
+ * @param {number|string} [fallbackId] - Post id to use when `topic` is absent
+ * @returns {string|null} The post URL, or null when there's no id to link to
  */
-export const generatePostUrl = (topic) => {
-  if (!topic?.id) return null;
+export const generatePostUrl = (topic, fallbackId) => {
+  const id = topic?.id ?? fallbackId;
+  if (!id) return null;
 
-  const username = topic.anonymous
+  const username = topic?.anonymous
     ? "anonymous"
-    : topic.author?.username || topic.user?.username || topic.username;
+    : topic?.author?.username || topic?.user?.username || topic?.username;
 
-  return `/${username || "anonymous"}/posts/${generatePostSlug(topic.id, topic.title)}`;
+  return `/${username || "anonymous"}/posts/${generatePostSlug(id, topic?.title)}`;
 };
