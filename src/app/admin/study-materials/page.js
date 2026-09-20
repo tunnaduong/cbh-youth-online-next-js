@@ -19,7 +19,7 @@ export default function AdminStudyMaterialsPage() {
       render: (_, m) => (
         <div className="max-w-[340px]">
           <div className="font-medium">{m.title}</div>
-          <div className="text-xs text-gray-500 truncate">{m.description}</div>
+          <div className="text-xs text-gray-500 dark:text-gray-400 truncate">{m.description}</div>
         </div>
       ),
     },

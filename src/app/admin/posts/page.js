@@ -30,7 +30,7 @@ export default function AdminPostsPage() {
           <a href={postUrl(t)} target="_blank" rel="noreferrer" className="font-medium">
             {t.title || "(không tiêu đề)"}
           </a>
-          <div className="text-xs text-gray-500 truncate">{t.description}</div>
+          <div className="text-xs text-gray-500 dark:text-gray-400 truncate">{t.description}</div>
         </div>
       ),
     },

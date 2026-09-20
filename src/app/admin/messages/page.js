@@ -31,16 +31,16 @@ function MessageBubble({ m, highlight }) {
   return (
     <div id={`msg-${m.id}`} className={`flex flex-col gap-1 ${highlight ? "bg-amber-50 -mx-2 px-2 py-1 rounded-lg" : ""}`}>
       <div className="flex items-baseline gap-2 text-xs">
-        <span className="font-semibold text-gray-800">{m.user?.username || m.guest_name || "Khách"}</span>
-        <span className="text-gray-400">{fmtDate(m.created_at)}</span>
-        {m.is_edited && <span className="text-gray-400">· đã sửa</span>}
-        {m.is_forwarded && <span className="text-gray-400">· chuyển tiếp</span>}
+        <span className="font-semibold text-gray-800 dark:text-gray-100">{m.user?.username || m.guest_name || "Khách"}</span>
+        <span className="text-gray-400 dark:text-gray-500">{fmtDate(m.created_at)}</span>
+        {m.is_edited && <span className="text-gray-400 dark:text-gray-500">· đã sửa</span>}
+        {m.is_forwarded && <span className="text-gray-400 dark:text-gray-500">· chuyển tiếp</span>}
         {m.is_recalled && <Tag color="orange" className="!text-[10px] !leading-4">Đã thu hồi</Tag>}
         {m.deleted_at && <Tag color="red" className="!text-[10px] !leading-4">Đã xóa</Tag>}
       </div>
       <div
         className={`self-start max-w-[85%] rounded-2xl rounded-tl-md px-3 py-2 text-sm whitespace-pre-wrap break-words ${
-          removed ? "bg-gray-50 text-gray-500 border border-dashed border-gray-200" : "bg-gray-100 text-gray-900"
+          removed ? "bg-gray-50 dark:bg-neutral-800 text-gray-500 dark:text-gray-400 border border-dashed border-gray-200 dark:border-neutral-700" : "bg-gray-100 dark:bg-neutral-700 text-gray-900 dark:text-gray-100"
         }`}
       >
         {m.type && m.type !== "text" && <Tag className="mb-1">{m.type}</Tag>}
@@ -111,11 +111,11 @@ function ConversationViewer({ conversationId, highlightId, onClose }) {
       }
       styles={{ body: { padding: 0, display: "flex", flexDirection: "column" } }}
     >
-      <div className="px-4 py-2 text-xs text-gray-500 bg-amber-50 border-b border-amber-100 flex items-center gap-1.5">
+      <div className="px-4 py-2 text-xs text-amber-800 bg-amber-50 border-b border-amber-100 dark:text-amber-200 dark:bg-amber-950/40 dark:border-amber-900/50 flex items-center gap-1.5">
         <LockOutlined /> Lượt xem này đã được ghi vào nhật ký truy cập.
       </div>
       {data && (
-        <div className="px-4 py-2 border-b border-gray-100 text-xs text-gray-500">
+        <div className="px-4 py-2 border-b border-gray-100 dark:border-neutral-700 text-xs text-gray-500 dark:text-gray-400">
           Thành viên: {(data.participants || []).map((p) => `@${p.username}`).join(", ")}
         </div>
       )}
@@ -155,7 +155,7 @@ export default function AdminMessagesPage() {
         <div className="max-w-[360px]">
           <div className="font-medium truncate">{convName(c)}</div>
           {c.type !== "private" && (
-            <div className="text-xs text-gray-500 truncate">
+            <div className="text-xs text-gray-500 dark:text-gray-400 truncate">
               {(c.participants || []).length} thành viên
             </div>
           )}

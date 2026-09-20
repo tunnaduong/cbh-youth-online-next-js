@@ -50,7 +50,7 @@ export default function AdminUsersPage() {
           <a href={`/${u.username}`} target="_blank" rel="noreferrer" className="font-medium">
             {u.profile?.profile_name || u.username}
           </a>
-          <div className="text-xs text-gray-500">@{u.username}</div>
+          <div className="text-xs text-gray-500 dark:text-gray-400">@{u.username}</div>
         </div>
       ),
     },

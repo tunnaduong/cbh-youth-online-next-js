@@ -69,7 +69,7 @@ export default function ImageUploadInput({ value, onChange, size, compact = fals
         <img
           src={value}
           alt=""
-          className={`${compact ? "w-8 h-8" : "w-14 h-14"} shrink-0 rounded object-cover bg-gray-100 border border-gray-200`}
+          className={`${compact ? "w-8 h-8" : "w-14 h-14"} shrink-0 rounded object-cover bg-gray-100 dark:bg-neutral-700 border border-gray-200 dark:border-neutral-700`}
         />
       ) : null}
       {compact ? null : (

@@ -23,7 +23,7 @@ export default function AdminShopOrdersPage() {
       render: (_, o) => (
         <div className="max-w-[260px]">
           <div>{o.phone}</div>
-          <div className="text-xs text-gray-500">{o.shipping_address}</div>
+          <div className="text-xs text-gray-500 dark:text-gray-400">{o.shipping_address}</div>
         </div>
       ),
     },
@@ -73,7 +73,7 @@ export default function AdminShopOrdersPage() {
                 {it.variant_label ? ` (${it.variant_label})` : ""} × {it.quantity} — {fmtVndPoints(it.price)}
               </div>
             ))}
-            {o.note && <div className="mt-2 text-gray-500">Ghi chú: {o.note}</div>}
+            {o.note && <div className="mt-2 text-gray-500 dark:text-gray-400">Ghi chú: {o.note}</div>}
           </div>
         ),
       }}

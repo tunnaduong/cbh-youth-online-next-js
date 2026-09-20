@@ -253,7 +253,7 @@ export default function AdminReportsPage() {
   return (
     <div>
       <div className="max-w-[1280px] mx-auto w-full px-4 sm:px-6 py-6">
-        <h1 className="text-2xl font-bold text-gray-900 tracking-tight mb-5">Quản lý báo cáo</h1>
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 tracking-tight mb-5">Quản lý báo cáo</h1>
 
         {stats && (
           <Row gutter={[16, 16]} className="mb-6">
@@ -288,7 +288,7 @@ export default function AdminReportsPage() {
                       r.reported_user?.profile_name ||
                       `#${r.reported_user_id}`}
                   </span>
-                  <span className="text-gray-500">{r.total} lượt</span>
+                  <span className="text-gray-500 dark:text-gray-400">{r.total} lượt</span>
                 </div>
               ))}
             </div>

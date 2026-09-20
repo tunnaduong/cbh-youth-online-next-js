@@ -49,7 +49,7 @@ export default function AdminWithdrawalsPage() {
       render: (_, w) => (
         <div>
           <div className="font-medium">{w.account_holder}</div>
-          <div className="text-xs text-gray-500">
+          <div className="text-xs text-gray-500 dark:text-gray-400">
             {w.bank_name} · {w.bank_account}
           </div>
         </div>

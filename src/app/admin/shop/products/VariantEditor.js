@@ -71,7 +71,7 @@ export default function VariantEditor({ value, onChange, basePrice = 0 }) {
             value={v.price}
             onChange={(price) => setVariant(i, { price: price ?? 0 })}
           />
-          <div className="text-[11px] text-gray-400">≈ {fmtNumber(vndToPoints(v.price || 0))} điểm</div>
+          <div className="text-[11px] text-gray-400 dark:text-gray-500">≈ {fmtNumber(vndToPoints(v.price || 0))} điểm</div>
         </div>
       ),
     },
@@ -110,7 +110,7 @@ export default function VariantEditor({ value, onChange, basePrice = 0 }) {
   return (
     <div className="space-y-3">
       {options.map((o, i) => (
-        <div key={i} className="rounded border border-gray-200 p-3 bg-gray-50">
+        <div key={i} className="rounded border border-gray-200 dark:border-neutral-700 p-3 bg-gray-50 dark:bg-neutral-800">
           <div className="flex gap-2 mb-2">
             <Input
               placeholder="Tên phân loại (VD: Size, Màu)"

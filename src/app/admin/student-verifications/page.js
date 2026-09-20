@@ -75,7 +75,7 @@ export default function AdminStudentVerificationsPage() {
           <a href={`/${r.user?.username}`} target="_blank" rel="noreferrer" className="font-medium">
             @{r.user?.username}
           </a>
-          <div className="text-xs text-gray-500">{r.user?.email}</div>
+          <div className="text-xs text-gray-500 dark:text-gray-400">{r.user?.email}</div>
         </div>
       ),
     },
@@ -209,7 +209,7 @@ export default function AdminStudentVerificationsPage() {
         onCancel={() => setRejecting(null)}
         onOk={handleReject}
       >
-        <p className="mb-3 text-sm text-gray-500">
+        <p className="mb-3 text-sm text-gray-500 dark:text-gray-400">
           Yêu cầu của @{rejecting?.user?.username}
         </p>
         <Form form={rejectForm} layout="vertical">
