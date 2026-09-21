@@ -241,7 +241,19 @@ export default function usePostComposer({ isEditMode = false, postData = null, o
 
       if (response.status === 201 || (isEditMode && response.status === 200)) {
         console.log(`Success: Post ${isEditMode ? 'updated' : 'created'}`, response.data);
-        message.success(`Bài viết đã được ${isEditMode ? 'cập nhật' : 'tạo'} thành công!`);
+
+        // AI moderation may hold the post for a human reviewer instead of
+        // publishing it - say so rather than claiming it went up.
+        const moderation = response.data?.moderation;
+        if (moderation?.status === "pending") {
+          message.warning(
+            moderation.message ||
+              "Bài viết của bạn đang chờ kiểm duyệt và sẽ được duyệt sớm.",
+            6
+          );
+        } else {
+          message.success(`Bài viết đã được ${isEditMode ? 'cập nhật' : 'tạo'} thành công!`);
+        }
         reset();
         setSelectedSubforum(null);
         setImageFiles([]);
