@@ -6,7 +6,6 @@ import { AddOutline, HelpCircleOutline, Mic } from "react-ionicons";
 import { Skeleton, message } from "antd";
 import CustomColorButton from "../ui/CustomColorButton";
 import { useState, useEffect, useCallback, useRef } from "react";
-import CreatePostModal from "../modals/CreatePostModal";
 import UploadRecordingModal from "../modals/UploadRecordingModal";
 import { useAuthContext, useTopUsersContext } from "@/contexts/Support";
 import { useRouter } from "@bprogress/next/app";
@@ -65,9 +64,11 @@ export default function RightSidebar({ onHandleCreatePost }) {
     } else if (!currentUser?.email_verified_at) {
       message.error("Bạn cần xác minh email để tạo cuộc thảo luận");
       return;
-    } else {
-      isRecordingsPage && message.loading("Cái này ad đang làm nha ^^");
+    } else if (isRecordingsPage) {
+      message.loading("Cái này ad đang làm nha ^^");
       setOpen(true);
+    } else {
+      router.push("/composer");
     }
   }, [loggedIn, currentUser, isRecordingsPage, router]);
 
@@ -80,10 +81,8 @@ export default function RightSidebar({ onHandleCreatePost }) {
 
   return (
     <>
-      {isRecordingsPage ? (
+      {isRecordingsPage && (
         <UploadRecordingModal open={open} onClose={() => setOpen(false)} />
-      ) : (
-        <CreatePostModal open={open} onClose={() => setOpen(false)} />
       )}
 
       {/* Right side bar */}
