@@ -1,8 +1,8 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo } from "react";
 import { Clapperboard } from "lucide-react";
-import CreatePostModal from "@/components/modals/CreatePostModal";
+import { useRouter } from "@bprogress/next/app";
 import SEOContent from "@/components/marketing/SEOContent";
 import StoriesSection from "@/components/stories/StoriesSection";
 import PublicChat from "@/components/chat/PublicChat";
@@ -28,10 +28,10 @@ export default function HomeClient({
   initialFeed,
   featuredPool = [],
 }) {
+  const router = useRouter();
   const { loggedIn, currentUser, authLoading } = useAuthContext();
   const { topUsers, loading: topUsersLoading } = useTopUsersContext();
   const { mainCategories: contextCategories, stats: contextStats } = useForumData();
-  const [createPostOpen, setCreatePostOpen] = useState(false);
 
   // Context data is only populated after a refresh (e.g. a new post was created).
   const mainCategories =
@@ -39,13 +39,12 @@ export default function HomeClient({
   const stats = contextStats || initialStats;
   const featuredPosts = useMemo(() => pickFeaturedPosts(featuredPool), [featuredPool]);
 
-  const openCreatePost = useCallback(() => setCreatePostOpen(true), []);
-  const handleCreatePost = useCreatePostGate(openCreatePost);
+  const handleCreatePost = useCreatePostGate(
+    useCallback(() => router.push("/composer"), [router])
+  );
 
   return (
     <div className="mx-auto w-full max-w-[1240px] space-y-4 px-3 pb-8 pt-4 sm:space-y-5 sm:px-4 xl:pl-1 xl:pr-6 xl:pt-6">
-      <CreatePostModal open={createPostOpen} onClose={() => setCreatePostOpen(false)} />
-
       <HomeHero
         currentUser={currentUser}
         authLoading={authLoading}

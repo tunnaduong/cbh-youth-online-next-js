@@ -22,6 +22,7 @@ import { CommentInput } from "./CommentInput";
 import CommentVotesModal from "./CommentVotesModal";
 import { useRouter } from "@bprogress/next/app";
 import Badges from "../ui/Badges";
+import MemberTierBadge from "../ui/MemberTierBadge";
 import MarkdownRenderer from "../ui/MarkdownRenderer";
 import ChatMediaLightbox from "../chat/ChatMediaLightbox";
 import { linkifyMentionsInHtml } from "@/utils/mentionRender";
@@ -289,7 +290,7 @@ export default function Comment({
               </div>
             ) : comment.is_anonymous ? (
               <div className="w-10 h-10 rounded-full bg-[#e9f1e9] dark:bg-[#1d281b] flex items-center justify-center border border-gray-200">
-                <span className="text-2xl text-white font-medium">?</span>
+                <span className="text-2xl text-primary-500 dark:text-neutral-300 font-medium">?</span>
               </div>
             ) : (
               <Link href={`/${comment.author.username}`}>
@@ -319,6 +320,7 @@ export default function Comment({
                     {comment.author.verified && (
                       <Badges className="ml-1 mb-[1.9px]" />
                     )}
+                    <MemberTierBadge tier={comment.author?.member_tier} />
                   </span>
                 </Link>
               )}

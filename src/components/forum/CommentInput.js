@@ -114,7 +114,7 @@ export function CommentInput({
       label: (
         <div className="flex items-center gap-2">
           <div className="w-6 h-6 rounded-full bg-[#e9f1e9] dark:bg-[#1d281b] flex items-center justify-center">
-            <span className="text-xs text-white">?</span>
+            <span className="text-xs text-primary-500 dark:text-neutral-300">?</span>
           </div>
           <span>Ẩn danh</span>
         </div>
@@ -208,7 +208,7 @@ export function CommentInput({
           <div className="relative flex-none self-start">
             {isAnonymous ? (
               <div className="w-8 h-8 rounded-full bg-[#e9f1e9] dark:bg-[#1d281b] flex items-center justify-center flex-shrink-0">
-                <span className="text-xs text-white font-medium">?</span>
+                <span className="text-xs text-primary-500 dark:text-neutral-300 font-medium">?</span>
               </div>
             ) : (
               <img
@@ -274,6 +274,7 @@ export function CommentInput({
                     ce-input
                     w-full bg-transparent border-none outline-none resize-none
                     text-sm min-h-[24px] leading-6
+                    text-gray-900 dark:text-gray-100
                     focus:outline-none focus:ring-0
                     whitespace-pre-wrap break-words overflow-y-auto
                   "

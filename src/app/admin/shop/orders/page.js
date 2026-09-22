@@ -1,7 +1,7 @@
 "use client";
 
 import { Select, Tag, message } from "antd";
-import ResourceTable, { fmtDate, fmtNumber, errMsg } from "../../_components/ResourceTable";
+import ResourceTable, { fmtDate, fmtVndPoints, errMsg, UserLink } from "../../_components/ResourceTable";
 import { adminGetShopOrders, adminUpdateShopOrder } from "@/app/Api";
 
 const STATUS = {
@@ -16,18 +16,18 @@ const STATUS_OPTIONS = Object.entries(STATUS).map(([value, s]) => ({ value, labe
 export default function AdminShopOrdersPage() {
   const columns = (reload) => [
     { title: "ID", dataIndex: "id", width: 70 },
-    { title: "Người đặt", key: "user", render: (_, o) => o.user?.username || `#${o.user_id}` },
+    { title: "Người đặt", key: "user", render: (_, o) => <UserLink user={o.user} userId={o.user_id} /> },
     {
       title: "Giao đến",
       key: "shipping",
       render: (_, o) => (
         <div className="max-w-[260px]">
           <div>{o.phone}</div>
-          <div className="text-xs text-gray-500">{o.shipping_address}</div>
+          <div className="text-xs text-gray-500 dark:text-gray-400">{o.shipping_address}</div>
         </div>
       ),
     },
-    { title: "Tổng (điểm)", dataIndex: "total_amount", render: fmtNumber },
+    { title: "Tổng (VND)", dataIndex: "total_amount", render: fmtVndPoints },
     {
       title: "Trạng thái",
       key: "status",
@@ -69,10 +69,11 @@ export default function AdminShopOrdersPage() {
           <div className="text-sm">
             {(o.items || []).map((it) => (
               <div key={it.id}>
-                {it.product?.name || `Sản phẩm #${it.product_id}`} × {it.quantity} — {fmtNumber(it.price)} điểm
+                {it.product?.name || `Sản phẩm #${it.product_id}`}
+                {it.variant_label ? ` (${it.variant_label})` : ""} × {it.quantity} — {fmtVndPoints(it.price)}
               </div>
             ))}
-            {o.note && <div className="mt-2 text-gray-500">Ghi chú: {o.note}</div>}
+            {o.note && <div className="mt-2 text-gray-500 dark:text-gray-400">Ghi chú: {o.note}</div>}
           </div>
         ),
       }}

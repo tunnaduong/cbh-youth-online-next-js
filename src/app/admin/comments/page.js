@@ -4,6 +4,7 @@ import { Button, Popconfirm, Tag, message } from "antd";
 import { DeleteOutlined } from "@ant-design/icons";
 import ResourceTable, { fmtDate, errMsg } from "../_components/ResourceTable";
 import { adminGetComments, adminDeleteComment } from "@/app/Api";
+import { generatePostUrl } from "@/utils/slugify";
 
 export default function AdminCommentsPage() {
   const columns = (reload) => [
@@ -26,11 +27,25 @@ export default function AdminCommentsPage() {
     {
       title: "Bài viết",
       key: "topic",
-      render: (_, c) => (
-        <div className="max-w-[240px] truncate">
-          #{c.topic_id} {c.topic?.title}
-        </div>
-      ),
+      render: (_, c) => {
+        // A comment has no page of its own, so link to the post holding it.
+        // topic_id is always on the row, so the link survives even if the
+        // topic relation wasn't loaded.
+        const url = generatePostUrl(c.topic, c.topic_id);
+        return (
+          <div className="max-w-[240px]">
+            {url ? (
+              <a href={url} target="_blank" rel="noreferrer" className="block truncate">
+                #{c.topic_id} {c.topic?.title}
+              </a>
+            ) : (
+              <div className="truncate text-gray-400 dark:text-gray-500">
+                #{c.topic_id} (bài đã xoá)
+              </div>
+            )}
+          </div>
+        );
+      },
     },
     { title: "Ngày tạo", dataIndex: "created_at", render: fmtDate },
     {

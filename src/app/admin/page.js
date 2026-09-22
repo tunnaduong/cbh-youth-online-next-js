@@ -19,16 +19,17 @@ import {
 } from "@ant-design/icons";
 import { getReportStats, adminGetOverview } from "@/app/Api";
 import TrendChart from "./_components/TrendChart";
+import { useIsDarkMode } from "@/hooks/useIsDarkMode";
 
 const fmt = (v) => (v == null ? "—" : Number(v).toLocaleString("vi-VN"));
 
 const Panel = ({ title, extra, children, className = "" }) => (
   <section
-    className={`bg-white rounded-2xl border border-[#eef0ee] shadow-[0_1px_2px_rgba(16,24,16,0.04)] ${className}`}
+    className={`bg-white dark:bg-neutral-800 rounded-2xl border border-[#eef0ee] dark:border-neutral-700 shadow-[0_1px_2px_rgba(16,24,16,0.04)] ${className}`}
   >
     {title && (
       <header className="flex items-center justify-between px-5 pt-4 pb-2">
-        <h2 className="font-semibold text-gray-900">{title}</h2>
+        <h2 className="font-semibold text-gray-900 dark:text-gray-100">{title}</h2>
         {extra}
       </header>
     )}
@@ -38,27 +39,34 @@ const Panel = ({ title, extra, children, className = "" }) => (
 
 function ActionCard({ href, icon, label, value, tint }) {
   const hot = value > 0;
+  // These chips are inline-styled (Tailwind's dark: variant can't reach them),
+  // so the dark pair is picked here: the pastel light backgrounds would
+  // otherwise stay bright against a near-black card.
+  const isDark = useIsDarkMode();
   return (
     <Link
       href={href}
-      className="group bg-white rounded-2xl border border-[#eef0ee] p-4 flex items-center gap-4 hover:border-[#cfe6cb] hover:shadow-md transition-all"
+      className="group bg-white dark:bg-neutral-800 rounded-2xl border border-[#eef0ee] dark:border-neutral-700 p-4 flex items-center gap-4 hover:border-[#cfe6cb] hover:shadow-md transition-all"
     >
       <span
         className="w-11 h-11 rounded-xl flex items-center justify-center text-lg shrink-0"
-        style={{ background: tint.bg, color: tint.fg }}
+        style={{
+          background: isDark ? tint.darkBg : tint.bg,
+          color: isDark ? tint.darkFg : tint.fg,
+        }}
       >
         {icon}
       </span>
       <div className="min-w-0 flex-1">
-        <div className="text-[13px] text-gray-500">{label}</div>
-        <div className="text-2xl font-bold text-gray-900 leading-tight">{fmt(value)}</div>
+        <div className="text-[13px] text-gray-500 dark:text-gray-400">{label}</div>
+        <div className="text-2xl font-bold text-gray-900 dark:text-gray-100 leading-tight">{fmt(value)}</div>
       </div>
       {hot ? (
-        <span className="text-[11px] font-medium px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200">
+        <span className="text-[11px] font-medium px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-500/15 dark:text-amber-300 dark:border-amber-500/30">
           Cần xử lý
         </span>
       ) : (
-        <ArrowRightOutlined className="text-gray-300 group-hover:text-[#319527] transition-colors" />
+        <ArrowRightOutlined className="text-gray-300 dark:text-gray-600 group-hover:text-[#319527] transition-colors" />
       )}
     </Link>
   );
@@ -68,11 +76,11 @@ function StatRow({ href, icon, label, value }) {
   return (
     <Link
       href={href}
-      className="flex items-center gap-3 py-2.5 px-2 -mx-2 rounded-lg hover:bg-gray-50 transition-colors"
+      className="flex items-center gap-3 py-2.5 px-2 -mx-2 rounded-lg hover:bg-gray-50 dark:hover:bg-neutral-700 transition-colors"
     >
-      <span className="w-8 h-8 rounded-lg bg-gray-100 text-gray-500 flex items-center justify-center">{icon}</span>
-      <span className="flex-1 text-sm text-gray-600">{label}</span>
-      <span className="font-semibold text-gray-900 tabular-nums">{fmt(value)}</span>
+      <span className="w-8 h-8 rounded-lg bg-gray-100 dark:bg-neutral-700 text-gray-500 dark:text-gray-400 flex items-center justify-center">{icon}</span>
+      <span className="flex-1 text-sm text-gray-600 dark:text-gray-300">{label}</span>
+      <span className="font-semibold text-gray-900 dark:text-gray-100 tabular-nums">{fmt(value)}</span>
     </Link>
   );
 }
@@ -136,6 +144,8 @@ export default function AdminDashboardPage() {
           </p>
           <Link
             href="/admin/notifications"
+            // Stays white in both themes: it sits on the green hero gradient,
+            // not on a page surface.
             className="inline-flex items-center gap-2 mt-4 px-4 py-2 rounded-lg bg-white text-[#1f6b19] text-sm font-semibold hover:bg-white/90 transition-colors"
           >
             <NotificationOutlined /> Gửi thông báo
@@ -150,13 +160,13 @@ export default function AdminDashboardPage() {
           {/* Needs attention */}
           <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
             <ActionCard href="/admin/reports" icon={<FlagOutlined />} label="Báo cáo chờ xử lý"
-              value={overview?.pending_reports ?? stats?.pending} tint={{ bg: "#fef2f2", fg: "#dc2626" }} />
+              value={overview?.pending_reports ?? stats?.pending} tint={{ bg: "#fef2f2", fg: "#dc2626", darkBg: "#45191933", darkFg: "#fca5a5" }} />
             <ActionCard href="/admin/deposits" icon={<DownloadOutlined />} label="Nạp tiền đang chờ"
-              value={overview?.pending_deposits} tint={{ bg: "#eff6ff", fg: "#2563eb" }} />
+              value={overview?.pending_deposits} tint={{ bg: "#eff6ff", fg: "#2563eb", darkBg: "#1e3a8a33", darkFg: "#93c5fd" }} />
             <ActionCard href="/admin/withdrawals" icon={<UploadOutlined />} label="Rút tiền chờ duyệt"
-              value={overview?.pending_withdrawals} tint={{ bg: "#fff7ed", fg: "#ea580c" }} />
+              value={overview?.pending_withdrawals} tint={{ bg: "#fff7ed", fg: "#ea580c", darkBg: "#7c2d1233", darkFg: "#fdba74" }} />
             <ActionCard href="/admin/shop/orders" icon={<ShoppingCartOutlined />} label="Đơn hàng mới"
-              value={overview?.pending_orders} tint={{ bg: "#f5f3ff", fg: "#7c3aed" }} />
+              value={overview?.pending_orders} tint={{ bg: "#f5f3ff", fg: "#7c3aed", darkBg: "#4c1d9533", darkFg: "#c4b5fd" }} />
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -180,8 +190,8 @@ export default function AdminDashboardPage() {
               {daily.length ? (
                 <>
                   <div className="flex items-baseline gap-2 mb-2">
-                    <span className="text-3xl font-bold text-gray-900 tabular-nums">{fmt(seriesTotal)}</span>
-                    <span className="text-sm text-gray-500">{SERIES[series]}</span>
+                    <span className="text-3xl font-bold text-gray-900 dark:text-gray-100 tabular-nums">{fmt(seriesTotal)}</span>
+                    <span className="text-sm text-gray-500 dark:text-gray-400">{SERIES[series]}</span>
                   </div>
                   <TrendChart
                     label={SERIES[series]}
@@ -189,7 +199,7 @@ export default function AdminDashboardPage() {
                   />
                 </>
               ) : (
-                <div className="text-sm text-gray-400 py-12 text-center">Chưa có dữ liệu</div>
+                <div className="text-sm text-gray-400 dark:text-gray-500 py-12 text-center">Chưa có dữ liệu</div>
               )}
             </Panel>
 
@@ -221,12 +231,12 @@ export default function AdminDashboardPage() {
                   return (
                     <div key={key}>
                       <div className="flex justify-between text-sm mb-1.5">
-                        <span className="text-gray-600">{label}</span>
-                        <span className="text-gray-900 font-medium tabular-nums">
-                          {fmt(v)} <span className="text-gray-400 font-normal">· {pct}%</span>
+                        <span className="text-gray-600 dark:text-gray-300">{label}</span>
+                        <span className="text-gray-900 dark:text-gray-100 font-medium tabular-nums">
+                          {fmt(v)} <span className="text-gray-400 dark:text-gray-500 font-normal">· {pct}%</span>
                         </span>
                       </div>
-                      <div className="h-2 rounded-full bg-gray-100 overflow-hidden">
+                      <div className="h-2 rounded-full bg-gray-100 dark:bg-neutral-700 overflow-hidden">
                         <div className="h-full rounded-full bg-[#319527]" style={{ width: `${pct}%` }} />
                       </div>
                     </div>

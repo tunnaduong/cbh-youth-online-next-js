@@ -18,6 +18,7 @@ import {
   Statistic,
 } from "antd";
 import { getReports, getReportStats, reviewReport } from "@/app/Api";
+import { generatePostUrl } from "@/utils/slugify";
 
 const { RangePicker } = DatePicker;
 const { TextArea } = Input;
@@ -212,9 +213,30 @@ export default function AdminReportsPage() {
       title: "Nội dung liên quan",
       key: "content",
       render: (_, r) => {
-        if (r.topic_id) return `Bài viết #${r.topic_id}`;
+        if (r.topic_id) {
+          // topic_id alone is enough to link: the post page resolves by id.
+          return (
+            <a
+              href={generatePostUrl(r.topic, r.topic_id)}
+              target="_blank"
+              rel="noreferrer"
+            >
+              Bài viết #{r.topic_id}
+            </a>
+          );
+        }
+        // Stories have no public page to link to, so they stay plain text.
         if (r.story_id) return `Tin #${r.story_id}`;
-        return r.reported_user_id ? `Người dùng #${r.reported_user_id}` : "Người dùng";
+        if (!r.reported_user_id) return "Người dùng";
+
+        const username = r.reported_user?.username;
+        return username ? (
+          <a href={`/${username}`} target="_blank" rel="noreferrer">
+            @{username}
+          </a>
+        ) : (
+          `Người dùng #${r.reported_user_id}`
+        );
       },
     },
     {
@@ -253,7 +275,7 @@ export default function AdminReportsPage() {
   return (
     <div>
       <div className="max-w-[1280px] mx-auto w-full px-4 sm:px-6 py-6">
-        <h1 className="text-2xl font-bold text-gray-900 tracking-tight mb-5">Quản lý báo cáo</h1>
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 tracking-tight mb-5">Quản lý báo cáo</h1>
 
         {stats && (
           <Row gutter={[16, 16]} className="mb-6">
@@ -288,7 +310,7 @@ export default function AdminReportsPage() {
                       r.reported_user?.profile_name ||
                       `#${r.reported_user_id}`}
                   </span>
-                  <span className="text-gray-500">{r.total} lượt</span>
+                  <span className="text-gray-500 dark:text-gray-400">{r.total} lượt</span>
                 </div>
               ))}
             </div>

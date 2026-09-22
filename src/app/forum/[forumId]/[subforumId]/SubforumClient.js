@@ -291,7 +291,7 @@ export default function SubforumClient({
                               {topic.anonymous ? (
                                 <div className="flex items-center gap-x-2">
                                   <div className="h-6 w-6 rounded-full border bg-[#e9f1e9] dark:bg-[#1d281b] flex items-center justify-center">
-                                    <span className="text-xs font-bold text-white dark:text-gray-300">
+                                    <span className="text-xs font-bold text-primary-500 dark:text-gray-300">
                                       ?
                                     </span>
                                   </div>

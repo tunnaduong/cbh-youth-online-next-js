@@ -1,7 +1,7 @@
 "use client";
 
 import { Button, Popconfirm, Space, Tag, message } from "antd";
-import ResourceTable, { fmtDate, fmtNumber, errMsg } from "../_components/ResourceTable";
+import ResourceTable, { fmtDate, fmtNumber, errMsg, UserLink } from "../_components/ResourceTable";
 import { adminGetPendingDeposits, adminApproveDeposit, adminExpireDeposit } from "@/app/Api";
 
 const STATUS = {
@@ -23,7 +23,7 @@ export default function AdminDepositsPage() {
 
   const columns = (reload) => [
     { title: "ID", dataIndex: "id", width: 70 },
-    { title: "Người dùng", key: "user", render: (_, d) => d.user?.username || `#${d.user_id}` },
+    { title: "Người dùng", key: "user", render: (_, d) => <UserLink user={d.user} userId={d.user_id} /> },
     { title: "Mã nạp", dataIndex: "deposit_code", render: (v) => <code>{v}</code> },
     { title: "Số tiền (VND)", dataIndex: "amount_vnd", render: fmtNumber },
     { title: "Điểm", dataIndex: "expected_points", render: fmtNumber },

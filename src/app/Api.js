@@ -121,6 +121,10 @@ export const getTopUsers = (limit = 8) => {
   return Api.getRequest(`/v1.0/users/ranking?limit=${limit}`);
 };
 
+export const dailyCheckin = () => Api.postRequest("/v1.0/checkin");
+export const getCheckinStatus = () => Api.getRequest("/v1.0/checkin/status");
+export const getMemberTiers = () => Api.getRequest("/v1.0/member-tiers");
+
 export const getYouthNews = (page = 1) => {
   return Api.getRequest(`/v1.0/youth-news?page=${page}`);
 };
@@ -681,6 +685,22 @@ export const getMyShopOrders = (params = "") => {
   return Api.getRequest(`/v1.0/shop/my-orders${params ? `?${params}` : ""}`);
 };
 
+// Student Verification (eKYC)
+export const getStudentVerificationStatus = () => Api.getRequest("/v1.0/student-verification/status");
+export const submitStudentVerification = (params) => Api.postRequest("/v1.0/student-verification", params);
+
+// Admin - Student Verifications
+export const adminGetStudentVerifications = (params) => Api.getRequest("/v1.0/admin/student-verifications", params);
+export const adminApproveStudentVerification = (id) => Api.postRequest(`/v1.0/admin/student-verifications/${id}/approve`);
+export const adminRejectStudentVerification = (id, params) => Api.postRequest(`/v1.0/admin/student-verifications/${id}/reject`, params);
+export const adminRevokeStudentVerification = (userId) => Api.postRequest(`/v1.0/admin/student-verifications/revoke/${userId}`);
+
+// AI moderation queue
+export const adminGetModerationQueue = (params) => Api.getRequest("/v1.0/admin/moderation", params);
+export const adminGetModerationStats = () => Api.getRequest("/v1.0/admin/moderation/stats");
+export const adminApproveModeration = (id, params) => Api.postRequest(`/v1.0/admin/moderation/${id}/approve`, params);
+export const adminRejectModeration = (id, params) => Api.postRequest(`/v1.0/admin/moderation/${id}/reject`, params);
+
 // Mention suggestions
 export const getMentionSuggestions = (query) => {
   return Api.getRequest(`/v1.0/mention-suggestions?q=${encodeURIComponent(query)}`);
@@ -835,3 +855,8 @@ export const adminDeleteStudyMaterial = (id) => Api.deleteRequest(`/v1.0/admin/s
 export const adminGetBroadcasts = (params) => Api.getRequest("/v1.0/admin/broadcasts", params);
 export const adminGetBroadcastAudience = (params) => Api.getRequest("/v1.0/admin/broadcasts/audience", params);
 export const adminSendBroadcast = (params) => Api.postRequest("/v1.0/admin/broadcasts", params);
+
+export const adminGetConversations = (params) => Api.getRequest("/v1.0/admin/conversations", params);
+export const adminGetConversationMessages = (id, params) => Api.getRequest(`/v1.0/admin/conversations/${id}/messages`, params);
+export const adminSearchMessages = (params) => Api.getRequest("/v1.0/admin/messages/search", params);
+export const adminGetMessageAccessLogs = (params) => Api.getRequest("/v1.0/admin/messages/access-logs", params);

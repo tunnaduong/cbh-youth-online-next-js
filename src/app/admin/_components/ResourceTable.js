@@ -5,7 +5,24 @@ import { Table, Input, Select, message } from "antd";
 
 export const fmtDate = (v) => (v ? new Date(v).toLocaleString("vi-VN") : "-");
 export const fmtNumber = (v) => (v == null ? "-" : Number(v).toLocaleString("vi-VN"));
+// Shop prices are stored in VND; 1.000đ = 10 điểm (PointsService::convertVNDToPoints).
+export const vndToPoints = (vnd) => Math.round((Number(vnd) / 1000) * 10);
+export const fmtVndPoints = (v) =>
+  v == null ? "-" : `${fmtNumber(v)}đ (${fmtNumber(vndToPoints(v))} điểm)`;
 export const errMsg = (err, fallback) => err?.response?.data?.message || fallback;
+
+/**
+ * A username cell that links to the public profile, falling back to the bare
+ * id when the account is gone or wasn't loaded.
+ */
+export const UserLink = ({ user, userId }) =>
+  user?.username ? (
+    <a href={`/${user.username}`} target="_blank" rel="noreferrer">
+      {user.username}
+    </a>
+  ) : (
+    <span className="text-gray-400 dark:text-gray-500">#{userId ?? "-"}</span>
+  );
 
 /**
  * Paginated, filterable admin table backed by a Laravel paginator endpoint.
@@ -64,15 +81,15 @@ const ResourceTable = forwardRef(function ResourceTable(
     <div className="max-w-[1280px] mx-auto w-full px-4 sm:px-6 py-6">
       <div className="flex items-end justify-between mb-5 gap-3 flex-wrap">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 tracking-tight">{title}</h1>
-          <p className="text-sm text-gray-500 mt-1">{fmtNumber(pagination.total)} mục</p>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 tracking-tight">{title}</h1>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{fmtNumber(pagination.total)} mục</p>
         </div>
         {extra}
       </div>
 
-      <div className="bg-white rounded-2xl border border-[#eef0ee] shadow-[0_1px_2px_rgba(16,24,16,0.04)] overflow-hidden">
+      <div className="bg-white dark:bg-neutral-800 rounded-2xl border border-[#eef0ee] dark:border-neutral-700 shadow-[0_1px_2px_rgba(16,24,16,0.04)] overflow-hidden">
       {filters.length > 0 && (
-        <div className="flex gap-3 p-4 flex-wrap border-b border-[#eef0ee]">
+        <div className="flex gap-3 p-4 flex-wrap border-b border-[#eef0ee] dark:border-neutral-700">
           {filters.map((f) =>
             f.type === "search" ? (
               <Input.Search

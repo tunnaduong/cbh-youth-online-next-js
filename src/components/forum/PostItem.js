@@ -13,6 +13,7 @@ import {
 import { generatePostSlug } from "@/utils/slugify";
 import dynamic from "next/dynamic";
 import VerifiedBadge from "@/components/ui/Badges";
+import MemberTierBadge from "@/components/ui/MemberTierBadge";
 import getCollageSetting from "@/utils/getCollageSetting";
 import { useState, useEffect, useMemo } from "react";
 import { extractHeadingsAndInjectIds } from "@/utils/toc";
@@ -48,7 +49,6 @@ import {
   Smartphone,
 } from "lucide-react";
 import { usePostRefresh } from "@/contexts/PostRefreshContext";
-import CreatePostModal from "../modals/CreatePostModal";
 import PostVotesModal from "./PostVotesModal";
 import ReportModal from "@/components/ReportModal";
 
@@ -68,7 +68,6 @@ export default function PostItem({ post, single = false, onVote, onRefresh = nul
   const router = useRouter();
 
   const { triggerRefresh } = usePostRefresh();
-  const [showEditModal, setShowEditModal] = useState(false);
 
   const [isMobile, setIsMobile] = useState(false);
 
@@ -332,7 +331,7 @@ export default function PostItem({ post, single = false, onVote, onRefresh = nul
   };
 
   const handleEdit = () => {
-    setShowEditModal(true);
+    router.push(`/composer?edit=${post.id}`);
   };
 
   const handleDelete = () => {
@@ -765,7 +764,7 @@ export default function PostItem({ post, single = false, onVote, onRefresh = nul
               <>
                 <span className="relative flex shrink-0 overflow-hidden rounded-full w-8 h-8">
                   <div className="border rounded-full aspect-square h-full w-full bg-[#e9f1e9] dark:bg-[#1d281b] dark:!border-gray-500 flex items-center justify-center">
-                    <span className="text-lg font-bold text-white dark:text-gray-300">
+                    <span className="text-lg font-bold text-primary-500 dark:text-gray-300">
                       ?
                     </span>
                   </div>
@@ -804,6 +803,7 @@ export default function PostItem({ post, single = false, onVote, onRefresh = nul
                     post.author?.profile?.verified === "1") && (
                       <VerifiedBadge className="inline-verified__badge" />
                     )}
+                  <MemberTierBadge tier={post.author?.member_tier} />
                 </Link>
               </>
             )}
@@ -858,20 +858,6 @@ export default function PostItem({ post, single = false, onVote, onRefresh = nul
           </div>
         </div>
       </div>
-      <CreatePostModal
-        open={showEditModal}
-        onClose={() => setShowEditModal(false)}
-        isEditMode={true}
-        postData={post}
-        onSuccess={() => {
-          if (onRefresh) {
-            onRefresh();
-          } else {
-            router.refresh();
-          }
-          triggerRefresh();
-        }}
-      />
     </div>
   );
 }
