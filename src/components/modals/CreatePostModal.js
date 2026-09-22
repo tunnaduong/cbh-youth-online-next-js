@@ -440,7 +440,7 @@ const CreatePostModal = ({ open, onClose, isEditMode = false, postData = null, o
         if (moderation?.status === "pending") {
           message.warning(
             moderation.message ||
-              "Bài viết của bạn đang chờ kiểm duyệt và sẽ được duyệt sớm.",
+            "Bài viết của bạn đang chờ kiểm duyệt và sẽ được duyệt sớm.",
             6
           );
         } else {
@@ -1050,7 +1050,7 @@ const CreatePostModal = ({ open, onClose, isEditMode = false, postData = null, o
                 <button
                   type="button"
                   onClick={() => setIsPreviewMode(!isPreviewMode)}
-                  className="-mt-1.5 text-xs font-bold flex items-center"
+                  className="-mt-1.5 text-xs font-bold flex items-center border-right pr-2"
                 >
                   {isPreviewMode ? (
                     <>
@@ -1064,6 +1064,8 @@ const CreatePostModal = ({ open, onClose, isEditMode = false, postData = null, o
                     </>
                   )}
                 </button>
+
+
                 <Tooltip title="Mở trình soạn thảo nâng cao (WYSIWYG, toàn màn hình)">
                   <button
                     type="button"
