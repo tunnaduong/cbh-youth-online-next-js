@@ -462,8 +462,16 @@ export default function PostItem({ post, single = false, onVote, onRefresh = nul
       <CreatePostModal
         open={showEditModal}
         onClose={() => setShowEditModal(false)}
-        isEditMode
-        postId={post.id}
+        isEditMode={true}
+        postData={post}
+        onSuccess={() => {
+          if (onRefresh) {
+            onRefresh();
+          } else {
+            router.refresh();
+          }
+          triggerRefresh();
+        }}
       />
       <div className="post-container-post post-container mb-4 shadow-lg rounded-xl !p-6 bg-white flex flex-col-reverse md:flex-row">
         <div className="min-w-[72px]">
