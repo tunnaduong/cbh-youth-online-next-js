@@ -7,6 +7,7 @@ import { Skeleton, message } from "antd";
 import CustomColorButton from "../ui/CustomColorButton";
 import { useState, useEffect, useCallback, useRef } from "react";
 import UploadRecordingModal from "../modals/UploadRecordingModal";
+import CreatePostModal from "../modals/CreatePostModal";
 import { useAuthContext, useTopUsersContext } from "@/contexts/Support";
 import { useRouter } from "@bprogress/next/app";
 import { getCurrentUser } from "@/app/Api";
@@ -16,6 +17,7 @@ export default function RightSidebar({ onHandleCreatePost }) {
   const router = useRouter();
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
+  const [composerOpen, setComposerOpen] = useState(false);
 
   // Get current URL to determine if we're on recordings page
   const isRecordingsPage = pathname.startsWith("/recordings");
@@ -68,7 +70,7 @@ export default function RightSidebar({ onHandleCreatePost }) {
       message.loading("Cái này ad đang làm nha ^^");
       setOpen(true);
     } else {
-      router.push("/composer");
+      setComposerOpen(true);
     }
   }, [loggedIn, currentUser, isRecordingsPage, router]);
 
@@ -84,6 +86,7 @@ export default function RightSidebar({ onHandleCreatePost }) {
       {isRecordingsPage && (
         <UploadRecordingModal open={open} onClose={() => setOpen(false)} />
       )}
+      <CreatePostModal open={composerOpen} onClose={() => setComposerOpen(false)} />
 
       {/* Right side bar */}
       <div

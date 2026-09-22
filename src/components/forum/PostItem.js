@@ -19,6 +19,7 @@ import { useState, useEffect, useMemo } from "react";
 import { extractHeadingsAndInjectIds } from "@/utils/toc";
 import ArticleToc from "./ArticleToc";
 import { linkifyMentionsInHtml } from "@/utils/mentionRender";
+import CreatePostModal from "@/components/modals/CreatePostModal";
 
 const ReactPhotoCollage = dynamic(
   () =>
@@ -59,6 +60,7 @@ export default function PostItem({ post, single = false, onVote, onRefresh = nul
   const [isSaved, setIsSaved] = useState(!!(post.is_saved || post.saved));
   const [showVotesModal, setShowVotesModal] = useState(false);
   const [showReportModal, setShowReportModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
   const maxLength = 300; // Số ký tự tối đa trước khi truncate
   const myVote =
     post.votes?.find((v) => v.username === currentUser?.username)?.vote_value ||
@@ -331,7 +333,7 @@ export default function PostItem({ post, single = false, onVote, onRefresh = nul
   };
 
   const handleEdit = () => {
-    router.push(`/composer?edit=${post.id}`);
+    setShowEditModal(true);
   };
 
   const handleDelete = () => {
@@ -456,6 +458,20 @@ export default function PostItem({ post, single = false, onVote, onRefresh = nul
         reportedUserId={post.author?.id}
         topicId={post.id}
         title="Báo cáo bài viết"
+      />
+      <CreatePostModal
+        open={showEditModal}
+        onClose={() => setShowEditModal(false)}
+        isEditMode={true}
+        postData={post}
+        onSuccess={() => {
+          if (onRefresh) {
+            onRefresh();
+          } else {
+            router.refresh();
+          }
+          triggerRefresh();
+        }}
       />
       <div className="post-container-post post-container mb-4 shadow-lg rounded-xl !p-6 bg-white flex flex-col-reverse md:flex-row">
         <div className="min-w-[72px]">

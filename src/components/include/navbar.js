@@ -29,6 +29,7 @@ import Dropdown from "@/components/ui/Dropdown";
 import { useAuthContext, useChatContext } from "@/contexts/Support";
 import { useTheme } from "@/contexts/themeContext";
 import useCreatePostGate from "@/hooks/useCreatePostGate";
+import CreatePostModal from "@/components/modals/CreatePostModal";
 import { logoutRequest } from "@/app/Api";
 import AccountSwitcher from "./AccountSwitcher";
 import { getSavedAccounts, removeSavedAccount, activateSavedAccount } from "@/utils/savedAccounts";
@@ -115,7 +116,8 @@ export default function Navbar({ hasSidebar = false }) {
     setDrawerOpen(false);
   }, [pathname]);
 
-  const handleCreatePost = useCreatePostGate(useCallback(() => router.push("/composer"), [router]));
+  const [composerOpen, setComposerOpen] = useState(false);
+  const handleCreatePost = useCreatePostGate(useCallback(() => setComposerOpen(true), []));
 
   const handleSearch = (e) => {
     e.preventDefault();
@@ -365,6 +367,8 @@ export default function Navbar({ hasSidebar = false }) {
           }
         />
       )}
+
+      <CreatePostModal open={composerOpen} onClose={() => setComposerOpen(false)} />
     </>
   );
 }

@@ -1,14 +1,14 @@
 "use client";
 
-import { useCallback, useMemo } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { Clapperboard } from "lucide-react";
-import { useRouter } from "@bprogress/next/app";
 import SEOContent from "@/components/marketing/SEOContent";
 import StoriesSection from "@/components/stories/StoriesSection";
 import PublicChat from "@/components/chat/PublicChat";
 import { useAuthContext, useTopUsersContext } from "@/contexts/Support";
 import { useForumData } from "@/contexts/ForumDataContext";
 import useCreatePostGate from "@/hooks/useCreatePostGate";
+import CreatePostModal from "@/components/modals/CreatePostModal";
 import HomeHero from "./HomeHero";
 import TrendingTopics from "./TrendingTopics";
 import FeaturedPosts from "./FeaturedPosts";
@@ -28,7 +28,6 @@ export default function HomeClient({
   initialFeed,
   featuredPool = [],
 }) {
-  const router = useRouter();
   const { loggedIn, currentUser, authLoading } = useAuthContext();
   const { topUsers, loading: topUsersLoading } = useTopUsersContext();
   const { mainCategories: contextCategories, stats: contextStats } = useForumData();
@@ -39,8 +38,9 @@ export default function HomeClient({
   const stats = contextStats || initialStats;
   const featuredPosts = useMemo(() => pickFeaturedPosts(featuredPool), [featuredPool]);
 
+  const [composerOpen, setComposerOpen] = useState(false);
   const handleCreatePost = useCreatePostGate(
-    useCallback(() => router.push("/composer"), [router])
+    useCallback(() => setComposerOpen(true), [])
   );
 
   return (
@@ -91,6 +91,8 @@ export default function HomeClient({
       <CommunityBanner />
 
       <SEOContent className="rounded-2xl border border-[#EBEFEA] dark:border-neutral-600 sm:p-8" />
+
+      <CreatePostModal open={composerOpen} onClose={() => setComposerOpen(false)} />
     </div>
   );
 }
