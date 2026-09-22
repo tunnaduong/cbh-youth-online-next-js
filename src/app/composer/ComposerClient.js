@@ -1,19 +1,20 @@
 "use client";
 
-import React, { useEffect } from "react";
+import React, { useEffect, useRef } from "react";
 import { useRouter } from "@bprogress/next/app";
 import { useSearchParams } from "next/navigation";
-import { message, Select, Switch, Dropdown, Tooltip } from "antd";
-import { EditorContent } from "@tiptap/react";
-import { Image as ImageIcon, FileVideo, Paperclip, X } from "lucide-react";
-import { IoEarth, IoCaretDown } from "react-icons/io5";
-import { FaMarkdown } from "react-icons/fa";
-import { FaFileLines } from "react-icons/fa6";
-import CustomInput from "@/components/ui/input";
-import { useRichTextEditor, RichTextToolbar } from "@/components/ui/RichTextEditor";
+import { message } from "antd";
+import { useRichTextEditor } from "@/components/ui/RichTextEditor";
+import ComposerForm from "@/components/forum/ComposerForm";
 import { useAuthContext } from "@/contexts/Support";
 import { usePostRefresh } from "@/contexts/PostRefreshContext";
 import usePostComposer from "@/hooks/usePostComposer";
+
+// Written by CreatePostModal.js's "Nâng cao" button right before it
+// navigates here, so switching from the quick modal to the full editor
+// doesn't lose whatever the user already typed. Not a persisted draft
+// feature - read once and discarded.
+const DRAFT_HANDOFF_KEY = "composer_modal_handoff";
 
 /**
  * The post composer at /composer (src/app/composer/page.js) - a plain page
@@ -22,6 +23,10 @@ import usePostComposer from "@/hooks/usePostComposer";
  * community" dropdown up top, title, a body editor with its formatting
  * toolbar directly underneath, and Post on the bottom right. Handles both
  * creating a post and editing one (`?edit=<id>`).
+ *
+ * The everyday "create post" entry points (navbar, sidebar, home) open the
+ * quick CreatePostModal instead; this page is reached via its "Nâng cao"
+ * button, or directly via ?edit=<id> from PostItem's edit action.
  */
 export default function ComposerClient() {
   const router = useRouter();
@@ -30,6 +35,7 @@ export default function ComposerClient() {
   const isEditMode = Boolean(editId);
   const { loggedIn, currentUser, authLoading } = useAuthContext();
   const { triggerRefresh } = usePostRefresh();
+  const handoffAppliedRef = useRef(false);
 
   // Mirrors useCreatePostGate.js's checks for anyone who lands here directly
   // via the URL instead of through a gated trigger (navbar/sidebar/home hero).
@@ -97,50 +103,42 @@ export default function ComposerClient() {
     onClose: () => router.push("/"),
   });
 
+  // Pick up a draft handed off from the quick CreatePostModal (only makes
+  // sense for a fresh post - editing already loads its own data from the API).
+  useEffect(() => {
+    if (isEditMode || handoffAppliedRef.current) return;
+    let raw;
+    try {
+      raw = sessionStorage.getItem(DRAFT_HANDOFF_KEY);
+      sessionStorage.removeItem(DRAFT_HANDOFF_KEY);
+    } catch {
+      return;
+    }
+    if (!raw) return;
+    handoffAppliedRef.current = true;
+    try {
+      const draft = JSON.parse(raw);
+      setData((prev) => ({
+        ...prev,
+        title: draft.title || "",
+        description: draft.description || "",
+        subforum_id: draft.subforum_id ?? prev.subforum_id,
+        privacy: draft.privacy || prev.privacy,
+        anonymous: Boolean(draft.anonymous),
+      }));
+      if (draft.subforum_id) handleSubforumChange(draft.subforum_id);
+      if (draft.privacy) handleVisibilityChange(draft.privacy);
+    } catch {
+      // Malformed/foreign sessionStorage value - ignore, start fresh.
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isEditMode]);
+
   const descriptionEditor = useRichTextEditor({
     value: data.description,
     onChange: handleDescriptionChange,
     placeholder: "Nội dung bài viết",
   });
-
-  const canSubmit =
-    !processing && data.title.trim() !== "" && data.description.trim() !== "";
-
-  const visibilityMenuItems = [
-    {
-      key: "public",
-      label: (
-        <div className="flex items-center gap-2">
-          <IoEarth className="text-base" />
-          <span>Công khai</span>
-        </div>
-      ),
-    },
-    {
-      key: "followers",
-      disabled: data.anonymous,
-      label: (
-        <div className="flex items-center gap-2">
-          <span>Chỉ người theo dõi</span>
-        </div>
-      ),
-    },
-    {
-      key: "private",
-      label: (
-        <div className="flex items-center gap-2">
-          <span>Chỉ mình tôi</span>
-        </div>
-      ),
-    },
-  ];
-
-  const visibilityLabel =
-    selectedVisibility === "public"
-      ? "Công khai"
-      : selectedVisibility === "followers"
-        ? "Chỉ người theo dõi"
-        : "Chỉ mình tôi";
 
   if (authLoading || !loggedIn || !currentUser?.email_verified_at) {
     // The redirect effect above is about to kick in - render nothing
@@ -148,313 +146,52 @@ export default function ComposerClient() {
     return null;
   }
 
-  const submitLabel = processing
-    ? isEditMode
-      ? "Đang cập nhật..."
-      : "Đang đăng..."
-    : isEditMode
-      ? "Cập nhật"
-      : "Đăng";
-
   return (
-    <div
-      className="mx-auto w-full px-3 pb-10 pt-5 md:max-w-[775px] md:px-1"
-      onDragEnter={handleFilesDragEnter}
-      onDragOver={(e) => {
-        e.preventDefault();
-        if (isDraggableImageSource(e.dataTransfer)) e.dataTransfer.dropEffect = "copy";
-      }}
-      onDragLeave={handleFilesDragLeave}
-      onDrop={handleFilesDrop}
-    >
+    <div className="mx-auto w-full px-3 pb-10 pt-5 md:max-w-[775px] md:px-1">
       <h1 className="mb-4 text-xl font-bold">
         {isEditMode ? "Chỉnh sửa bài viết" : "Tạo bài viết"}
       </h1>
-
-      {/* Community + audience, Reddit-style pill dropdowns */}
-      <div className="flex flex-wrap items-center gap-2">
-        <Select
-          value={selectedSubforum}
-          onChange={handleSubforumChange}
-          loading={loading}
-          className="min-w-[220px]"
-          options={
-            forumData?.main_categories
-              ?.filter((category) => category.subforums && category.subforums.length > 0)
-              ?.map((category) => ({
-                label: <span>{category.name}</span>,
-                title: category.name,
-                options:
-                  category.subforums?.map((subforum) => ({
-                    label: <span>{subforum.name}</span>,
-                    value: subforum.id,
-                  })) || [],
-              })) || []
-          }
-          placeholder={loading ? "Đang tải..." : "Chọn chuyên mục"}
-        />
-        <Dropdown
-          menu={{ items: visibilityMenuItems, onClick: ({ key }) => handleVisibilityChange(key) }}
-          trigger={["click"]}
-          placement="bottomLeft"
-        >
-          <button className="flex items-center gap-x-1 rounded-full bg-gray-100 px-3 py-1.5 text-xs font-semibold text-gray-700 hover:bg-gray-200 dark:bg-neutral-700 dark:text-neutral-200 dark:hover:bg-neutral-600">
-            <IoEarth className="text-sm" />
-            {visibilityLabel}
-            <IoCaretDown className="text-[9px]" />
-          </button>
-        </Dropdown>
-      </div>
-      {errors.subforum_id && <div className="mt-1 text-sm text-red-500">{errors.subforum_id}</div>}
-
-      {/* Title */}
-      <div className="mt-4">
-        <CustomInput
-          placeholder="Tiêu đề*"
-          value={data.title}
-          onChange={(e) => setData((prev) => ({ ...prev, title: e.target.value }))}
-          error={errors.title}
-          className="!border-0 !border-b !rounded-none !px-0 !text-2xl !font-semibold"
-        />
-      </div>
-
-      {/* Body */}
-      <div className="mt-3">
-        <EditorContent
-          editor={descriptionEditor}
-          className="min-h-[220px] text-[15px] leading-relaxed"
-        />
-        {errors.description && (
-          <div className="mt-1 text-sm text-red-500">{errors.description}</div>
-        )}
-      </div>
-
-      {/* Attachments preview */}
-      {(imagePreviews.length > 0 || existingImages.length > 0) && (
-        <div className="mt-4 grid grid-cols-4 gap-2">
-          {imagePreviews.map((preview, index) => (
-            <div key={preview.id} className="relative">
-              <img
-                src={preview.preview}
-                alt={`Preview ${index + 1}`}
-                className="h-24 w-full rounded-md border object-cover dark:!border-neutral-500"
-              />
-              <button
-                type="button"
-                onClick={() => removeImage(index)}
-                className="absolute -right-2 -top-2 flex h-6 w-6 items-center justify-center rounded-full bg-red-500 text-white hover:bg-red-600"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            </div>
-          ))}
-          {existingImages.map((img) => (
-            <div key={`existing-${img.id}`} className="relative">
-              <img
-                src={img.url}
-                alt="Existing"
-                className="h-24 w-full rounded-md border object-cover dark:!border-neutral-500"
-              />
-              <button
-                type="button"
-                onClick={() => setExistingImages((prev) => prev.filter((item) => item.id !== img.id))}
-                className="absolute -right-2 -top-2 flex h-6 w-6 items-center justify-center rounded-full bg-red-500 text-white hover:bg-red-600"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            </div>
-          ))}
-        </div>
-      )}
-      {(videoPreviews.length > 0 || existingVideos.length > 0) && (
-        <div className="mt-4 grid grid-cols-4 gap-2">
-          {videoPreviews.map((preview, index) => (
-            <div key={preview.id} className="relative">
-              <video
-                src={preview.preview}
-                controls
-                className="h-24 w-full rounded-md border bg-black object-cover dark:!border-neutral-500"
-              />
-              <button
-                type="button"
-                onClick={() => removeVideo(index)}
-                className="absolute -right-2 -top-2 flex h-6 w-6 items-center justify-center rounded-full bg-red-500 text-white hover:bg-red-600"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            </div>
-          ))}
-          {existingVideos.map((vid) => (
-            <div key={`existing-video-${vid.id}`} className="relative">
-              <video
-                src={vid.url}
-                controls
-                className="h-24 w-full rounded-md border bg-black object-cover dark:!border-neutral-500"
-              />
-              <button
-                type="button"
-                onClick={() => setExistingVideos((prev) => prev.filter((item) => item.id !== vid.id))}
-                className="absolute -right-2 -top-2 flex h-6 w-6 items-center justify-center rounded-full bg-red-500 text-white hover:bg-red-600"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            </div>
-          ))}
-        </div>
-      )}
-      {(documentFiles.length > 0 || existingDocuments.length > 0) && (
-        <div className="mt-4 flex flex-col gap-2">
-          {documentFiles.map((file, index) => (
-            <div
-              key={`doc-${index}`}
-              className="flex items-center justify-between rounded-md bg-gray-100 p-2 dark:bg-neutral-600"
-            >
-              <div className="flex items-center overflow-hidden">
-                <FaFileLines size={16} className="mr-2 flex-shrink-0 text-blue-500" />
-                <span className="truncate text-sm">{file.name}</span>
-                <span className="ml-2 text-xs text-gray-500">
-                  ({(file.size / 1024 / 1024).toFixed(2)} MB)
-                </span>
-              </div>
-              <button type="button" onClick={() => removeDocument(index)} className="ml-2 text-red-500 hover:text-red-700">
-                <X className="h-4 w-4" />
-              </button>
-            </div>
-          ))}
-          {existingDocuments.map((doc) => (
-            <div
-              key={`existing-doc-${doc.id}`}
-              className="flex items-center justify-between rounded-md bg-gray-100 p-2 dark:bg-neutral-600"
-            >
-              <div className="flex items-center overflow-hidden">
-                <FaFileLines size={16} className="mr-2 flex-shrink-0 text-blue-500" />
-                <span className="truncate text-sm">{doc.name || "Tài liệu"}</span>
-              </div>
-              <button
-                type="button"
-                onClick={() => setExistingDocuments((prev) => prev.filter((item) => item.id !== doc.id))}
-                className="ml-2 text-red-500 hover:text-red-700"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {isDraggingFiles && (
-        <div className="mt-4 rounded-lg border-2 border-dashed border-emerald-500 bg-emerald-50 p-4 text-center dark:bg-emerald-950/30">
-          <p className="text-sm font-medium">Kéo và thả ảnh, video hoặc tài liệu vào đây</p>
-        </div>
-      )}
-
-      {processing && videoFiles.length > 0 && (
-        <div className="mt-4 w-full">
-          <div className="mb-1 flex justify-between text-xs text-gray-500 dark:text-gray-400">
-            <span>Đang tải lên...</span>
-            <span>{uploadProgress}%</span>
-          </div>
-          <div className="h-2 w-full overflow-hidden rounded-full bg-gray-200 dark:bg-neutral-600">
-            <div
-              className="h-full bg-primary-500 transition-all duration-200"
-              style={{ width: `${uploadProgress}%` }}
-            />
-          </div>
-        </div>
-      )}
-
-      {/* Toolbar: formatting + attachments in one row, Reddit-style */}
-      <div className="mt-3 rounded-md border dark:!border-neutral-600">
-        <RichTextToolbar editor={descriptionEditor} />
-        <div className="flex items-center gap-1 border-t px-2 py-1.5 dark:!border-neutral-600">
-          <input
-            ref={imageInputRef}
-            type="file"
-            accept="image/*"
-            multiple
-            onChange={handleImageChange}
-            style={{ display: "none" }}
-          />
-          <input
-            ref={documentInputRef}
-            type="file"
-            accept=".pdf,.doc,.docx,.txt"
-            multiple
-            onChange={handleDocumentChange}
-            style={{ display: "none" }}
-          />
-          <input
-            ref={videoInputRef}
-            type="file"
-            accept="video/mp4,video/quicktime,video/x-msvideo,video/webm,video/x-matroska,.mp4,.mov,.avi,.webm,.mkv"
-            multiple
-            onChange={handleVideoChange}
-            style={{ display: "none" }}
-          />
-          <Tooltip title="Đính kèm ảnh">
-            <button
-              type="button"
-              onClick={() => imageInputRef.current?.click()}
-              className="rounded p-1.5 text-emerald-500 hover:bg-gray-100 dark:hover:bg-neutral-600"
-            >
-              <ImageIcon className="h-4 w-4" />
-            </button>
-          </Tooltip>
-          <Tooltip title="Đính kèm video">
-            <button
-              type="button"
-              onClick={() => videoInputRef.current?.click()}
-              className="rounded p-1.5 text-purple-500 hover:bg-gray-100 dark:hover:bg-neutral-600"
-            >
-              <FileVideo className="h-4 w-4" />
-            </button>
-          </Tooltip>
-          <Tooltip title="Đính kèm tài liệu">
-            <button
-              type="button"
-              onClick={() => documentInputRef.current?.click()}
-              className="rounded p-1.5 text-blue-500 hover:bg-gray-100 dark:hover:bg-neutral-600"
-            >
-              <Paperclip className="h-4 w-4" />
-            </button>
-          </Tooltip>
-          {(imageFiles.length > 0 || documentFiles.length > 0 || videoFiles.length > 0) && (
-            <span className="ml-1 text-xs font-semibold text-primary-500">
-              {imageFiles.length + documentFiles.length + videoFiles.length} đã chọn
-            </span>
-          )}
-          <div className="ml-auto flex items-center gap-x-2 text-gray-500 dark:text-neutral-400">
-            <a href="/guide/markdown" className="flex items-center text-xs font-bold" target="_blank">
-              <FaMarkdown className="mr-1" />
-              Markdown
-            </a>
-            <a href="/policy/forum-rules" className="flex items-center text-xs font-bold" target="_blank">
-              <FaFileLines className="mr-1" />
-              Quy tắc
-            </a>
-          </div>
-        </div>
-      </div>
-
-      {/* Anonymous toggle + submit */}
-      <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
-        <label className="flex items-center gap-2 text-sm text-gray-700 dark:text-neutral-300">
-          <Switch
-            size="small"
-            checked={data.anonymous}
-            onChange={(checked) => setData((prev) => ({ ...prev, anonymous: checked }))}
-          />
-          Đăng ẩn danh
-        </label>
-        <button
-          type="button"
-          onClick={handleSubmit}
-          disabled={!canSubmit}
-          className="rounded-full bg-primary-500 px-6 py-2 text-sm font-semibold text-white transition-colors hover:bg-primary-600 disabled:cursor-not-allowed disabled:bg-gray-300 disabled:text-gray-500 dark:disabled:bg-neutral-600 dark:disabled:text-neutral-400"
-        >
-          {submitLabel}
-        </button>
-      </div>
+      <ComposerForm
+        data={data}
+        setData={setData}
+        errors={errors}
+        processing={processing}
+        selectedSubforum={selectedSubforum}
+        handleSubforumChange={handleSubforumChange}
+        selectedVisibility={selectedVisibility}
+        handleVisibilityChange={handleVisibilityChange}
+        forumData={forumData}
+        loading={loading}
+        descriptionEditor={descriptionEditor}
+        imageFiles={imageFiles}
+        imagePreviews={imagePreviews}
+        existingImages={existingImages}
+        setExistingImages={setExistingImages}
+        imageInputRef={imageInputRef}
+        handleImageChange={handleImageChange}
+        removeImage={removeImage}
+        documentFiles={documentFiles}
+        existingDocuments={existingDocuments}
+        setExistingDocuments={setExistingDocuments}
+        documentInputRef={documentInputRef}
+        handleDocumentChange={handleDocumentChange}
+        removeDocument={removeDocument}
+        videoFiles={videoFiles}
+        videoPreviews={videoPreviews}
+        existingVideos={existingVideos}
+        setExistingVideos={setExistingVideos}
+        videoInputRef={videoInputRef}
+        handleVideoChange={handleVideoChange}
+        removeVideo={removeVideo}
+        isDraggingFiles={isDraggingFiles}
+        isDraggableImageSource={isDraggableImageSource}
+        handleFilesDrop={handleFilesDrop}
+        handleFilesDragEnter={handleFilesDragEnter}
+        handleFilesDragLeave={handleFilesDragLeave}
+        uploadProgress={uploadProgress}
+        handleSubmit={handleSubmit}
+        isEditMode={isEditMode}
+      />
     </div>
   );
 }
