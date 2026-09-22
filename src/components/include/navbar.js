@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import dynamic from "next/dynamic";
 import { usePathname } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "@bprogress/next/app";
@@ -35,11 +34,6 @@ import AccountSwitcher from "./AccountSwitcher";
 import { getSavedAccounts, removeSavedAccount, activateSavedAccount } from "@/utils/savedAccounts";
 import { NAV_BADGE_CLASS, NAV_ICON_BUTTON_CLASS } from "./navStyles";
 
-// Only fetched the first time someone opens the composer from the navbar.
-const CreatePostModal = dynamic(() => import("@/components/modals/CreatePostModal"), {
-  ssr: false,
-});
-
 const MENU_ITEM_CLASS =
   "flex w-full items-center gap-2.5 px-4 py-2 text-left text-sm text-gray-700 transition-colors hover:bg-gray-100 dark:text-neutral-200 dark:hover:bg-neutral-800";
 
@@ -71,8 +65,6 @@ export default function Navbar({ hasSidebar = false }) {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [shortcutLabel, setShortcutLabel] = useState("Ctrl /");
-  const [composerOpen, setComposerOpen] = useState(false);
-  const [composerMounted, setComposerMounted] = useState(false);
   const searchInputRef = useRef(null);
 
   // Calculate total unread messages
@@ -123,11 +115,7 @@ export default function Navbar({ hasSidebar = false }) {
     setDrawerOpen(false);
   }, [pathname]);
 
-  const openComposer = useCallback(() => {
-    setComposerMounted(true);
-    setComposerOpen(true);
-  }, []);
-  const handleCreatePost = useCreatePostGate(openComposer);
+  const handleCreatePost = useCreatePostGate(useCallback(() => router.push("/composer"), [router]));
 
   const handleSearch = (e) => {
     e.preventDefault();
@@ -358,10 +346,6 @@ export default function Navbar({ hasSidebar = false }) {
           />
         </div>
       </Drawer>
-
-      {composerMounted && (
-        <CreatePostModal open={composerOpen} onClose={() => setComposerOpen(false)} />
-      )}
 
       {loggedIn && !currentUser?.email_verified_at && (
         <Alert
