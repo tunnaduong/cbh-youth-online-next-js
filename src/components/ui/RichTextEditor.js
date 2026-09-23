@@ -11,7 +11,7 @@ import { FaBold, FaItalic, FaLink, FaCode, FaQuoteLeft, FaListUl, FaListOl } fro
 import { TbH1, TbH2, TbH3, TbH4 } from "react-icons/tb";
 import { createMentionExtension } from "./MentionExtension";
 import { normalizeNewlines } from "@/utils/richInput";
-import { uploadInlineImage } from "@/utils/imageUpload";
+import { uploadInlineImage, collectImageFiles } from "@/utils/imageUpload";
 
 /**
  * Tiptap WYSIWYG editor for post bodies. Storage format is still Markdown
@@ -39,10 +39,10 @@ export function useRichTextEditor({
   const imageUidRef = useRef(imageUid);
   imageUidRef.current = imageUid;
 
-  // An image pasted or dropped into the body is *inline content*: it gets
-  // uploaded and written into the Markdown as `![](url)` right where the
-  // caret was, not added to the post's attachment list (that list is for
-  // files the reader browses as a gallery underneath the post).
+  // An image pasted into the body is *inline content*: it gets uploaded and
+  // written into the Markdown as `![](url)` right where the caret was, not
+  // added to the post's attachment list (that list is for files the reader
+  // browses as a gallery underneath the post).
   const uploadAndInsertImages = async (files, at) => {
     const key = `inline-image-${Date.now()}`;
     message.open({ key, type: "loading", content: "Đang tải ảnh lên...", duration: 0 });
@@ -78,14 +78,12 @@ export function useRichTextEditor({
       .run();
   };
 
-  const handleImageTransfer = (view, dataTransfer) => {
+  const handlePastedImage = (view, dataTransfer) => {
     if (!dataTransfer) return false;
 
     const at = view.state.selection.from;
 
-    const files = Array.from(dataTransfer.files || []).filter((file) =>
-      file.type.startsWith("image/")
-    );
+    const files = collectImageFiles(dataTransfer);
     if (files.length > 0) {
       uploadAndInsertImages(files, at);
       return true;
@@ -135,15 +133,11 @@ export function useRichTextEditor({
         class:
           "prose dark:prose-invert max-w-none focus:outline-none min-h-[160px] text-base",
       },
-      handlePaste: (view, event) => handleImageTransfer(view, event.clipboardData),
-      handleDrop: (view, event) => {
-        if (!handleImageTransfer(view, event.dataTransfer)) return false;
-        // Handled here - stop it from also reaching the composer's own
-        // drop zone (ComposerForm's wrapper), which would attach it twice.
-        event.preventDefault();
-        event.stopPropagation();
-        return true;
-      },
+      // Paste only. A *dropped* file keeps bubbling to the composer's own
+      // drop zone (ComposerForm's wrapper), which attaches it to the post -
+      // dropping a file on a composer means "attach this", while pasting
+      // means "put it here", and CreatePostModal.js draws the same line.
+      handlePaste: (view, event) => handlePastedImage(view, event.clipboardData),
     },
     onUpdate: ({ editor: e }) => {
       onChange?.(e.storage.markdown.getMarkdown());

@@ -17,7 +17,7 @@ import { usePostRefresh } from "@/contexts/PostRefreshContext";
 import { getForumData, createPost, updatePost, getPostDetail } from "@/app/Api";
 import { useForumData } from "@/contexts/ForumDataContext";
 import { useMentionInput } from "@/hooks/useMentionInput";
-import { uploadInlineImage } from "@/utils/imageUpload";
+import { uploadInlineImage, collectImageFiles } from "@/utils/imageUpload";
 import MentionSuggestionsDropdown from "../ui/MentionSuggestionsDropdown";
 import {
   buildHtml,
@@ -777,9 +777,7 @@ const CreatePostModal = ({ open, onClose, isEditMode = false, postData = null, o
     const from = Math.min(caretStart, caretEnd);
     const to = Math.max(caretStart, caretEnd);
 
-    const pastedImages = Array.from(clipboard.files || []).filter((file) =>
-      file.type.startsWith("image/")
-    );
+    const pastedImages = collectImageFiles(clipboard);
     if (pastedImages.length > 0) {
       e.preventDefault();
       uploadAndInsertInlineImages(pastedImages, from, to);

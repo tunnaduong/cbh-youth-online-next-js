@@ -12,6 +12,19 @@ export function toApiStorageUrl(path) {
   return `${process.env.NEXT_PUBLIC_API_URL}${storagePath.startsWith("/") ? "" : "/"}${storagePath}`;
 }
 
+// The backend files uploads by the extension of the name it's given, and an
+// image straight off the clipboard often arrives as a bare "image" or with no
+// name at all. Give it one derived from its MIME type so a pasted screenshot
+// lands in /storage/images (and gets the compression job) like a picked file.
+function withImageExtension(file) {
+  const subtype = (file.type.split("/")[1] || "png").toLowerCase();
+  const ext = subtype === "jpeg" ? "jpg" : subtype.replace(/[^a-z0-9]/g, "");
+  const name = file.name || "";
+  if (name.toLowerCase().endsWith(`.${ext}`)) return file;
+  const base = name.replace(/\.[^.]*$/, "") || "anh-dan";
+  return new File([file], `${base}.${ext}`, { type: file.type });
+}
+
 function currentUserId() {
   try {
     return JSON.parse(localStorage.getItem("CURRENT_USER") || "null")?.id;
@@ -41,13 +54,40 @@ export async function uploadInlineImage(file, uid) {
     throw new Error(`Ảnh tối đa ${MAX_INLINE_IMAGE_MB}MB`);
   }
 
-  const formData = new FormData();
-  formData.append("file", file);
   const ownerId = uid ?? currentUserId();
-  if (ownerId != null) formData.append("uid", ownerId);
+  if (ownerId == null) throw new Error("Bạn cần đăng nhập để tải ảnh lên");
+
+  const formData = new FormData();
+  formData.append("file", withImageExtension(file));
+  formData.append("uid", ownerId);
 
   const res = await uploadFile(formData);
   const path = res?.data?.path;
   if (!path) throw new Error("Tải ảnh lên thất bại");
   return toApiStorageUrl(path);
+}
+
+/**
+ * Image files on a clipboard/drag payload.
+ *
+ * DataTransfer.files is empty for a clipboard paste on iOS Safari (and on
+ * some Android keyboards' image insertion) - there the image is only
+ * reachable through .items, so try both. Both lists are live only for the
+ * duration of the event, hence the synchronous read.
+ *
+ * @param {DataTransfer|null} dataTransfer
+ * @returns {File[]}
+ */
+export function collectImageFiles(dataTransfer) {
+  if (!dataTransfer) return [];
+
+  const fromFiles = Array.from(dataTransfer.files || []).filter((file) =>
+    file.type.startsWith("image/")
+  );
+  if (fromFiles.length > 0) return fromFiles;
+
+  return Array.from(dataTransfer.items || [])
+    .filter((item) => item.kind === "file")
+    .map((item) => item.getAsFile())
+    .filter((file) => file && file.type.startsWith("image/"));
 }
