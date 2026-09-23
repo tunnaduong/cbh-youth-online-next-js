@@ -2,10 +2,31 @@
 
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
-import { Button, Checkbox, Form, Input, InputNumber, Modal, Radio, Select, Spin, Switch, Tag, message } from "antd";
-import { SendOutlined, GlobalOutlined, MobileOutlined } from "@ant-design/icons";
+import {
+  Button,
+  Checkbox,
+  Form,
+  Input,
+  InputNumber,
+  Modal,
+  Popconfirm,
+  Radio,
+  Select,
+  Spin,
+  Switch,
+  Tag,
+  Tooltip,
+  message,
+} from "antd";
+import { SendOutlined, GlobalOutlined, MobileOutlined, DeleteOutlined } from "@ant-design/icons";
 import ResourceTable, { fmtDate, fmtNumber, errMsg } from "../_components/ResourceTable";
-import { adminGetBroadcasts, adminGetBroadcastAudience, adminSendBroadcast, adminGetUsers } from "@/app/Api";
+import {
+  adminGetBroadcasts,
+  adminGetBroadcastAudience,
+  adminSendBroadcast,
+  adminDeleteBroadcast,
+  adminGetUsers,
+} from "@/app/Api";
 
 const ROLE_OPTIONS = [
   { value: "user", label: "Người dùng" },
@@ -169,6 +190,16 @@ export default function AdminNotificationsPage() {
     });
   };
 
+  const remove = async (id) => {
+    try {
+      const res = await adminDeleteBroadcast(id);
+      message.success(res.data?.message || "Đã xóa thông báo");
+      tableRef.current?.reload();
+    } catch (err) {
+      message.error(errMsg(err, "Xóa thất bại"));
+    }
+  };
+
   const columns = [
     { title: "ID", dataIndex: "id", width: 60 },
     {
@@ -212,6 +243,26 @@ export default function AdminNotificationsPage() {
     },
     { title: "Người gửi", key: "admin", render: (_, b) => b.admin?.username || "-" },
     { title: "Thời gian", dataIndex: "created_at", render: fmtDate },
+    {
+      title: "",
+      key: "actions",
+      fixed: "right",
+      render: (_, b) => (
+        <Popconfirm
+          title="Xóa thông báo này?"
+          description="Xóa bản ghi này và thông báo trong hộp thư của người dùng. Thông báo đẩy đã gửi tới thiết bị không thể thu hồi."
+          okText="Xóa"
+          okButtonProps={{ danger: true }}
+          cancelText="Hủy"
+          disabled={b.status === "sending"}
+          onConfirm={() => remove(b.id)}
+        >
+          <Tooltip title={b.status === "sending" ? "Đang gửi, hãy đợi gửi xong" : "Xóa thông báo"}>
+            <Button size="small" danger icon={<DeleteOutlined />} disabled={b.status === "sending"} />
+          </Tooltip>
+        </Popconfirm>
+      ),
+    },
   ];
 
   return (

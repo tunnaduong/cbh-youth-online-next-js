@@ -1,14 +1,15 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { Button, Form, Input, Modal, Space, Tag, Image, Popconfirm, message } from "antd";
-import { CheckCircle, XCircle, Eye } from "lucide-react";
+import { Button, Form, Input, Modal, Space, Tag, Image, Popconfirm, Tooltip, message } from "antd";
+import { CheckCircle, Trash2, XCircle, Eye } from "lucide-react";
 import ResourceTable, { fmtDate, errMsg } from "../_components/ResourceTable";
 import {
   adminGetStudentVerifications,
   adminApproveStudentVerification,
   adminRejectStudentVerification,
   adminRevokeStudentVerification,
+  adminDeleteStudentVerification,
 } from "@/app/Api";
 
 const STATUS_COLOR = { pending: "gold", approved: "green", rejected: "red" };
@@ -47,6 +48,19 @@ export default function AdminStudentVerificationsPage() {
       reload();
     } catch (err) {
       message.error(errMsg(err, "Thao tác thất bại"));
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDelete = async (id) => {
+    setSaving(true);
+    try {
+      const res = await adminDeleteStudentVerification(id);
+      message.success(res.data?.message || "Đã xóa");
+      reload();
+    } catch (err) {
+      message.error(errMsg(err, "Xóa thất bại"));
     } finally {
       setSaving(false);
     }
@@ -172,6 +186,22 @@ export default function AdminStudentVerificationsPage() {
               </Button>
             </Popconfirm>
           )}
+          <Popconfirm
+            title="Xóa yêu cầu xác minh này?"
+            description={
+              r.status === "approved"
+                ? "Ảnh và bản ghi sẽ bị xóa, đồng thời thu hồi xác minh của học sinh."
+                : "Ảnh và bản ghi sẽ bị xóa vĩnh viễn."
+            }
+            okText="Xóa"
+            okButtonProps={{ danger: true }}
+            cancelText="Hủy"
+            onConfirm={() => handleDelete(r.id)}
+          >
+            <Tooltip title="Xóa yêu cầu">
+              <Button size="small" danger icon={<Trash2 size={14} />} />
+            </Tooltip>
+          </Popconfirm>
         </Space>
       ),
     },

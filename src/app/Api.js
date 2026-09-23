@@ -694,12 +694,14 @@ export const adminGetStudentVerifications = (params) => Api.getRequest("/v1.0/ad
 export const adminApproveStudentVerification = (id) => Api.postRequest(`/v1.0/admin/student-verifications/${id}/approve`);
 export const adminRejectStudentVerification = (id, params) => Api.postRequest(`/v1.0/admin/student-verifications/${id}/reject`, params);
 export const adminRevokeStudentVerification = (userId) => Api.postRequest(`/v1.0/admin/student-verifications/revoke/${userId}`);
+export const adminDeleteStudentVerification = (id) => Api.deleteRequest(`/v1.0/admin/student-verifications/${id}`);
 
 // AI moderation queue
 export const adminGetModerationQueue = (params) => Api.getRequest("/v1.0/admin/moderation", params);
 export const adminGetModerationStats = () => Api.getRequest("/v1.0/admin/moderation/stats");
 export const adminApproveModeration = (id, params) => Api.postRequest(`/v1.0/admin/moderation/${id}/approve`, params);
 export const adminRejectModeration = (id, params) => Api.postRequest(`/v1.0/admin/moderation/${id}/reject`, params);
+export const adminDeleteModeration = (id) => Api.deleteRequest(`/v1.0/admin/moderation/${id}`);
 
 // Mention suggestions
 export const getMentionSuggestions = (query) => {
@@ -733,6 +735,10 @@ export const getReportStats = () => {
 
 export const reviewReport = (id, params) => {
   return Api.postRequest(`/v1.0/reports/${id}/review`, params);
+};
+
+export const deleteReport = (id) => {
+  return Api.deleteRequest(`/v1.0/reports/${id}`);
 };
 
 // Blocking
@@ -832,16 +838,19 @@ export const adminDeleteComment = (id) => Api.deleteRequest(`/v1.0/admin/comment
 
 export const adminGetUsers = (params) => Api.getRequest("/v1.0/admin/users", params);
 export const adminUpdateUser = (id, params) => Api.patchRequest(`/v1.0/admin/users/${id}`, params);
+export const adminDeleteUser = (id) => Api.deleteRequest(`/v1.0/admin/users/${id}`);
 export const adminBanUser = (id, params) => Api.postRequest(`/v1.0/admin/users/${id}/ban`, params);
 export const adminUnbanUser = (id) => Api.postRequest(`/v1.0/admin/users/${id}/unban`);
 
 export const adminGetPendingDeposits = (params) => Api.getRequest("/v1.0/admin/pending-deposits", params);
 export const adminApproveDeposit = (id) => Api.postRequest(`/v1.0/admin/pending-deposits/${id}/approve`);
 export const adminExpireDeposit = (id) => Api.postRequest(`/v1.0/admin/pending-deposits/${id}/expire`);
+export const adminDeleteDeposit = (id) => Api.deleteRequest(`/v1.0/admin/pending-deposits/${id}`);
 
 export const adminGetWithdrawals = (params) => Api.getRequest("/v1.0/admin/withdrawal-requests", params);
 export const adminApproveWithdrawal = (id, params) => Api.postRequest(`/v1.0/admin/withdrawal-requests/${id}/approve`, params);
 export const adminRejectWithdrawal = (id, params) => Api.postRequest(`/v1.0/admin/withdrawal-requests/${id}/reject`, params);
+export const adminDeleteWithdrawal = (id) => Api.deleteRequest(`/v1.0/admin/withdrawal-requests/${id}`);
 
 export const adminGetShopCategories = (params) => Api.getRequest("/v1.0/admin/shop/categories", params);
 export const adminSaveShopCategory = (id, params) =>
@@ -855,6 +864,7 @@ export const adminDeleteShopProduct = (id) => Api.deleteRequest(`/v1.0/admin/sho
 
 export const adminGetShopOrders = (params) => Api.getRequest("/v1.0/admin/shop/orders", params);
 export const adminUpdateShopOrder = (id, params) => Api.patchRequest(`/v1.0/admin/shop/orders/${id}`, params);
+export const adminDeleteShopOrder = (id) => Api.deleteRequest(`/v1.0/admin/shop/orders/${id}`);
 
 export const adminGetStudyMaterials = (params) => Api.getRequest("/v1.0/admin/study-materials", params);
 export const adminUpdateStudyMaterial = (id, params) => Api.patchRequest(`/v1.0/admin/study-materials/${id}`, params);
@@ -863,8 +873,13 @@ export const adminDeleteStudyMaterial = (id) => Api.deleteRequest(`/v1.0/admin/s
 export const adminGetBroadcasts = (params) => Api.getRequest("/v1.0/admin/broadcasts", params);
 export const adminGetBroadcastAudience = (params) => Api.getRequest("/v1.0/admin/broadcasts/audience", params);
 export const adminSendBroadcast = (params) => Api.postRequest("/v1.0/admin/broadcasts", params);
+export const adminDeleteBroadcast = (id) => Api.deleteRequest(`/v1.0/admin/broadcasts/${id}`);
 
 export const adminGetConversations = (params) => Api.getRequest("/v1.0/admin/conversations", params);
 export const adminGetConversationMessages = (id, params) => Api.getRequest(`/v1.0/admin/conversations/${id}/messages`, params);
 export const adminSearchMessages = (params) => Api.getRequest("/v1.0/admin/messages/search", params);
 export const adminGetMessageAccessLogs = (params) => Api.getRequest("/v1.0/admin/messages/access-logs", params);
+export const adminDeleteConversation = (id) => Api.deleteRequest(`/v1.0/admin/conversations/${id}`);
+// purge=1 wipes the row instead of soft-deleting it (used on already-deleted messages).
+export const adminDeleteMessage = (id, purge = false) =>
+  Api.deleteRequest(`/v1.0/admin/messages/${id}${purge ? "?purge=1" : ""}`);

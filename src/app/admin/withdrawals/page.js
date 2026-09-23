@@ -1,9 +1,15 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { Button, Input, Modal, Space, Tag, message } from "antd";
+import { Button, Input, Modal, Popconfirm, Space, Tag, Tooltip, message } from "antd";
+import { DeleteOutlined } from "@ant-design/icons";
 import ResourceTable, { fmtDate, fmtNumber, errMsg, UserLink } from "../_components/ResourceTable";
-import { adminGetWithdrawals, adminApproveWithdrawal, adminRejectWithdrawal } from "@/app/Api";
+import {
+  adminGetWithdrawals,
+  adminApproveWithdrawal,
+  adminRejectWithdrawal,
+  adminDeleteWithdrawal,
+} from "@/app/Api";
 
 const STATUS = {
   pending: { label: "Chờ duyệt", color: "orange" },
@@ -37,6 +43,16 @@ export default function AdminWithdrawalsPage() {
   const open = (row, action) => {
     setNote("");
     setTarget({ row, action });
+  };
+
+  const remove = async (id) => {
+    try {
+      const res = await adminDeleteWithdrawal(id);
+      message.success(res.data?.message || "Đã xóa yêu cầu");
+      tableRef.current?.reload();
+    } catch (err) {
+      message.error(errMsg(err, "Xóa thất bại"));
+    }
   };
 
   const columns = [
@@ -78,17 +94,34 @@ export default function AdminWithdrawalsPage() {
       title: "",
       key: "actions",
       fixed: "right",
-      render: (_, w) =>
-        w.status === "pending" ? (
-          <Space>
-            <Button size="small" type="primary" onClick={() => open(w, "approve")}>
-              Duyệt
-            </Button>
-            <Button size="small" danger onClick={() => open(w, "reject")}>
-              Từ chối
-            </Button>
-          </Space>
-        ) : null,
+      render: (_, w) => (
+        <Space>
+          {w.status === "pending" ? (
+            <>
+              <Button size="small" type="primary" onClick={() => open(w, "approve")}>
+                Duyệt
+              </Button>
+              <Button size="small" danger onClick={() => open(w, "reject")}>
+                Từ chối
+              </Button>
+            </>
+          ) : null}
+          {/* A pending request is still holding the user's points - decide it first. */}
+          <Popconfirm
+            title="Xóa yêu cầu rút tiền này?"
+            description="Bản ghi sẽ bị xóa khỏi danh sách, không thể hoàn tác."
+            okText="Xóa"
+            okButtonProps={{ danger: true }}
+            cancelText="Hủy"
+            disabled={w.status === "pending"}
+            onConfirm={() => remove(w.id)}
+          >
+            <Tooltip title={w.status === "pending" ? "Hãy duyệt hoặc từ chối trước khi xóa" : "Xóa yêu cầu"}>
+              <Button size="small" danger icon={<DeleteOutlined />} disabled={w.status === "pending"} />
+            </Tooltip>
+          </Popconfirm>
+        </Space>
+      ),
     },
   ];
 

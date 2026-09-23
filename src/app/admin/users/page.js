@@ -1,9 +1,10 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { Button, Form, Input, InputNumber, Modal, Popconfirm, Select, Space, Tag, message } from "antd";
+import { Button, Form, Input, InputNumber, Modal, Popconfirm, Select, Space, Tag, Tooltip, message } from "antd";
+import { DeleteOutlined } from "@ant-design/icons";
 import ResourceTable, { fmtDate, fmtNumber, errMsg } from "../_components/ResourceTable";
-import { adminGetUsers, adminUpdateUser, adminBanUser, adminUnbanUser } from "@/app/Api";
+import { adminGetUsers, adminUpdateUser, adminBanUser, adminUnbanUser, adminDeleteUser } from "@/app/Api";
 
 const ROLE_OPTIONS = [
   { value: "user", label: "Người dùng" },
@@ -108,6 +109,20 @@ export default function AdminUsersPage() {
               Khóa
             </Button>
           )}
+          {/* Admins have to be demoted before they can be deleted, same rule as banning. */}
+          <Popconfirm
+            title={`Xóa tài khoản @${u.username}?`}
+            description="Bài viết, bình luận, tin nhắn và ví của tài khoản này sẽ bị xóa theo. Không thể hoàn tác - hãy dùng Khóa nếu chỉ muốn tạm dừng."
+            okText="Xóa"
+            okButtonProps={{ danger: true }}
+            cancelText="Hủy"
+            disabled={u.role === "admin"}
+            onConfirm={() => submit(() => adminDeleteUser(u.id), () => {})}
+          >
+            <Tooltip title={u.role === "admin" ? "Hãy hạ quyền trước khi xóa" : "Xóa tài khoản"}>
+              <Button size="small" danger icon={<DeleteOutlined />} disabled={u.role === "admin"} />
+            </Tooltip>
+          </Popconfirm>
         </Space>
       ),
     },

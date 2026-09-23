@@ -1,14 +1,15 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Button, Form, Input, Modal, Popconfirm, Space, Tag, message } from "antd";
-import { CheckCircle, Paperclip, XCircle } from "lucide-react";
+import { Button, Form, Input, Modal, Popconfirm, Space, Tag, Tooltip, message } from "antd";
+import { CheckCircle, Paperclip, Trash2, XCircle } from "lucide-react";
 import ResourceTable, { fmtDate, fmtNumber, errMsg } from "../_components/ResourceTable";
 import {
   adminGetModerationQueue,
   adminGetModerationStats,
   adminApproveModeration,
   adminRejectModeration,
+  adminDeleteModeration,
 } from "@/app/Api";
 import { generatePostUrl } from "@/utils/slugify";
 
@@ -82,6 +83,19 @@ export default function AdminModerationPage() {
       reload();
     } catch (err) {
       message.error(errMsg(err, "Thao tác thất bại"));
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDelete = async (id) => {
+    setSaving(true);
+    try {
+      const res = await adminDeleteModeration(id);
+      message.success(res.data?.message || "Đã xóa");
+      reload();
+    } catch (err) {
+      message.error(errMsg(err, "Xóa thất bại"));
     } finally {
       setSaving(false);
     }
@@ -202,34 +216,49 @@ export default function AdminModerationPage() {
       title: "Hành động",
       key: "actions",
       width: 180,
-      render: (_, r) =>
-        r.status === "pending" ? (
-          <Space size="small">
-            <Popconfirm
-              title="Duyệt và hiển thị nội dung này?"
-              okText="Duyệt"
-              cancelText="Hủy"
-              onConfirm={() => handleApprove(r.id)}
-            >
-              <Button size="small" type="primary" icon={<CheckCircle size={14} />}>
-                Duyệt
+      render: (_, r) => (
+        <Space size="small">
+          {r.status === "pending" ? (
+            <>
+              <Popconfirm
+                title="Duyệt và hiển thị nội dung này?"
+                okText="Duyệt"
+                cancelText="Hủy"
+                onConfirm={() => handleApprove(r.id)}
+              >
+                <Button size="small" type="primary" icon={<CheckCircle size={14} />}>
+                  Duyệt
+                </Button>
+              </Popconfirm>
+              <Button
+                size="small"
+                danger
+                icon={<XCircle size={14} />}
+                onClick={() => {
+                  setRejecting(r);
+                  rejectForm.resetFields();
+                }}
+              >
+                Từ chối
               </Button>
-            </Popconfirm>
-            <Button
-              size="small"
-              danger
-              icon={<XCircle size={14} />}
-              onClick={() => {
-                setRejecting(r);
-                rejectForm.resetFields();
-              }}
-            >
-              Từ chối
-            </Button>
-          </Space>
-        ) : (
-          <span className="text-gray-400 dark:text-gray-500">Đã xử lý</span>
-        ),
+            </>
+          ) : (
+            <span className="text-gray-400 dark:text-gray-500">Đã xử lý</span>
+          )}
+          <Popconfirm
+            title="Xóa mục kiểm duyệt này?"
+            description="Chỉ xóa bản ghi kiểm duyệt; bài viết hoặc bình luận gốc không bị ảnh hưởng."
+            okText="Xóa"
+            okButtonProps={{ danger: true }}
+            cancelText="Hủy"
+            onConfirm={() => handleDelete(r.id)}
+          >
+            <Tooltip title="Xóa bản ghi kiểm duyệt">
+              <Button size="small" danger icon={<Trash2 size={14} />} />
+            </Tooltip>
+          </Popconfirm>
+        </Space>
+      ),
     },
   ];
 

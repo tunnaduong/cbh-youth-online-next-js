@@ -1,8 +1,9 @@
 "use client";
 
-import { Select, Tag, message } from "antd";
+import { Button, Popconfirm, Select, Tag, message } from "antd";
+import { DeleteOutlined } from "@ant-design/icons";
 import ResourceTable, { fmtDate, fmtVndPoints, errMsg, UserLink } from "../../_components/ResourceTable";
-import { adminGetShopOrders, adminUpdateShopOrder } from "@/app/Api";
+import { adminGetShopOrders, adminUpdateShopOrder, adminDeleteShopOrder } from "@/app/Api";
 
 const STATUS = {
   pending: { label: "Chờ xử lý", color: "orange" },
@@ -53,6 +54,35 @@ export default function AdminShopOrdersPage() {
         ),
     },
     { title: "Ngày đặt", dataIndex: "created_at", render: fmtDate },
+    {
+      title: "",
+      key: "actions",
+      fixed: "right",
+      render: (_, o) => (
+        <Popconfirm
+          title="Xóa đơn hàng này?"
+          description={
+            o.status === "cancelled"
+              ? "Đơn và các sản phẩm trong đơn sẽ bị xóa vĩnh viễn."
+              : "Đơn sẽ bị xóa vĩnh viễn và số lượng sản phẩm được hoàn lại kho."
+          }
+          okText="Xóa"
+          okButtonProps={{ danger: true }}
+          cancelText="Hủy"
+          onConfirm={async () => {
+            try {
+              const res = await adminDeleteShopOrder(o.id);
+              message.success(res.data?.message || "Đã xóa đơn hàng");
+              reload();
+            } catch (err) {
+              message.error(errMsg(err, "Xóa thất bại"));
+            }
+          }}
+        >
+          <Button size="small" danger icon={<DeleteOutlined />} />
+        </Popconfirm>
+      ),
+    },
   ];
 
   return (

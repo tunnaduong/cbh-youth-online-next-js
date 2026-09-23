@@ -16,8 +16,11 @@ import {
   Row,
   Col,
   Statistic,
+  Popconfirm,
+  Space,
 } from "antd";
-import { getReports, getReportStats, reviewReport } from "@/app/Api";
+import { DeleteOutlined } from "@ant-design/icons";
+import { getReports, getReportStats, reviewReport, deleteReport } from "@/app/Api";
 import { generatePostUrl } from "@/utils/slugify";
 
 const { RangePicker } = DatePicker;
@@ -196,6 +199,17 @@ export default function AdminReportsPage() {
   }, [statusFilter, dateRange]);
 
 
+  const handleDelete = async (id) => {
+    try {
+      const res = await deleteReport(id);
+      message.success(res.data?.message || "Đã xóa báo cáo");
+      fetchReports(pagination.current);
+      fetchStats();
+    } catch (err) {
+      message.error(err?.response?.data?.message || "Xóa thất bại");
+    }
+  };
+
   const columns = [
     { title: "ID", dataIndex: "id", key: "id", width: 70 },
     {
@@ -265,9 +279,21 @@ export default function AdminReportsPage() {
       title: "",
       key: "actions",
       render: (_, r) => (
-        <Button size="small" onClick={() => setReviewTarget(r)}>
-          Xử lý
-        </Button>
+        <Space>
+          <Button size="small" onClick={() => setReviewTarget(r)}>
+            Xử lý
+          </Button>
+          <Popconfirm
+            title="Xóa báo cáo này?"
+            description="Chỉ xóa báo cáo; bài viết, tin hoặc tài khoản bị báo cáo không bị ảnh hưởng."
+            okText="Xóa"
+            okButtonProps={{ danger: true }}
+            cancelText="Hủy"
+            onConfirm={() => handleDelete(r.id)}
+          >
+            <Button size="small" danger icon={<DeleteOutlined />} />
+          </Popconfirm>
+        </Space>
       ),
     },
   ];
