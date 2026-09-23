@@ -1029,12 +1029,6 @@ export default function ProfileClient({ initialProfile, activeTab, username }) {
                 {profile.location && <div className="flex items-center gap-x-1"><IoLocationOutline className="text-base" /><span>{profile.location}</span></div>}
                 {profile.joined_at && <div className="flex items-center gap-x-1"><IoCalendarOutline className="text-base" /><span>{profile.joined_at}</span></div>}
               </div>
-              <div className="w-full mt-3 lg:hidden">
-                <ProfilePhotoGallery
-                  username={username || profile.username}
-                  profileUsername={profile.username}
-                />
-              </div>
               <div className="flex justify-center items-center mt-4 gap-2">
                 {currentUser && currentUser.username == profile.username ? (
                   <Link href="/settings" className="flex items-center gap-x-2">
@@ -1067,6 +1061,12 @@ export default function ProfileClient({ initialProfile, activeTab, username }) {
                     </div>
                   </>
                 )}
+              </div>
+              <div className="w-full mt-3 lg:hidden">
+                <ProfilePhotoGallery
+                  username={username || profile.username}
+                  profileUsername={profile.username}
+                />
               </div>
             </div>
           </div>
