@@ -72,8 +72,6 @@ export default function ComposerClient() {
     forumData,
     loading,
     handleDescriptionChange,
-    handleEditorImageFiles,
-    handleEditorImageUrl,
     imageFiles,
     imagePreviews,
     existingImages,
@@ -148,10 +146,7 @@ export default function ComposerClient() {
     value: data.description,
     onChange: handleDescriptionChange,
     placeholder: "Nội dung bài viết",
-    // Ctrl/Cmd+V of a screenshot or a copied image inside the body attaches
-    // it to the post, same as the image button and drag & drop.
-    onImageFiles: handleEditorImageFiles,
-    onImageUrl: handleEditorImageUrl,
+    imageUid: currentUser?.id,
   });
 
   if (authLoading || !loggedIn || !currentUser?.email_verified_at) {

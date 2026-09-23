@@ -508,17 +508,6 @@ export default function usePostComposer({ isEditMode = false, postData = null, o
     }
   };
 
-  // Passed to useRichTextEditor() so an image pasted (or dropped) straight
-  // into the Tiptap body becomes a post attachment. ProseMirror consumes
-  // those events itself, so the surrounding drop zone below never sees them.
-  const handleEditorImageFiles = (files) => {
-    handleImageFiles(files);
-  };
-
-  const handleEditorImageUrl = (url) => {
-    handleRemoteImageDrop(url);
-  };
-
   const handleFilesDragEnter = (e) => {
     e.preventDefault();
     if (!isDraggableImageSource(e.dataTransfer)) return;
@@ -597,8 +586,6 @@ export default function usePostComposer({ isEditMode = false, postData = null, o
 
     // description editor
     handleDescriptionChange,
-    handleEditorImageFiles,
-    handleEditorImageUrl,
 
     // images
     imageFiles,

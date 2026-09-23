@@ -17,6 +17,7 @@ import { usePostRefresh } from "@/contexts/PostRefreshContext";
 import { getForumData, createPost, updatePost, getPostDetail } from "@/app/Api";
 import { useForumData } from "@/contexts/ForumDataContext";
 import { useMentionInput } from "@/hooks/useMentionInput";
+import { uploadInlineImage } from "@/utils/imageUpload";
 import MentionSuggestionsDropdown from "../ui/MentionSuggestionsDropdown";
 import {
   buildHtml,
@@ -707,13 +708,59 @@ const CreatePostModal = ({ open, onClose, isEditMode = false, postData = null, o
     }
   };
 
-  // Pasting into the description. Two things the browser's own default does
-  // wrong here:
+  // Replaces [from, to) of the description with `insert` and puts the caret
+  // right after it, going through the same programmaticChangeRef path the
+  // edit-mode preload and undo/redo use (the div's own onInput never fires
+  // for an edit we make ourselves).
+  const replaceDescriptionRange = (insert, from, to) => {
+    const el = divRef.current;
+    if (!el) return;
+
+    const text = getContentText(el);
+    const start = Math.max(0, Math.min(from, text.length));
+    const end = Math.max(start, Math.min(to ?? from, text.length));
+    const newText = text.slice(0, start) + insert + text.slice(end);
+    if (newText === text) return;
+
+    const newCaret = start + insert.length;
+    recordDescriptionEdit(newText, newCaret);
+    pendingCaretRef.current = newCaret;
+    programmaticChangeRef.current = true;
+    setData((prev) => ({ ...prev, description: newText }));
+    handleDescriptionMentionChange(newText, newCaret);
+  };
+
+  // Uploads images pasted/dropped into the body and writes them into the
+  // Markdown as `![](url)` right where the caret was. They're inline
+  // content, not attachments - the attachment list below is for files the
+  // reader browses as a gallery underneath the post.
+  const uploadAndInsertInlineImages = async (files, from, to) => {
+    const key = `inline-image-${Date.now()}`;
+    message.open({ key, type: "loading", content: "Đang tải ảnh lên...", duration: 0 });
+
+    const urls = [];
+    try {
+      for (const file of files) {
+        urls.push(await uploadInlineImage(file, currentUser?.id));
+      }
+      message.destroy(key);
+    } catch (error) {
+      message.destroy(key);
+      message.error(
+        error?.response?.data?.message || error?.message || "Tải ảnh lên thất bại"
+      );
+    }
+
+    if (urls.length === 0) return;
+    replaceDescriptionRange(urls.map((url) => `![](${url})`).join("\n"), from, to);
+  };
+
+  // Pasting into the description. Three things the browser's own default
+  // does wrong here:
   //   1. An image on the clipboard (screenshot, "Copy image" from another
   //      tab, a file copied in Finder/Explorer) is simply dropped on the
   //      floor - the contenteditable is plain text, so nothing happens at
-  //      all. Route it through the same attachment path as drag & drop
-  //      instead, so Ctrl/Cmd+V adds the image to the post.
+  //      all. Upload it and insert it inline instead.
   //   2. Rich text pastes as real HTML (<div>/<p>/<span>/<b>...), which this
   //      editor's plain-text-plus-<br> model doesn't understand - the block
   //      elements come back out of getContentText() as extra line breaks.
@@ -722,27 +769,35 @@ const CreatePostModal = ({ open, onClose, isEditMode = false, postData = null, o
     const clipboard = e.clipboardData;
     if (!clipboard) return;
 
-    const pastedFiles = Array.from(clipboard.files || []);
-    const pastedImages = pastedFiles.filter((file) => file.type.startsWith("image/"));
+    const el = divRef.current;
+    if (!el) return;
+
+    const caretEnd = getCaretOffset(el);
+    const caretStart = getSelectionStartOffset(el);
+    const from = Math.min(caretStart, caretEnd);
+    const to = Math.max(caretStart, caretEnd);
+
+    const pastedImages = Array.from(clipboard.files || []).filter((file) =>
+      file.type.startsWith("image/")
+    );
     if (pastedImages.length > 0) {
       e.preventDefault();
-      handleImageFiles(pastedImages);
+      uploadAndInsertInlineImages(pastedImages, from, to);
       return;
     }
 
     const plainText = clipboard.getData("text/plain");
 
     // "Copy image" from a web page puts an <img> on the clipboard as HTML
-    // with no text alongside it. A copied *link* also carries HTML, but it
-    // has the URL as its text too - so only treat it as an image when there
-    // is no text flavour to paste, otherwise a pasted link would silently
-    // turn into an attachment.
+    // with no text alongside it - that URL is already public, so it goes in
+    // as-is. A copied *link* carries HTML too, but with the URL as its text,
+    // and should stay a plain pasted link.
     if (!plainText.trim()) {
       const html = clipboard.getData("text/html");
       const match = html && html.match(/<img[^>]+src=["']([^"']+)["']/i);
-      if (match) {
+      if (match && /^https?:\/\//i.test(match[1])) {
         e.preventDefault();
-        handleRemoteImageDrop(match[1]);
+        replaceDescriptionRange(`![](${match[1]})`, from, to);
         return;
       }
     }
@@ -754,28 +809,7 @@ const CreatePostModal = ({ open, onClose, isEditMode = false, postData = null, o
     e.preventDefault();
     if (!plainText) return;
 
-    const el = divRef.current;
-    if (!el) return;
-
-    const text = getContentText(el);
-    const caretEnd = getCaretOffset(el);
-    const caretStart = getSelectionStartOffset(el);
-    const start = Math.min(caretStart, caretEnd);
-    const end = Math.max(caretStart, caretEnd);
-    const insert = normalizeNewlines(plainText);
-    const newText = text.slice(0, start) + insert + text.slice(end);
-    const newCaret = start + insert.length;
-    // Nothing actually changed (e.g. re-pasting the same text over its own
-    // selection) - bail out rather than arming programmaticChangeRef for a
-    // state update that will never come, which would make the *next* real
-    // keystroke rebuild the DOM and jump the caret.
-    if (newText === text) return;
-
-    recordDescriptionEdit(newText, newCaret);
-    pendingCaretRef.current = newCaret;
-    programmaticChangeRef.current = true;
-    setData((prev) => ({ ...prev, description: newText }));
-    handleDescriptionMentionChange(newText, newCaret);
+    replaceDescriptionRange(normalizeNewlines(plainText), from, to);
   };
 
   const handleFilesDragEnter = (e) => {
