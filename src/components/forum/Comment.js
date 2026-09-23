@@ -26,6 +26,7 @@ import MemberTierBadge from "../ui/MemberTierBadge";
 import MarkdownRenderer from "../ui/MarkdownRenderer";
 import ChatMediaLightbox from "../chat/ChatMediaLightbox";
 import { linkifyMentionsInHtml } from "@/utils/mentionRender";
+import { rewriteExternalLinksInHtml } from "@/utils/externalLink";
 
 export default function Comment({
   comment,
@@ -414,13 +415,13 @@ export default function Comment({
                   {comment.comment && (
                     <div
                       className="text-gray-700 dark:text-gray-300 text-sm mb-1 prose custom-prose markdown-preview dark:prose-invert flex flex-col"
-                      dangerouslySetInnerHTML={{ __html: linkifyMentionsInHtml(
+                      dangerouslySetInnerHTML={{ __html: rewriteExternalLinksInHtml(linkifyMentionsInHtml(
                         comment.comment,
                         Array.isArray(comment.mentions)
                           ? new Set(comment.mentions.map((m) => m.username.toLowerCase()))
                           : null,
                         { allowBroadcastMention: true }
-                      ) }}
+                      )) }}
                     />
                   )}
                   {comment.image_urls?.length > 0 && (

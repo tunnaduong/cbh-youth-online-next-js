@@ -19,6 +19,7 @@ import { useState, useEffect, useMemo } from "react";
 import { extractHeadingsAndInjectIds } from "@/utils/toc";
 import ArticleToc from "./ArticleToc";
 import { linkifyMentionsInHtml } from "@/utils/mentionRender";
+import { rewriteExternalLinksInHtml } from "@/utils/externalLink";
 import CreatePostModal from "@/components/modals/CreatePostModal";
 
 const ReactPhotoCollage = dynamic(
@@ -639,9 +640,11 @@ export default function PostItem({ post, single = false, onVote, onRefresh = nul
               __html:
                 !post.content || post.content.trim() === ""
                   ? '<span style="color: #9ca3af;">(Chưa có nội dung)</span>'
-                  : single
-                    ? wrapIframes(contentWithHeadingIds)
-                    : getContentWithReadMore(),
+                  : rewriteExternalLinksInHtml(
+                      single
+                        ? wrapIframes(contentWithHeadingIds)
+                        : getContentWithReadMore()
+                    ),
             }}
             onClick={(e) => {
               const hashtagEl = e.target.closest(".hashtag-link");

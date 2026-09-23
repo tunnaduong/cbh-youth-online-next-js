@@ -16,6 +16,7 @@ import ForwardMessageModal from "./ForwardMessageModal";
 import Modal from "@/components/ui/Modal";
 import { CornerUpLeft, FileText, Download, PlayCircle, Forward, Loader2, AlertCircle, RotateCw, X } from "lucide-react";
 import NextLink from "next/link";
+import { safeLinkHref } from "@/utils/externalLink";
 import {
   recallMessage,
   editMessage,
@@ -105,10 +106,13 @@ function linkifyText(text, linkClassName, isOwn = false, validMentions = null) {
   const parts = text.split(URL_RE);
   const rest = parts.flatMap((part, i) => {
     if (i % 2 === 1) {
+      // The visible text stays the raw URL, but the href points at the /link
+      // interstitial - a chat message is the easiest place to drop a
+      // phishing link, so nobody leaves the site without confirming first.
       return (
         <a
           key={i}
-          href={part}
+          href={safeLinkHref(part)}
           target="_blank"
           rel="noopener noreferrer"
           className={`underline break-all ${linkClassName || ""}`}
