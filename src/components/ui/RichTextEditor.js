@@ -46,13 +46,27 @@ export function useRichTextEditor({
   // Images pasted/dropped into the body become post attachments (the same
   // ones the toolbar's image button adds) rather than inline Markdown - this
   // composer uploads them as files, it has no inline-image storage.
+  // DataTransfer.files is empty for a clipboard paste on iOS Safari (and on
+  // some Android keyboards' image insertion) - there the image is only
+  // reachable through .items, so try both. Both lists are live only for the
+  // duration of the event, hence the synchronous read.
+  const collectImageFiles = (dataTransfer) => {
+    const fromFiles = Array.from(dataTransfer.files || []).filter((file) =>
+      file.type.startsWith("image/")
+    );
+    if (fromFiles.length > 0) return fromFiles;
+
+    return Array.from(dataTransfer.items || [])
+      .filter((item) => item.kind === "file")
+      .map((item) => item.getAsFile())
+      .filter((file) => file && file.type.startsWith("image/"));
+  };
+
   const handleImageTransfer = (dataTransfer) => {
     const { onImageFiles: onFiles, onImageUrl: onUrl } = imageHandlersRef.current;
     if (!dataTransfer) return false;
 
-    const files = Array.from(dataTransfer.files || []).filter((file) =>
-      file.type.startsWith("image/")
-    );
+    const files = collectImageFiles(dataTransfer);
     if (files.length > 0) {
       if (!onFiles) return false;
       onFiles(files);
