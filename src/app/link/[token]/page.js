@@ -91,8 +91,10 @@ export default function LinkSafetyPage({ params }) {
             </span>
           </div>
           <p className="mt-2 break-all font-mono text-xs leading-5 text-gray-600 dark:text-neutral-400">
+            {/* Template literal, not `{url.protocol}//` - a bare "//" in JSX
+                text reads as the start of a comment to the linter. */}
             <span className={isInsecure ? "text-red-600 dark:text-red-400" : ""}>
-              {url.protocol}//
+              {`${url.protocol}//`}
             </span>
             <span className="font-semibold text-gray-800 dark:text-neutral-200">
               {url.hostname}
@@ -129,34 +131,45 @@ export default function LinkSafetyPage({ params }) {
           <p className="text-sm font-medium text-gray-900 dark:text-neutral-200">
             Trước khi tiếp tục, hãy kiểm tra:
           </p>
+          {/* Each bullet's text is one <span>: the <li> is a flex container, so
+              an inline <em> left as a direct child would become its own flex
+              item and break out of the sentence. */}
           <ul className="mt-2 space-y-1.5 text-sm leading-6 text-gray-600 dark:text-neutral-400">
             <li className="flex gap-2">
               <span aria-hidden="true" className="text-gray-400">
                 •
               </span>
-              Tên miền có đúng chính tả không? Các trang lừa đảo hay dùng tên
-              gần giống, ví dụ <em>chuyenb1enhoa.com</em>.
+              <span>
+                Tên miền có đúng chính tả không? Các trang lừa đảo hay dùng tên
+                gần giống, ví dụ <em>chuyenb1enhoa.com</em>.
+              </span>
             </li>
             <li className="flex gap-2">
               <span aria-hidden="true" className="text-gray-400">
                 •
               </span>
-              Không bao giờ nhập mật khẩu CBH Youth Online của bạn ở một trang
-              web khác.
+              <span>
+                Không bao giờ nhập mật khẩu CBH Youth Online của bạn ở một trang
+                web khác.
+              </span>
             </li>
             <li className="flex gap-2">
               <span aria-hidden="true" className="text-gray-400">
                 •
               </span>
-              Cẩn thận với trang yêu cầu tải tệp về, nhập mã OTP, số điện thoại
-              hay thông tin thẻ ngân hàng.
+              <span>
+                Cẩn thận với trang yêu cầu tải tệp về, nhập mã OTP, số điện thoại
+                hay thông tin thẻ ngân hàng.
+              </span>
             </li>
             <li className="flex gap-2">
               <span aria-hidden="true" className="text-gray-400">
                 •
               </span>
-              Nếu bạn không biết ai đã gửi liên kết này, tốt nhất là đừng truy
-              cập.
+              <span>
+                Nếu bạn không biết ai đã gửi liên kết này, tốt nhất là đừng truy
+                cập.
+              </span>
             </li>
           </ul>
         </div>
