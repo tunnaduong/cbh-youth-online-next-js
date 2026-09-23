@@ -18,7 +18,16 @@ import { getForumData, createPost, updatePost, getPostDetail } from "@/app/Api";
 import { useForumData } from "@/contexts/ForumDataContext";
 import { useMentionInput } from "@/hooks/useMentionInput";
 import MentionSuggestionsDropdown from "../ui/MentionSuggestionsDropdown";
-import { buildHtml, getCaretOffset, setCaretOffset, getContentText, makeProxyRef, applyHighlights } from "@/utils/richInput";
+import {
+  buildHtml,
+  getCaretOffset,
+  getSelectionStartOffset,
+  setCaretOffset,
+  getContentText,
+  makeProxyRef,
+  applyHighlights,
+  normalizeNewlines,
+} from "@/utils/richInput";
 
 // Read by ComposerClient.js (src/app/composer/ComposerClient.js) on mount so
 // bailing out to the full /composer page via the "Nâng cao" button below
@@ -69,7 +78,14 @@ const CreatePostModal = ({ open, onClose, isEditMode = false, postData = null, o
       getPostDetail(postData.id)
         .then((response) => {
           const fetchedPost = response.data.post;
-          const fetchedDescription = fetchedPost.description || fetchedPost.content || "";
+          // Posts stored with Windows line endings would otherwise have every
+          // line break doubled the moment they were loaded here - see
+          // normalizeNewlines() in richInput.js. Normalize at the boundary so
+          // `data.description` matches what the contenteditable actually
+          // holds (mention offsets are computed against it too).
+          const fetchedDescription = normalizeNewlines(
+            fetchedPost.description || fetchedPost.content || ""
+          );
           programmaticChangeRef.current = true;
           setData({
             title: fetchedPost.title || "",
@@ -101,7 +117,11 @@ const CreatePostModal = ({ open, onClose, isEditMode = false, postData = null, o
     } else if (open && !isEditMode) {
       reset(); // Reset if opening fresh
     }
-  }, [open, currentUser, isEditMode, postData]);
+    // Keyed on the post id rather than the `postData` object: a caller that
+    // rebuilds that object each render would otherwise restart this fetch
+    // after every setState it makes here, looping forever (that's exactly
+    // what happened on the /composer page - see usePostComposer.js).
+  }, [open, currentUser, isEditMode, postData?.id]);
 
   // Replace useForm with regular state management
   const [data, setData] = useState({
@@ -687,6 +707,77 @@ const CreatePostModal = ({ open, onClose, isEditMode = false, postData = null, o
     }
   };
 
+  // Pasting into the description. Two things the browser's own default does
+  // wrong here:
+  //   1. An image on the clipboard (screenshot, "Copy image" from another
+  //      tab, a file copied in Finder/Explorer) is simply dropped on the
+  //      floor - the contenteditable is plain text, so nothing happens at
+  //      all. Route it through the same attachment path as drag & drop
+  //      instead, so Ctrl/Cmd+V adds the image to the post.
+  //   2. Rich text pastes as real HTML (<div>/<p>/<span>/<b>...), which this
+  //      editor's plain-text-plus-<br> model doesn't understand - the block
+  //      elements come back out of getContentText() as extra line breaks.
+  //      Insert the plain-text flavour at the caret ourselves instead.
+  const handleDescriptionPaste = (e) => {
+    const clipboard = e.clipboardData;
+    if (!clipboard) return;
+
+    const pastedFiles = Array.from(clipboard.files || []);
+    const pastedImages = pastedFiles.filter((file) => file.type.startsWith("image/"));
+    if (pastedImages.length > 0) {
+      e.preventDefault();
+      handleImageFiles(pastedImages);
+      return;
+    }
+
+    const plainText = clipboard.getData("text/plain");
+
+    // "Copy image" from a web page puts an <img> on the clipboard as HTML
+    // with no text alongside it. A copied *link* also carries HTML, but it
+    // has the URL as its text too - so only treat it as an image when there
+    // is no text flavour to paste, otherwise a pasted link would silently
+    // turn into an attachment.
+    if (!plainText.trim()) {
+      const html = clipboard.getData("text/html");
+      const match = html && html.match(/<img[^>]+src=["']([^"']+)["']/i);
+      if (match) {
+        e.preventDefault();
+        handleRemoteImageDrop(match[1]);
+        return;
+      }
+    }
+
+    // Nothing textual to paste (e.g. a non-image file on the clipboard).
+    // Still swallow the event - the browser's fallback would be to insert
+    // whatever HTML flavour is left, which this plain-text editor can't
+    // represent.
+    e.preventDefault();
+    if (!plainText) return;
+
+    const el = divRef.current;
+    if (!el) return;
+
+    const text = getContentText(el);
+    const caretEnd = getCaretOffset(el);
+    const caretStart = getSelectionStartOffset(el);
+    const start = Math.min(caretStart, caretEnd);
+    const end = Math.max(caretStart, caretEnd);
+    const insert = normalizeNewlines(plainText);
+    const newText = text.slice(0, start) + insert + text.slice(end);
+    const newCaret = start + insert.length;
+    // Nothing actually changed (e.g. re-pasting the same text over its own
+    // selection) - bail out rather than arming programmaticChangeRef for a
+    // state update that will never come, which would make the *next* real
+    // keystroke rebuild the DOM and jump the caret.
+    if (newText === text) return;
+
+    recordDescriptionEdit(newText, newCaret);
+    pendingCaretRef.current = newCaret;
+    programmaticChangeRef.current = true;
+    setData((prev) => ({ ...prev, description: newText }));
+    handleDescriptionMentionChange(newText, newCaret);
+  };
+
   const handleFilesDragEnter = (e) => {
     e.preventDefault();
     if (!isDraggableImageSource(e.dataTransfer)) return;
@@ -1010,6 +1101,7 @@ const CreatePostModal = ({ open, onClose, isEditMode = false, postData = null, o
                         applyHighlights(el, text, false);
                       }}
                       onKeyDown={handleTextareaKeyDown}
+                      onPaste={handleDescriptionPaste}
                     />
                     {showDescriptionSuggestions && (
                       <MentionSuggestionsDropdown

@@ -5,6 +5,7 @@ import { message } from "antd";
 import { useAuthContext, useTopUsersContext } from "@/contexts/Support";
 import { usePostRefresh } from "@/contexts/PostRefreshContext";
 import { getForumData, createPost, updatePost, getPostDetail } from "@/app/Api";
+import { normalizeNewlines } from "@/utils/richInput";
 
 /**
  * All the state, refs, effects and handlers behind the post composer
@@ -32,6 +33,7 @@ import { getForumData, createPost, updatePost, getPostDetail } from "@/app/Api";
  */
 export default function usePostComposer({ isEditMode = false, postData = null, onSuccess = null, onClose, open = true }) {
   const { currentUser, refreshUser } = useAuthContext();
+  const postId = postData?.id ?? null;
   const { fetchTopUsers } = useTopUsersContext();
   const { triggerRefresh } = usePostRefresh();
 
@@ -71,7 +73,12 @@ export default function usePostComposer({ isEditMode = false, postData = null, o
       getPostDetail(postData.id)
         .then((response) => {
           const fetchedPost = response.data.post;
-          const fetchedDescription = fetchedPost.description || fetchedPost.content || "";
+          // Posts stored with Windows line endings otherwise get every line
+          // break doubled on the way into the editor - see normalizeNewlines()
+          // in richInput.js.
+          const fetchedDescription = normalizeNewlines(
+            fetchedPost.description || fetchedPost.content || ""
+          );
           setData({
             title: fetchedPost.title || "",
             description: fetchedDescription, // Prioritize description (raw content)
@@ -99,8 +106,14 @@ export default function usePostComposer({ isEditMode = false, postData = null, o
     } else if (open && !isEditMode) {
       reset(); // Reset if opening fresh
     }
+    // `postData` itself is an object literal rebuilt on every render by
+    // ComposerClient.js, so depending on it re-ran this effect after each of
+    // its own setState calls: an endless getForumData()/getPostDetail() loop
+    // that flipped `loading` back to true as fast as it settled, leaving the
+    // subforum picker stuck on "Đang tải..." (and never selectable) the whole
+    // time the composer was in edit mode. Depend on the id it actually reads.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, currentUser, isEditMode, postData]);
+  }, [open, currentUser, isEditMode, postId]);
 
   // Replace useForm with regular state management
   const [data, setData] = useState({
@@ -495,6 +508,17 @@ export default function usePostComposer({ isEditMode = false, postData = null, o
     }
   };
 
+  // Passed to useRichTextEditor() so an image pasted (or dropped) straight
+  // into the Tiptap body becomes a post attachment. ProseMirror consumes
+  // those events itself, so the surrounding drop zone below never sees them.
+  const handleEditorImageFiles = (files) => {
+    handleImageFiles(files);
+  };
+
+  const handleEditorImageUrl = (url) => {
+    handleRemoteImageDrop(url);
+  };
+
   const handleFilesDragEnter = (e) => {
     e.preventDefault();
     if (!isDraggableImageSource(e.dataTransfer)) return;
@@ -573,6 +597,8 @@ export default function usePostComposer({ isEditMode = false, postData = null, o
 
     // description editor
     handleDescriptionChange,
+    handleEditorImageFiles,
+    handleEditorImageUrl,
 
     // images
     imageFiles,

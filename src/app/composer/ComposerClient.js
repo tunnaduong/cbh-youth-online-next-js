@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useMemo, useRef } from "react";
 import { useRouter } from "@bprogress/next/app";
 import { useSearchParams } from "next/navigation";
 import { message } from "antd";
@@ -37,6 +37,14 @@ export default function ComposerClient() {
   const { triggerRefresh } = usePostRefresh();
   const handoffAppliedRef = useRef(false);
 
+  // Memoized: usePostComposer's load effect keys off this, and a fresh object
+  // literal on every render would restart the fetch after each of its own
+  // state updates (see the dependency comment there).
+  const editPostData = useMemo(
+    () => (isEditMode ? { id: editId } : null),
+    [isEditMode, editId]
+  );
+
   // Mirrors useCreatePostGate.js's checks for anyone who lands here directly
   // via the URL instead of through a gated trigger (navbar/sidebar/home hero).
   useEffect(() => {
@@ -64,6 +72,8 @@ export default function ComposerClient() {
     forumData,
     loading,
     handleDescriptionChange,
+    handleEditorImageFiles,
+    handleEditorImageUrl,
     imageFiles,
     imagePreviews,
     existingImages,
@@ -94,7 +104,7 @@ export default function ComposerClient() {
   } = usePostComposer({
     open: true,
     isEditMode,
-    postData: isEditMode ? { id: editId } : null,
+    postData: editPostData,
     onSuccess: () => {
       triggerRefresh();
       router.refresh();
@@ -138,6 +148,10 @@ export default function ComposerClient() {
     value: data.description,
     onChange: handleDescriptionChange,
     placeholder: "Nội dung bài viết",
+    // Ctrl/Cmd+V of a screenshot or a copied image inside the body attaches
+    // it to the post, same as the image button and drag & drop.
+    onImageFiles: handleEditorImageFiles,
+    onImageUrl: handleEditorImageUrl,
   });
 
   if (authLoading || !loggedIn || !currentUser?.email_verified_at) {

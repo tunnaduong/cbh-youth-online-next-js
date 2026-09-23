@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect } from "react";
+import React, { useEffect, useRef } from "react";
 import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Placeholder from "@tiptap/extension-placeholder";
@@ -9,6 +9,7 @@ import { ConfigProvider, Tooltip } from "antd";
 import { FaBold, FaItalic, FaLink, FaCode, FaQuoteLeft, FaListUl, FaListOl } from "react-icons/fa";
 import { TbH1, TbH2, TbH3, TbH4 } from "react-icons/tb";
 import { createMentionExtension } from "./MentionExtension";
+import { normalizeNewlines } from "@/utils/richInput";
 
 /**
  * Tiptap WYSIWYG editor for post bodies. Storage format is still Markdown
@@ -18,8 +19,62 @@ import { createMentionExtension } from "./MentionExtension";
  * (usePostComposer.js's old divRef/textareaRef machinery) to a real
  * ProseMirror-backed editor. Shared by the /composer page and the edit
  * modal (CreatePostModal.js).
+ *
+ * @param {object} opts
+ * @param {function} [opts.onImageFiles] - Called with the image File objects
+ *   found on the clipboard (or in a drop) inside the editor. Tiptap/
+ *   ProseMirror swallows those events itself, so without this the composer's
+ *   surrounding drop zone never sees them and pasting a screenshot into the
+ *   body does nothing at all. Return value ignored; providing the callback
+ *   is what enables the handling.
+ * @param {function} [opts.onImageUrl] - Same, for an image copied from
+ *   another page (which arrives as HTML carrying an <img src>, not a file).
  */
-export function useRichTextEditor({ value, onChange, placeholder, editable = true }) {
+export function useRichTextEditor({
+  value,
+  onChange,
+  placeholder,
+  editable = true,
+  onImageFiles,
+  onImageUrl,
+}) {
+  // ProseMirror's handlers are installed once, at editor creation - keep the
+  // callbacks in a ref so they can't go stale on re-render.
+  const imageHandlersRef = useRef({ onImageFiles, onImageUrl });
+  imageHandlersRef.current = { onImageFiles, onImageUrl };
+
+  // Images pasted/dropped into the body become post attachments (the same
+  // ones the toolbar's image button adds) rather than inline Markdown - this
+  // composer uploads them as files, it has no inline-image storage.
+  const handleImageTransfer = (dataTransfer) => {
+    const { onImageFiles: onFiles, onImageUrl: onUrl } = imageHandlersRef.current;
+    if (!dataTransfer) return false;
+
+    const files = Array.from(dataTransfer.files || []).filter((file) =>
+      file.type.startsWith("image/")
+    );
+    if (files.length > 0) {
+      if (!onFiles) return false;
+      onFiles(files);
+      return true;
+    }
+
+    // "Copy image" from a web page puts an <img> on the clipboard as HTML
+    // with no text alongside it. A copied *link* carries HTML too, but with
+    // the URL as its text - only the former should become an attachment.
+    const plainText = dataTransfer.getData("text/plain");
+    if (plainText && plainText.trim()) return false;
+
+    const html = dataTransfer.getData("text/html");
+    const match = html && html.match(/<img[^>]+src=["']([^"']+)["']/i);
+    if (match && onUrl) {
+      onUrl(match[1]);
+      return true;
+    }
+
+    return false;
+  };
+
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
@@ -35,13 +90,22 @@ export function useRichTextEditor({ value, onChange, placeholder, editable = tru
       }),
       createMentionExtension(),
     ],
-    content: value || "",
+    content: normalizeNewlines(value),
     editable,
     immediatelyRender: false,
     editorProps: {
       attributes: {
         class:
           "prose dark:prose-invert max-w-none focus:outline-none min-h-[160px] text-base",
+      },
+      handlePaste: (_view, event) => handleImageTransfer(event.clipboardData),
+      handleDrop: (_view, event) => {
+        if (!handleImageTransfer(event.dataTransfer)) return false;
+        // Handled here - stop it from also reaching the composer's own
+        // drop zone (ComposerForm's wrapper), which would attach it twice.
+        event.preventDefault();
+        event.stopPropagation();
+        return true;
       },
     },
     onUpdate: ({ editor: e }) => {
@@ -56,9 +120,10 @@ export function useRichTextEditor({ value, onChange, placeholder, editable = tru
   // onUpdate->setData->value round-trip never clobbers an in-progress edit.
   useEffect(() => {
     if (!editor || editor.isFocused) return;
+    const next = normalizeNewlines(value);
     const current = editor.storage.markdown.getMarkdown();
-    if (current !== (value || "")) {
-      editor.commands.setContent(value || "", { emitUpdate: false });
+    if (current !== next) {
+      editor.commands.setContent(next, { emitUpdate: false });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [editor, value]);

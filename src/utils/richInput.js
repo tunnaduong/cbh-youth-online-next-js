@@ -26,12 +26,27 @@ function esc(s) {
   return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
 
+// Collapse CRLF / lone CR line endings to plain "\n". Text coming back from
+// the API can carry Windows line endings (posts written in an editor that
+// submits CRLF, content pasted in from Word, ...), and buildHtml() used to
+// escape the "\r" straight into the HTML it produced. The HTML parser turns
+// that lone "\r" into a "\n" *inside the text node*, which `white-space:
+// pre-wrap` renders as a second line break right next to the <br> we already
+// emitted - and getContentText() then reads both back. So every paragraph
+// break in an existing post doubled the moment the post was opened for
+// editing, and the doubling got saved back on submit. Normalizing at both
+// ends of the round-trip keeps "\r\n" and "\n" rendering identically.
+export function normalizeNewlines(text) {
+  if (!text) return "";
+  return String(text).replace(/\r\n?/g, "\n");
+}
+
 // Newlines (from Shift+Enter) need to become <br> - a bare "\n" inside a
 // contenteditable's HTML is collapsed/ignored by the browser. No spans, no
 // styling here at all - see the module docblock for why.
 export function buildHtml(text) {
   if (!text) return "";
-  return text.split("\n").map(esc).join("<br>");
+  return normalizeNewlines(text).split("\n").map(esc).join("<br>");
 }
 
 export function getCaretOffset(el) {
@@ -112,6 +127,10 @@ export function getContentText(el) {
     first = false;
   }
 
+  // A text node can still hold a raw "\r"/"\r\n" (pasted content, or HTML
+  // set from outside buildHtml) - normalize before the trailing-newline trim
+  // so a trailing "\r\n" doesn't leave a stray "\r" behind.
+  out = normalizeNewlines(out);
   if (out.endsWith("\n")) out = out.slice(0, -1);
   return out;
 }
