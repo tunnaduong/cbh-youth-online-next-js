@@ -82,6 +82,14 @@ const getNotificationMessage = (notification) => {
       return "Nội dung của bạn đã bị ẩn";
     case "content_deleted":
       return "Nội dung của bạn đã bị xóa";
+    case "content_pending_review":
+      return `${data?.comment_id ? "Bình luận" : "Bài viết"} của bạn đang chờ kiểm duyệt${data?.reason ? `: ${data.reason}` : ""
+        }`;
+    case "content_approved":
+      return `${data?.comment_id ? "Bình luận" : "Bài viết"} của bạn đã được duyệt và hiển thị công khai`;
+    case "content_rejected":
+      return `${data?.comment_id ? "Bình luận" : "Bài viết"} của bạn không được duyệt${data?.reason ? `: ${data.reason}` : ""
+        }`;
     case "moderation_pending":
       return `${data?.content_type === "comment" ? "Bình luận" : "Bài viết"} của @${data?.author_username || "người dùng"
         } đang chờ kiểm duyệt${data?.reason ? `: ${data.reason}` : ""}`;
