@@ -82,6 +82,9 @@ const getNotificationMessage = (notification) => {
       return "Nội dung của bạn đã bị ẩn";
     case "content_deleted":
       return "Nội dung của bạn đã bị xóa";
+    case "moderation_pending":
+      return `${data?.content_type === "comment" ? "Bình luận" : "Bài viết"} của @${data?.author_username || "người dùng"
+        } đang chờ kiểm duyệt${data?.reason ? `: ${data.reason}` : ""}`;
     case "system_message":
       return data?.message || "Bạn có thông báo mới";
     default:
