@@ -5,6 +5,7 @@ import Link from "next/link";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import remarkBreaks from "remark-breaks";
+import { safeLinkHref } from "@/utils/externalLink";
 
 const MarkdownRenderer = ({ content, className = "" }) => {
   if (!content || content.trim() === "") {
@@ -96,10 +97,12 @@ const MarkdownRenderer = ({ content, className = "" }) => {
                 </Link>
               );
             }
+            // Outbound links go through the /link interstitial so the reader
+            // sees where they're actually headed before leaving the site.
             return (
               <a
                 {...props}
-                href={href}
+                href={safeLinkHref(href)}
                 target="_blank"
                 rel="noopener noreferrer"
               >

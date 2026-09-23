@@ -18,6 +18,7 @@ import MessageReactions from "./MessageReactions";
 import ReplyPreviewBubble from "./ReplyPreviewBubble";
 import { reactToMessage, removeMessageReaction, recallMessage, editMessage, deleteMessage } from "@/app/Api";
 import { Popover, message as antdMessage } from "antd";
+import { safeLinkHref } from "@/utils/externalLink";
 
 const URL_RE = /(https?:\/\/[^\s]+)/g;
 const MENTION_RE = /(@[\w.-]+)/g;
@@ -98,10 +99,11 @@ function linkifyText(text, validMentions = null) {
   const parts = text.split(URL_RE);
   const rest = parts.flatMap((part, i) => {
     if (i % 2 === 1) {
+      // Outbound links go through the /link interstitial first.
       return (
         <a
           key={i}
-          href={part}
+          href={safeLinkHref(part)}
           target="_blank"
           rel="noopener noreferrer"
           className="underline break-all"

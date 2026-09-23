@@ -81,13 +81,13 @@ export default function AdminShopProductsPage() {
         <div className="flex items-center gap-3">
           {p.image_url ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={p.image_url} alt="" className="w-10 h-10 rounded object-cover bg-gray-100" />
+            <img src={p.image_url} alt="" className="w-10 h-10 rounded object-cover bg-gray-100 dark:bg-neutral-700" />
           ) : (
-            <div className="w-10 h-10 rounded bg-gray-100" />
+            <div className="w-10 h-10 rounded bg-gray-100 dark:bg-neutral-700" />
           )}
           <div>
             <div className="font-medium">{p.name}</div>
-            <div className="text-xs text-gray-500">
+            <div className="text-xs text-gray-500 dark:text-gray-400">
               {p.sku ? `${p.sku} · ` : ""}
               {p.slug}
             </div>
@@ -103,7 +103,7 @@ export default function AdminShopProductsPage() {
         p.variants?.length ? (
           <div>
             <div>Từ {fmtVndPoints(v)}</div>
-            <div className="text-xs text-gray-500">{p.variants.length} phân loại</div>
+            <div className="text-xs text-gray-500 dark:text-gray-400">{p.variants.length} phân loại</div>
           </div>
         ) : (
           fmtVndPoints(v)
@@ -203,7 +203,7 @@ export default function AdminShopProductsPage() {
             <Select options={categories} />
           </Form.Item>
           {hasVariants && (
-            <div className="text-xs text-gray-500 mb-2">
+            <div className="text-xs text-gray-500 dark:text-gray-400 mb-2">
               Giá hiển thị = giá thấp nhất, tồn kho = tổng các phân loại.
             </div>
           )}

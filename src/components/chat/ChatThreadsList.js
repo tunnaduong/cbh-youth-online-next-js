@@ -5,7 +5,7 @@ import { useChatContext } from "@/contexts/Support";
 import Image from "next/image";
 import moment from "moment";
 import "moment/locale/vi";
-import { Image as ImageIcon, Video as VideoIcon, FileText } from "lucide-react";
+import { Image as ImageIcon, Video as VideoIcon, FileText, Share } from "lucide-react";
 
 export default function ChatThreadsList({ onSelectConversation }) {
   const { conversations } = useChatContext();
@@ -112,6 +112,21 @@ export default function ChatThreadsList({ onSelectConversation }) {
           {prefix}
           <FileText className="w-3.5 h-3.5 flex-shrink-0" />
           <span className="truncate">{fileName}</span>
+        </span>
+      );
+    }
+
+    // A shared post's content is "note + link" - the raw url reads as noise
+    // in a one-line preview, so show the post's title instead.
+    const sharedTopic = conversation.latest_message.metadata?.shared_topic;
+    if (sharedTopic) {
+      return (
+        <span className="inline-flex items-center gap-1 min-w-0">
+          {prefix}
+          <Share className="w-3.5 h-3.5 flex-shrink-0" />
+          <span className="truncate">
+            {sharedTopic.title || "Đã chia sẻ một bài viết"}
+          </span>
         </span>
       );
     }

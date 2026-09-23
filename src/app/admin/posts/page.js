@@ -4,10 +4,7 @@ import { Button, Popconfirm, Space, Tag, Tooltip, message } from "antd";
 import { EyeInvisibleOutlined, EyeOutlined, PushpinOutlined, DeleteOutlined } from "@ant-design/icons";
 import ResourceTable, { fmtDate, errMsg } from "../_components/ResourceTable";
 import { adminGetTopics, adminUpdateTopic, adminDeleteTopic } from "@/app/Api";
-import { generatePostSlug } from "@/utils/slugify";
-
-const postUrl = (t) =>
-  `/${t.anonymous ? "anonymous" : t.user?.username || "anonymous"}/posts/${generatePostSlug(t.id, t.title)}`;
+import { generatePostUrl } from "@/utils/slugify";
 
 export default function AdminPostsPage() {
   const act = async (fn, reload) => {
@@ -27,10 +24,10 @@ export default function AdminPostsPage() {
       key: "title",
       render: (_, t) => (
         <div className="max-w-[360px]">
-          <a href={postUrl(t)} target="_blank" rel="noreferrer" className="font-medium">
+          <a href={generatePostUrl(t)} target="_blank" rel="noreferrer" className="font-medium">
             {t.title || "(không tiêu đề)"}
           </a>
-          <div className="text-xs text-gray-500 truncate">{t.description}</div>
+          <div className="text-xs text-gray-500 dark:text-gray-400 truncate">{t.description}</div>
         </div>
       ),
     },

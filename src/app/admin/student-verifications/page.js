@@ -1,14 +1,15 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { Button, Form, Input, Modal, Space, Tag, Image, Popconfirm, message } from "antd";
-import { CheckCircle, XCircle, Eye } from "lucide-react";
+import { Button, Form, Input, Modal, Space, Tag, Image, Popconfirm, Tooltip, message } from "antd";
+import { CheckCircle, Trash2, XCircle, Eye } from "lucide-react";
 import ResourceTable, { fmtDate, errMsg } from "../_components/ResourceTable";
 import {
   adminGetStudentVerifications,
   adminApproveStudentVerification,
   adminRejectStudentVerification,
   adminRevokeStudentVerification,
+  adminDeleteStudentVerification,
 } from "@/app/Api";
 
 const STATUS_COLOR = { pending: "gold", approved: "green", rejected: "red" };
@@ -52,6 +53,19 @@ export default function AdminStudentVerificationsPage() {
     }
   };
 
+  const handleDelete = async (id) => {
+    setSaving(true);
+    try {
+      const res = await adminDeleteStudentVerification(id);
+      message.success(res.data?.message || "Đã xóa");
+      reload();
+    } catch (err) {
+      message.error(errMsg(err, "Xóa thất bại"));
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const handleRevoke = async (userId) => {
     setSaving(true);
     try {
@@ -75,7 +89,7 @@ export default function AdminStudentVerificationsPage() {
           <a href={`/${r.user?.username}`} target="_blank" rel="noreferrer" className="font-medium">
             @{r.user?.username}
           </a>
-          <div className="text-xs text-gray-500">{r.user?.email}</div>
+          <div className="text-xs text-gray-500 dark:text-gray-400">{r.user?.email}</div>
         </div>
       ),
     },
@@ -172,6 +186,22 @@ export default function AdminStudentVerificationsPage() {
               </Button>
             </Popconfirm>
           )}
+          <Popconfirm
+            title="Xóa yêu cầu xác minh này?"
+            description={
+              r.status === "approved"
+                ? "Ảnh và bản ghi sẽ bị xóa, đồng thời thu hồi xác minh của học sinh."
+                : "Ảnh và bản ghi sẽ bị xóa vĩnh viễn."
+            }
+            okText="Xóa"
+            okButtonProps={{ danger: true }}
+            cancelText="Hủy"
+            onConfirm={() => handleDelete(r.id)}
+          >
+            <Tooltip title="Xóa yêu cầu">
+              <Button size="small" danger icon={<Trash2 size={14} />} />
+            </Tooltip>
+          </Popconfirm>
         </Space>
       ),
     },
@@ -209,7 +239,7 @@ export default function AdminStudentVerificationsPage() {
         onCancel={() => setRejecting(null)}
         onOk={handleReject}
       >
-        <p className="mb-3 text-sm text-gray-500">
+        <p className="mb-3 text-sm text-gray-500 dark:text-gray-400">
           Yêu cầu của @{rejecting?.user?.username}
         </p>
         <Form form={rejectForm} layout="vertical">

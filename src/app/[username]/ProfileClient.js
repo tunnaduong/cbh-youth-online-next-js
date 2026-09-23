@@ -10,7 +10,8 @@ import FollowButton from "@/components/profile/FollowButton";
 import { BsFillGearFill } from "react-icons/bs";
 import { IoChatbubbleEllipsesOutline } from "react-icons/io5";
 import { IoCalendarOutline, IoLocationOutline } from "react-icons/io5";
-import { Edit2Icon, Flag, X, MoreHorizontal, Ban } from "lucide-react";
+import { Archive, Edit2Icon, Flag, X, MoreHorizontal, Ban } from "lucide-react";
+import ProfilePhotoGallery from "@/components/profile/ProfilePhotoGallery";
 import MemberTierBadge from "@/components/ui/MemberTierBadge";
 import { useAuthContext, useChatContext } from "@/contexts/Support";
 import ReportModal from "@/components/ReportModal";
@@ -31,7 +32,6 @@ export default function ProfileClient({ initialProfile, activeTab, username }) {
   const router = useRouter();
   const [showReportModal, setShowReportModal] = useState(false);
   const [showMoreMenu, setShowMoreMenu] = useState(false);
-  const [galleryOpen, setGalleryOpen] = useState(true);
 
   // Transform API response to component format
   const transformProfileData = (apiData, currentUsername = null) => {
@@ -1019,40 +1019,22 @@ export default function ProfileClient({ initialProfile, activeTab, username }) {
                 <div><span className="text-gray-500 dark:text-gray-400">Lượt like: </span><span className="font-bold text-gray-900 dark:text-white">{profile.stats.likes}</span></div>
               </div>
               {profile.bio && <p className="text-center text-gray-700 dark:text-gray-300 text-sm mt-2 break-words max-w-full">{profile.bio}</p>}
+              {isOwnProfile && (
+                <Link href="/my-archives" className="flex items-center gap-x-1 mt-2 text-sm text-gray-500 dark:text-gray-400 hover:text-primary-500">
+                  <Archive className="w-4 h-4" />
+                  <span>Kho lưu trữ</span>
+                </Link>
+              )}
               <div className="flex flex-col gap-y-1 mt-2 text-sm text-gray-500 dark:text-gray-400">
                 {profile.location && <div className="flex items-center gap-x-1"><IoLocationOutline className="text-base" /><span>{profile.location}</span></div>}
                 {profile.joined_at && <div className="flex items-center gap-x-1"><IoCalendarOutline className="text-base" /><span>{profile.joined_at}</span></div>}
               </div>
-
-              {/* Photo gallery accordion — mobile only */}
-              {(() => {
-                const galleryImages = posts.flatMap((p) => p.image_urls || []).filter(Boolean);
-                if (galleryImages.length === 0) return null;
-                return (
-                  <div className="w-full mt-3 border border-gray-200 dark:border-neutral-700 rounded-xl overflow-hidden">
-                    <button
-                      onClick={() => setGalleryOpen((v) => !v)}
-                      className="w-full flex items-center justify-between px-3 py-2.5 bg-gray-50 dark:bg-neutral-700 text-sm font-semibold text-gray-700 dark:text-gray-200"
-                    >
-                      <span className="flex items-center gap-x-1.5">
-                        <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
-                        Thư viện ảnh ({galleryImages.length})
-                      </span>
-                      <svg xmlns="http://www.w3.org/2000/svg" className={`w-4 h-4 transition-transform ${galleryOpen ? "rotate-180" : ""}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="6 9 12 15 18 9"/></svg>
-                    </button>
-                    {galleryOpen && (
-                      <div className="grid grid-cols-3 gap-0.5 p-0.5 bg-gray-100 dark:bg-neutral-800">
-                        {galleryImages.map((url, i) => (
-                          <a key={i} href={url} target="_blank" rel="noopener noreferrer">
-                            <img src={url} alt="" className="w-full aspect-square object-cover" />
-                          </a>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                );
-              })()}
-
+              <div className="w-full mt-3 lg:hidden">
+                <ProfilePhotoGallery
+                  username={username || profile.username}
+                  profileUsername={profile.username}
+                />
+              </div>
               <div className="flex justify-center items-center mt-4 gap-2">
                 {currentUser && currentUser.username == profile.username ? (
                   <Link href="/settings" className="flex items-center gap-x-2">
@@ -1292,6 +1274,15 @@ export default function ProfileClient({ initialProfile, activeTab, username }) {
                   </p>
                 </div>
                 <p className="dark:text-neutral-300">{profile.bio}</p>
+                {isOwnProfile && (
+                  <Link
+                    href="/my-archives"
+                    className="flex items-center -ml-0.5 gap-x-1 text-gray-500 hover:text-primary-500"
+                  >
+                    <Archive className="w-[18px] h-[18px]" />
+                    <span className="text-sm">Kho lưu trữ</span>
+                  </Link>
+                )}
                 <div className="flex flex-col gap-y-2">
                   {profile.location && (
                     <div className="flex items-center -ml-0.5 gap-x-1 text-gray-500">
@@ -1308,6 +1299,10 @@ export default function ProfileClient({ initialProfile, activeTab, username }) {
                     </div>
                   )}
                 </div>
+                <ProfilePhotoGallery
+                  username={username || profile.username}
+                  profileUsername={profile.username}
+                />
               </div>
               <div className="flex-1 !my-6 !px-3 md:!px-0 flex flex-col items-center">
                 {renderTabContent()}

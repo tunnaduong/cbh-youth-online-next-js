@@ -15,6 +15,28 @@ import { createPortal } from "react-dom";
  */
 export default function MentionSuggestionsDropdown({ suggestions, onSelect, onClose, anchorRef }) {
   const [coords, setCoords] = useState(null);
+  const [activeIndex, setActiveIndex] = useState(0);
+  // The keydown listener is registered once per suggestion list, so it would
+  // otherwise close over a stale activeIndex. Mirror it in a ref.
+  const activeIndexRef = useRef(0);
+  const listRef = useRef(null);
+
+  // Callers pass inline arrows, so these change identity on every render -
+  // keeping them in refs stops the listener from resubscribing constantly.
+  const onSelectRef = useRef(onSelect);
+  const onCloseRef = useRef(onClose);
+  onSelectRef.current = onSelect;
+  onCloseRef.current = onClose;
+
+  const setActive = (i) => {
+    activeIndexRef.current = i;
+    setActiveIndex(i);
+  };
+
+  // A freshly filtered list must not keep a highlight pointing past its end.
+  useEffect(() => {
+    setActive(0);
+  }, [suggestions]);
 
   // Recompute position when suggestions appear or window scrolls/resizes
   useEffect(() => {
@@ -38,12 +60,53 @@ export default function MentionSuggestionsDropdown({ suggestions, onSelect, onCl
     };
   }, [suggestions, anchorRef]);
 
-  // Close on Escape
+  // Keyboard navigation. Registered in the CAPTURE phase on document so it
+  // runs before the composer's own React onKeyDown - otherwise Enter would
+  // reach the editor first and insert a newline (or auto-continue a markdown
+  // list) before we could claim the key for picking a suggestion.
   useEffect(() => {
-    const handler = (e) => { if (e.key === "Escape") onClose(); };
-    document.addEventListener("keydown", handler);
-    return () => document.removeEventListener("keydown", handler);
-  }, [onClose]);
+    const count = suggestions?.length ?? 0;
+    if (count === 0) return;
+
+    const handler = (e) => {
+      if (e.key === "Escape") {
+        e.preventDefault();
+        e.stopPropagation();
+        onCloseRef.current?.();
+        return;
+      }
+
+      // Mid-composition keys belong to the IME, not to us.
+      if (e.isComposing || e.keyCode === 229) return;
+
+      if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+        e.preventDefault();
+        e.stopPropagation();
+        const i = activeIndexRef.current;
+        setActive(e.key === "ArrowDown" ? (i + 1) % count : (i - 1 + count) % count);
+        return;
+      }
+
+      // Enter and Tab both commit the highlighted suggestion, the way most
+      // editors behave. Modified Enter (Ctrl/Cmd+Enter submits a comment) is
+      // left alone so it still reaches the composer.
+      if ((e.key === "Enter" && !e.ctrlKey && !e.metaKey && !e.shiftKey && !e.altKey) || e.key === "Tab") {
+        const user = suggestions[activeIndexRef.current];
+        if (!user) return;
+        e.preventDefault();
+        e.stopPropagation();
+        onSelectRef.current?.(user);
+      }
+    };
+
+    document.addEventListener("keydown", handler, true);
+    return () => document.removeEventListener("keydown", handler, true);
+  }, [suggestions]);
+
+  // Keep the highlighted row visible while arrowing through a long list.
+  useEffect(() => {
+    listRef.current?.children?.[activeIndex]?.scrollIntoView({ block: "nearest" });
+  }, [activeIndex]);
 
   if (!suggestions || suggestions.length === 0 || !coords) return null;
 
@@ -59,10 +122,13 @@ export default function MentionSuggestionsDropdown({ suggestions, onSelect, onCl
 
   const content = (
     <div
+      ref={listRef}
       style={style}
       className="max-h-80 overflow-y-auto bg-white dark:bg-neutral-800 border border-gray-200 dark:border-neutral-600 rounded-xl shadow-xl"
     >
-      {suggestions.map((user) => (
+      {/* onMouseEnter moves the highlight too, so the mouse and the keyboard
+          never disagree about which row Enter would pick. */}
+      {suggestions.map((user, index) => (
         <button
           key={user.id}
           type="button"
@@ -70,7 +136,10 @@ export default function MentionSuggestionsDropdown({ suggestions, onSelect, onCl
             e.preventDefault();
             onSelect(user);
           }}
-          className="w-full flex items-center gap-2.5 px-3 py-2 text-left hover:bg-gray-50 dark:hover:bg-neutral-700 transition-colors"
+          onMouseEnter={() => setActive(index)}
+          className={`w-full flex items-center gap-2.5 px-3 py-2 text-left transition-colors ${
+            index === activeIndex ? "bg-gray-100 dark:bg-neutral-700" : ""
+          }`}
         >
           <img
             src={user.avatar_url || `${process.env.NEXT_PUBLIC_API_URL}/v1.0/users/${user.username}/avatar`}

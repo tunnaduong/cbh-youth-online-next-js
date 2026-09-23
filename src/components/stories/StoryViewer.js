@@ -13,6 +13,9 @@ import { Modal } from "antd";
 import Link from "next/link";
 import { openDeepLink } from "@/lib/deepLink";
 import ReportModal from "@/components/ReportModal";
+import StoryOverlayLayer from "@/components/stories/StoryOverlayLayer";
+import StoryMusicPlayer from "@/components/stories/StoryMusicPlayer";
+import { getStoryFilterCss, parseStoryMusic, parseStoryOverlays } from "@/lib/storyOverlays";
 
 // Import Swiper styles
 import "swiper/css";
@@ -282,6 +285,9 @@ const StoryContent = ({ story, isActive, isPaused, onNext, isMuted }) => {
             : undefined
         }
         className="w-full h-full object-contain"
+        // Video keeps its original pixels on the server, so the editor's
+        // filter is re-applied here; photos already have it baked in.
+        style={{ filter: getStoryFilterCss(parseStoryOverlays(story.overlays)?.filter) }}
         autoPlay={isActive}
         muted={isMuted}
         playsInline
@@ -290,7 +296,10 @@ const StoryContent = ({ story, isActive, isPaused, onNext, isMuted }) => {
     );
   }
 
-  if (story.type === "text") {
+  // Text stories posted from the app are uploaded as a rendered picture (the
+  // styled text, stickers and everything else are already in it), so when
+  // there is media, show that instead of re-rendering the plain text.
+  if (story.type === "text" && !story.media_url) {
     return (
       <div
         className="w-full h-full flex items-center justify-center text-white text-2xl font-bold text-center p-4"
@@ -352,7 +361,9 @@ const StoryContent = ({ story, isActive, isPaused, onNext, isMuted }) => {
           : story.media_url) || "/placeholder.svg"
       }
       alt="Story content"
-      className="h-full object-contain mx-auto"
+      // Fill the frame and let object-contain do the letterboxing, so the
+      // picture occupies exactly the 9:16 box the overlay layer measures.
+      className="w-full h-full object-contain"
     />
   );
 };
@@ -756,6 +767,14 @@ const StorySlide = ({
         isPaused={isPaused}
         onNext={handleNextStory}
         isMuted={isMuted}
+      />
+
+      <StoryOverlayLayer overlays={parseStoryOverlays(currentStory?.overlays)} />
+
+      <StoryMusicPlayer
+        music={parseStoryMusic(currentStory?.music)}
+        playing={isActive && isViewerOpen && !isPaused}
+        muted={isMuted}
       />
 
       {/* Touch areas for navigation — exclude bottom footer */}

@@ -13,9 +13,11 @@ import MessageReactions from "./MessageReactions";
 import ReplyPreviewBubble from "./ReplyPreviewBubble";
 import ChatMediaLightbox from "./ChatMediaLightbox";
 import ForwardMessageModal from "./ForwardMessageModal";
+import SharedPostCard from "./SharedPostCard";
 import Modal from "@/components/ui/Modal";
 import { CornerUpLeft, FileText, Download, PlayCircle, Forward, Loader2, AlertCircle, RotateCw, X } from "lucide-react";
 import NextLink from "next/link";
+import { safeLinkHref } from "@/utils/externalLink";
 import {
   recallMessage,
   editMessage,
@@ -105,10 +107,13 @@ function linkifyText(text, linkClassName, isOwn = false, validMentions = null) {
   const parts = text.split(URL_RE);
   const rest = parts.flatMap((part, i) => {
     if (i % 2 === 1) {
+      // The visible text stays the raw URL, but the href points at the /link
+      // interstitial - a chat message is the easiest place to drop a
+      // phishing link, so nobody leaves the site without confirming first.
       return (
         <a
           key={i}
-          href={part}
+          href={safeLinkHref(part)}
           target="_blank"
           rel="noopener noreferrer"
           className={`underline break-all ${linkClassName || ""}`}
@@ -1378,14 +1383,36 @@ export default function ChatConversation({
                     onTouchMove={clearLongPressTimer}
                     onContextMenu={(e) => e.preventDefault()}
                   >
-                    {linkifyText(
-                      message.content,
-                      "",
-                      message.is_myself,
-                      Array.isArray(message.mentions)
+                    {(() => {
+                      // A post shared from the feed: show the preview card
+                      // instead of the bare link, keeping the sender's note
+                      // above it.
+                      const sharedTopic = message.metadata?.shared_topic;
+                      const mentionSet = Array.isArray(message.mentions)
                         ? new Set(message.mentions.map((m) => m.username.toLowerCase()))
-                        : null
-                    )}
+                        : null;
+
+                      if (!sharedTopic) {
+                        return linkifyText(
+                          message.content,
+                          "",
+                          message.is_myself,
+                          mentionSet
+                        );
+                      }
+
+                      const note = String(message.content || "")
+                        .replace(sharedTopic.url || "", "")
+                        .trim();
+
+                      return (
+                        <div className="flex flex-col gap-2">
+                          {note &&
+                            linkifyText(note, "", message.is_myself, mentionSet)}
+                          <SharedPostCard topic={sharedTopic} compact />
+                        </div>
+                      );
+                    })()}
                   </div>
                 )}
                 {!message.is_sending && !message.is_recalled && (

@@ -2,13 +2,13 @@
 
 import { useCallback, useMemo, useState } from "react";
 import { Clapperboard } from "lucide-react";
-import CreatePostModal from "@/components/modals/CreatePostModal";
 import SEOContent from "@/components/marketing/SEOContent";
 import StoriesSection from "@/components/stories/StoriesSection";
 import PublicChat from "@/components/chat/PublicChat";
 import { useAuthContext, useTopUsersContext } from "@/contexts/Support";
 import { useForumData } from "@/contexts/ForumDataContext";
 import useCreatePostGate from "@/hooks/useCreatePostGate";
+import CreatePostModal from "@/components/modals/CreatePostModal";
 import HomeHero from "./HomeHero";
 import TrendingTopics from "./TrendingTopics";
 import FeaturedPosts from "./FeaturedPosts";
@@ -31,7 +31,6 @@ export default function HomeClient({
   const { loggedIn, currentUser, authLoading } = useAuthContext();
   const { topUsers, loading: topUsersLoading } = useTopUsersContext();
   const { mainCategories: contextCategories, stats: contextStats } = useForumData();
-  const [createPostOpen, setCreatePostOpen] = useState(false);
 
   // Context data is only populated after a refresh (e.g. a new post was created).
   const mainCategories =
@@ -39,13 +38,13 @@ export default function HomeClient({
   const stats = contextStats || initialStats;
   const featuredPosts = useMemo(() => pickFeaturedPosts(featuredPool), [featuredPool]);
 
-  const openCreatePost = useCallback(() => setCreatePostOpen(true), []);
-  const handleCreatePost = useCreatePostGate(openCreatePost);
+  const [composerOpen, setComposerOpen] = useState(false);
+  const handleCreatePost = useCreatePostGate(
+    useCallback(() => setComposerOpen(true), [])
+  );
 
   return (
     <div className="mx-auto w-full max-w-[1240px] space-y-4 px-3 pb-8 pt-4 sm:space-y-5 sm:px-4 xl:pl-1 xl:pr-6 xl:pt-6">
-      <CreatePostModal open={createPostOpen} onClose={() => setCreatePostOpen(false)} />
-
       <HomeHero
         currentUser={currentUser}
         authLoading={authLoading}
@@ -92,6 +91,8 @@ export default function HomeClient({
       <CommunityBanner />
 
       <SEOContent className="rounded-2xl border border-[#EBEFEA] dark:border-neutral-600 sm:p-8" />
+
+      <CreatePostModal open={composerOpen} onClose={() => setComposerOpen(false)} />
     </div>
   );
 }
