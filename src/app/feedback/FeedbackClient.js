@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { Button, Input, message } from "antd";
-import { Bug, CheckCircle2, ImagePlus, Lightbulb, MessageSquare, X } from "lucide-react";
+import { Bug, CheckCircle2, ImagePlus, Lightbulb, Mail, MessageSquare, X } from "lucide-react";
 import { useAuthContext } from "@/contexts/Support";
 import { submitFeedback } from "@/app/Api";
 import { uploadInlineImage } from "@/utils/imageUpload";
@@ -231,10 +231,12 @@ export default function FeedbackClient() {
           <div className="text-sm font-semibold text-gray-800 dark:text-neutral-200 mb-2">
             Email liên hệ {loggedIn && <span className="font-normal text-gray-500">(tùy chọn)</span>}
           </div>
-          {/* No type="email": @tailwindcss/forms restyles [type="email"] inputs
-              (square corners, dark border) over antd's own look. inputMode
-              still brings up the email keyboard on phones. */}
+          {/* The prefix matters: a bare antd Input is a plain [type="text"]
+              that @tailwindcss/forms restyles (square corners, dark border);
+              with a prefix antd wraps it in an affix wrapper whose styles win,
+              same as the inputs on the register page. */}
           <Input
+            prefix={<Mail size={16} className="text-gray-400" />}
             inputMode="email"
             autoComplete="email"
             value={email}

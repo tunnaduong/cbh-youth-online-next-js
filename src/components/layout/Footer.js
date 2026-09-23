@@ -16,7 +16,7 @@ export default function Footer() {
             <li className="hidden md:block">
               <Link href="/help">Trợ giúp</Link>
             </li>
-            <li>
+            <li className="hidden md:block">
               <Link href="/feedback">Góp ý &amp; Báo lỗi</Link>
             </li>
             <li>
