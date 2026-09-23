@@ -40,6 +40,8 @@ import { openDeepLink } from "@/lib/deepLink";
 import {
   savePost as savePostApi,
   unsavePost as unsavePostApi,
+  hidePost as hidePostApi,
+  unhidePost as unhidePostApi,
   deletePost,
 } from "@/app/Api";
 import {
@@ -49,10 +51,12 @@ import {
   Trash,
   Flag,
   Smartphone,
+  EyeOff,
 } from "lucide-react";
 import { usePostRefresh } from "@/contexts/PostRefreshContext";
 import PostVotesModal from "./PostVotesModal";
 import ReportModal from "@/components/ReportModal";
+import SharePostModal from "@/components/modals/SharePostModal";
 
 export default function PostItem({ post, single = false, onVote, onRefresh = null }) {
   const { currentUser, refreshUser } = useAuthContext();
@@ -62,6 +66,8 @@ export default function PostItem({ post, single = false, onVote, onRefresh = nul
   const [showVotesModal, setShowVotesModal] = useState(false);
   const [showReportModal, setShowReportModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [showShareModal, setShowShareModal] = useState(false);
+  const [isHidden, setIsHidden] = useState(false);
   const maxLength = 300; // Số ký tự tối đa trước khi truncate
   const myVote =
     post.votes?.find((v) => v.username === currentUser?.username)?.vote_value ||
@@ -323,14 +329,7 @@ export default function PostItem({ post, single = false, onVote, onRefresh = nul
   );
 
   const handleShare = () => {
-    const url =
-      window.location.origin +
-      "/" +
-      post.author.username +
-      "/posts/" +
-      generatePostSlug(post.id, post.title) + "?utm_source=desktop_share";
-    navigator.clipboard.writeText(url);
-    message.success("Đã sao chép liên kết vào bộ nhớ tạm");
+    setShowShareModal(true);
   };
 
   const handleEdit = () => {
@@ -388,6 +387,37 @@ export default function PostItem({ post, single = false, onVote, onRefresh = nul
     setShowVotesModal(true);
   };
 
+  // "Ẩn bài viết": a per-user feed filter, not a delete - the post stays public
+  // and reachable by link, it just stops showing up in this user's feed. The
+  // card is swapped for an undo placeholder rather than yanked out of the list,
+  // so the undo stays reachable without re-fetching the feed.
+  const handleHide = async () => {
+    if (!currentUser) {
+      message.warning("Bạn cần đăng nhập để ẩn bài viết.");
+      return;
+    }
+
+    setIsHidden(true);
+
+    try {
+      await hidePostApi(post.id);
+    } catch (error) {
+      setIsHidden(false);
+      message.error("Không thể ẩn bài viết. Vui lòng thử lại.");
+    }
+  };
+
+  const handleUndoHide = async () => {
+    setIsHidden(false);
+
+    try {
+      await unhidePostApi(post.id);
+    } catch (error) {
+      setIsHidden(true);
+      message.error("Không thể hoàn tác. Vui lòng thử lại.");
+    }
+  };
+
   const handleReport = () => {
     if (!currentUser) {
       message.warning("Bạn cần đăng nhập để báo cáo bài viết.");
@@ -396,6 +426,12 @@ export default function PostItem({ post, single = false, onVote, onRefresh = nul
     setShowReportModal(true);
   };
 
+  const isOwnPost = !!(
+    currentUser &&
+    (currentUser.username === post.author.username ||
+      (post.anonymous && post.is_owner))
+  );
+
   const menuItems = [
     {
       key: "share",
@@ -403,6 +439,18 @@ export default function PostItem({ post, single = false, onVote, onRefresh = nul
       icon: <Share size={16} />,
       onClick: handleShare,
     },
+    // Only in the feed - on a post's own page there'd be nothing left to show
+    // after hiding it, and it's your own feed you're curating.
+    ...(!single && !isOwnPost
+      ? [
+          {
+            key: "hide",
+            label: "Ẩn bài viết",
+            icon: <EyeOff size={16} />,
+            onClick: handleHide,
+          },
+        ]
+      : []),
     ...(isMobile
       ? [
           {
@@ -421,12 +469,7 @@ export default function PostItem({ post, single = false, onVote, onRefresh = nul
     },
   ];
 
-  if (
-    currentUser &&
-    (currentUser.username === post.author.username ||
-      currentUser.role === "admin" ||
-      (post.anonymous && post.is_owner))
-  ) {
+  if (currentUser && (isOwnPost || currentUser.role === "admin")) {
     menuItems.push({
       key: "edit",
       label: "Chỉnh sửa",
@@ -442,6 +485,29 @@ export default function PostItem({ post, single = false, onVote, onRefresh = nul
     });
   }
 
+  if (isHidden) {
+    return (
+      <div
+        className="px-1.5 md:px-0 md:max-w-[775px] mx-auto w-full"
+        key={post.id}
+      >
+        <div className="post-container mb-4 shadow-lg rounded-xl !p-6 bg-white flex items-center justify-between gap-4">
+          <div>
+            <p className="font-semibold dark:text-neutral-300">
+              Đã ẩn bài viết
+            </p>
+            <p className="text-sm text-gray-500 dark:text-neutral-400">
+              Bạn sẽ không thấy bài viết này trên bảng tin nữa.
+            </p>
+          </div>
+          <Button type="link" className="!px-0" onClick={handleUndoHide}>
+            Hoàn tác
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div
       className="px-1.5 md:px-0 md:max-w-[775px] mx-auto w-full"
@@ -452,6 +518,11 @@ export default function PostItem({ post, single = false, onVote, onRefresh = nul
         postId={post.id}
         postTitle={post.title}
         onClose={() => setShowVotesModal(false)}
+      />
+      <SharePostModal
+        post={post}
+        open={showShareModal}
+        onClose={() => setShowShareModal(false)}
       />
       <ReportModal
         open={showReportModal}
@@ -539,6 +610,15 @@ export default function PostItem({ post, single = false, onVote, onRefresh = nul
                 width="20px"
                 color={isSaved ? "#16a34a" : "#9ca3af"}
               />
+            </Button>
+            <Button
+              size="small"
+              onClick={handleShare}
+              aria-label="Chia sẻ bài viết"
+              title="Chia sẻ bài viết"
+              className="w-8 px-2 md:mt-2 rounded-full border-0 text-gray-400"
+            >
+              <Share size={22} />
             </Button>
             <div className="flex-1"></div>
             {/* Mobile view */}
