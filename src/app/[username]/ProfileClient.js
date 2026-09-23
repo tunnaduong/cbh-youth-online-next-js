@@ -10,7 +10,8 @@ import FollowButton from "@/components/profile/FollowButton";
 import { BsFillGearFill } from "react-icons/bs";
 import { IoChatbubbleEllipsesOutline } from "react-icons/io5";
 import { IoCalendarOutline, IoLocationOutline } from "react-icons/io5";
-import { Edit2Icon, Flag, X } from "lucide-react";
+import { Archive, Edit2Icon, Flag, X } from "lucide-react";
+import ProfilePhotoGallery from "@/components/profile/ProfilePhotoGallery";
 import MemberTierBadge from "@/components/ui/MemberTierBadge";
 import { useAuthContext, useChatContext } from "@/contexts/Support";
 import ReportModal from "@/components/ReportModal";
@@ -991,9 +992,21 @@ export default function ProfileClient({ initialProfile, activeTab, username }) {
                 <div><span className="text-gray-500 dark:text-gray-400">Lượt like: </span><span className="font-bold text-gray-900 dark:text-white">{profile.stats.likes}</span></div>
               </div>
               {profile.bio && <p className="text-center text-gray-700 dark:text-gray-300 text-sm mt-2 break-words max-w-full">{profile.bio}</p>}
+              {isOwnProfile && (
+                <Link href="/my-archives" className="flex items-center gap-x-1 mt-2 text-sm text-gray-500 dark:text-gray-400 hover:text-primary-500">
+                  <Archive className="w-4 h-4" />
+                  <span>Kho lưu trữ</span>
+                </Link>
+              )}
               <div className="flex flex-col gap-y-1 mt-2 text-sm text-gray-500 dark:text-gray-400">
                 {profile.location && <div className="flex items-center gap-x-1"><IoLocationOutline className="text-base" /><span>{profile.location}</span></div>}
                 {profile.joined_at && <div className="flex items-center gap-x-1"><IoCalendarOutline className="text-base" /><span>{profile.joined_at}</span></div>}
+              </div>
+              <div className="w-full mt-3 lg:hidden">
+                <ProfilePhotoGallery
+                  username={username || profile.username}
+                  profileUsername={profile.username}
+                />
               </div>
               <div className="flex justify-center items-center mt-4 gap-2">
                 {currentUser && currentUser.username == profile.username ? (
@@ -1207,6 +1220,15 @@ export default function ProfileClient({ initialProfile, activeTab, username }) {
                   </p>
                 </div>
                 <p className="dark:text-neutral-300">{profile.bio}</p>
+                {isOwnProfile && (
+                  <Link
+                    href="/my-archives"
+                    className="flex items-center -ml-0.5 gap-x-1 text-gray-500 hover:text-primary-500"
+                  >
+                    <Archive className="w-[18px] h-[18px]" />
+                    <span className="text-sm">Kho lưu trữ</span>
+                  </Link>
+                )}
                 <div className="flex flex-col gap-y-2">
                   {profile.location && (
                     <div className="flex items-center -ml-0.5 gap-x-1 text-gray-500">
@@ -1223,6 +1245,10 @@ export default function ProfileClient({ initialProfile, activeTab, username }) {
                     </div>
                   )}
                 </div>
+                <ProfilePhotoGallery
+                  username={username || profile.username}
+                  profileUsername={profile.username}
+                />
               </div>
               <div className="flex-1 !my-6 !px-3 md:!px-0 flex flex-col items-center">
                 {renderTabContent()}

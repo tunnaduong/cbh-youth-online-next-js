@@ -535,6 +535,16 @@ export const getUserPosts = (username, page = 1, perPage = 10) => {
   return Api.getRequest(`/v1.0/users/${username}/posts?page=${page}&per_page=${perPage}`);
 };
 
+export const getUserPhotos = (username, page = 1, perPage = 12) => {
+  return Api.getRequest(
+    `/v1.0/users/${username}/photos?page=${page}&per_page=${perPage}`
+  );
+};
+
+export const getStoryArchive = () => {
+  return Api.getRequest("/v1.0/stories/archive");
+};
+
 export const updateProfile = (username, params) => {
   return Api.putRequest(`/v1.0/users/${username}/profile`, params);
 };

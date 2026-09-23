@@ -5,7 +5,6 @@ import { useEffect, useState } from "react";
 import { useRouter } from "@bprogress/next/app";
 import { message } from "antd";
 import {
-  Archive,
   BookOpen,
   Bookmark,
   ChartNoAxesColumn,
@@ -35,7 +34,6 @@ export const MAIN_NAV_ITEMS = [
   { key: "shop", href: "https://giftshop.chuyenbienhoa.com", label: "Gift Shop", Icon: Gift, badge: "Mới" },
   { key: "ranking", href: "/users/ranking", label: "Bảng xếp hạng", Icon: ChartNoAxesColumn },
   { key: "saved", href: "/saved", label: "Đã lưu", Icon: Bookmark },
-  { key: "my-archives", href: "/my-archives", label: "Kho lưu trữ", Icon: Archive },
 ];
 
 const FOOTER_LINKS = [
@@ -74,14 +72,13 @@ export default function SidebarNav({ items = MAIN_NAV_ITEMS, activeKey, onNaviga
 
   const isDark = mounted && theme === "dark";
 
-  // Both "Đã lưu" and "Kho lưu trữ" are personal pages: send guests to login
-  // and back to the page they wanted instead of an empty list.
-  const requireLogin = (e, href, warning) => {
+  const handleSavedClick = (e) => {
     if (!loggedIn) {
       e.preventDefault();
-      message.error(warning);
+      message.error("Vui lòng đăng nhập để xem các bài viết đã lưu của bạn.");
       router.push(
-        "/login?continue=" + encodeURIComponent(window.location.origin + href)
+        "/login?continue=" +
+          encodeURIComponent(window.location.origin + "/saved")
       );
     }
     onNavigate?.();
@@ -99,18 +96,7 @@ export default function SidebarNav({ items = MAIN_NAV_ITEMS, activeKey, onNaviga
       : { href: it.href };
     const handleClick = (e) => {
       if (it.onClick) it.onClick(e);
-      else if (it.key === "saved")
-        return requireLogin(
-          e,
-          "/saved",
-          "Vui lòng đăng nhập để xem các bài viết đã lưu của bạn."
-        );
-      else if (it.key === "my-archives")
-        return requireLogin(
-          e,
-          "/my-archives",
-          "Vui lòng đăng nhập để xem kho lưu trữ của bạn."
-        );
+      else if (it.key === "saved") return handleSavedClick(e);
       onNavigate?.();
     };
 
