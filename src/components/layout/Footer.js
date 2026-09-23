@@ -17,6 +17,9 @@ export default function Footer() {
               <Link href="/help">Trợ giúp</Link>
             </li>
             <li>
+              <Link href="/feedback">Góp ý &amp; Báo lỗi</Link>
+            </li>
+            <li>
               <Link href="/policy/terms">Điều khoản &amp; Quy định</Link>
             </li>
             <li>

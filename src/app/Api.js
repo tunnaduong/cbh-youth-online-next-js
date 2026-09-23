@@ -710,6 +710,14 @@ export const getConversationMentionSuggestions = (conversationId, query) => {
   return Api.getRequest(`/v1.0/chat/conversations/${conversationId}/mention-suggestions?q=${encodeURIComponent(query)}`);
 };
 
+// In-app feedback (bug reports & suggestions)
+export const submitFeedback = (params) => Api.postRequest("/v1.0/feedback", params);
+export const getMyFeedback = (params) => Api.getRequest("/v1.0/feedback/mine", params);
+export const adminGetFeedback = (params) => Api.getRequest("/v1.0/admin/feedback", params);
+export const adminGetFeedbackStats = () => Api.getRequest("/v1.0/admin/feedback/stats");
+export const adminUpdateFeedback = (id, params) => Api.patchRequest(`/v1.0/admin/feedback/${id}`, params);
+export const adminDeleteFeedback = (id) => Api.deleteRequest(`/v1.0/admin/feedback/${id}`);
+
 // Reports
 export const reportContent = (params) => {
   return Api.postRequest("/v1.0/reports", params);

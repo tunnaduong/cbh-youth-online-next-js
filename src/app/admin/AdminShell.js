@@ -28,6 +28,7 @@ import {
   MenuOutlined,
   HomeOutlined,
   SafetyCertificateOutlined,
+  BugOutlined,
 } from "@ant-design/icons";
 
 const { Sider, Content, Header } = Layout;
@@ -87,6 +88,7 @@ export const NAV_GROUPS = [
       { key: "/admin/comments", icon: <CommentOutlined />, label: "Bình luận" },
       { key: "/admin/reports", icon: <FlagOutlined />, label: "Báo cáo" },
       { key: "/admin/moderation", icon: <RobotOutlined />, label: "Kiểm duyệt AI" },
+      { key: "/admin/feedback", icon: <BugOutlined />, label: "Góp ý & Báo lỗi" },
       { key: "/admin/study-materials", icon: <BookOutlined />, label: "Tài liệu học tập" },
     ],
   },

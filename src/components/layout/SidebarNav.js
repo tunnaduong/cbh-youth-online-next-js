@@ -38,7 +38,7 @@ export const MAIN_NAV_ITEMS = [
 
 const FOOTER_LINKS = [
   { href: "/help", label: "Trợ giúp" },
-  { href: "https://forms.gle/XJ3v1vN82BxLUVWo9", label: "Góp ý", isExternal: true },
+  { href: "/feedback", label: "Góp ý & Báo lỗi" },
   { href: "/policy/forum-rules", label: "Nội quy" },
 ];
 
