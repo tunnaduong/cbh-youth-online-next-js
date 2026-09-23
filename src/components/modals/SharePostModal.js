@@ -9,23 +9,8 @@ import { useAuthContext, useChatContext } from "@/contexts/Support";
 import { sharePostToChat } from "@/app/Api";
 import { generatePostSlug } from "@/utils/slugify";
 import UserMultiSelect from "@/components/chat/UserMultiSelect";
-import SharedPostCard from "@/components/chat/SharedPostCard";
 
 const MAX_TARGETS = 20;
-
-const htmlToExcerpt = (html) => {
-  if (!html) return "";
-  const text = String(html)
-    .replace(/<[^>]*>/g, " ")
-    .replace(/&nbsp;/g, " ")
-    .replace(/&amp;/g, "&")
-    .replace(/&lt;/g, "<")
-    .replace(/&gt;/g, ">")
-    .replace(/&quot;/g, '"')
-    .replace(/\s+/g, " ")
-    .trim();
-  return text.length > 200 ? text.slice(0, 200) + "..." : text;
-};
 
 const getThreadDisplayName = (conversation) => {
   if (conversation.display_name) return conversation.display_name;
@@ -92,26 +77,6 @@ export default function SharePostModal({ post, open, onClose }) {
   }, [post]);
 
   const shareTitle = post?.title || "Bài viết trên CBH Youth Online";
-
-  // Same shape the server stores in metadata.shared_topic, so the sender sees
-  // exactly the card the recipient will get.
-  const previewTopic = useMemo(() => {
-    if (!post) return null;
-    return {
-      id: post.id,
-      title: post.title,
-      url: shareUrl,
-      excerpt: htmlToExcerpt(post.content),
-      thumbnail: post.image_urls?.[0] || null,
-      author_name: post.anonymous
-        ? "Người dùng ẩn danh"
-        : post.author?.profile_name || post.author?.username || "",
-      author_avatar:
-        post.anonymous || !post.author?.username
-          ? null
-          : `${process.env.NEXT_PUBLIC_API_URL}/v1.0/users/${post.author.username}/avatar`,
-    };
-  }, [post, shareUrl]);
 
   const filteredConversations = useMemo(
     () =>
@@ -265,12 +230,6 @@ export default function SharePostModal({ post, open, onClose }) {
             <X className="w-4 h-4" />
           </button>
         </div>
-
-        {previewTopic && (
-          <div className="px-4 py-3 border-b dark:border-neutral-600">
-            <SharedPostCard topic={previewTopic} compact />
-          </div>
-        )}
 
         {currentUser ? (
           <>
