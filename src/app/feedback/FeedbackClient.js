@@ -231,8 +231,12 @@ export default function FeedbackClient() {
           <div className="text-sm font-semibold text-gray-800 dark:text-neutral-200 mb-2">
             Email liên hệ {loggedIn && <span className="font-normal text-gray-500">(tùy chọn)</span>}
           </div>
+          {/* No type="email": @tailwindcss/forms restyles [type="email"] inputs
+              (square corners, dark border) over antd's own look. inputMode
+              still brings up the email keyboard on phones. */}
           <Input
-            type="email"
+            inputMode="email"
+            autoComplete="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             placeholder={loggedIn ? "Để trống nếu dùng email tài khoản" : "email@example.com"}
