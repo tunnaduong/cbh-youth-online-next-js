@@ -941,7 +941,7 @@ export default function ProfileClient({ initialProfile, activeTab, username }) {
                       title="Nhắn tin"
                       loading={messaging}
                       onClick={handleMessage}
-                      className="!flex !items-center !justify-center !border-[#319527]"
+                      className="!flex !items-center !justify-center !border-[#319527] !text-[#319527]"
                     />
                     <FollowButton
                       isFollowing={isFollowing}
@@ -1039,7 +1039,7 @@ export default function ProfileClient({ initialProfile, activeTab, username }) {
                   </Link>
                 ) : (
                   <>
-                    <Button shape="circle" icon={<IoChatbubbleEllipsesOutline className="w-5 h-5 mt-1 text-[#319527]" />} aria-label="Nhắn tin" title="Nhắn tin" loading={messaging} onClick={handleMessage} className="!flex !items-center !justify-center !border-[#319527]" />
+                    <Button shape="circle" icon={<IoChatbubbleEllipsesOutline className="w-5 h-5 mt-1 text-[#319527]" />} aria-label="Nhắn tin" title="Nhắn tin" loading={messaging} onClick={handleMessage} className="!flex !items-center !justify-center !border-[#319527] !text-[#319527]" />
                     <FollowButton isFollowing={isFollowing} loading={loading} handleFollow={handleFollow} />
                     <div className="relative">
                       <Button shape="circle" icon={<MoreHorizontal className="w-4 h-4" />} aria-label="Thêm" title="Thêm tùy chọn" onClick={() => setShowMoreMenu((v) => !v)} className="!flex !items-center !justify-center" />
@@ -1208,7 +1208,7 @@ export default function ProfileClient({ initialProfile, activeTab, username }) {
                       title="Nhắn tin"
                       loading={messaging}
                       onClick={handleMessage}
-                      className="!flex !items-center !justify-center !border-[#319527]"
+                      className="!flex !items-center !justify-center !border-[#319527] !text-[#319527]"
                     />
                     <FollowButton
                       isFollowing={isFollowing}
