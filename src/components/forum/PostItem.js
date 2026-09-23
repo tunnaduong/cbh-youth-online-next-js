@@ -431,6 +431,7 @@ export default function PostItem({ post, single = false, onVote, onRefresh = nul
     (currentUser.username === post.author.username ||
       (post.anonymous && post.is_owner))
   );
+  const isAdmin = currentUser?.role === "admin";
 
   const menuItems = [
     {
@@ -439,9 +440,10 @@ export default function PostItem({ post, single = false, onVote, onRefresh = nul
       icon: <Share size={16} />,
       onClick: handleShare,
     },
-    // Only in the feed - on a post's own page there'd be nothing left to show
-    // after hiding it, and it's your own feed you're curating.
-    ...(!single && !isOwnPost
+    // Own posts only (admins get it everywhere, like the rest of their menu):
+    // hiding is about keeping a post out of your own feed, it doesn't affect
+    // anyone else's view of it.
+    ...(isOwnPost || isAdmin
       ? [
           {
             key: "hide",
@@ -469,7 +471,7 @@ export default function PostItem({ post, single = false, onVote, onRefresh = nul
     },
   ];
 
-  if (currentUser && (isOwnPost || currentUser.role === "admin")) {
+  if (currentUser && (isOwnPost || isAdmin)) {
     menuItems.push({
       key: "edit",
       label: "Chỉnh sửa",
