@@ -10,7 +10,7 @@ import FollowButton from "@/components/profile/FollowButton";
 import { BsFillGearFill } from "react-icons/bs";
 import { IoChatbubbleEllipsesOutline } from "react-icons/io5";
 import { IoCalendarOutline, IoLocationOutline } from "react-icons/io5";
-import { Edit2Icon, Flag, X } from "lucide-react";
+import { Edit2Icon, Flag, X, MoreHorizontal, Ban } from "lucide-react";
 import MemberTierBadge from "@/components/ui/MemberTierBadge";
 import { useAuthContext, useChatContext } from "@/contexts/Support";
 import ReportModal from "@/components/ReportModal";
@@ -22,6 +22,7 @@ import {
   getUserPosts,
   updateAvatar,
   updateCover,
+  blockUser,
 } from "@/app/Api";
 
 export default function ProfileClient({ initialProfile, activeTab, username }) {
@@ -29,6 +30,7 @@ export default function ProfileClient({ initialProfile, activeTab, username }) {
   const { openChat, createConversation } = useChatContext();
   const router = useRouter();
   const [showReportModal, setShowReportModal] = useState(false);
+  const [showMoreMenu, setShowMoreMenu] = useState(false);
 
   // Transform API response to component format
   const transformProfileData = (apiData, currentUsername = null) => {
@@ -554,6 +556,21 @@ export default function ProfileClient({ initialProfile, activeTab, username }) {
     }
   };
 
+  const handleBlock = async () => {
+    if (!currentUser) {
+      message.error("Vui lòng đăng nhập để thực hiện hành động này");
+      return;
+    }
+    try {
+      await blockUser(profile.id);
+      message.success("Đã chặn người dùng này");
+      setShowMoreMenu(false);
+    } catch (error) {
+      console.error("Block error:", error);
+      message.error("Có lỗi xảy ra. Vui lòng thử lại.");
+    }
+  };
+
   const renderTabContent = () => {
     if (!profile) return null;
 
@@ -917,7 +934,7 @@ export default function ProfileClient({ initialProfile, activeTab, username }) {
                   <>
                     <Button
                       shape="circle"
-                      icon={<IoChatbubbleEllipsesOutline className="w-5 h-5 mt-1" />}
+                      icon={<IoChatbubbleEllipsesOutline className="w-5 h-5 mt-1 text-[#319527]" />}
                       aria-label="Nhắn tin"
                       title="Nhắn tin"
                       loading={messaging}
@@ -929,14 +946,24 @@ export default function ProfileClient({ initialProfile, activeTab, username }) {
                       loading={loading}
                       handleFollow={handleFollow}
                     />
-                    <Button
-                      shape="circle"
-                      icon={<Flag className="w-4 h-4" />}
-                      aria-label="Báo cáo"
-                      title="Báo cáo người dùng"
-                      onClick={() => setShowReportModal(true)}
-                      className="!flex !items-center !justify-center"
-                    />
+                    <div className="relative">
+                      <Button shape="circle" icon={<MoreHorizontal className="w-4 h-4" />} aria-label="Thêm" title="Thêm tùy chọn" onClick={() => setShowMoreMenu((v) => !v)} className="!flex !items-center !justify-center" />
+                      {showMoreMenu && (
+                        <>
+                          <div className="fixed inset-0 z-10" onClick={() => setShowMoreMenu(false)} />
+                          <div className="absolute right-0 mt-1 w-44 bg-white dark:bg-neutral-800 border border-gray-200 dark:border-neutral-700 rounded-xl shadow-lg z-20 overflow-hidden">
+                            <button onClick={handleBlock} className="w-full flex items-center gap-x-2 px-4 py-2.5 text-sm text-red-600 hover:bg-gray-50 dark:hover:bg-neutral-700 transition-colors">
+                              <Ban className="w-4 h-4" />
+                              Chặn người dùng
+                            </button>
+                            <button onClick={() => { setShowReportModal(true); setShowMoreMenu(false); }} className="w-full flex items-center gap-x-2 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-neutral-700 transition-colors">
+                              <Flag className="w-4 h-4" />
+                              Báo cáo
+                            </button>
+                          </div>
+                        </>
+                      )}
+                    </div>
                   </>
                 )}
               </div>
@@ -1004,9 +1031,26 @@ export default function ProfileClient({ initialProfile, activeTab, username }) {
                   </Link>
                 ) : (
                   <>
-                    <Button shape="circle" icon={<IoChatbubbleEllipsesOutline className="w-5 h-5 mt-1" />} aria-label="Nhắn tin" title="Nhắn tin" loading={messaging} onClick={handleMessage} className="!flex !items-center !justify-center !border-[#319527]" />
+                    <Button shape="circle" icon={<IoChatbubbleEllipsesOutline className="w-5 h-5 mt-1 text-[#319527]" />} aria-label="Nhắn tin" title="Nhắn tin" loading={messaging} onClick={handleMessage} className="!flex !items-center !justify-center !border-[#319527]" />
                     <FollowButton isFollowing={isFollowing} loading={loading} handleFollow={handleFollow} />
-                    <Button shape="circle" icon={<Flag className="w-4 h-4" />} aria-label="Báo cáo" title="Báo cáo người dùng" onClick={() => setShowReportModal(true)} className="!flex !items-center !justify-center" />
+                    <div className="relative">
+                      <Button shape="circle" icon={<MoreHorizontal className="w-4 h-4" />} aria-label="Thêm" title="Thêm tùy chọn" onClick={() => setShowMoreMenu((v) => !v)} className="!flex !items-center !justify-center" />
+                      {showMoreMenu && (
+                        <>
+                          <div className="fixed inset-0 z-10" onClick={() => setShowMoreMenu(false)} />
+                          <div className="absolute right-0 mt-1 w-44 bg-white dark:bg-neutral-800 border border-gray-200 dark:border-neutral-700 rounded-xl shadow-lg z-20 overflow-hidden">
+                            <button onClick={handleBlock} className="w-full flex items-center gap-x-2 px-4 py-2.5 text-sm text-red-600 hover:bg-gray-50 dark:hover:bg-neutral-700 transition-colors">
+                              <Ban className="w-4 h-4" />
+                              Chặn người dùng
+                            </button>
+                            <button onClick={() => { setShowReportModal(true); setShowMoreMenu(false); }} className="w-full flex items-center gap-x-2 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-neutral-700 transition-colors">
+                              <Flag className="w-4 h-4" />
+                              Báo cáo
+                            </button>
+                          </div>
+                        </>
+                      )}
+                    </div>
                   </>
                 )}
               </div>
@@ -1145,7 +1189,7 @@ export default function ProfileClient({ initialProfile, activeTab, username }) {
                   <>
                     <Button
                       shape="circle"
-                      icon={<IoChatbubbleEllipsesOutline className="w-5 h-5 mt-1" />}
+                      icon={<IoChatbubbleEllipsesOutline className="w-5 h-5 mt-1 text-[#319527]" />}
                       aria-label="Nhắn tin"
                       title="Nhắn tin"
                       loading={messaging}
@@ -1157,14 +1201,24 @@ export default function ProfileClient({ initialProfile, activeTab, username }) {
                       loading={loading}
                       handleFollow={handleFollow}
                     />
-                    <Button
-                      shape="circle"
-                      icon={<Flag className="w-4 h-4" />}
-                      aria-label="Báo cáo"
-                      title="Báo cáo người dùng"
-                      onClick={() => setShowReportModal(true)}
-                      className="!flex !items-center !justify-center"
-                    />
+                    <div className="relative">
+                      <Button shape="circle" icon={<MoreHorizontal className="w-4 h-4" />} aria-label="Thêm" title="Thêm tùy chọn" onClick={() => setShowMoreMenu((v) => !v)} className="!flex !items-center !justify-center" />
+                      {showMoreMenu && (
+                        <>
+                          <div className="fixed inset-0 z-10" onClick={() => setShowMoreMenu(false)} />
+                          <div className="absolute right-0 mt-1 w-44 bg-white dark:bg-neutral-800 border border-gray-200 dark:border-neutral-700 rounded-xl shadow-lg z-20 overflow-hidden">
+                            <button onClick={handleBlock} className="w-full flex items-center gap-x-2 px-4 py-2.5 text-sm text-red-600 hover:bg-gray-50 dark:hover:bg-neutral-700 transition-colors">
+                              <Ban className="w-4 h-4" />
+                              Chặn người dùng
+                            </button>
+                            <button onClick={() => { setShowReportModal(true); setShowMoreMenu(false); }} className="w-full flex items-center gap-x-2 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-neutral-700 transition-colors">
+                              <Flag className="w-4 h-4" />
+                              Báo cáo
+                            </button>
+                          </div>
+                        </>
+                      )}
+                    </div>
                   </>
                 )}
               </div>
