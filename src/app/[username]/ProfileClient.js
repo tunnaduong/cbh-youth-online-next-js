@@ -72,8 +72,8 @@ export default function ProfileClient({ initialProfile, activeTab, username }) {
         user.profile?.profile_picture ||
         `${process.env.NEXT_PUBLIC_API_URL}/v1.0/users/${user.username}/avatar`,
       cover_photo_url: user.profile?.cover_photo_url || null,
-      member_tier: user.profile?.member_tier || null,
-      points_milestones: user.profile?.points_milestones || [],
+      member_tier: user.member_tier || user.profile?.member_tier || null,
+      points_milestones: user.points_milestones || user.profile?.points_milestones || [],
       stats: {
         posts: user.stats?.posts_count || user.stats?.posts || 0,
         followers: user.stats?.followers || 0,
@@ -1321,12 +1321,17 @@ export default function ProfileClient({ initialProfile, activeTab, username }) {
         onClick={() => setShowMilestonesModal(false)}
       >
         <div
-          className="bg-white dark:bg-neutral-900 rounded-2xl w-full max-w-sm shadow-xl overflow-hidden"
+          className="bg-white dark:bg-neutral-900 rounded-2xl w-full max-w-md shadow-xl overflow-hidden"
           onClick={(e) => e.stopPropagation()}
         >
           {/* Header */}
           <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-neutral-700">
-            <h2 className="font-bold text-base text-gray-900 dark:text-white">Điểm thành tích</h2>
+            <div>
+              <h2 className="font-bold text-base text-[#319527]">Điểm thành tích</h2>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                Tổng điểm: <span className="font-bold text-gray-800 dark:text-white">{profile.stats.points}</span>
+              </p>
+            </div>
             <button
               onClick={() => setShowMilestonesModal(false)}
               className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
@@ -1336,36 +1341,46 @@ export default function ProfileClient({ initialProfile, activeTab, username }) {
           </div>
 
           {/* Milestone list */}
-          <div className="divide-y divide-gray-100 dark:divide-neutral-700">
-            {(profile.points_milestones || []).map((m) => (
-              <div key={m.id} className={`flex items-center gap-4 px-5 py-4 ${!m.achieved_at ? "opacity-40" : ""}`}>
-                {/* Points badge */}
-                <div className="w-10 text-center shrink-0">
-                  <span className={`text-2xl font-bold ${m.achieved_at ? "text-[#319527]" : "text-gray-400"}`}>
-                    {m.min_points}
-                  </span>
+          <div className="divide-y divide-gray-100 dark:divide-neutral-800 max-h-[70vh] overflow-y-auto">
+            {(profile.points_milestones || []).length === 0 ? (
+              <p className="text-center text-gray-400 py-8 text-sm">Đang tải...</p>
+            ) : (profile.points_milestones || []).map((m) => {
+              const DESCRIPTIONS = {
+                trainee: "Mở khóa tùy chỉnh profile, tên nổi bật, khung avatar riêng và voucher 50% Gift Shop.",
+                active: "Được tặng điểm cho tác giả, tăng giới hạn đăng bài, ưu tiên hiển thị bình luận.",
+                distinguished: "Quy đổi điểm ra tiền mặt và đăng bài không cần duyệt.",
+                veteran: "Thành viên kỳ cựu của diễn đàn — danh hiệu cao quý nhất.",
+              };
+              return (
+                <div
+                  key={m.id}
+                  className={`flex items-start gap-4 px-5 py-4 transition-opacity ${!m.achieved_at ? "opacity-40" : ""}`}
+                >
+                  {/* Points number */}
+                  <div className="w-12 shrink-0 text-right pt-0.5">
+                    <span className={`text-2xl font-bold leading-none ${m.achieved_at ? "text-[#319527]" : "text-gray-400 dark:text-gray-500"}`}>
+                      {m.min_points}
+                    </span>
+                  </div>
+                  {/* Info */}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-1.5">
+                      <p className="font-bold text-sm text-gray-900 dark:text-white">{m.name}</p>
+                      <MemberTierBadge tier={m.achieved_at ? { id: m.id } : null} />
+                    </div>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 leading-relaxed">
+                      {DESCRIPTIONS[m.id]}
+                    </p>
+                  </div>
+                  {/* Date */}
+                  <div className="shrink-0 text-right pt-0.5">
+                    <span className="text-xs text-gray-400 dark:text-gray-500 whitespace-nowrap">
+                      {m.achieved_at || "—"}
+                    </span>
+                  </div>
                 </div>
-                {/* Info */}
-                <div className="flex-1 min-w-0">
-                  <p className="font-semibold text-sm text-gray-900 dark:text-white">{m.name}</p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">
-                    {m.achieved_at ? `Đạt được ngày ${m.achieved_at}` : "Chưa đạt được"}
-                  </p>
-                </div>
-                {/* Tier badge icon */}
-                <span className="text-xl shrink-0">
-                  <MemberTierBadge tier={m.achieved_at ? { id: m.id } : null} className="text-xl" />
-                </span>
-              </div>
-            ))}
-          </div>
-
-          {/* Footer */}
-          <div className="px-5 py-3 bg-gray-50 dark:bg-neutral-800 text-center">
-            <p className="text-xs text-gray-500 dark:text-gray-400">
-              Tổng điểm hiện tại:{" "}
-              <span className="font-bold text-[#319527]">{profile.stats.points} điểm</span>
-            </p>
+              );
+            })}
           </div>
         </div>
       </div>
