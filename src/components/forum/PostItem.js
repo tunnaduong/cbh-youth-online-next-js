@@ -56,11 +56,13 @@ import {
   EyeOff,
   Archive,
   ArchiveRestore,
+  Gift,
 } from "lucide-react";
 import { usePostRefresh } from "@/contexts/PostRefreshContext";
 import PostVotesModal from "./PostVotesModal";
 import ReportModal from "@/components/ReportModal";
 import SharePostModal from "@/components/modals/SharePostModal";
+import GiftPointsModal from "@/components/modals/GiftPointsModal";
 
 export default function PostItem({
   post,
@@ -77,6 +79,7 @@ export default function PostItem({
   const [showReportModal, setShowReportModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
+  const [showGiftModal, setShowGiftModal] = useState(false);
   const [isHidden, setIsHidden] = useState(false);
   const [isArchived, setIsArchived] = useState(!!post.archived);
   const maxLength = 300; // Số ký tự tối đa trước khi truncate
@@ -478,6 +481,14 @@ export default function PostItem({
     setShowReportModal(true);
   };
 
+  const handleGiftPoints = () => {
+    if (!currentUser) {
+      message.warning("Bạn cần đăng nhập để tặng điểm.");
+      return;
+    }
+    setShowGiftModal(true);
+  };
+
   const isOwnPost = !!(
     currentUser &&
     (currentUser.username === post.author.username ||
@@ -492,6 +503,18 @@ export default function PostItem({
       icon: <Share size={16} />,
       onClick: handleShare,
     },
+    // Gifting points to the author: other people's posts only (the server
+    // resolves the recipient from the post, so anonymous authors stay hidden).
+    ...(currentUser && !isOwnPost
+      ? [
+          {
+            key: "gift-points",
+            label: "Tặng điểm cho tác giả",
+            icon: <Gift size={16} />,
+            onClick: handleGiftPoints,
+          },
+        ]
+      : []),
     // Other people's posts, in the feed only: this just curates your own feed,
     // so there's nothing to hide on your own post or on the post's own page.
     ...(!single && !isOwnPost
@@ -595,6 +618,11 @@ export default function PostItem({
         post={post}
         open={showShareModal}
         onClose={() => setShowShareModal(false)}
+      />
+      <GiftPointsModal
+        post={post}
+        open={showGiftModal}
+        onClose={() => setShowGiftModal(false)}
       />
       <ReportModal
         open={showReportModal}

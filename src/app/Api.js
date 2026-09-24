@@ -666,6 +666,12 @@ export const getMaterialRatings = (materialId, params = "") => {
   );
 };
 
+// Gift points to another member. Pass `topic_id` (the post's author gets
+// the points - works for anonymous posts too) or `username`.
+export const giftPoints = (params) => {
+  return Api.postRequest("/v1.0/points/gift", params);
+};
+
 // Wallet
 export const getWalletBalance = () => {
   return Api.getRequest("/v1.0/wallet/balance");

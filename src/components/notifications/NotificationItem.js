@@ -72,6 +72,8 @@ const getNotificationMessage = (notification) => {
       return `Bạn đã nhận được huy hiệu: ${data?.badge_name || "Huy hiệu"}`;
     case "points_earned":
       return `Bạn đã nhận được ${data?.points || 0} điểm`;
+    case "points_gifted":
+      return `${actorName} đã tặng bạn ${Number(data?.amount || 0).toLocaleString()} điểm${data?.message ? `: "${data.message}"` : ""}`;
     case "study_material_purchased":
       return `${actorName} đã mua tài liệu của bạn (+${data?.price} điểm)`;
     case "study_material_rated":
@@ -126,6 +128,11 @@ const convertToRelativeUrl = (url) => {
 
 const buildNotificationTargetUrl = (notification, viewerUsername) => {
   const data = notification?.data || {};
+
+  // A gift lands in the wallet, not on the post it was made from.
+  if (notification?.type === "points_gifted") {
+    return "/wallet";
+  }
   const legacyMetadata = parseLegacyUrlMetadata(data.url);
 
   const topicId =
