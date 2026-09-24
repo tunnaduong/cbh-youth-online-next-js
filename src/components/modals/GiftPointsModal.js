@@ -105,9 +105,18 @@ export default function GiftPointsModal({ open, onClose, post, onSuccess }) {
           Tặng điểm cho {authorName}
         </span>
       }
-      footer={null}
       centered
       destroyOnClose
+      onOk={handleSubmit}
+      okText={`Tặng ${validAmount ? amount.toLocaleString() : ""} điểm`}
+      cancelText="Hủy"
+      okButtonProps={{
+        loading: submitting,
+        disabled: !validAmount || insufficient,
+        className: "!bg-[#319527] hover:!bg-[#2a7f21]",
+      }}
+      cancelButtonProps={{ disabled: submitting }}
+      footer={canGift ? undefined : null}
     >
       {!canGift ? (
         <div className="py-2">
@@ -162,32 +171,21 @@ export default function GiftPointsModal({ open, onClose, post, onSuccess }) {
             />
           </div>
 
-          <TextArea
-            value={note}
-            onChange={(e) => setNote(e.target.value)}
-            placeholder="Lời nhắn (không bắt buộc)"
-            maxLength={200}
-            showCount
-            autoSize={{ minRows: 2, maxRows: 4 }}
-            disabled={submitting}
-          />
+          {/* antd draws the character counter below the textarea without
+              reserving space for it, so leave room before the footer. */}
+          <div className="pb-4">
+            <TextArea
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+              placeholder="Lời nhắn (không bắt buộc)"
+              maxLength={200}
+              showCount
+              autoSize={{ minRows: 2, maxRows: 4 }}
+              disabled={submitting}
+            />
+          </div>
 
           {error && <p className="text-sm text-red-500 !mb-0">{error}</p>}
-
-          <div className="flex justify-end gap-2">
-            <Button onClick={handleClose} disabled={submitting}>
-              Hủy
-            </Button>
-            <Button
-              type="primary"
-              onClick={handleSubmit}
-              loading={submitting}
-              disabled={!validAmount || insufficient}
-              className="!bg-[#319527] hover:!bg-[#2a7f21]"
-            >
-              Tặng {validAmount ? amount.toLocaleString() : ""} điểm
-            </Button>
-          </div>
         </div>
       )}
     </Modal>
