@@ -1117,7 +1117,7 @@ export default function ProfileClient({ initialProfile, activeTab, username }) {
               <div className="flex flex-row">
                 <Link
                   href={`/${profile.username}`}
-                  className="select-none cursor-pointer h-full flex flex-col items-center justify-center px-3 box-border min-w-max"
+                  className="select-none cursor-pointer h-full flex flex-col items-center justify-center px-3 box-border min-w-max rounded-lg hover:bg-gray-50 dark:hover:bg-neutral-800 transition-colors"
                   style={{
                     borderBottom:
                       activeTab === "posts"
@@ -1134,7 +1134,7 @@ export default function ProfileClient({ initialProfile, activeTab, username }) {
                 </Link>
                 <Link
                   href={`/${profile.username}/followers`}
-                  className="select-none cursor-pointer h-full flex flex-col items-center justify-center px-3 box-border min-w-max"
+                  className="select-none cursor-pointer h-full flex flex-col items-center justify-center px-3 box-border min-w-max rounded-lg hover:bg-gray-50 dark:hover:bg-neutral-800 transition-colors"
                   style={{
                     borderBottom:
                       activeTab === "followers"
@@ -1151,7 +1151,7 @@ export default function ProfileClient({ initialProfile, activeTab, username }) {
                 </Link>
                 <Link
                   href={`/${profile.username}/following`}
-                  className="select-none cursor-pointer h-full flex flex-col items-center justify-center px-3 box-border min-w-max"
+                  className="select-none cursor-pointer h-full flex flex-col items-center justify-center px-3 box-border min-w-max rounded-lg hover:bg-gray-50 dark:hover:bg-neutral-800 transition-colors"
                   style={{
                     borderBottom:
                       activeTab === "following"
@@ -1168,7 +1168,7 @@ export default function ProfileClient({ initialProfile, activeTab, username }) {
                 </Link>
 
                 <div
-                  className="select-none h-full flex flex-col items-center justify-center px-3 box-border min-w-max"
+                  className="select-none h-full flex flex-col items-center justify-center px-3 box-border min-w-max rounded-lg hover:bg-gray-50 dark:hover:bg-neutral-800 transition-colors"
                   style={{ borderBottom: "3px solid transparent" }}
                 >
                   <p className="font-semibold text-sm text-slate-600 dark:text-neutral-400">
