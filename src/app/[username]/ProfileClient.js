@@ -1143,10 +1143,10 @@ export default function ProfileClient({ initialProfile, activeTab, username }) {
                   <span className="font-semibold text-xs text-gray-500 dark:text-gray-400">Đang t.dõi</span>
                   <span className="font-bold text-lg text-primary-500">{profile.stats.following}</span>
                 </Link>
-                <div className="flex flex-col items-center px-3 py-1 rounded-lg hover:bg-gray-50 dark:hover:bg-neutral-700 transition-colors">
+                <Link href={`/${profile.username}/likes`} className="flex flex-col items-center px-3 py-1 rounded-lg hover:bg-gray-50 dark:hover:bg-neutral-700 transition-colors">
                   <span className="font-semibold text-xs text-gray-500 dark:text-gray-400">Thích</span>
                   <span className="font-bold text-lg text-primary-500">{profile.stats.likes}</span>
-                </div>
+                </Link>
                 <button type="button" onClick={() => setShowMilestonesModal(true)} className="flex flex-col items-center px-3 py-1 rounded-lg hover:bg-gray-50 dark:hover:bg-neutral-700 transition-colors cursor-pointer">
                   <span className="font-semibold text-xs text-gray-500 dark:text-gray-400">Điểm</span>
                   <span className="font-bold text-lg text-primary-500">{profile.stats.points}</span>
