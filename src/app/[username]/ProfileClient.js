@@ -21,10 +21,18 @@ import {
   registerVote,
   getProfile,
   getUserPosts,
+  getUserLikedPosts,
   updateAvatar,
   updateCover,
   blockUser,
 } from "@/app/Api";
+
+const LIKED_SORT_OPTIONS = [
+  { value: "newest", label: "Mới nhất" },
+  { value: "oldest", label: "Cũ nhất" },
+  { value: "most_liked", label: "Nhiều lượt thích" },
+  { value: "least_liked", label: "Ít lượt thích" },
+];
 
 export default function ProfileClient({ initialProfile, activeTab, username }) {
   const { currentUser } = useAuthContext();
@@ -145,6 +153,14 @@ export default function ProfileClient({ initialProfile, activeTab, username }) {
   const [postsPage, setPostsPage] = useState(1);
   const [postsHasMore, setPostsHasMore] = useState(true);
   const [loadingMorePosts, setLoadingMorePosts] = useState(false);
+  // "Likes" tab: the posts that add up to the profile's like total.
+  const [likedPosts, setLikedPosts] = useState([]);
+  const [likedPostsPage, setLikedPostsPage] = useState(1);
+  const [likedPostsHasMore, setLikedPostsHasMore] = useState(false);
+  const [likedPostsTotal, setLikedPostsTotal] = useState(0);
+  const [likedTotalLikes, setLikedTotalLikes] = useState(0);
+  const [loadingLikedPosts, setLoadingLikedPosts] = useState(false);
+  const [likedSort, setLikedSort] = useState("newest");
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [uploadingCover, setUploadingCover] = useState(false);
   const [coverIsLight, setCoverIsLight] = useState(false);
@@ -214,6 +230,49 @@ export default function ProfileClient({ initialProfile, activeTab, username }) {
       cancelled = true;
     };
   }, [activeTab, username]);
+
+  // Reload the "Likes" tab whenever it opens or its sort option changes.
+  useEffect(() => {
+    if (activeTab !== "likes" || !username) return;
+
+    let cancelled = false;
+    setLoadingLikedPosts(true);
+    getUserLikedPosts(username, 1, 10, likedSort)
+      .then((response) => {
+        if (cancelled) return;
+        setLikedPosts(response.data?.data || []);
+        setLikedPostsPage(1);
+        setLikedPostsHasMore(Boolean(response.data?.has_more));
+        setLikedPostsTotal(response.data?.total || 0);
+        setLikedTotalLikes(response.data?.total_likes || 0);
+      })
+      .catch((error) => {
+        console.error("Error loading liked posts:", error);
+      })
+      .finally(() => {
+        if (!cancelled) setLoadingLikedPosts(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [activeTab, username, likedSort]);
+
+  const loadMoreLikedPosts = async () => {
+    if (loadingLikedPosts || !likedPostsHasMore) return;
+    setLoadingLikedPosts(true);
+    try {
+      const nextPage = likedPostsPage + 1;
+      const response = await getUserLikedPosts(username, nextPage, 10, likedSort);
+      setLikedPosts((prev) => [...prev, ...(response.data?.data || [])]);
+      setLikedPostsPage(nextPage);
+      setLikedPostsHasMore(Boolean(response.data?.has_more));
+    } catch (error) {
+      console.error("Error loading more liked posts:", error);
+    } finally {
+      setLoadingLikedPosts(false);
+    }
+  };
 
   const loadMorePosts = async () => {
     if (loadingMorePosts || !postsHasMore) return;
@@ -498,9 +557,11 @@ export default function ProfileClient({ initialProfile, activeTab, username }) {
 
     // Store original state for rollback
     const originalPosts = [...posts];
+    const originalLikedPosts = [...likedPosts];
 
-    // Optimistic update
-    setPosts((prev) =>
+    // Optimistic update - the same post can be on screen in both the
+    // Posts tab and the Likes tab, so patch it in both lists.
+    const applyVote = (prev) =>
       prev.map((post) => {
         if (post.id !== postId) return post;
 
@@ -542,9 +603,11 @@ export default function ProfileClient({ initialProfile, activeTab, username }) {
           ...post,
           votes: newVotes,
           votes_sum_vote_value: votesSum,
+          likes_count: newVotes.filter((v) => v.vote_value === 1).length,
         };
-      })
-    );
+      });
+    setPosts(applyVote);
+    setLikedPosts(applyVote);
 
     // Call backend
     try {
@@ -552,6 +615,7 @@ export default function ProfileClient({ initialProfile, activeTab, username }) {
     } catch (error) {
       // Rollback on error
       setPosts(originalPosts);
+      setLikedPosts(originalLikedPosts);
       console.error("Vote error:", error);
       message.error("Có lỗi xảy ra khi vote. Vui lòng thử lại.");
     }
@@ -594,6 +658,57 @@ export default function ProfileClient({ initialProfile, activeTab, username }) {
             {postsHasMore && (
               <div className="flex justify-center py-4">
                 <Button loading={loadingMorePosts} onClick={loadMorePosts}>
+                  Xem thêm bài viết
+                </Button>
+              </div>
+            )}
+          </>
+        );
+      case "likes":
+        return (
+          <>
+            <div className="w-full bg-white dark:!bg-[var(--main-white)] rounded-xl px-4 py-3 mb-3 flex flex-col gap-y-2">
+              <div className="flex items-center justify-between gap-x-2 flex-wrap gap-y-1">
+                <h2 className="font-bold text-base text-gray-900 dark:text-white">
+                  Bài viết được thích
+                </h2>
+                <span className="text-sm text-gray-500 dark:text-gray-400">
+                  {likedPostsTotal} bài viết · {likedTotalLikes} lượt thích
+                </span>
+              </div>
+              <div className="flex items-center gap-2 flex-wrap">
+                {LIKED_SORT_OPTIONS.map((option) => (
+                  <button
+                    key={option.value}
+                    type="button"
+                    onClick={() => setLikedSort(option.value)}
+                    className={`px-3 py-1 rounded-full text-sm font-medium border transition-colors ${
+                      likedSort === option.value
+                        ? "bg-primary-500 border-primary-500 text-white"
+                        : "bg-transparent border-gray-200 dark:border-neutral-700 text-gray-600 dark:text-neutral-300 hover:bg-gray-50 dark:hover:bg-neutral-800"
+                    }`}
+                  >
+                    {option.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+            {likedPosts.map((post) => (
+              <PostItem
+                key={post.id}
+                post={post}
+                single={false}
+                onVote={handleVote}
+              />
+            ))}
+            {!loadingLikedPosts && likedPosts.length === 0 && (
+              <div className="w-full bg-white dark:!bg-[var(--main-white)] rounded-xl py-10 text-center text-gray-500 dark:text-gray-400">
+                Chưa có bài viết nào được thích
+              </div>
+            )}
+            {(likedPostsHasMore || (loadingLikedPosts && likedPosts.length === 0)) && (
+              <div className="flex justify-center py-4">
+                <Button loading={loadingLikedPosts} onClick={loadMoreLikedPosts}>
                   Xem thêm bài viết
                 </Button>
               </div>
@@ -905,12 +1020,12 @@ export default function ProfileClient({ initialProfile, activeTab, username }) {
                       {profile.stats.followers}
                     </span>
                   </Link>
-                  <div className="px-3">
+                  <Link href={`/${profile.username}/likes`} className="px-3">
                     <span className={mobileMutedTextClass}>Lượt like: </span>
                     <span className={`font-bold ${mobileTextClass}`}>
                       {profile.stats.likes}
                     </span>
-                  </div>
+                  </Link>
                 </div>
               </div>
               <p className={`text-center ${mobileTextClass}`}>{profile.bio}</p>
@@ -1177,17 +1292,25 @@ export default function ProfileClient({ initialProfile, activeTab, username }) {
                   </span>
                 </Link>
 
-                <div
-                  className="select-none h-full flex flex-col items-center justify-center px-3 box-border min-w-max rounded-lg hover:bg-gray-50 dark:hover:bg-neutral-800 transition-colors"
-                  style={{ borderBottom: "3px solid transparent" }}
+                <Link
+                  href={`/${profile.username}/likes`}
+                  className="select-none cursor-pointer h-full flex flex-col items-center justify-center box-border min-w-max"
+                  style={{
+                    borderBottom:
+                      activeTab === "likes"
+                        ? "3px solid #319527"
+                        : "3px solid transparent",
+                  }}
                 >
-                  <p className="font-semibold text-sm text-slate-600 dark:text-neutral-400">
-                    Thích
-                  </p>
-                  <p className="font-bold text-xl text-primary-500">
-                    {profile.stats.likes}
-                  </p>
-                </div>
+                  <span className="flex flex-col items-center justify-center px-3 py-1 rounded-lg hover:bg-gray-50 dark:hover:bg-neutral-800 transition-colors h-full">
+                    <p className="font-semibold text-sm text-slate-600 dark:text-neutral-400">
+                      Thích
+                    </p>
+                    <p className="font-bold text-xl text-primary-500">
+                      {profile.stats.likes}
+                    </p>
+                  </span>
+                </Link>
                 <button
                   onClick={() => setShowMilestonesModal(true)}
                   className="select-none h-full flex flex-col items-center justify-center px-3 box-border min-w-max cursor-pointer hover:bg-gray-50 dark:hover:bg-neutral-800 transition-colors rounded-lg"

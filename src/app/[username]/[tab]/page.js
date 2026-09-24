@@ -33,7 +33,14 @@ export async function generateMetadata({ params }) {
     // API response may be direct user object or wrapped in 'user' key
     const user = userData.user || userData;
     const profileName = user.profile?.profile_name || user.username;
-    const tabName = tab === "followers" ? "Người theo dõi" : tab === "following" ? "Đang theo dõi" : "";
+    const tabName =
+      tab === "followers"
+        ? "Người theo dõi"
+        : tab === "following"
+        ? "Đang theo dõi"
+        : tab === "likes"
+        ? "Bài viết được thích"
+        : "";
     const title = `${profileName}${tabName ? ` - ${tabName}` : ""} - Diễn đàn học sinh Chuyên Biên Hòa`;
     const description =
       user.profile?.bio ||
@@ -73,7 +80,7 @@ export default async function UserProfileTab({ params }) {
   const { username, tab } = params;
 
   // Validate tab
-  const validTabs = ["followers", "following"];
+  const validTabs = ["followers", "following", "likes"];
   if (!validTabs.includes(tab)) {
     notFound();
   }

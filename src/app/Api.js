@@ -535,6 +535,14 @@ export const getUserPosts = (username, page = 1, perPage = 10) => {
   return Api.getRequest(`/v1.0/users/${username}/posts?page=${page}&per_page=${perPage}`);
 };
 
+// Posts that make up a profile's "likes" total, sortable:
+// newest | oldest | most_liked | least_liked
+export const getUserLikedPosts = (username, page = 1, perPage = 10, sort = "newest") => {
+  return Api.getRequest(
+    `/v1.0/users/${username}/likes?page=${page}&per_page=${perPage}&sort=${sort}`
+  );
+};
+
 export const getUserPhotos = (username, page = 1, perPage = 12) => {
   return Api.getRequest(
     `/v1.0/users/${username}/photos?page=${page}&per_page=${perPage}`
