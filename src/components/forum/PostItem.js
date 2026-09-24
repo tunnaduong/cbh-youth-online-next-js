@@ -11,10 +11,9 @@ import {
   ChatboxOutline,
 } from "react-ionicons";
 import { generatePostSlug } from "@/utils/slugify";
-import dynamic from "next/dynamic";
 import VerifiedBadge from "@/components/ui/Badges";
 import MemberTierBadge from "@/components/ui/MemberTierBadge";
-import getCollageSetting from "@/utils/getCollageSetting";
+import PhotoCollage from "@/components/ui/PhotoCollage";
 import { useState, useEffect, useMemo } from "react";
 import { extractHeadingsAndInjectIds } from "@/utils/toc";
 import ArticleToc from "./ArticleToc";
@@ -22,18 +21,6 @@ import { linkifyMentionsInHtml } from "@/utils/mentionRender";
 import { rewriteExternalLinksInHtml } from "@/utils/externalLink";
 import CreatePostModal from "@/components/modals/CreatePostModal";
 
-const ReactPhotoCollage = dynamic(
-  () =>
-    import("react-photo-collage").then((mod) => ({
-      default: mod.ReactPhotoCollage,
-    })),
-  {
-    loading: () => (
-      <div className="h-64 bg-gray-100 dark:bg-neutral-800 animate-pulse rounded-lg" />
-    ),
-    ssr: false,
-  }
-);
 import { Button, ConfigProvider, message, Tooltip, Dropdown, Modal } from "antd";
 import { useRouter } from "@bprogress/next/app";
 import { openDeepLink } from "@/lib/deepLink";
@@ -321,12 +308,6 @@ export default function PostItem({
       : ' <span class="text-[var(--tw-prose-body)] dark:text-[rgb(209_213_219)] hover:underline text-base font-medium read-more-link cursor-pointer">Xem thêm</span>';
 
     return content + readMoreLink;
-  };
-
-  const setting = {
-    ...getCollageSetting(post.image_urls),
-    photos: post.image_urls?.map((url) => ({ source: url })),
-    showNumOfRemainingPhotos: true,
   };
 
   // Only build a "Xem nhanh" ToC for the single post view, from the raw content
@@ -945,10 +926,11 @@ export default function PostItem({
             </div>
           )}
 
-          {post.image_urls?.length != 0 && (
-            <div className="square-wrapper mt-3 rounded overflow-hidden">
-              <ReactPhotoCollage {...setting} />
-            </div>
+          {post.image_urls?.length > 0 && (
+            <PhotoCollage
+              images={post.image_urls}
+              className="mt-3 rounded overflow-hidden"
+            />
           )}
           {post.video_urls?.length != 0 && (
             <div className="mt-3 flex flex-col gap-2">

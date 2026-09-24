@@ -630,17 +630,6 @@ hr {
   border-top: 1px solid #545454;
 }
 
-.square-wrapper {
-  position: relative;
-  width: 100%;
-  padding-bottom: 70%; /* height = width */
-}
-
-.square-wrapper > * {
-  position: absolute;
-  inset: 0;
-}
-
 .fade-in-bottom {
   animation: fadeInBottom 0.5s ease-out forwards;
 }
