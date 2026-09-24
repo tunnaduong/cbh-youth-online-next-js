@@ -1117,7 +1117,7 @@ export default function ProfileClient({ initialProfile, activeTab, username }) {
               <div className="flex flex-row">
                 <Link
                   href={`/${profile.username}`}
-                  className="select-none cursor-pointer h-full flex flex-col items-center justify-center px-3 box-border min-w-max hover:bg-gray-50 dark:hover:bg-neutral-800 transition-colors"
+                  className="select-none cursor-pointer h-full flex flex-col items-center justify-center box-border min-w-max"
                   style={{
                     borderBottom:
                       activeTab === "posts"
@@ -1125,16 +1125,18 @@ export default function ProfileClient({ initialProfile, activeTab, username }) {
                         : "3px solid transparent",
                   }}
                 >
-                  <p className="font-semibold text-sm text-slate-600 dark:text-neutral-400">
-                    Bài viết
-                  </p>
-                  <p className="font-bold text-xl text-primary-500">
-                    {profile.stats.posts}
-                  </p>
+                  <span className="flex flex-col items-center justify-center px-3 py-1 rounded-lg hover:bg-gray-50 dark:hover:bg-neutral-800 transition-colors h-full">
+                    <p className="font-semibold text-sm text-slate-600 dark:text-neutral-400">
+                      Bài viết
+                    </p>
+                    <p className="font-bold text-xl text-primary-500">
+                      {profile.stats.posts}
+                    </p>
+                  </span>
                 </Link>
                 <Link
                   href={`/${profile.username}/followers`}
-                  className="select-none cursor-pointer h-full flex flex-col items-center justify-center px-3 box-border min-w-max hover:bg-gray-50 dark:hover:bg-neutral-800 transition-colors"
+                  className="select-none cursor-pointer h-full flex flex-col items-center justify-center box-border min-w-max"
                   style={{
                     borderBottom:
                       activeTab === "followers"
@@ -1142,16 +1144,18 @@ export default function ProfileClient({ initialProfile, activeTab, username }) {
                         : "3px solid transparent",
                   }}
                 >
-                  <p className="font-semibold text-sm text-slate-600 dark:text-neutral-400">
-                    Người t.dõi
-                  </p>
-                  <p className="font-bold text-xl text-primary-500 follower_count">
-                    {profile.stats.followers}
-                  </p>
+                  <span className="flex flex-col items-center justify-center px-3 py-1 rounded-lg hover:bg-gray-50 dark:hover:bg-neutral-800 transition-colors h-full">
+                    <p className="font-semibold text-sm text-slate-600 dark:text-neutral-400">
+                      Người t.dõi
+                    </p>
+                    <p className="font-bold text-xl text-primary-500 follower_count">
+                      {profile.stats.followers}
+                    </p>
+                  </span>
                 </Link>
                 <Link
                   href={`/${profile.username}/following`}
-                  className="select-none cursor-pointer h-full flex flex-col items-center justify-center px-3 box-border min-w-max hover:bg-gray-50 dark:hover:bg-neutral-800 transition-colors"
+                  className="select-none cursor-pointer h-full flex flex-col items-center justify-center box-border min-w-max"
                   style={{
                     borderBottom:
                       activeTab === "following"
@@ -1159,12 +1163,14 @@ export default function ProfileClient({ initialProfile, activeTab, username }) {
                         : "3px solid transparent",
                   }}
                 >
-                  <p className="font-semibold text-sm text-slate-600 dark:text-neutral-400">
-                    Đang t.dõi
-                  </p>
-                  <p className="font-bold text-xl text-primary-500">
-                    {profile.stats.following}
-                  </p>
+                  <span className="flex flex-col items-center justify-center px-3 py-1 rounded-lg hover:bg-gray-50 dark:hover:bg-neutral-800 transition-colors h-full">
+                    <p className="font-semibold text-sm text-slate-600 dark:text-neutral-400">
+                      Đang t.dõi
+                    </p>
+                    <p className="font-bold text-xl text-primary-500">
+                      {profile.stats.following}
+                    </p>
+                  </span>
                 </Link>
 
                 <div
