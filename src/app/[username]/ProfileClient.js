@@ -566,6 +566,10 @@ export default function ProfileClient({ initialProfile, activeTab, username }) {
       await blockUser(profile.id);
       message.success("Đã chặn người dùng này");
       setShowMoreMenu(false);
+      // The server now answers 404 for this profile, so there's nothing
+      // left to show here - leave instead of keeping the stale page up.
+      router.push("/");
+      router.refresh();
     } catch (error) {
       console.error("Block error:", error);
       message.error("Có lỗi xảy ra. Vui lòng thử lại.");

@@ -518,6 +518,14 @@ export default function ChatConversation({
         try {
           await blockUser(sender.id);
           antdMessage.success("Đã chặn người dùng");
+          // Refresh so the blocked user's messages disappear right away; a
+          // 1-on-1 thread with them no longer exists server-side, so leave it.
+          await loadConversations();
+          if (!isGroupChat && conversationId) {
+            router.push("/chat");
+          } else if (conversationId) {
+            await loadMessages(conversationId, 1, false);
+          }
         } catch (error) {
           antdMessage.error(
             error?.response?.data?.message || "Không thể chặn người dùng"
