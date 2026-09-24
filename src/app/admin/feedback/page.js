@@ -18,6 +18,28 @@ const PLATFORM_LABEL = { web: "Web", ios: "iOS", android: "Android" };
 
 const toOptions = (labels) => Object.entries(labels).map(([value, label]) => ({ value, label }));
 
+// Mobile reports send a pseudo-URL instead of a web page: "app://<screen>?via=<entry>",
+// e.g. "app://PostScreen?via=shake" (shake-to-report screenshot of that screen).
+const VIA_LABEL = { shake: "lắc điện thoại", sidebar: "menu", home_long_press: "giữ nút Trang chủ" };
+function describePageUrl(pageUrl) {
+  if (!pageUrl) return null;
+  if (/^https?:\/\//i.test(pageUrl)) {
+    return (
+      <>
+        Trang: <a href={pageUrl} target="_blank" rel="noreferrer">{pageUrl}</a>
+      </>
+    );
+  }
+  const match = pageUrl.match(/^app:\/\/([^?]*)(?:\?via=(.*))?$/);
+  if (!match) return <>Vị trí: {pageUrl}</>;
+  const screen = match[1];
+  const via = match[2] ? VIA_LABEL[match[2]] || match[2] : null;
+  const parts = [];
+  if (screen) parts.push(`màn hình ${screen}`);
+  if (via) parts.push(`qua ${via}`);
+  return <>Vị trí trong app: {parts.length ? parts.join(", ") : "không rõ"}</>;
+}
+
 function ReviewModal({ item, onClose, onSaved }) {
   const [status, setStatus] = useState("in_progress");
   const [notes, setNotes] = useState("");
@@ -79,11 +101,7 @@ function ReviewModal({ item, onClose, onSaved }) {
               {!item.user_id && " (khách)"}
             </div>
             {(item.contact_email || item.user?.email) && <div>Email: {item.contact_email || item.user?.email}</div>}
-            {item.page_url && (
-              <div className="break-all">
-                Trang: <a href={item.page_url} target="_blank" rel="noreferrer">{item.page_url}</a>
-              </div>
-            )}
+            {item.page_url && <div className="break-all">{describePageUrl(item.page_url)}</div>}
             {item.device_info && <div className="break-all">Thiết bị: {item.device_info}</div>}
             <div>Gửi lúc: {fmtDate(item.created_at)}</div>
           </div>
