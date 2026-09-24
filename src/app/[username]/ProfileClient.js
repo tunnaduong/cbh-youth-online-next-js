@@ -1130,12 +1130,27 @@ export default function ProfileClient({ initialProfile, activeTab, username }) {
                 </h1>
                 <p className="text-sm text-gray-500 dark:text-gray-400 break-words max-w-full">@{profile.username}</p>
               </div>
-              <div className="flex flex-wrap justify-center gap-x-4 gap-y-1 mt-3 text-sm max-w-full">
-                <Link href={`/${profile.username}`}><span className="text-gray-500 dark:text-gray-400">Bài đăng: </span><span className="font-bold text-gray-900 dark:text-white">{profile.stats.posts}</span></Link>
-                <div><span className="text-gray-500 dark:text-gray-400">Điểm: </span><span className="font-bold text-gray-900 dark:text-white">{profile.stats.points}</span></div>
-                <Link href={`/${profile.username}/following`}><span className="text-gray-500 dark:text-gray-400">Đang theo dõi: </span><span className="font-bold text-gray-900 dark:text-white">{profile.stats.following}</span></Link>
-                <Link href={`/${profile.username}/followers`}><span className="text-gray-500 dark:text-gray-400">Người theo dõi: </span><span className="font-bold text-gray-900 dark:text-white">{profile.stats.followers}</span></Link>
-                <div><span className="text-gray-500 dark:text-gray-400">Lượt like: </span><span className="font-bold text-gray-900 dark:text-white">{profile.stats.likes}</span></div>
+              <div className="flex flex-wrap justify-center mt-3 w-full">
+                <Link href={`/${profile.username}`} className="flex flex-col items-center px-3 py-1 rounded-lg hover:bg-gray-50 dark:hover:bg-neutral-700 transition-colors">
+                  <span className="font-semibold text-xs text-gray-500 dark:text-gray-400">Bài viết</span>
+                  <span className="font-bold text-lg text-primary-500">{profile.stats.posts}</span>
+                </Link>
+                <Link href={`/${profile.username}/followers`} className="flex flex-col items-center px-3 py-1 rounded-lg hover:bg-gray-50 dark:hover:bg-neutral-700 transition-colors">
+                  <span className="font-semibold text-xs text-gray-500 dark:text-gray-400">Người t.dõi</span>
+                  <span className="font-bold text-lg text-primary-500">{profile.stats.followers}</span>
+                </Link>
+                <Link href={`/${profile.username}/following`} className="flex flex-col items-center px-3 py-1 rounded-lg hover:bg-gray-50 dark:hover:bg-neutral-700 transition-colors">
+                  <span className="font-semibold text-xs text-gray-500 dark:text-gray-400">Đang t.dõi</span>
+                  <span className="font-bold text-lg text-primary-500">{profile.stats.following}</span>
+                </Link>
+                <div className="flex flex-col items-center px-3 py-1 rounded-lg hover:bg-gray-50 dark:hover:bg-neutral-700 transition-colors">
+                  <span className="font-semibold text-xs text-gray-500 dark:text-gray-400">Thích</span>
+                  <span className="font-bold text-lg text-primary-500">{profile.stats.likes}</span>
+                </div>
+                <button type="button" onClick={() => setShowMilestonesModal(true)} className="flex flex-col items-center px-3 py-1 rounded-lg hover:bg-gray-50 dark:hover:bg-neutral-700 transition-colors cursor-pointer">
+                  <span className="font-semibold text-xs text-gray-500 dark:text-gray-400">Điểm</span>
+                  <span className="font-bold text-lg text-primary-500">{profile.stats.points}</span>
+                </button>
               </div>
               {profile.bio && <p className="text-center text-gray-700 dark:text-gray-300 text-sm mt-2 break-words max-w-full">{profile.bio}</p>}
               {isOwnProfile && (
