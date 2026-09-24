@@ -1399,6 +1399,7 @@ export default function ProfileClient({ initialProfile, activeTab, username }) {
                           </svg>
                         </span>
                       )}
+                      <MemberTierBadge tier={profile.member_tier} className="text-xl" />
                     </span>
                   </h1>
                   <p className="text-sm text-gray-500">
@@ -1432,9 +1433,12 @@ export default function ProfileClient({ initialProfile, activeTab, username }) {
                     </div>
                   )}
                 </div>
+                {/* Desktop sidebar has room, so the gallery opens by default here;
+                    the mobile card above keeps it collapsed. */}
                 <ProfilePhotoGallery
                   username={username || profile.username}
                   profileUsername={profile.username}
+                  defaultOpen
                 />
               </div>
               <div className="flex-1 !my-6 !px-3 md:!px-0 flex flex-col items-center">

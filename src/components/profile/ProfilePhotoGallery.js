@@ -12,14 +12,23 @@ const PAGE_SIZE = 12;
 // (UserController::getUserPhotos) already applies the same visibility rules as
 // the posts list, so archived/anonymous posts only contribute photos on the
 // author's own profile.
-export default function ProfilePhotoGallery({ username, profileUsername }) {
+//
+// `defaultOpen` controls the accordion's initial state. The profile page
+// renders one instance in the desktop sidebar (expanded by default — plenty of
+// vertical room) and another in the mobile card (collapsed by default so the
+// feed stays reachable). Each instance keeps its own state.
+export default function ProfilePhotoGallery({
+  username,
+  profileUsername,
+  defaultOpen = false,
+}) {
   const [photos, setPhotos] = useState([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(false);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(defaultOpen);
 
   useEffect(() => {
     if (!username) return;
