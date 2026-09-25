@@ -25,9 +25,9 @@ export function setAuthCookie(token, options = {}) {
     // server-side by default (config/sanctum.php `expiration` => null), so
     // there's nothing to stay in sync with - 30 days keeps people signed in
     // across normal use without living forever if a device is ever shared.
-    maxAge: 60 * 60 * 24 * 30,
+    "max-age": 60 * 60 * 24 * 30,
     secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
+    samesite: "lax",
     // Leading-dot domain shares this cookie with every *.chuyenbienhoa.com
     // subdomain (e.g. giftshop.chuyenbienhoa.com), letting other CBH sites
     // pick up the same login without a separate auth flow. Only applied
@@ -39,9 +39,22 @@ export function setAuthCookie(token, options = {}) {
     ...options,
   };
 
-  document.cookie = `auth_token=${token}; ${Object.entries(defaultOptions)
-    .map(([key, value]) => `${key}=${value}`)
-    .join("; ")}`;
+  // Secure/httpOnly-style attributes are boolean flags to the browser's
+  // cookie parser - merely being *present* in the string turns them on,
+  // regardless of the value after "=" (a literal "secure=false" still sets
+  // Secure). On plain http://localhost that silently drops the cookie
+  // entirely rather than just ignoring the flag, so `secure` must be
+  // omitted outright when falsy, not stringified as "secure=false".
+  const parts = [`auth_token=${token}`];
+  for (const [key, value] of Object.entries(defaultOptions)) {
+    if (key === "secure") {
+      if (value) parts.push("secure");
+      continue;
+    }
+    parts.push(`${key}=${value}`);
+  }
+
+  document.cookie = parts.join("; ");
 }
 
 function getSharedCookieDomain() {
