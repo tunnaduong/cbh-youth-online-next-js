@@ -1,7 +1,8 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
-import { Modal, Button, Select, message, Switch, Dropdown } from "antd";
+import { Modal, Button, Select, message, Switch, Dropdown, Tooltip } from "antd";
+import { useRouter } from "@bprogress/next/app";
 import CustomInput from "../ui/input";
 import CustomColorButton from "../ui/CustomColorButton";
 // // import { usePage, useForm } from "@inertiajs/react"; // TODO: Replace with Next.js equivalent // TODO: Replace with Next.js equivalent
@@ -9,17 +10,34 @@ import VerifiedBadge from "../ui/Badges";
 import MarkdownToolbar from "../ui/MarkdownToolbar";
 import MarkdownRenderer from "../ui/MarkdownRenderer";
 import { IoEarth, IoCaretDown } from "react-icons/io5";
-import { FaEye, FaMarkdown, FaEdit } from "react-icons/fa";
+import { FaEye, FaMarkdown, FaEdit, FaExpand } from "react-icons/fa";
 import { FaFileLines } from "react-icons/fa6";
 import { useAuthContext, useTopUsersContext } from "@/contexts/Support";
 import { usePostRefresh } from "@/contexts/PostRefreshContext";
 import { getForumData, createPost, updatePost, getPostDetail } from "@/app/Api";
 import { useForumData } from "@/contexts/ForumDataContext";
 import { useMentionInput } from "@/hooks/useMentionInput";
+import { uploadInlineImage, collectImageFiles } from "@/utils/imageUpload";
 import MentionSuggestionsDropdown from "../ui/MentionSuggestionsDropdown";
-import { buildHtml, getCaretOffset, setCaretOffset, getContentText, makeProxyRef, applyHighlights } from "@/utils/richInput";
+import {
+  buildHtml,
+  getCaretOffset,
+  getSelectionStartOffset,
+  setCaretOffset,
+  getContentText,
+  makeProxyRef,
+  applyHighlights,
+  normalizeNewlines,
+} from "@/utils/richInput";
+
+// Read by ComposerClient.js (src/app/composer/ComposerClient.js) on mount so
+// bailing out to the full /composer page via the "Nâng cao" button below
+// doesn't lose whatever was already typed here. Not a persisted draft
+// feature - written right before navigating, read once and discarded.
+const COMPOSER_HANDOFF_KEY = "composer_modal_handoff";
 
 const CreatePostModal = ({ open, onClose, isEditMode = false, postData = null, onSuccess = null }) => {
+  const router = useRouter();
   const { currentUser, refreshUser } = useAuthContext();
   const { fetchTopUsers } = useTopUsersContext();
   const { triggerRefresh } = usePostRefresh();
@@ -61,7 +79,14 @@ const CreatePostModal = ({ open, onClose, isEditMode = false, postData = null, o
       getPostDetail(postData.id)
         .then((response) => {
           const fetchedPost = response.data.post;
-          const fetchedDescription = fetchedPost.description || fetchedPost.content || "";
+          // Posts stored with Windows line endings would otherwise have every
+          // line break doubled the moment they were loaded here - see
+          // normalizeNewlines() in richInput.js. Normalize at the boundary so
+          // `data.description` matches what the contenteditable actually
+          // holds (mention offsets are computed against it too).
+          const fetchedDescription = normalizeNewlines(
+            fetchedPost.description || fetchedPost.content || ""
+          );
           programmaticChangeRef.current = true;
           setData({
             title: fetchedPost.title || "",
@@ -93,7 +118,11 @@ const CreatePostModal = ({ open, onClose, isEditMode = false, postData = null, o
     } else if (open && !isEditMode) {
       reset(); // Reset if opening fresh
     }
-  }, [open, currentUser, isEditMode, postData]);
+    // Keyed on the post id rather than the `postData` object: a caller that
+    // rebuilds that object each render would otherwise restart this fetch
+    // after every setState it makes here, looping forever (that's exactly
+    // what happened on the /composer page - see usePostComposer.js).
+  }, [open, currentUser, isEditMode, postData?.id]);
 
   // Replace useForm with regular state management
   const [data, setData] = useState({
@@ -425,7 +454,19 @@ const CreatePostModal = ({ open, onClose, isEditMode = false, postData = null, o
 
       if (response.status === 201 || (isEditMode && response.status === 200)) {
         console.log(`Success: Post ${isEditMode ? 'updated' : 'created'}`, response.data);
-        message.success(`Bài viết đã được ${isEditMode ? 'cập nhật' : 'tạo'} thành công!`);
+
+        // AI moderation may hold the post for a human reviewer instead of
+        // publishing it - say so rather than claiming it went up.
+        const moderation = response.data?.moderation;
+        if (moderation?.status === "pending") {
+          message.warning(
+            moderation.message ||
+            "Bài viết của bạn đang chờ kiểm duyệt và sẽ được duyệt sớm.",
+            6
+          );
+        } else {
+          message.success(`Bài viết đã được ${isEditMode ? 'cập nhật' : 'tạo'} thành công!`);
+        }
         reset();
         setSelectedSubforum(null);
         setImageFiles([]);
@@ -667,6 +708,108 @@ const CreatePostModal = ({ open, onClose, isEditMode = false, postData = null, o
     }
   };
 
+  // Replaces [from, to) of the description with `insert` and puts the caret
+  // right after it, going through the same programmaticChangeRef path the
+  // edit-mode preload and undo/redo use (the div's own onInput never fires
+  // for an edit we make ourselves).
+  const replaceDescriptionRange = (insert, from, to) => {
+    const el = divRef.current;
+    if (!el) return;
+
+    const text = getContentText(el);
+    const start = Math.max(0, Math.min(from, text.length));
+    const end = Math.max(start, Math.min(to ?? from, text.length));
+    const newText = text.slice(0, start) + insert + text.slice(end);
+    if (newText === text) return;
+
+    const newCaret = start + insert.length;
+    recordDescriptionEdit(newText, newCaret);
+    pendingCaretRef.current = newCaret;
+    programmaticChangeRef.current = true;
+    setData((prev) => ({ ...prev, description: newText }));
+    handleDescriptionMentionChange(newText, newCaret);
+  };
+
+  // Uploads images pasted/dropped into the body and writes them into the
+  // Markdown as `![](url)` right where the caret was. They're inline
+  // content, not attachments - the attachment list below is for files the
+  // reader browses as a gallery underneath the post.
+  const uploadAndInsertInlineImages = async (files, from, to) => {
+    const key = `inline-image-${Date.now()}`;
+    message.open({ key, type: "loading", content: "Đang tải ảnh lên...", duration: 0 });
+
+    const urls = [];
+    try {
+      for (const file of files) {
+        urls.push(await uploadInlineImage(file, currentUser?.id));
+      }
+      message.destroy(key);
+    } catch (error) {
+      message.destroy(key);
+      message.error(
+        error?.response?.data?.message || error?.message || "Tải ảnh lên thất bại"
+      );
+    }
+
+    if (urls.length === 0) return;
+    replaceDescriptionRange(urls.map((url) => `![](${url})`).join("\n"), from, to);
+  };
+
+  // Pasting into the description. Three things the browser's own default
+  // does wrong here:
+  //   1. An image on the clipboard (screenshot, "Copy image" from another
+  //      tab, a file copied in Finder/Explorer) is simply dropped on the
+  //      floor - the contenteditable is plain text, so nothing happens at
+  //      all. Upload it and insert it inline instead.
+  //   2. Rich text pastes as real HTML (<div>/<p>/<span>/<b>...), which this
+  //      editor's plain-text-plus-<br> model doesn't understand - the block
+  //      elements come back out of getContentText() as extra line breaks.
+  //      Insert the plain-text flavour at the caret ourselves instead.
+  const handleDescriptionPaste = (e) => {
+    const clipboard = e.clipboardData;
+    if (!clipboard) return;
+
+    const el = divRef.current;
+    if (!el) return;
+
+    const caretEnd = getCaretOffset(el);
+    const caretStart = getSelectionStartOffset(el);
+    const from = Math.min(caretStart, caretEnd);
+    const to = Math.max(caretStart, caretEnd);
+
+    const pastedImages = collectImageFiles(clipboard);
+    if (pastedImages.length > 0) {
+      e.preventDefault();
+      uploadAndInsertInlineImages(pastedImages, from, to);
+      return;
+    }
+
+    const plainText = clipboard.getData("text/plain");
+
+    // "Copy image" from a web page puts an <img> on the clipboard as HTML
+    // with no text alongside it - that URL is already public, so it goes in
+    // as-is. A copied *link* carries HTML too, but with the URL as its text,
+    // and should stay a plain pasted link.
+    if (!plainText.trim()) {
+      const html = clipboard.getData("text/html");
+      const match = html && html.match(/<img[^>]+src=["']([^"']+)["']/i);
+      if (match && /^https?:\/\//i.test(match[1])) {
+        e.preventDefault();
+        replaceDescriptionRange(`![](${match[1]})`, from, to);
+        return;
+      }
+    }
+
+    // Nothing textual to paste (e.g. a non-image file on the clipboard).
+    // Still swallow the event - the browser's fallback would be to insert
+    // whatever HTML flavour is left, which this plain-text editor can't
+    // represent.
+    e.preventDefault();
+    if (!plainText) return;
+
+    replaceDescriptionRange(normalizeNewlines(plainText), from, to);
+  };
+
   const handleFilesDragEnter = (e) => {
     e.preventDefault();
     if (!isDraggableImageSource(e.dataTransfer)) return;
@@ -719,6 +862,28 @@ const CreatePostModal = ({ open, onClose, isEditMode = false, postData = null, o
     setSelectedVisibility(value);
     // Always set visibility to 0 (not hidden from feed)
     setData((prev) => ({ ...prev, visibility: 0, privacy: value }));
+  };
+
+  // Hands the current draft off to the full-page /composer editor (Tiptap
+  // WYSIWYG) for people who want more room, without losing what's typed here.
+  const handleOpenAdvanced = () => {
+    try {
+      sessionStorage.setItem(
+        COMPOSER_HANDOFF_KEY,
+        JSON.stringify({
+          title: data.title,
+          description: data.description,
+          subforum_id: data.subforum_id,
+          privacy: data.privacy,
+          anonymous: data.anonymous,
+        })
+      );
+    } catch {
+      // sessionStorage unavailable (private mode etc.) - /composer just
+      // opens with a clean draft instead of the current one.
+    }
+    onClose();
+    router.push(isEditMode && postData?.id ? `/composer?edit=${postData.id}` : "/composer");
   };
 
   const visibilityMenuItems = [
@@ -809,7 +974,7 @@ const CreatePostModal = ({ open, onClose, isEditMode = false, postData = null, o
           <hr className="absolute right-0 left-0 w-full" />
           <div className="flex flex-row items-center py-3">
             {data.anonymous ? (
-              <div className="w-11 h-11 rounded-full bg-[#e9f1e9] dark:bg-[#1d281b] flex items-center justify-center text-[27px] font-semibold text-white">
+              <div className="w-11 h-11 rounded-full bg-[#e9f1e9] dark:bg-[#1d281b] flex items-center justify-center text-[27px] font-semibold text-primary-500 dark:text-neutral-300">
                 ?
               </div>
             ) : (
@@ -968,6 +1133,7 @@ const CreatePostModal = ({ open, onClose, isEditMode = false, postData = null, o
                         applyHighlights(el, text, false);
                       }}
                       onKeyDown={handleTextareaKeyDown}
+                      onPaste={handleDescriptionPaste}
                     />
                     {showDescriptionSuggestions && (
                       <MentionSuggestionsDropdown
@@ -1008,7 +1174,7 @@ const CreatePostModal = ({ open, onClose, isEditMode = false, postData = null, o
                 <button
                   type="button"
                   onClick={() => setIsPreviewMode(!isPreviewMode)}
-                  className="-mt-1.5 text-xs font-bold flex items-center"
+                  className="-mt-1.5 text-xs font-bold flex items-center border-right pr-2"
                 >
                   {isPreviewMode ? (
                     <>
@@ -1022,6 +1188,18 @@ const CreatePostModal = ({ open, onClose, isEditMode = false, postData = null, o
                     </>
                   )}
                 </button>
+
+
+                <Tooltip title="Mở trình soạn thảo nâng cao (WYSIWYG, toàn màn hình)">
+                  <button
+                    type="button"
+                    onClick={handleOpenAdvanced}
+                    className="-mt-1.5 text-xs font-bold flex items-center hover:text-primary-500"
+                  >
+                    <FaExpand className="mr-1" />
+                    Nâng cao
+                  </button>
+                </Tooltip>
               </div>
             </div>
             <Select

@@ -1,8 +1,14 @@
 "use client";
 
 import { Button, Popconfirm, Space, Tag, message } from "antd";
-import ResourceTable, { fmtDate, fmtNumber, errMsg } from "../_components/ResourceTable";
-import { adminGetPendingDeposits, adminApproveDeposit, adminExpireDeposit } from "@/app/Api";
+import { DeleteOutlined } from "@ant-design/icons";
+import ResourceTable, { fmtDate, fmtNumber, errMsg, UserLink } from "../_components/ResourceTable";
+import {
+  adminGetPendingDeposits,
+  adminApproveDeposit,
+  adminExpireDeposit,
+  adminDeleteDeposit,
+} from "@/app/Api";
 
 const STATUS = {
   pending: { label: "Chờ thanh toán", color: "orange" },
@@ -23,7 +29,7 @@ export default function AdminDepositsPage() {
 
   const columns = (reload) => [
     { title: "ID", dataIndex: "id", width: 70 },
-    { title: "Người dùng", key: "user", render: (_, d) => d.user?.username || `#${d.user_id}` },
+    { title: "Người dùng", key: "user", render: (_, d) => <UserLink user={d.user} userId={d.user_id} /> },
     { title: "Mã nạp", dataIndex: "deposit_code", render: (v) => <code>{v}</code> },
     { title: "Số tiền (VND)", dataIndex: "amount_vnd", render: fmtNumber },
     { title: "Điểm", dataIndex: "expected_points", render: fmtNumber },
@@ -39,6 +45,8 @@ export default function AdminDepositsPage() {
       key: "actions",
       fixed: "right",
       render: (_, d) =>
+        // Completed deposits stay on the list: the points they credited are
+        // reconciled against this row in the wallet history.
         d.status === "completed" ? null : (
           <Space>
             <Popconfirm
@@ -61,6 +69,16 @@ export default function AdminDepositsPage() {
                 <Button size="small" danger>Hủy</Button>
               </Popconfirm>
             )}
+            <Popconfirm
+              title="Xóa yêu cầu nạp này?"
+              description="Bản ghi sẽ bị xóa khỏi danh sách, không thể hoàn tác."
+              okText="Xóa"
+              okButtonProps={{ danger: true }}
+              cancelText="Hủy"
+              onConfirm={() => act(() => adminDeleteDeposit(d.id), reload)}
+            >
+              <Button size="small" danger icon={<DeleteOutlined />} />
+            </Popconfirm>
           </Space>
         ),
     },

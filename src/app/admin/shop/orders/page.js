@@ -1,8 +1,9 @@
 "use client";
 
-import { Select, Tag, message } from "antd";
-import ResourceTable, { fmtDate, fmtVndPoints, errMsg } from "../../_components/ResourceTable";
-import { adminGetShopOrders, adminUpdateShopOrder } from "@/app/Api";
+import { Button, Popconfirm, Select, Tag, message } from "antd";
+import { DeleteOutlined } from "@ant-design/icons";
+import ResourceTable, { fmtDate, fmtVndPoints, errMsg, UserLink } from "../../_components/ResourceTable";
+import { adminGetShopOrders, adminUpdateShopOrder, adminDeleteShopOrder } from "@/app/Api";
 
 const STATUS = {
   pending: { label: "Chờ xử lý", color: "orange" },
@@ -16,14 +17,14 @@ const STATUS_OPTIONS = Object.entries(STATUS).map(([value, s]) => ({ value, labe
 export default function AdminShopOrdersPage() {
   const columns = (reload) => [
     { title: "ID", dataIndex: "id", width: 70 },
-    { title: "Người đặt", key: "user", render: (_, o) => o.user?.username || `#${o.user_id}` },
+    { title: "Người đặt", key: "user", render: (_, o) => <UserLink user={o.user} userId={o.user_id} /> },
     {
       title: "Giao đến",
       key: "shipping",
       render: (_, o) => (
         <div className="max-w-[260px]">
           <div>{o.phone}</div>
-          <div className="text-xs text-gray-500">{o.shipping_address}</div>
+          <div className="text-xs text-gray-500 dark:text-gray-400">{o.shipping_address}</div>
         </div>
       ),
     },
@@ -53,6 +54,35 @@ export default function AdminShopOrdersPage() {
         ),
     },
     { title: "Ngày đặt", dataIndex: "created_at", render: fmtDate },
+    {
+      title: "",
+      key: "actions",
+      fixed: "right",
+      render: (_, o) => (
+        <Popconfirm
+          title="Xóa đơn hàng này?"
+          description={
+            o.status === "cancelled"
+              ? "Đơn và các sản phẩm trong đơn sẽ bị xóa vĩnh viễn."
+              : "Đơn sẽ bị xóa vĩnh viễn và số lượng sản phẩm được hoàn lại kho."
+          }
+          okText="Xóa"
+          okButtonProps={{ danger: true }}
+          cancelText="Hủy"
+          onConfirm={async () => {
+            try {
+              const res = await adminDeleteShopOrder(o.id);
+              message.success(res.data?.message || "Đã xóa đơn hàng");
+              reload();
+            } catch (err) {
+              message.error(errMsg(err, "Xóa thất bại"));
+            }
+          }}
+        >
+          <Button size="small" danger icon={<DeleteOutlined />} />
+        </Popconfirm>
+      ),
+    },
   ];
 
   return (
@@ -73,7 +103,7 @@ export default function AdminShopOrdersPage() {
                 {it.variant_label ? ` (${it.variant_label})` : ""} × {it.quantity} — {fmtVndPoints(it.price)}
               </div>
             ))}
-            {o.note && <div className="mt-2 text-gray-500">Ghi chú: {o.note}</div>}
+            {o.note && <div className="mt-2 text-gray-500 dark:text-gray-400">Ghi chú: {o.note}</div>}
           </div>
         ),
       }}

@@ -36,7 +36,7 @@ export default function ContactPage() {
                 </a>
               </li>
               <li>
-                <strong>Hotline:</strong> 0365520031 (Trong giờ hành chính)
+                <strong>Hotline:</strong> 0707006421 (Trong giờ hành chính)
               </li>
             </ul>
 

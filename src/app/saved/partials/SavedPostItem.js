@@ -37,7 +37,7 @@ export default function SavedPostItem({ post, onUnsave }) {
       <Link href={getPostUrl()} className="shrink-0">
         {topic.anonymous ? (
           <div className="w-36 h-36 bg-[#e9f1e9] dark:bg-[#1d281b] dark:!border-gray-500 flex items-center justify-center rounded-lg border">
-            <span className="text-7xl font-bold text-white dark:text-gray-300">
+            <span className="text-7xl font-bold text-primary-500 dark:text-gray-300">
               ?
             </span>
           </div>

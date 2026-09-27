@@ -2,10 +2,31 @@
 
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
-import { Button, Checkbox, Form, Input, InputNumber, Modal, Radio, Select, Spin, Switch, Tag, message } from "antd";
-import { SendOutlined, GlobalOutlined, MobileOutlined } from "@ant-design/icons";
+import {
+  Button,
+  Checkbox,
+  Form,
+  Input,
+  InputNumber,
+  Modal,
+  Popconfirm,
+  Radio,
+  Select,
+  Spin,
+  Switch,
+  Tag,
+  Tooltip,
+  message,
+} from "antd";
+import { SendOutlined, GlobalOutlined, MobileOutlined, DeleteOutlined } from "@ant-design/icons";
 import ResourceTable, { fmtDate, fmtNumber, errMsg } from "../_components/ResourceTable";
-import { adminGetBroadcasts, adminGetBroadcastAudience, adminSendBroadcast, adminGetUsers } from "@/app/Api";
+import {
+  adminGetBroadcasts,
+  adminGetBroadcastAudience,
+  adminSendBroadcast,
+  adminDeleteBroadcast,
+  adminGetUsers,
+} from "@/app/Api";
 
 const ROLE_OPTIONS = [
   { value: "user", label: "Người dùng" },
@@ -75,32 +96,32 @@ function Preview({ title, body }) {
   return (
     <div className="space-y-5">
       <div>
-        <div className="text-xs font-medium text-gray-400 mb-2 flex items-center gap-1.5">
+        <div className="text-xs font-medium text-gray-400 dark:text-gray-500 mb-2 flex items-center gap-1.5">
           <GlobalOutlined /> Trình duyệt
         </div>
-        <div className="rounded-xl bg-white border border-gray-200 shadow-lg p-3 flex gap-3">
+        <div className="rounded-xl bg-white dark:bg-neutral-800 border border-gray-200 dark:border-neutral-700 shadow-lg p-3 flex gap-3">
           <Image src="/images/logo.png" alt="" width={40} height={40} className="rounded-lg shrink-0" />
           <div className="min-w-0">
-            <div className="text-[13px] font-semibold text-gray-900 truncate">{t}</div>
-            <div className="text-[12px] text-gray-600 line-clamp-2">{b}</div>
-            <div className="text-[11px] text-gray-400 mt-1">chuyenbienhoa.com</div>
+            <div className="text-[13px] font-semibold text-gray-900 dark:text-gray-100 truncate">{t}</div>
+            <div className="text-[12px] text-gray-600 dark:text-gray-300 line-clamp-2">{b}</div>
+            <div className="text-[11px] text-gray-400 dark:text-gray-500 mt-1">chuyenbienhoa.com</div>
           </div>
         </div>
       </div>
       <div>
-        <div className="text-xs font-medium text-gray-400 mb-2 flex items-center gap-1.5">
+        <div className="text-xs font-medium text-gray-400 dark:text-gray-500 mb-2 flex items-center gap-1.5">
           <MobileOutlined /> Điện thoại
         </div>
         <div className="rounded-[28px] bg-gradient-to-b from-[#2b3a2a] to-[#111a10] p-3 pt-8">
           <div className="rounded-2xl bg-white/85 backdrop-blur p-3 flex gap-2.5">
             <Image src="/images/logo.png" alt="" width={36} height={36} className="rounded-lg shrink-0" />
             <div className="min-w-0 flex-1">
-              <div className="flex justify-between text-[11px] text-gray-500">
+              <div className="flex justify-between text-[11px] text-gray-500 dark:text-gray-400">
                 <span className="uppercase tracking-wide">CBH Youth Online</span>
                 <span>bây giờ</span>
               </div>
-              <div className="text-[13px] font-semibold text-gray-900 truncate">{t}</div>
-              <div className="text-[12px] text-gray-700 line-clamp-3">{b}</div>
+              <div className="text-[13px] font-semibold text-gray-900 dark:text-gray-100 truncate">{t}</div>
+              <div className="text-[12px] text-gray-700 dark:text-gray-200 line-clamp-3">{b}</div>
             </div>
           </div>
           <div className="h-16" />
@@ -169,6 +190,16 @@ export default function AdminNotificationsPage() {
     });
   };
 
+  const remove = async (id) => {
+    try {
+      const res = await adminDeleteBroadcast(id);
+      message.success(res.data?.message || "Đã xóa thông báo");
+      tableRef.current?.reload();
+    } catch (err) {
+      message.error(errMsg(err, "Xóa thất bại"));
+    }
+  };
+
   const columns = [
     { title: "ID", dataIndex: "id", width: 60 },
     {
@@ -177,7 +208,7 @@ export default function AdminNotificationsPage() {
       render: (_, b) => (
         <div className="max-w-[360px]">
           <div className="font-medium">{b.title}</div>
-          <div className="text-xs text-gray-500 truncate">{b.body}</div>
+          <div className="text-xs text-gray-500 dark:text-gray-400 truncate">{b.body}</div>
         </div>
       ),
     },
@@ -196,7 +227,7 @@ export default function AdminNotificationsPage() {
       title: "Đã gửi",
       key: "sent",
       render: (_, b) => (
-        <span className="text-xs text-gray-600 whitespace-nowrap">
+        <span className="text-xs text-gray-600 dark:text-gray-300 whitespace-nowrap">
           {fmtNumber(b.recipients_count)} người · {fmtNumber(b.web_sent)} web · {fmtNumber(b.mobile_sent)} app
         </span>
       ),
@@ -212,18 +243,38 @@ export default function AdminNotificationsPage() {
     },
     { title: "Người gửi", key: "admin", render: (_, b) => b.admin?.username || "-" },
     { title: "Thời gian", dataIndex: "created_at", render: fmtDate },
+    {
+      title: "",
+      key: "actions",
+      fixed: "right",
+      render: (_, b) => (
+        <Popconfirm
+          title="Xóa thông báo này?"
+          description="Xóa bản ghi này và thông báo trong hộp thư của người dùng. Thông báo đẩy đã gửi tới thiết bị không thể thu hồi."
+          okText="Xóa"
+          okButtonProps={{ danger: true }}
+          cancelText="Hủy"
+          disabled={b.status === "sending"}
+          onConfirm={() => remove(b.id)}
+        >
+          <Tooltip title={b.status === "sending" ? "Đang gửi, hãy đợi gửi xong" : "Xóa thông báo"}>
+            <Button size="small" danger icon={<DeleteOutlined />} disabled={b.status === "sending"} />
+          </Tooltip>
+        </Popconfirm>
+      ),
+    },
   ];
 
   return (
     <>
       <div className="max-w-[1280px] mx-auto w-full px-4 sm:px-6 pt-6">
-        <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Gửi thông báo đẩy</h1>
-        <p className="text-sm text-gray-500 mt-1 mb-5">
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 tracking-tight">Gửi thông báo đẩy</h1>
+        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1 mb-5">
           Gửi tới trình duyệt (Web Push) và ứng dụng di động (Expo) của người dùng đã bật thông báo.
         </p>
 
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_340px] gap-6">
-          <div className="bg-white rounded-2xl border border-[#eef0ee] p-5 sm:p-6">
+          <div className="bg-white dark:bg-neutral-800 rounded-2xl border border-[#eef0ee] dark:border-neutral-700 p-5 sm:p-6">
             <Form
               form={form}
               layout="vertical"
@@ -289,12 +340,12 @@ export default function AdminNotificationsPage() {
                 <Switch checkedChildren="Lưu vào hộp thông báo" unCheckedChildren="Chỉ gửi push" />
               </Form.Item>
 
-              <div className="flex items-center justify-between gap-4 flex-wrap pt-4 border-t border-gray-100">
-                <div className="text-sm text-gray-500">
+              <div className="flex items-center justify-between gap-4 flex-wrap pt-4 border-t border-gray-100 dark:border-neutral-700">
+                <div className="text-sm text-gray-500 dark:text-gray-400">
                   {reach ? (
                     <>
-                      Tiếp cận <b className="text-gray-900">{fmtNumber(reach.users)}</b> người dùng ·{" "}
-                      <b className="text-gray-900">{fmtNumber(devices)}</b> thiết bị
+                      Tiếp cận <b className="text-gray-900 dark:text-gray-100">{fmtNumber(reach.users)}</b> người dùng ·{" "}
+                      <b className="text-gray-900 dark:text-gray-100">{fmtNumber(devices)}</b> thiết bị
                     </>
                   ) : (
                     "Đang tính số người nhận..."
@@ -307,8 +358,8 @@ export default function AdminNotificationsPage() {
             </Form>
           </div>
 
-          <div className="bg-white rounded-2xl border border-[#eef0ee] p-5 h-fit lg:sticky lg:top-20">
-            <div className="font-semibold text-gray-900 mb-4">Xem trước</div>
+          <div className="bg-white dark:bg-neutral-800 rounded-2xl border border-[#eef0ee] dark:border-neutral-700 p-5 h-fit lg:sticky lg:top-20">
+            <div className="font-semibold text-gray-900 dark:text-gray-100 mb-4">Xem trước</div>
             <Preview title={title} body={body} />
           </div>
         </div>

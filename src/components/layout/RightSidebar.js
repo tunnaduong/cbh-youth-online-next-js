@@ -6,8 +6,8 @@ import { AddOutline, HelpCircleOutline, Mic } from "react-ionicons";
 import { Skeleton, message } from "antd";
 import CustomColorButton from "../ui/CustomColorButton";
 import { useState, useEffect, useCallback, useRef } from "react";
-import CreatePostModal from "../modals/CreatePostModal";
 import UploadRecordingModal from "../modals/UploadRecordingModal";
+import CreatePostModal from "../modals/CreatePostModal";
 import { useAuthContext, useTopUsersContext } from "@/contexts/Support";
 import { useRouter } from "@bprogress/next/app";
 import { getCurrentUser } from "@/app/Api";
@@ -17,6 +17,7 @@ export default function RightSidebar({ onHandleCreatePost }) {
   const router = useRouter();
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
+  const [composerOpen, setComposerOpen] = useState(false);
 
   // Get current URL to determine if we're on recordings page
   const isRecordingsPage = pathname.startsWith("/recordings");
@@ -65,9 +66,11 @@ export default function RightSidebar({ onHandleCreatePost }) {
     } else if (!currentUser?.email_verified_at) {
       message.error("Bạn cần xác minh email để tạo cuộc thảo luận");
       return;
-    } else {
-      isRecordingsPage && message.loading("Cái này ad đang làm nha ^^");
+    } else if (isRecordingsPage) {
+      message.loading("Cái này ad đang làm nha ^^");
       setOpen(true);
+    } else {
+      setComposerOpen(true);
     }
   }, [loggedIn, currentUser, isRecordingsPage, router]);
 
@@ -80,11 +83,10 @@ export default function RightSidebar({ onHandleCreatePost }) {
 
   return (
     <>
-      {isRecordingsPage ? (
+      {isRecordingsPage && (
         <UploadRecordingModal open={open} onClose={() => setOpen(false)} />
-      ) : (
-        <CreatePostModal open={open} onClose={() => setOpen(false)} />
       )}
+      <CreatePostModal open={composerOpen} onClose={() => setComposerOpen(false)} />
 
       {/* Right side bar */}
       <div

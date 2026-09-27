@@ -11,33 +11,26 @@ import {
   ChatboxOutline,
 } from "react-ionicons";
 import { generatePostSlug } from "@/utils/slugify";
-import dynamic from "next/dynamic";
 import VerifiedBadge from "@/components/ui/Badges";
 import MemberTierBadge from "@/components/ui/MemberTierBadge";
-import getCollageSetting from "@/utils/getCollageSetting";
+import PhotoCollage from "@/components/ui/PhotoCollage";
 import { useState, useEffect, useMemo } from "react";
 import { extractHeadingsAndInjectIds } from "@/utils/toc";
 import ArticleToc from "./ArticleToc";
 import { linkifyMentionsInHtml } from "@/utils/mentionRender";
+import { rewriteExternalLinksInHtml } from "@/utils/externalLink";
+import CreatePostModal from "@/components/modals/CreatePostModal";
 
-const ReactPhotoCollage = dynamic(
-  () =>
-    import("react-photo-collage").then((mod) => ({
-      default: mod.ReactPhotoCollage,
-    })),
-  {
-    loading: () => (
-      <div className="h-64 bg-gray-100 dark:bg-neutral-800 animate-pulse rounded-lg" />
-    ),
-    ssr: false,
-  }
-);
 import { Button, ConfigProvider, message, Tooltip, Dropdown, Modal } from "antd";
 import { useRouter } from "@bprogress/next/app";
 import { openDeepLink } from "@/lib/deepLink";
 import {
   savePost as savePostApi,
   unsavePost as unsavePostApi,
+  hidePost as hidePostApi,
+  unhidePost as unhidePostApi,
+  archivePost as archivePostApi,
+  unarchivePost as unarchivePostApi,
   deletePost,
 } from "@/app/Api";
 import {
@@ -47,19 +40,35 @@ import {
   Trash,
   Flag,
   Smartphone,
+  EyeOff,
+  Archive,
+  ArchiveRestore,
+  Gift,
 } from "lucide-react";
 import { usePostRefresh } from "@/contexts/PostRefreshContext";
-import CreatePostModal from "../modals/CreatePostModal";
 import PostVotesModal from "./PostVotesModal";
 import ReportModal from "@/components/ReportModal";
+import SharePostModal from "@/components/modals/SharePostModal";
+import GiftPointsModal from "@/components/modals/GiftPointsModal";
 
-export default function PostItem({ post, single = false, onVote, onRefresh = null }) {
+export default function PostItem({
+  post,
+  single = false,
+  onVote,
+  onRefresh = null,
+  onArchiveChange = null,
+}) {
   const { currentUser, refreshUser } = useAuthContext();
   const { fetchTopUsers } = useTopUsersContext();
   const [showFullContent, setShowFullContent] = useState(false);
   const [isSaved, setIsSaved] = useState(!!(post.is_saved || post.saved));
   const [showVotesModal, setShowVotesModal] = useState(false);
   const [showReportModal, setShowReportModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [showShareModal, setShowShareModal] = useState(false);
+  const [showGiftModal, setShowGiftModal] = useState(false);
+  const [isHidden, setIsHidden] = useState(false);
+  const [isArchived, setIsArchived] = useState(!!post.archived);
   const maxLength = 300; // Số ký tự tối đa trước khi truncate
   const myVote =
     post.votes?.find((v) => v.username === currentUser?.username)?.vote_value ||
@@ -69,13 +78,16 @@ export default function PostItem({ post, single = false, onVote, onRefresh = nul
   const router = useRouter();
 
   const { triggerRefresh } = usePostRefresh();
-  const [showEditModal, setShowEditModal] = useState(false);
 
   const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
     setIsSaved(!!(post.is_saved || post.saved));
   }, [post.is_saved, post.saved]);
+
+  useEffect(() => {
+    setIsArchived(!!post.archived);
+  }, [post.archived]);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -298,12 +310,6 @@ export default function PostItem({ post, single = false, onVote, onRefresh = nul
     return content + readMoreLink;
   };
 
-  const setting = {
-    ...getCollageSetting(post.image_urls),
-    photos: post.image_urls?.map((url) => ({ source: url })),
-    showNumOfRemainingPhotos: true,
-  };
-
   // Only build a "Xem nhanh" ToC for the single post view, from the raw content
   // (headings get injected once here so ids match between the ToC and the body).
   const { html: contentWithHeadingIds, headings: tocHeadings } = useMemo(() => {
@@ -322,14 +328,7 @@ export default function PostItem({ post, single = false, onVote, onRefresh = nul
   );
 
   const handleShare = () => {
-    const url =
-      window.location.origin +
-      "/" +
-      post.author.username +
-      "/posts/" +
-      generatePostSlug(post.id, post.title) + "?utm_source=desktop_share";
-    navigator.clipboard.writeText(url);
-    message.success("Đã sao chép liên kết vào bộ nhớ tạm");
+    setShowShareModal(true);
   };
 
   const handleEdit = () => {
@@ -387,6 +386,74 @@ export default function PostItem({ post, single = false, onVote, onRefresh = nul
     setShowVotesModal(true);
   };
 
+  // "Ẩn bài viết": a per-user feed filter, not a delete - the post stays public
+  // and reachable by link, it just stops showing up in this user's feed. The
+  // card is swapped for an undo placeholder rather than yanked out of the list,
+  // so the undo stays reachable without re-fetching the feed.
+  const handleHide = async () => {
+    if (!currentUser) {
+      message.warning("Bạn cần đăng nhập để ẩn bài viết.");
+      return;
+    }
+
+    setIsHidden(true);
+
+    try {
+      await hidePostApi(post.id);
+    } catch (error) {
+      setIsHidden(false);
+      message.error("Không thể ẩn bài viết. Vui lòng thử lại.");
+    }
+  };
+
+  const handleUndoHide = async () => {
+    setIsHidden(false);
+
+    try {
+      await unhidePostApi(post.id);
+    } catch (error) {
+      setIsHidden(true);
+      message.error("Không thể hoàn tác. Vui lòng thử lại.");
+    }
+  };
+
+  // "Chuyển vào kho lưu trữ" flips the post's own `hidden` column, so it
+  // disappears for everyone - feeds, search and other people's view of the
+  // author's profile - and only the author still sees it, on their profile
+  // and at /my-archives, from where it can be restored.
+  const handleArchive = async () => {
+    Modal.confirm({
+      title: "Chuyển vào kho lưu trữ",
+      content:
+        "Bài viết sẽ không còn hiển thị với người khác. Bạn có thể khôi phục bất cứ lúc nào trong Kho lưu trữ.",
+      okText: "Lưu trữ",
+      cancelText: "Hủy",
+      onOk: async () => {
+        try {
+          await archivePostApi(post.id);
+          setIsArchived(true);
+          message.success("Đã chuyển bài viết vào kho lưu trữ");
+          onArchiveChange?.(post.id, true);
+          triggerRefresh();
+        } catch (error) {
+          message.error("Không thể lưu trữ bài viết. Vui lòng thử lại.");
+        }
+      },
+    });
+  };
+
+  const handleUnarchive = async () => {
+    try {
+      await unarchivePostApi(post.id);
+      setIsArchived(false);
+      message.success("Đã khôi phục bài viết");
+      onArchiveChange?.(post.id, false);
+      triggerRefresh();
+    } catch (error) {
+      message.error("Không thể khôi phục bài viết. Vui lòng thử lại.");
+    }
+  };
+
   const handleReport = () => {
     if (!currentUser) {
       message.warning("Bạn cần đăng nhập để báo cáo bài viết.");
@@ -395,6 +462,21 @@ export default function PostItem({ post, single = false, onVote, onRefresh = nul
     setShowReportModal(true);
   };
 
+  const handleGiftPoints = () => {
+    if (!currentUser) {
+      message.warning("Bạn cần đăng nhập để tặng điểm.");
+      return;
+    }
+    setShowGiftModal(true);
+  };
+
+  const isOwnPost = !!(
+    currentUser &&
+    (currentUser.username === post.author.username ||
+      (post.anonymous && post.is_owner))
+  );
+  const isAdmin = currentUser?.role === "admin";
+
   const menuItems = [
     {
       key: "share",
@@ -402,6 +484,49 @@ export default function PostItem({ post, single = false, onVote, onRefresh = nul
       icon: <Share size={16} />,
       onClick: handleShare,
     },
+    // Gifting points to the author: other people's posts only (the server
+    // resolves the recipient from the post, so anonymous authors stay hidden).
+    ...(currentUser && !isOwnPost
+      ? [
+          {
+            key: "gift-points",
+            label: "Tặng điểm cho tác giả",
+            icon: <Gift size={16} />,
+            onClick: handleGiftPoints,
+          },
+        ]
+      : []),
+    // Other people's posts, in the feed only: this just curates your own feed,
+    // so there's nothing to hide on your own post or on the post's own page.
+    ...(!single && !isOwnPost
+      ? [
+          {
+            key: "hide",
+            label: "Ẩn khỏi bảng tin",
+            icon: <EyeOff size={16} />,
+            onClick: handleHide,
+          },
+        ]
+      : []),
+    // Archiving is the author's own (admins can archive anything, like the
+    // rest of their menu) and is offered everywhere the post is shown.
+    ...(isOwnPost || isAdmin
+      ? [
+          isArchived
+            ? {
+                key: "unarchive",
+                label: "Khôi phục bài viết",
+                icon: <ArchiveRestore size={16} />,
+                onClick: handleUnarchive,
+              }
+            : {
+                key: "archive",
+                label: "Chuyển vào kho lưu trữ",
+                icon: <Archive size={16} />,
+                onClick: handleArchive,
+              },
+        ]
+      : []),
     ...(isMobile
       ? [
           {
@@ -420,12 +545,7 @@ export default function PostItem({ post, single = false, onVote, onRefresh = nul
     },
   ];
 
-  if (
-    currentUser &&
-    (currentUser.username === post.author.username ||
-      currentUser.role === "admin" ||
-      (post.anonymous && post.is_owner))
-  ) {
+  if (currentUser && (isOwnPost || isAdmin)) {
     menuItems.push({
       key: "edit",
       label: "Chỉnh sửa",
@@ -441,6 +561,29 @@ export default function PostItem({ post, single = false, onVote, onRefresh = nul
     });
   }
 
+  if (isHidden) {
+    return (
+      <div
+        className="px-1.5 md:px-0 md:max-w-[775px] mx-auto w-full"
+        key={post.id}
+      >
+        <div className="post-container mb-4 shadow-lg rounded-xl !p-6 bg-white flex items-center justify-between gap-4">
+          <div>
+            <p className="font-semibold dark:text-neutral-300">
+              Đã ẩn bài viết
+            </p>
+            <p className="text-sm text-gray-500 dark:text-neutral-400">
+              Bạn sẽ không thấy bài viết này trên bảng tin nữa.
+            </p>
+          </div>
+          <Button type="link" className="!px-0" onClick={handleUndoHide}>
+            Hoàn tác
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div
       className="px-1.5 md:px-0 md:max-w-[775px] mx-auto w-full"
@@ -452,12 +595,36 @@ export default function PostItem({ post, single = false, onVote, onRefresh = nul
         postTitle={post.title}
         onClose={() => setShowVotesModal(false)}
       />
+      <SharePostModal
+        post={post}
+        open={showShareModal}
+        onClose={() => setShowShareModal(false)}
+      />
+      <GiftPointsModal
+        post={post}
+        open={showGiftModal}
+        onClose={() => setShowGiftModal(false)}
+      />
       <ReportModal
         open={showReportModal}
         onClose={() => setShowReportModal(false)}
         reportedUserId={post.author?.id}
         topicId={post.id}
         title="Báo cáo bài viết"
+      />
+      <CreatePostModal
+        open={showEditModal}
+        onClose={() => setShowEditModal(false)}
+        isEditMode={true}
+        postData={post}
+        onSuccess={() => {
+          if (onRefresh) {
+            onRefresh();
+          } else {
+            router.refresh();
+          }
+          triggerRefresh();
+        }}
       />
       <div className="post-container-post post-container mb-4 shadow-lg rounded-xl !p-6 bg-white flex flex-col-reverse md:flex-row">
         <div className="min-w-[72px]">
@@ -525,6 +692,15 @@ export default function PostItem({ post, single = false, onVote, onRefresh = nul
                 color={isSaved ? "#16a34a" : "#9ca3af"}
               />
             </Button>
+            <Button
+              size="small"
+              onClick={handleShare}
+              aria-label="Chia sẻ bài viết"
+              title="Chia sẻ bài viết"
+              className="w-8 px-2 md:mt-2 rounded-full border-0 text-gray-400"
+            >
+              <Share size={22} />
+            </Button>
             <div className="flex-1"></div>
             {/* Mobile view */}
             <div className="flex-1 flex md:hidden flex-row-reverse items-center text-gray-500">
@@ -574,6 +750,12 @@ export default function PostItem({ post, single = false, onVote, onRefresh = nul
         <div className="flex-1 overflow-hidden break-words">
           <div className="flex justify-between items-start gap-2">
             <div className="flex-1 min-w-0">
+              {isArchived && (
+                <span className="mb-1 inline-flex items-center gap-1 rounded-full bg-gray-100 px-2 py-0.5 text-[12px] font-medium text-gray-600 dark:bg-neutral-700 dark:text-neutral-300">
+                  <Archive size={12} />
+                  Đã lưu trữ
+                </span>
+              )}
               {single ? (
                 <h1 className="text-xl font-semibold mb-1 dark:text-neutral-300">
                   {post.title || (
@@ -625,9 +807,11 @@ export default function PostItem({ post, single = false, onVote, onRefresh = nul
               __html:
                 !post.content || post.content.trim() === ""
                   ? '<span style="color: #9ca3af;">(Chưa có nội dung)</span>'
-                  : single
-                    ? wrapIframes(contentWithHeadingIds)
-                    : getContentWithReadMore(),
+                  : rewriteExternalLinksInHtml(
+                      single
+                        ? wrapIframes(contentWithHeadingIds)
+                        : getContentWithReadMore()
+                    ),
             }}
             onClick={(e) => {
               const hashtagEl = e.target.closest(".hashtag-link");
@@ -742,10 +926,11 @@ export default function PostItem({ post, single = false, onVote, onRefresh = nul
             </div>
           )}
 
-          {post.image_urls?.length != 0 && (
-            <div className="square-wrapper mt-3 rounded overflow-hidden">
-              <ReactPhotoCollage {...setting} />
-            </div>
+          {post.image_urls?.length > 0 && (
+            <PhotoCollage
+              images={post.image_urls}
+              className="mt-3 rounded overflow-hidden"
+            />
           )}
           {post.video_urls?.length != 0 && (
             <div className="mt-3 flex flex-col gap-2">
@@ -766,7 +951,7 @@ export default function PostItem({ post, single = false, onVote, onRefresh = nul
               <>
                 <span className="relative flex shrink-0 overflow-hidden rounded-full w-8 h-8">
                   <div className="border rounded-full aspect-square h-full w-full bg-[#e9f1e9] dark:bg-[#1d281b] dark:!border-gray-500 flex items-center justify-center">
-                    <span className="text-lg font-bold text-white dark:text-gray-300">
+                    <span className="text-lg font-bold text-primary-500 dark:text-gray-300">
                       ?
                     </span>
                   </div>
@@ -860,20 +1045,6 @@ export default function PostItem({ post, single = false, onVote, onRefresh = nul
           </div>
         </div>
       </div>
-      <CreatePostModal
-        open={showEditModal}
-        onClose={() => setShowEditModal(false)}
-        isEditMode={true}
-        postData={post}
-        onSuccess={() => {
-          if (onRefresh) {
-            onRefresh();
-          } else {
-            router.refresh();
-          }
-          triggerRefresh();
-        }}
-      />
     </div>
   );
 }

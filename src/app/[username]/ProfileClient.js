@@ -10,7 +10,8 @@ import FollowButton from "@/components/profile/FollowButton";
 import { BsFillGearFill } from "react-icons/bs";
 import { IoChatbubbleEllipsesOutline } from "react-icons/io5";
 import { IoCalendarOutline, IoLocationOutline } from "react-icons/io5";
-import { Edit2Icon, Flag, X } from "lucide-react";
+import { Archive, Edit2Icon, Flag, X, MoreHorizontal, Ban } from "lucide-react";
+import ProfilePhotoGallery from "@/components/profile/ProfilePhotoGallery";
 import MemberTierBadge from "@/components/ui/MemberTierBadge";
 import { useAuthContext, useChatContext } from "@/contexts/Support";
 import ReportModal from "@/components/ReportModal";
@@ -20,15 +21,25 @@ import {
   registerVote,
   getProfile,
   getUserPosts,
+  getUserLikedPosts,
   updateAvatar,
   updateCover,
+  blockUser,
 } from "@/app/Api";
+
+const LIKED_SORT_OPTIONS = [
+  { value: "newest", label: "Mới nhất" },
+  { value: "oldest", label: "Cũ nhất" },
+  { value: "most_liked", label: "Nhiều lượt thích" },
+  { value: "least_liked", label: "Ít lượt thích" },
+];
 
 export default function ProfileClient({ initialProfile, activeTab, username }) {
   const { currentUser } = useAuthContext();
   const { openChat, createConversation } = useChatContext();
   const router = useRouter();
   const [showReportModal, setShowReportModal] = useState(false);
+  const [showMoreMenu, setShowMoreMenu] = useState(false);
 
   // Transform API response to component format
   const transformProfileData = (apiData, currentUsername = null) => {
@@ -69,8 +80,8 @@ export default function ProfileClient({ initialProfile, activeTab, username }) {
         user.profile?.profile_picture ||
         `${process.env.NEXT_PUBLIC_API_URL}/v1.0/users/${user.username}/avatar`,
       cover_photo_url: user.profile?.cover_photo_url || null,
-      member_tier: user.profile?.member_tier || null,
-      points_milestones: user.profile?.points_milestones || [],
+      member_tier: user.member_tier || user.profile?.member_tier || null,
+      points_milestones: user.points_milestones || user.profile?.points_milestones || [],
       stats: {
         posts: user.stats?.posts_count || user.stats?.posts || 0,
         followers: user.stats?.followers || 0,
@@ -142,6 +153,14 @@ export default function ProfileClient({ initialProfile, activeTab, username }) {
   const [postsPage, setPostsPage] = useState(1);
   const [postsHasMore, setPostsHasMore] = useState(true);
   const [loadingMorePosts, setLoadingMorePosts] = useState(false);
+  // "Likes" tab: the posts that add up to the profile's like total.
+  const [likedPosts, setLikedPosts] = useState([]);
+  const [likedPostsPage, setLikedPostsPage] = useState(1);
+  const [likedPostsHasMore, setLikedPostsHasMore] = useState(false);
+  const [likedPostsTotal, setLikedPostsTotal] = useState(0);
+  const [likedTotalLikes, setLikedTotalLikes] = useState(0);
+  const [loadingLikedPosts, setLoadingLikedPosts] = useState(false);
+  const [likedSort, setLikedSort] = useState("newest");
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [uploadingCover, setUploadingCover] = useState(false);
   const [coverIsLight, setCoverIsLight] = useState(false);
@@ -211,6 +230,49 @@ export default function ProfileClient({ initialProfile, activeTab, username }) {
       cancelled = true;
     };
   }, [activeTab, username]);
+
+  // Reload the "Likes" tab whenever it opens or its sort option changes.
+  useEffect(() => {
+    if (activeTab !== "likes" || !username) return;
+
+    let cancelled = false;
+    setLoadingLikedPosts(true);
+    getUserLikedPosts(username, 1, 10, likedSort)
+      .then((response) => {
+        if (cancelled) return;
+        setLikedPosts(response.data?.data || []);
+        setLikedPostsPage(1);
+        setLikedPostsHasMore(Boolean(response.data?.has_more));
+        setLikedPostsTotal(response.data?.total || 0);
+        setLikedTotalLikes(response.data?.total_likes || 0);
+      })
+      .catch((error) => {
+        console.error("Error loading liked posts:", error);
+      })
+      .finally(() => {
+        if (!cancelled) setLoadingLikedPosts(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [activeTab, username, likedSort]);
+
+  const loadMoreLikedPosts = async () => {
+    if (loadingLikedPosts || !likedPostsHasMore) return;
+    setLoadingLikedPosts(true);
+    try {
+      const nextPage = likedPostsPage + 1;
+      const response = await getUserLikedPosts(username, nextPage, 10, likedSort);
+      setLikedPosts((prev) => [...prev, ...(response.data?.data || [])]);
+      setLikedPostsPage(nextPage);
+      setLikedPostsHasMore(Boolean(response.data?.has_more));
+    } catch (error) {
+      console.error("Error loading more liked posts:", error);
+    } finally {
+      setLoadingLikedPosts(false);
+    }
+  };
 
   const loadMorePosts = async () => {
     if (loadingMorePosts || !postsHasMore) return;
@@ -495,9 +557,11 @@ export default function ProfileClient({ initialProfile, activeTab, username }) {
 
     // Store original state for rollback
     const originalPosts = [...posts];
+    const originalLikedPosts = [...likedPosts];
 
-    // Optimistic update
-    setPosts((prev) =>
+    // Optimistic update - the same post can be on screen in both the
+    // Posts tab and the Likes tab, so patch it in both lists.
+    const applyVote = (prev) =>
       prev.map((post) => {
         if (post.id !== postId) return post;
 
@@ -539,9 +603,11 @@ export default function ProfileClient({ initialProfile, activeTab, username }) {
           ...post,
           votes: newVotes,
           votes_sum_vote_value: votesSum,
+          likes_count: newVotes.filter((v) => v.vote_value === 1).length,
         };
-      })
-    );
+      });
+    setPosts(applyVote);
+    setLikedPosts(applyVote);
 
     // Call backend
     try {
@@ -549,8 +615,28 @@ export default function ProfileClient({ initialProfile, activeTab, username }) {
     } catch (error) {
       // Rollback on error
       setPosts(originalPosts);
+      setLikedPosts(originalLikedPosts);
       console.error("Vote error:", error);
       message.error("Có lỗi xảy ra khi vote. Vui lòng thử lại.");
+    }
+  };
+
+  const handleBlock = async () => {
+    if (!currentUser) {
+      message.error("Vui lòng đăng nhập để thực hiện hành động này");
+      return;
+    }
+    try {
+      await blockUser(profile.id);
+      message.success("Đã chặn người dùng này");
+      setShowMoreMenu(false);
+      // The server now answers 404 for this profile, so there's nothing
+      // left to show here - leave instead of keeping the stale page up.
+      router.push("/");
+      router.refresh();
+    } catch (error) {
+      console.error("Block error:", error);
+      message.error("Có lỗi xảy ra. Vui lòng thử lại.");
     }
   };
 
@@ -572,6 +658,57 @@ export default function ProfileClient({ initialProfile, activeTab, username }) {
             {postsHasMore && (
               <div className="flex justify-center py-4">
                 <Button loading={loadingMorePosts} onClick={loadMorePosts}>
+                  Xem thêm bài viết
+                </Button>
+              </div>
+            )}
+          </>
+        );
+      case "likes":
+        return (
+          <>
+            <div className="w-full bg-white dark:!bg-[var(--main-white)] rounded-xl px-4 py-3 mb-3 flex flex-col gap-y-2">
+              <div className="flex items-center justify-between gap-x-2 flex-wrap gap-y-1">
+                <h2 className="font-bold text-base text-gray-900 dark:text-white">
+                  Bài viết được thích
+                </h2>
+                <span className="text-sm text-gray-500 dark:text-gray-400">
+                  {likedPostsTotal} bài viết · {likedTotalLikes} lượt thích
+                </span>
+              </div>
+              <div className="flex items-center gap-2 flex-wrap">
+                {LIKED_SORT_OPTIONS.map((option) => (
+                  <button
+                    key={option.value}
+                    type="button"
+                    onClick={() => setLikedSort(option.value)}
+                    className={`px-3 py-1 rounded-full text-sm font-medium border transition-colors ${
+                      likedSort === option.value
+                        ? "bg-primary-500 border-primary-500 text-white"
+                        : "bg-transparent border-gray-200 dark:border-neutral-700 text-gray-600 dark:text-neutral-300 hover:bg-gray-50 dark:hover:bg-neutral-800"
+                    }`}
+                  >
+                    {option.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+            {likedPosts.map((post) => (
+              <PostItem
+                key={post.id}
+                post={post}
+                single={false}
+                onVote={handleVote}
+              />
+            ))}
+            {!loadingLikedPosts && likedPosts.length === 0 && (
+              <div className="w-full bg-white dark:!bg-[var(--main-white)] rounded-xl py-10 text-center text-gray-500 dark:text-gray-400">
+                Chưa có bài viết nào được thích
+              </div>
+            )}
+            {(likedPostsHasMore || (loadingLikedPosts && likedPosts.length === 0)) && (
+              <div className="flex justify-center py-4">
+                <Button loading={loadingLikedPosts} onClick={loadMoreLikedPosts}>
                   Xem thêm bài viết
                 </Button>
               </div>
@@ -738,6 +875,7 @@ export default function ProfileClient({ initialProfile, activeTab, username }) {
   const mobileMutedTextClass = coverIsLight ? "text-gray-600" : "text-white/75";
 
   return (
+    <>
     <DefaultLayout activeNav="home">
       <ReportModal
         open={showReportModal}
@@ -882,12 +1020,12 @@ export default function ProfileClient({ initialProfile, activeTab, username }) {
                       {profile.stats.followers}
                     </span>
                   </Link>
-                  <div className="px-3">
+                  <Link href={`/${profile.username}/likes`} className="px-3">
                     <span className={mobileMutedTextClass}>Lượt like: </span>
                     <span className={`font-bold ${mobileTextClass}`}>
                       {profile.stats.likes}
                     </span>
-                  </div>
+                  </Link>
                 </div>
               </div>
               <p className={`text-center ${mobileTextClass}`}>{profile.bio}</p>
@@ -917,26 +1055,36 @@ export default function ProfileClient({ initialProfile, activeTab, username }) {
                   <>
                     <Button
                       shape="circle"
-                      icon={<IoChatbubbleEllipsesOutline className="w-5 h-5 mt-1" />}
+                      icon={<IoChatbubbleEllipsesOutline className="w-5 h-5 mt-1 text-[#319527]" />}
                       aria-label="Nhắn tin"
                       title="Nhắn tin"
                       loading={messaging}
                       onClick={handleMessage}
-                      className="!flex !items-center !justify-center !border-[#319527]"
+                      className="!flex !items-center !justify-center !border-[#319527] !text-[#319527]"
                     />
                     <FollowButton
                       isFollowing={isFollowing}
                       loading={loading}
                       handleFollow={handleFollow}
                     />
-                    <Button
-                      shape="circle"
-                      icon={<Flag className="w-4 h-4" />}
-                      aria-label="Báo cáo"
-                      title="Báo cáo người dùng"
-                      onClick={() => setShowReportModal(true)}
-                      className="!flex !items-center !justify-center"
-                    />
+                    <div className="relative">
+                      <Button shape="circle" icon={<MoreHorizontal className="w-4 h-4" />} aria-label="Thêm" title="Thêm tùy chọn" onClick={() => setShowMoreMenu((v) => !v)} className="!flex !items-center !justify-center" />
+                      {showMoreMenu && (
+                        <>
+                          <div className="fixed inset-0 z-10" onClick={() => setShowMoreMenu(false)} />
+                          <div className="absolute right-0 mt-1 w-44 bg-white dark:bg-neutral-800 border border-gray-200 dark:border-neutral-700 rounded-xl shadow-lg z-20 overflow-hidden">
+                            <button onClick={handleBlock} className="w-full flex items-center gap-x-2 px-4 py-2.5 text-sm text-red-600 hover:bg-gray-50 dark:hover:bg-neutral-700 transition-colors">
+                              <Ban className="w-4 h-4" />
+                              Chặn người dùng
+                            </button>
+                            <button onClick={() => { setShowReportModal(true); setShowMoreMenu(false); }} className="w-full flex items-center gap-x-2 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-neutral-700 transition-colors">
+                              <Flag className="w-4 h-4" />
+                              Báo cáo
+                            </button>
+                          </div>
+                        </>
+                      )}
+                    </div>
                   </>
                 )}
               </div>
@@ -982,14 +1130,35 @@ export default function ProfileClient({ initialProfile, activeTab, username }) {
                 </h1>
                 <p className="text-sm text-gray-500 dark:text-gray-400 break-words max-w-full">@{profile.username}</p>
               </div>
-              <div className="flex flex-wrap justify-center gap-x-4 gap-y-1 mt-3 text-sm max-w-full">
-                <Link href={`/${profile.username}`}><span className="text-gray-500 dark:text-gray-400">Bài đăng: </span><span className="font-bold text-gray-900 dark:text-white">{profile.stats.posts}</span></Link>
-                <div><span className="text-gray-500 dark:text-gray-400">Điểm: </span><span className="font-bold text-gray-900 dark:text-white">{profile.stats.points}</span></div>
-                <Link href={`/${profile.username}/following`}><span className="text-gray-500 dark:text-gray-400">Đang theo dõi: </span><span className="font-bold text-gray-900 dark:text-white">{profile.stats.following}</span></Link>
-                <Link href={`/${profile.username}/followers`}><span className="text-gray-500 dark:text-gray-400">Người theo dõi: </span><span className="font-bold text-gray-900 dark:text-white">{profile.stats.followers}</span></Link>
-                <div><span className="text-gray-500 dark:text-gray-400">Lượt like: </span><span className="font-bold text-gray-900 dark:text-white">{profile.stats.likes}</span></div>
+              <div className="flex flex-wrap justify-center mt-3 w-full">
+                <Link href={`/${profile.username}`} className="flex flex-col items-center px-3 py-1 rounded-lg hover:bg-gray-50 dark:hover:bg-neutral-700 transition-colors">
+                  <span className="font-semibold text-xs text-gray-500 dark:text-gray-400">Bài viết</span>
+                  <span className="font-bold text-lg text-primary-500">{profile.stats.posts}</span>
+                </Link>
+                <Link href={`/${profile.username}/followers`} className="flex flex-col items-center px-3 py-1 rounded-lg hover:bg-gray-50 dark:hover:bg-neutral-700 transition-colors">
+                  <span className="font-semibold text-xs text-gray-500 dark:text-gray-400">Người t.dõi</span>
+                  <span className="font-bold text-lg text-primary-500">{profile.stats.followers}</span>
+                </Link>
+                <Link href={`/${profile.username}/following`} className="flex flex-col items-center px-3 py-1 rounded-lg hover:bg-gray-50 dark:hover:bg-neutral-700 transition-colors">
+                  <span className="font-semibold text-xs text-gray-500 dark:text-gray-400">Đang t.dõi</span>
+                  <span className="font-bold text-lg text-primary-500">{profile.stats.following}</span>
+                </Link>
+                <Link href={`/${profile.username}/likes`} className="flex flex-col items-center px-3 py-1 rounded-lg hover:bg-gray-50 dark:hover:bg-neutral-700 transition-colors">
+                  <span className="font-semibold text-xs text-gray-500 dark:text-gray-400">Thích</span>
+                  <span className="font-bold text-lg text-primary-500">{profile.stats.likes}</span>
+                </Link>
+                <button type="button" onClick={() => setShowMilestonesModal(true)} className="flex flex-col items-center px-3 py-1 rounded-lg hover:bg-gray-50 dark:hover:bg-neutral-700 transition-colors cursor-pointer">
+                  <span className="font-semibold text-xs text-gray-500 dark:text-gray-400">Điểm</span>
+                  <span className="font-bold text-lg text-primary-500">{profile.stats.points}</span>
+                </button>
               </div>
               {profile.bio && <p className="text-center text-gray-700 dark:text-gray-300 text-sm mt-2 break-words max-w-full">{profile.bio}</p>}
+              {isOwnProfile && (
+                <Link href="/my-archives" className="flex items-center gap-x-1 mt-2 text-sm text-gray-500 dark:text-gray-400 hover:text-primary-500">
+                  <Archive className="w-4 h-4" />
+                  <span>Kho lưu trữ</span>
+                </Link>
+              )}
               <div className="flex flex-col gap-y-1 mt-2 text-sm text-gray-500 dark:text-gray-400">
                 {profile.location && <div className="flex items-center gap-x-1"><IoLocationOutline className="text-base" /><span>{profile.location}</span></div>}
                 {profile.joined_at && <div className="flex items-center gap-x-1"><IoCalendarOutline className="text-base" /><span>{profile.joined_at}</span></div>}
@@ -1004,11 +1173,34 @@ export default function ProfileClient({ initialProfile, activeTab, username }) {
                   </Link>
                 ) : (
                   <>
-                    <Button shape="circle" icon={<IoChatbubbleEllipsesOutline className="w-5 h-5 mt-1" />} aria-label="Nhắn tin" title="Nhắn tin" loading={messaging} onClick={handleMessage} className="!flex !items-center !justify-center !border-[#319527]" />
+                    <Button shape="circle" icon={<IoChatbubbleEllipsesOutline className="w-5 h-5 mt-1 text-[#319527]" />} aria-label="Nhắn tin" title="Nhắn tin" loading={messaging} onClick={handleMessage} className="!flex !items-center !justify-center !border-[#319527] !text-[#319527]" />
                     <FollowButton isFollowing={isFollowing} loading={loading} handleFollow={handleFollow} />
-                    <Button shape="circle" icon={<Flag className="w-4 h-4" />} aria-label="Báo cáo" title="Báo cáo người dùng" onClick={() => setShowReportModal(true)} className="!flex !items-center !justify-center" />
+                    <div className="relative">
+                      <Button shape="circle" icon={<MoreHorizontal className="w-4 h-4" />} aria-label="Thêm" title="Thêm tùy chọn" onClick={() => setShowMoreMenu((v) => !v)} className="!flex !items-center !justify-center" />
+                      {showMoreMenu && (
+                        <>
+                          <div className="fixed inset-0 z-10" onClick={() => setShowMoreMenu(false)} />
+                          <div className="absolute right-0 mt-1 w-44 bg-white dark:bg-neutral-800 border border-gray-200 dark:border-neutral-700 rounded-xl shadow-lg z-20 overflow-hidden">
+                            <button onClick={handleBlock} className="w-full flex items-center gap-x-2 px-4 py-2.5 text-sm text-red-600 hover:bg-gray-50 dark:hover:bg-neutral-700 transition-colors">
+                              <Ban className="w-4 h-4" />
+                              Chặn người dùng
+                            </button>
+                            <button onClick={() => { setShowReportModal(true); setShowMoreMenu(false); }} className="w-full flex items-center gap-x-2 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-neutral-700 transition-colors">
+                              <Flag className="w-4 h-4" />
+                              Báo cáo
+                            </button>
+                          </div>
+                        </>
+                      )}
+                    </div>
                   </>
                 )}
+              </div>
+              <div className="w-full mt-3 lg:hidden">
+                <ProfilePhotoGallery
+                  username={username || profile.username}
+                  profileUsername={profile.username}
+                />
               </div>
             </div>
           </div>
@@ -1059,7 +1251,7 @@ export default function ProfileClient({ initialProfile, activeTab, username }) {
               <div className="flex flex-row">
                 <Link
                   href={`/${profile.username}`}
-                  className="select-none cursor-pointer h-full flex flex-col items-center justify-center px-3 box-border min-w-max"
+                  className="select-none cursor-pointer h-full flex flex-col items-center justify-center box-border min-w-max"
                   style={{
                     borderBottom:
                       activeTab === "posts"
@@ -1067,16 +1259,18 @@ export default function ProfileClient({ initialProfile, activeTab, username }) {
                         : "3px solid transparent",
                   }}
                 >
-                  <p className="font-semibold text-sm text-slate-600 dark:text-neutral-400">
-                    Bài viết
-                  </p>
-                  <p className="font-bold text-xl text-primary-500">
-                    {profile.stats.posts}
-                  </p>
+                  <span className="flex flex-col items-center justify-center px-3 py-1 rounded-lg hover:bg-gray-50 dark:hover:bg-neutral-800 transition-colors h-full">
+                    <p className="font-semibold text-sm text-slate-600 dark:text-neutral-400">
+                      Bài viết
+                    </p>
+                    <p className="font-bold text-xl text-primary-500">
+                      {profile.stats.posts}
+                    </p>
+                  </span>
                 </Link>
                 <Link
                   href={`/${profile.username}/followers`}
-                  className="select-none cursor-pointer h-full flex flex-col items-center justify-center px-3 box-border min-w-max"
+                  className="select-none cursor-pointer h-full flex flex-col items-center justify-center box-border min-w-max"
                   style={{
                     borderBottom:
                       activeTab === "followers"
@@ -1084,16 +1278,18 @@ export default function ProfileClient({ initialProfile, activeTab, username }) {
                         : "3px solid transparent",
                   }}
                 >
-                  <p className="font-semibold text-sm text-slate-600 dark:text-neutral-400">
-                    Người t.dõi
-                  </p>
-                  <p className="font-bold text-xl text-primary-500 follower_count">
-                    {profile.stats.followers}
-                  </p>
+                  <span className="flex flex-col items-center justify-center px-3 py-1 rounded-lg hover:bg-gray-50 dark:hover:bg-neutral-800 transition-colors h-full">
+                    <p className="font-semibold text-sm text-slate-600 dark:text-neutral-400">
+                      Người t.dõi
+                    </p>
+                    <p className="font-bold text-xl text-primary-500 follower_count">
+                      {profile.stats.followers}
+                    </p>
+                  </span>
                 </Link>
                 <Link
                   href={`/${profile.username}/following`}
-                  className="select-none cursor-pointer h-full flex flex-col items-center justify-center px-3 box-border min-w-max"
+                  className="select-none cursor-pointer h-full flex flex-col items-center justify-center box-border min-w-max"
                   style={{
                     borderBottom:
                       activeTab === "following"
@@ -1101,25 +1297,35 @@ export default function ProfileClient({ initialProfile, activeTab, username }) {
                         : "3px solid transparent",
                   }}
                 >
-                  <p className="font-semibold text-sm text-slate-600 dark:text-neutral-400">
-                    Đang t.dõi
-                  </p>
-                  <p className="font-bold text-xl text-primary-500">
-                    {profile.stats.following}
-                  </p>
+                  <span className="flex flex-col items-center justify-center px-3 py-1 rounded-lg hover:bg-gray-50 dark:hover:bg-neutral-800 transition-colors h-full">
+                    <p className="font-semibold text-sm text-slate-600 dark:text-neutral-400">
+                      Đang t.dõi
+                    </p>
+                    <p className="font-bold text-xl text-primary-500">
+                      {profile.stats.following}
+                    </p>
+                  </span>
                 </Link>
 
-                <div
-                  className="select-none h-full flex flex-col items-center justify-center px-3 box-border min-w-max"
-                  style={{ borderBottom: "3px solid transparent" }}
+                <Link
+                  href={`/${profile.username}/likes`}
+                  className="select-none cursor-pointer h-full flex flex-col items-center justify-center box-border min-w-max"
+                  style={{
+                    borderBottom:
+                      activeTab === "likes"
+                        ? "3px solid #319527"
+                        : "3px solid transparent",
+                  }}
                 >
-                  <p className="font-semibold text-sm text-slate-600 dark:text-neutral-400">
-                    Thích
-                  </p>
-                  <p className="font-bold text-xl text-primary-500">
-                    {profile.stats.likes}
-                  </p>
-                </div>
+                  <span className="flex flex-col items-center justify-center px-3 py-1 rounded-lg hover:bg-gray-50 dark:hover:bg-neutral-800 transition-colors h-full">
+                    <p className="font-semibold text-sm text-slate-600 dark:text-neutral-400">
+                      Thích
+                    </p>
+                    <p className="font-bold text-xl text-primary-500">
+                      {profile.stats.likes}
+                    </p>
+                  </span>
+                </Link>
                 <button
                   onClick={() => setShowMilestonesModal(true)}
                   className="select-none h-full flex flex-col items-center justify-center px-3 box-border min-w-max cursor-pointer hover:bg-gray-50 dark:hover:bg-neutral-800 transition-colors rounded-lg"
@@ -1145,26 +1351,36 @@ export default function ProfileClient({ initialProfile, activeTab, username }) {
                   <>
                     <Button
                       shape="circle"
-                      icon={<IoChatbubbleEllipsesOutline className="w-5 h-5 mt-1" />}
+                      icon={<IoChatbubbleEllipsesOutline className="w-5 h-5 mt-1 text-[#319527]" />}
                       aria-label="Nhắn tin"
                       title="Nhắn tin"
                       loading={messaging}
                       onClick={handleMessage}
-                      className="!flex !items-center !justify-center !border-[#319527]"
+                      className="!flex !items-center !justify-center !border-[#319527] !text-[#319527]"
                     />
                     <FollowButton
                       isFollowing={isFollowing}
                       loading={loading}
                       handleFollow={handleFollow}
                     />
-                    <Button
-                      shape="circle"
-                      icon={<Flag className="w-4 h-4" />}
-                      aria-label="Báo cáo"
-                      title="Báo cáo người dùng"
-                      onClick={() => setShowReportModal(true)}
-                      className="!flex !items-center !justify-center"
-                    />
+                    <div className="relative">
+                      <Button shape="circle" icon={<MoreHorizontal className="w-4 h-4" />} aria-label="Thêm" title="Thêm tùy chọn" onClick={() => setShowMoreMenu((v) => !v)} className="!flex !items-center !justify-center" />
+                      {showMoreMenu && (
+                        <>
+                          <div className="fixed inset-0 z-10" onClick={() => setShowMoreMenu(false)} />
+                          <div className="absolute right-0 mt-1 w-44 bg-white dark:bg-neutral-800 border border-gray-200 dark:border-neutral-700 rounded-xl shadow-lg z-20 overflow-hidden">
+                            <button onClick={handleBlock} className="w-full flex items-center gap-x-2 px-4 py-2.5 text-sm text-red-600 hover:bg-gray-50 dark:hover:bg-neutral-700 transition-colors">
+                              <Ban className="w-4 h-4" />
+                              Chặn người dùng
+                            </button>
+                            <button onClick={() => { setShowReportModal(true); setShowMoreMenu(false); }} className="w-full flex items-center gap-x-2 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-neutral-700 transition-colors">
+                              <Flag className="w-4 h-4" />
+                              Báo cáo
+                            </button>
+                          </div>
+                        </>
+                      )}
+                    </div>
                   </>
                 )}
               </div>
@@ -1198,6 +1414,7 @@ export default function ProfileClient({ initialProfile, activeTab, username }) {
                           </svg>
                         </span>
                       )}
+                      <MemberTierBadge tier={profile.member_tier} className="text-xl" />
                     </span>
                   </h1>
                   <p className="text-sm text-gray-500">
@@ -1206,6 +1423,15 @@ export default function ProfileClient({ initialProfile, activeTab, username }) {
                   </p>
                 </div>
                 <p className="dark:text-neutral-300">{profile.bio}</p>
+                {isOwnProfile && (
+                  <Link
+                    href="/my-archives"
+                    className="flex items-center -ml-0.5 gap-x-1 text-gray-500 hover:text-primary-500"
+                  >
+                    <Archive className="w-[18px] h-[18px]" />
+                    <span className="text-sm">Kho lưu trữ</span>
+                  </Link>
+                )}
                 <div className="flex flex-col gap-y-2">
                   {profile.location && (
                     <div className="flex items-center -ml-0.5 gap-x-1 text-gray-500">
@@ -1222,6 +1448,13 @@ export default function ProfileClient({ initialProfile, activeTab, username }) {
                     </div>
                   )}
                 </div>
+                {/* Desktop sidebar has room, so the gallery opens by default here;
+                    the mobile card above keeps it collapsed. */}
+                <ProfilePhotoGallery
+                  username={username || profile.username}
+                  profileUsername={profile.username}
+                  defaultOpen
+                />
               </div>
               <div className="flex-1 !my-6 !px-3 md:!px-0 flex flex-col items-center">
                 {renderTabContent()}
@@ -1240,12 +1473,17 @@ export default function ProfileClient({ initialProfile, activeTab, username }) {
         onClick={() => setShowMilestonesModal(false)}
       >
         <div
-          className="bg-white dark:bg-neutral-900 rounded-2xl w-full max-w-sm shadow-xl overflow-hidden"
+          className="bg-white dark:bg-neutral-900 rounded-2xl w-full max-w-md shadow-xl overflow-hidden"
           onClick={(e) => e.stopPropagation()}
         >
           {/* Header */}
           <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-neutral-700">
-            <h2 className="font-bold text-base text-gray-900 dark:text-white">Điểm thành tích</h2>
+            <div>
+              <h2 className="font-bold text-base text-[#319527]">Điểm thành tích</h2>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                Tổng điểm: <span className="font-bold text-gray-800 dark:text-white">{profile.stats.points}</span>
+              </p>
+            </div>
             <button
               onClick={() => setShowMilestonesModal(false)}
               className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
@@ -1255,39 +1493,50 @@ export default function ProfileClient({ initialProfile, activeTab, username }) {
           </div>
 
           {/* Milestone list */}
-          <div className="divide-y divide-gray-100 dark:divide-neutral-700">
-            {(profile.points_milestones || []).map((m) => (
-              <div key={m.id} className={`flex items-center gap-4 px-5 py-4 ${!m.achieved_at ? "opacity-40" : ""}`}>
-                {/* Points badge */}
-                <div className="w-10 text-center shrink-0">
-                  <span className={`text-2xl font-bold ${m.achieved_at ? "text-[#319527]" : "text-gray-400"}`}>
-                    {m.min_points}
-                  </span>
+          <div className="divide-y divide-gray-100 dark:divide-neutral-800 max-h-[70vh] overflow-y-auto">
+            {(profile.points_milestones || []).length === 0 ? (
+              <p className="text-center text-gray-400 py-8 text-sm">Đang tải...</p>
+            ) : (profile.points_milestones || []).map((m) => {
+              const DESCRIPTIONS = {
+                trainee: "Mở khóa tùy chỉnh profile, tên nổi bật, khung avatar riêng và voucher 50% Gift Shop.",
+                active: "Được tặng điểm cho tác giả, tăng giới hạn đăng bài, ưu tiên hiển thị bình luận.",
+                distinguished: "Quy đổi điểm ra tiền mặt và đăng bài không cần duyệt.",
+                veteran: "Thành viên kỳ cựu của diễn đàn — danh hiệu cao quý nhất.",
+              };
+              return (
+                <div
+                  key={m.id}
+                  className={`flex items-start gap-4 px-5 py-4 transition-opacity ${!m.achieved_at ? "opacity-40" : ""}`}
+                >
+                  {/* Points number */}
+                  <div className="w-12 shrink-0 text-right pt-0.5">
+                    <span className={`text-2xl font-bold leading-none ${m.achieved_at ? "text-[#319527]" : "text-gray-400 dark:text-gray-500"}`}>
+                      {m.min_points}
+                    </span>
+                  </div>
+                  {/* Info */}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-1.5">
+                      <p className="font-bold text-sm text-gray-900 dark:text-white">{m.name}</p>
+                      <MemberTierBadge tier={m.achieved_at ? { id: m.id } : null} />
+                    </div>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 leading-relaxed">
+                      {DESCRIPTIONS[m.id]}
+                    </p>
+                  </div>
+                  {/* Date */}
+                  <div className="shrink-0 text-right pt-0.5">
+                    <span className="text-xs text-gray-400 dark:text-gray-500 whitespace-nowrap">
+                      {m.achieved_at || "—"}
+                    </span>
+                  </div>
                 </div>
-                {/* Info */}
-                <div className="flex-1 min-w-0">
-                  <p className="font-semibold text-sm text-gray-900 dark:text-white">{m.name}</p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">
-                    {m.achieved_at ? `Đạt được ngày ${m.achieved_at}` : "Chưa đạt được"}
-                  </p>
-                </div>
-                {/* Tier badge icon */}
-                <span className="text-xl shrink-0">
-                  <MemberTierBadge tier={m.achieved_at ? { id: m.id } : null} className="text-xl" />
-                </span>
-              </div>
-            ))}
-          </div>
-
-          {/* Footer */}
-          <div className="px-5 py-3 bg-gray-50 dark:bg-neutral-800 text-center">
-            <p className="text-xs text-gray-500 dark:text-gray-400">
-              Tổng điểm hiện tại:{" "}
-              <span className="font-bold text-[#319527]">{profile.stats.points} điểm</span>
-            </p>
+              );
+            })}
           </div>
         </div>
       </div>
     )}
+    </>
   );
 }

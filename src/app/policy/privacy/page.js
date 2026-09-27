@@ -217,10 +217,10 @@ export default function PrivacyPage() {
               <br />
               Hotline:{" "}
               <a
-                href="tel:0365520031"
+                href="tel:0707006421"
                 className="text-blue-600 hover:underline"
               >
-                0365520031
+                0707006421
               </a>
             </p>
           </div>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useRef, useState } from "react";
+import { useIsDarkMode } from "@/hooks/useIsDarkMode";
 
 const W = 600;
 const H = 180;
@@ -18,6 +19,12 @@ const fmtDay = (d) => {
 export default function TrendChart({ data, color = "#319527", label }) {
   const svgRef = useRef(null);
   const [hover, setHover] = useState(null);
+  // SVG strokes can't use Tailwind's dark: variant, so the few theme-dependent
+  // ones are picked here. The axis labels (#9ca3af) read fine on both.
+  const isDark = useIsDarkMode();
+  const gridStroke = isDark ? "#333833" : "#eef0ee";
+  const crosshairStroke = isDark ? "#6b7280" : "#d1d5db";
+  const dotRing = isDark ? "#1f221f" : "#fff";
 
   const { points, ticks, max } = useMemo(() => {
     const maxVal = Math.max(1, ...data.map((d) => d.value));
@@ -73,7 +80,7 @@ export default function TrendChart({ data, color = "#319527", label }) {
 
         {ticks.map((t) => (
           <g key={t.v}>
-            <line x1={PAD.left} x2={W - PAD.right} y1={t.y} y2={t.y} stroke="#eef0ee" />
+            <line x1={PAD.left} x2={W - PAD.right} y1={t.y} y2={t.y} stroke={gridStroke} />
             <text x={PAD.left - 8} y={t.y + 4} textAnchor="end" fontSize="11" fill="#9ca3af">
               {Number.isInteger(t.v) ? t.v : t.v.toFixed(1)}
             </text>
@@ -93,8 +100,8 @@ export default function TrendChart({ data, color = "#319527", label }) {
 
         {hover && (
           <g>
-            <line x1={hover.x} x2={hover.x} y1={PAD.top} y2={baseY} stroke="#d1d5db" strokeDasharray="3 3" />
-            <circle cx={hover.x} cy={hover.y} r="5" fill={color} stroke="#fff" strokeWidth="2" />
+            <line x1={hover.x} x2={hover.x} y1={PAD.top} y2={baseY} stroke={crosshairStroke} strokeDasharray="3 3" />
+            <circle cx={hover.x} cy={hover.y} r="5" fill={color} stroke={dotRing} strokeWidth="2" />
           </g>
         )}
         {/* full-height hit area */}
@@ -103,9 +110,10 @@ export default function TrendChart({ data, color = "#319527", label }) {
 
       {hover && (
         <div
-          className="pointer-events-none absolute -translate-x-1/2 -translate-y-full rounded-lg bg-gray-900 px-2.5 py-1.5 text-xs text-white shadow-lg whitespace-nowrap"
+          className="pointer-events-none absolute -translate-x-1/2 -translate-y-full rounded-lg bg-gray-900 dark:bg-neutral-700 px-2.5 py-1.5 text-xs text-white shadow-lg whitespace-nowrap"
           style={{ left: `${(hover.x / W) * 100}%`, top: `${(hover.y / H) * 100}%`, marginTop: -10 }}
         >
+          {/* Inside an always-dark tooltip, so this stays light in both themes. */}
           <div className="text-gray-300">{fmtDay(hover.date)}</div>
           <div className="font-semibold">
             {hover.value} {label}

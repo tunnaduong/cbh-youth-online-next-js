@@ -72,6 +72,8 @@ const getNotificationMessage = (notification) => {
       return `Bạn đã nhận được huy hiệu: ${data?.badge_name || "Huy hiệu"}`;
     case "points_earned":
       return `Bạn đã nhận được ${data?.points || 0} điểm`;
+    case "points_gifted":
+      return `${actorName} đã tặng bạn ${Number(data?.amount || 0).toLocaleString()} điểm${data?.message ? `: "${data.message}"` : ""}`;
     case "study_material_purchased":
       return `${actorName} đã mua tài liệu của bạn (+${data?.price} điểm)`;
     case "study_material_rated":
@@ -82,6 +84,17 @@ const getNotificationMessage = (notification) => {
       return "Nội dung của bạn đã bị ẩn";
     case "content_deleted":
       return "Nội dung của bạn đã bị xóa";
+    case "content_pending_review":
+      return `${data?.comment_id ? "Bình luận" : "Bài viết"} của bạn đang chờ kiểm duyệt${data?.reason ? `: ${data.reason}` : ""
+        }`;
+    case "content_approved":
+      return `${data?.comment_id ? "Bình luận" : "Bài viết"} của bạn đã được duyệt và hiển thị công khai`;
+    case "content_rejected":
+      return `${data?.comment_id ? "Bình luận" : "Bài viết"} của bạn không được duyệt${data?.reason ? `: ${data.reason}` : ""
+        }`;
+    case "moderation_pending":
+      return `${data?.content_type === "comment" ? "Bình luận" : "Bài viết"} của @${data?.author_username || "người dùng"
+        } đang chờ kiểm duyệt${data?.reason ? `: ${data.reason}` : ""}`;
     case "system_message":
       return data?.message || "Bạn có thông báo mới";
     default:
@@ -115,6 +128,11 @@ const convertToRelativeUrl = (url) => {
 
 const buildNotificationTargetUrl = (notification, viewerUsername) => {
   const data = notification?.data || {};
+
+  // A gift lands in the wallet, not on the post it was made from.
+  if (notification?.type === "points_gifted") {
+    return "/wallet";
+  }
   const legacyMetadata = parseLegacyUrlMetadata(data.url);
 
   const topicId =

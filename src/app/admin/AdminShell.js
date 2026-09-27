@@ -4,11 +4,15 @@ import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
-import { Layout, Menu, Button, ConfigProvider, Drawer, Avatar, Dropdown, Grid } from "antd";
+import { Layout, Menu, Button, ConfigProvider, Drawer, Avatar, Dropdown, Grid, theme as antdTheme, Tooltip } from "antd";
 import viVN from "antd/locale/vi_VN";
+import { SunOutlined, MoonOutlined } from "@ant-design/icons";
+import { useTheme } from "@/contexts/themeContext";
+import { useIsDarkMode } from "@/hooks/useIsDarkMode";
 import {
   DashboardOutlined,
   FlagOutlined,
+  RobotOutlined,
   FileTextOutlined,
   CommentOutlined,
   UserOutlined,
@@ -24,6 +28,7 @@ import {
   MenuOutlined,
   HomeOutlined,
   SafetyCertificateOutlined,
+  BugOutlined,
 } from "@ant-design/icons";
 
 const { Sider, Content, Header } = Layout;
@@ -32,30 +37,47 @@ export const ADMIN_SESSION_KEY = "cbh_admin_session";
 
 const BRAND = "#319527";
 
-const ADMIN_THEME = {
+// The brand green is tuned for white backgrounds and doesn't carry enough
+// contrast against near-black ones, so dark mode gets a brighter variant.
+const BRAND_DARK = "#4cb93f";
+
+// Nearly everything inside the shell is antd (tables, cards, modals, inputs,
+// dropdowns), so switching the algorithm does most of the dark-mode work on
+// its own - these tokens only restyle the surfaces the admin layout itself
+// defines on top of that.
+const adminTheme = (isDark) => ({
+  algorithm: isDark ? antdTheme.darkAlgorithm : antdTheme.defaultAlgorithm,
   token: {
-    colorPrimary: BRAND,
-    colorLink: BRAND,
+    colorPrimary: isDark ? BRAND_DARK : BRAND,
+    colorLink: isDark ? BRAND_DARK : BRAND,
     borderRadius: 10,
-    colorBgLayout: "#f4f6f5",
+    colorBgLayout: isDark ? "#171917" : "#f4f6f5",
     fontSize: 14,
   },
   components: {
-    Layout: { headerBg: "rgba(255,255,255,0.85)", siderBg: "#ffffff", headerHeight: 64 },
+    Layout: {
+      headerBg: isDark ? "rgba(31,34,31,0.85)" : "rgba(255,255,255,0.85)",
+      siderBg: isDark ? "#1f221f" : "#ffffff",
+      headerHeight: 64,
+    },
     Menu: {
       itemBg: "transparent",
-      itemSelectedBg: "#e9f5e7",
-      itemSelectedColor: BRAND,
-      itemHoverBg: "#f3f7f2",
+      itemSelectedBg: isDark ? "#2a3d27" : "#e9f5e7",
+      itemSelectedColor: isDark ? BRAND_DARK : BRAND,
+      itemHoverBg: isDark ? "#2a2e2a" : "#f3f7f2",
       itemBorderRadius: 8,
       itemHeight: 40,
-      groupTitleColor: "#9ca3af",
+      groupTitleColor: isDark ? "#6b7280" : "#9ca3af",
       groupTitleFontSize: 11,
     },
     Card: { paddingLG: 20 },
-    Table: { headerBg: "#fafbfa", headerColor: "#6b7280", rowHoverBg: "#f7faf6" },
+    Table: {
+      headerBg: isDark ? "#242724" : "#fafbfa",
+      headerColor: isDark ? "#9ca3af" : "#6b7280",
+      rowHoverBg: isDark ? "#242724" : "#f7faf6",
+    },
   },
-};
+});
 
 export const NAV_GROUPS = [
   { key: "/admin", icon: <DashboardOutlined />, label: "Tổng quan" },
@@ -65,6 +87,8 @@ export const NAV_GROUPS = [
       { key: "/admin/posts", icon: <FileTextOutlined />, label: "Bài viết" },
       { key: "/admin/comments", icon: <CommentOutlined />, label: "Bình luận" },
       { key: "/admin/reports", icon: <FlagOutlined />, label: "Báo cáo" },
+      { key: "/admin/moderation", icon: <RobotOutlined />, label: "Kiểm duyệt AI" },
+      { key: "/admin/feedback", icon: <BugOutlined />, label: "Góp ý & Báo lỗi" },
       { key: "/admin/study-materials", icon: <BookOutlined />, label: "Tài liệu học tập" },
     ],
   },
@@ -103,8 +127,8 @@ function SidebarContent({ selectedKey, onNavigate }) {
       <Link href="/admin" className="flex items-center gap-3 px-5 h-16 shrink-0" onClick={onNavigate}>
         <Image src="/images/logo.png" alt="CBH" width={34} height={34} />
         <div className="leading-tight">
-          <div className="font-bold text-[15px] text-gray-900">CBH Admin</div>
-          <div className="text-[11px] text-gray-400">Chuyên Biên Hòa Online</div>
+          <div className="font-bold text-[15px] text-gray-900 dark:text-gray-100">CBH Admin</div>
+          <div className="text-[11px] text-gray-400 dark:text-gray-500">Chuyên Biên Hòa Online</div>
         </div>
       </Link>
 
@@ -118,10 +142,10 @@ function SidebarContent({ selectedKey, onNavigate }) {
         />
       </div>
 
-      <div className="p-3 border-t border-gray-100">
+      <div className="p-3 border-t border-gray-100 dark:border-neutral-700">
         <Link
           href="/"
-          className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-gray-500 hover:bg-gray-50 hover:text-gray-800"
+          className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-neutral-700 hover:text-gray-800 dark:hover:text-gray-100"
         >
           <HomeOutlined /> Về trang chủ
         </Link>
@@ -137,6 +161,16 @@ export default function AdminShell({ children }) {
   const [authed, setAuthed] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [me, setMe] = useState(null);
+  // Shares the site-wide theme setting (and its localStorage key) rather than
+  // keeping a separate admin-only preference, so flipping it here or on the
+  // main site follows you both ways.
+  const { changeTheme } = useTheme();
+  const isDark = useIsDarkMode();
+  // Set explicitly off what's currently on screen instead of using
+  // toggleTheme(), which assumes the setting is already "light" or "dark" -
+  // from "auto" on a light OS it would pick "light" again and appear to do
+  // nothing.
+  const flipTheme = () => changeTheme(isDark ? "light" : "dark");
 
   const isLoginPage = pathname === "/admin/login";
 
@@ -155,7 +189,12 @@ export default function AdminShell({ children }) {
     }
   }, [router, isLoginPage]);
 
-  if (isLoginPage) return <ConfigProvider theme={ADMIN_THEME} locale={viVN}>{children}</ConfigProvider>;
+  if (isLoginPage)
+    return (
+      <ConfigProvider theme={adminTheme(isDark)} locale={viVN}>
+        {children}
+      </ConfigProvider>
+    );
   if (!authed) return null;
 
   // Longest nav key that prefixes the current path.
@@ -173,14 +212,14 @@ export default function AdminShell({ children }) {
   const displayName = me?.profile_name || me?.username || "Quản trị viên";
 
   return (
-    <ConfigProvider theme={ADMIN_THEME} locale={viVN}>
+    <ConfigProvider theme={adminTheme(isDark)} locale={viVN}>
       <Layout style={{ minHeight: "100vh" }}>
         {isDesktop ? (
           <Sider
             width={248}
-            theme="light"
+            theme={isDark ? "dark" : "light"}
             style={{
-              borderRight: "1px solid #eef0ee",
+              borderRight: `1px solid ${isDark ? "#2a2e2a" : "#eef0ee"}`,
               position: "sticky",
               top: 0,
               height: "100vh",
@@ -208,7 +247,7 @@ export default function AdminShell({ children }) {
               top: 0,
               zIndex: 20,
               backdropFilter: "blur(8px)",
-              borderBottom: "1px solid #eef0ee",
+              borderBottom: `1px solid ${isDark ? "#2a2e2a" : "#eef0ee"}`,
               padding: "0 24px",
               display: "flex",
               alignItems: "center",
@@ -219,12 +258,22 @@ export default function AdminShell({ children }) {
               <Button type="text" icon={<MenuOutlined />} onClick={() => setDrawerOpen(true)} />
             )}
             <div className="flex items-center gap-2 min-w-0">
-              <span className="w-8 h-8 rounded-lg bg-[#e9f5e7] text-[#319527] flex items-center justify-center shrink-0">
+              <span className="w-8 h-8 rounded-lg bg-[#e9f5e7] text-[#319527] dark:bg-[#2a3d27] dark:text-[#4cb93f] flex items-center justify-center shrink-0">
                 {current.icon}
               </span>
-              <span className="font-semibold text-gray-900 truncate">{current.label}</span>
+              <span className="font-semibold text-gray-900 dark:text-gray-100 truncate">
+                {current.label}
+              </span>
             </div>
             <div className="flex-1" />
+            <Tooltip title={isDark ? "Chuyển sang giao diện sáng" : "Chuyển sang giao diện tối"}>
+              <Button
+                type="text"
+                aria-label="Đổi giao diện sáng/tối"
+                icon={isDark ? <SunOutlined /> : <MoonOutlined />}
+                onClick={flipTheme}
+              />
+            </Tooltip>
             <Dropdown
               trigger={["click"]}
               menu={{
@@ -235,7 +284,7 @@ export default function AdminShell({ children }) {
                 ],
               }}
             >
-              <button className="flex items-center gap-2 rounded-full pl-1 pr-3 py-1 hover:bg-gray-100 transition-colors">
+              <button className="flex items-center gap-2 rounded-full pl-1 pr-3 py-1 hover:bg-gray-100 dark:hover:bg-neutral-700 dark:hover:bg-neutral-700 transition-colors">
                 <Avatar
                   size={32}
                   src={
@@ -243,12 +292,12 @@ export default function AdminShell({ children }) {
                       ? `${process.env.NEXT_PUBLIC_API_URL}/v1.0/users/${me.username}/avatar`
                       : undefined
                   }
-                  style={{ background: BRAND }}
+                  style={{ background: isDark ? BRAND_DARK : BRAND }}
                 >
                   {displayName.charAt(0).toUpperCase()}
                 </Avatar>
                 {screens.sm && (
-                  <span className="text-sm text-gray-700 font-medium max-w-[140px] truncate">
+                  <span className="text-sm text-gray-700 dark:text-gray-200 font-medium max-w-[140px] truncate">
                     {displayName}
                   </span>
                 )}

@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useAuthContext, useTopUsersContext } from "@/contexts/Support";
 // // import { usePage, router } from "@inertiajs/react"; // TODO: Replace with Next.js equivalent // TODO: Replace with Next.js equivalent
-import { Button, ConfigProvider, Input, message, Dropdown, Modal } from "antd";
+import { Button, ConfigProvider, Input, message, Dropdown, Modal, Image } from "antd";
 import { voteOnComment, destroyCommentVote } from "@/app/Api";
 import {
   MessageCircle,
@@ -24,8 +24,8 @@ import { useRouter } from "@bprogress/next/app";
 import Badges from "../ui/Badges";
 import MemberTierBadge from "../ui/MemberTierBadge";
 import MarkdownRenderer from "../ui/MarkdownRenderer";
-import ChatMediaLightbox from "../chat/ChatMediaLightbox";
 import { linkifyMentionsInHtml } from "@/utils/mentionRender";
+import { rewriteExternalLinksInHtml } from "@/utils/externalLink";
 
 export default function Comment({
   comment,
@@ -47,7 +47,6 @@ export default function Comment({
   const [isConnectorHovered, setIsConnectorHovered] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [localVotes, setLocalVotes] = useState(comment.votes || []);
-  const [lightboxMedia, setLightboxMedia] = useState(null);
   const [votesModalOpen, setVotesModalOpen] = useState(false);
 
   const handleOpenVotesModal = (e) => {
@@ -232,7 +231,6 @@ export default function Comment({
       className={`relative transition-colors duration-700 rounded ${isHighlighted ? "bg-yellow-100 dark:bg-yellow-900/30" : ""}`}
       id={commentDomId}
     >
-      <ChatMediaLightbox media={lightboxMedia} onClose={() => setLightboxMedia(null)} />
       <CommentVotesModal
         open={votesModalOpen}
         commentId={comment.id}
@@ -290,7 +288,7 @@ export default function Comment({
               </div>
             ) : comment.is_anonymous ? (
               <div className="w-10 h-10 rounded-full bg-[#e9f1e9] dark:bg-[#1d281b] flex items-center justify-center border border-gray-200">
-                <span className="text-2xl text-white font-medium">?</span>
+                <span className="text-2xl text-primary-500 dark:text-neutral-300 font-medium">?</span>
               </div>
             ) : (
               <Link href={`/${comment.author.username}`}>
@@ -414,27 +412,30 @@ export default function Comment({
                   {comment.comment && (
                     <div
                       className="text-gray-700 dark:text-gray-300 text-sm mb-1 prose custom-prose markdown-preview dark:prose-invert flex flex-col"
-                      dangerouslySetInnerHTML={{ __html: linkifyMentionsInHtml(
+                      dangerouslySetInnerHTML={{ __html: rewriteExternalLinksInHtml(linkifyMentionsInHtml(
                         comment.comment,
                         Array.isArray(comment.mentions)
                           ? new Set(comment.mentions.map((m) => m.username.toLowerCase()))
                           : null,
                         { allowBroadcastMention: true }
-                      ) }}
+                      )) }}
                     />
                   )}
                   {comment.image_urls?.length > 0 && (
-                    <div className="flex flex-wrap gap-2 mt-1 mb-2">
-                      {comment.image_urls.map((url, idx) => (
-                        <img
-                          key={idx}
-                          src={url}
-                          alt={`Ảnh ${idx + 1}`}
-                          className="max-h-48 max-w-[200px] rounded-lg border object-cover cursor-pointer"
-                          onClick={() => setLightboxMedia({ type: "image", url })}
-                        />
-                      ))}
-                    </div>
+                    <Image.PreviewGroup>
+                      <div className="flex flex-wrap gap-2 mt-1 mb-2">
+                        {comment.image_urls.map((url, idx) => (
+                          <Image
+                            key={idx}
+                            src={url}
+                            alt={`Ảnh ${idx + 1}`}
+                            rootClassName="rounded-lg overflow-hidden border dark:border-neutral-600"
+                            className="max-h-48 max-w-[200px] object-cover cursor-pointer transition-[filter] duration-200 hover:brightness-90"
+                            preview={{ mask: false }}
+                          />
+                        ))}
+                      </div>
+                    </Image.PreviewGroup>
                   )}
                   {/* Show optimistic update indicator */}
                   {comment.isOptimistic && (

@@ -3,25 +3,9 @@
 import { useState } from "react";
 import { Button, Input, Upload, message } from "antd";
 import { DeleteOutlined, UploadOutlined } from "@ant-design/icons";
-import { uploadFile } from "@/app/Api";
+import { uploadInlineImage, MAX_INLINE_IMAGE_MB } from "@/utils/imageUpload";
 
-const MAX_MB = 10;
-
-const currentUserId = () => {
-  try {
-    return JSON.parse(localStorage.getItem("CURRENT_USER") || "null")?.id;
-  } catch {
-    return null;
-  }
-};
-
-// Uploads are stored on the API host (api.chuyenbienhoa.com/storage/...), but the backend
-// builds the URL from APP_URL, which points at the main site. Keep only the /storage/... part
-// and put it under the API host.
-const toApiStorageUrl = (path) => {
-  const storagePath = String(path).replace(/^https?:\/\/[^/]+/, "");
-  return `${process.env.NEXT_PUBLIC_API_URL}${storagePath.startsWith("/") ? "" : "/"}${storagePath}`;
-};
+const MAX_MB = MAX_INLINE_IMAGE_MB;
 
 /**
  * Image URL field with an upload button (via /v1.0/upload) and a preview.
@@ -41,13 +25,9 @@ export default function ImageUploadInput({ value, onChange, size, compact = fals
     }
     setUploading(true);
     try {
-      const formData = new FormData();
-      formData.append("file", file);
-      formData.append("uid", currentUserId());
-      const res = await uploadFile(formData);
-      onChange?.(toApiStorageUrl(res.data.path));
+      onChange?.(await uploadInlineImage(file));
     } catch (err) {
-      message.error(err?.response?.data?.message || "Tải ảnh lên thất bại");
+      message.error(err?.response?.data?.message || err?.message || "Tải ảnh lên thất bại");
     } finally {
       setUploading(false);
     }
@@ -69,7 +49,7 @@ export default function ImageUploadInput({ value, onChange, size, compact = fals
         <img
           src={value}
           alt=""
-          className={`${compact ? "w-8 h-8" : "w-14 h-14"} shrink-0 rounded object-cover bg-gray-100 border border-gray-200`}
+          className={`${compact ? "w-8 h-8" : "w-14 h-14"} shrink-0 rounded object-cover bg-gray-100 dark:bg-neutral-700 border border-gray-200 dark:border-neutral-700`}
         />
       ) : null}
       {compact ? null : (
