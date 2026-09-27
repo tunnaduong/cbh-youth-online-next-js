@@ -91,3 +91,77 @@ export function collectImageFiles(dataTransfer) {
     .map((item) => item.getAsFile())
     .filter((file) => file && file.type.startsWith("image/"));
 }
+
+// Photos straight off a phone/camera are 3-5MB each at 4000px+; a dozen of
+// them made one ~35MB multipart request that took minutes on a home uplink
+// and could stall out entirely. Nothing on the site shows an attachment
+// wider than this, so downscale + re-encode before upload instead.
+const COMPRESS_MAX_DIMENSION = 2048;
+const COMPRESS_QUALITY = 0.82;
+const COMPRESS_MIN_BYTES = 500 * 1024;
+
+/**
+ * Downscales and re-encodes a photo in the browser before upload.
+ *
+ * Resolves to the original file whenever compressing wouldn't help or can't
+ * be done: GIFs (would lose animation), SVGs, files already small, formats
+ * the browser can't decode (HEIC outside Safari - the backend converts
+ * those), or a result that isn't actually smaller.
+ *
+ * @param {File} file
+ * @returns {Promise<File>}
+ */
+export async function compressImageForUpload(file) {
+  if (
+    typeof window === "undefined" ||
+    typeof createImageBitmap !== "function" ||
+    !file.type.startsWith("image/") ||
+    file.type === "image/gif" ||
+    file.type === "image/svg+xml" ||
+    file.size < COMPRESS_MIN_BYTES
+  ) {
+    return file;
+  }
+
+  let bitmap;
+  try {
+    bitmap = await createImageBitmap(file, { imageOrientation: "from-image" });
+  } catch {
+    return file;
+  }
+
+  try {
+    const scale = Math.min(1, COMPRESS_MAX_DIMENSION / Math.max(bitmap.width, bitmap.height));
+    const width = Math.round(bitmap.width * scale);
+    const height = Math.round(bitmap.height * scale);
+
+    const canvas = document.createElement("canvas");
+    canvas.width = width;
+    canvas.height = height;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return file;
+    ctx.drawImage(bitmap, 0, 0, width, height);
+
+    // PNG/WebP may carry transparency, which JPEG would flatten to black -
+    // encode those as WebP (keeps alpha) instead.
+    const keepsAlpha = file.type === "image/png" || file.type === "image/webp";
+    const targetType = keepsAlpha ? "image/webp" : "image/jpeg";
+    const blob = await new Promise((resolve) =>
+      canvas.toBlob(resolve, targetType, COMPRESS_QUALITY)
+    );
+    // Browsers that can't encode the requested type silently fall back to
+    // PNG, which is usually bigger - only take a real win.
+    if (!blob || blob.type !== targetType || blob.size >= file.size) return file;
+
+    const ext = targetType === "image/webp" ? "webp" : "jpg";
+    const base = (file.name || "").replace(/\.[^.]*$/, "") || "anh";
+    return new File([blob], `${base}.${ext}`, {
+      type: targetType,
+      lastModified: file.lastModified,
+    });
+  } catch {
+    return file;
+  } finally {
+    bitmap.close?.();
+  }
+}

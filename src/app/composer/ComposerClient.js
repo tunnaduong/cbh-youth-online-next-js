@@ -98,6 +98,7 @@ export default function ComposerClient() {
     handleFilesDragEnter,
     handleFilesDragLeave,
     uploadProgress,
+    uploadStage,
     handleSubmit,
   } = usePostComposer({
     open: true,
@@ -198,6 +199,7 @@ export default function ComposerClient() {
         handleFilesDragEnter={handleFilesDragEnter}
         handleFilesDragLeave={handleFilesDragLeave}
         uploadProgress={uploadProgress}
+        uploadStage={uploadStage}
         handleSubmit={handleSubmit}
         isEditMode={isEditMode}
       />
