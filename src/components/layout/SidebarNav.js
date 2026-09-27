@@ -31,7 +31,10 @@ export const MAIN_NAV_ITEMS = [
   { key: "universities", href: "/explore/universities", label: "Đại học", Icon: GraduationCap },
   { key: "game", href: "/explore/games", label: "Giải trí", Icon: Gamepad2 },
   { key: "news", href: "/youth-news", label: "Tin tức Đoàn", Icon: Newspaper },
-  { key: "shop", href: "https://giftshop.chuyenbienhoa.com", label: "Gift Shop", Icon: Gift, badge: "Mới" },
+  // NEXT_PUBLIC_GIFTSHOP_URL lets local dev point this at the giftshop app's
+  // own dev server (e.g. http://localhost:3000) instead of production -
+  // unset in prod, so it falls back to the real giftshop domain there.
+  { key: "shop", href: process.env.NEXT_PUBLIC_GIFTSHOP_URL || "https://giftshop.chuyenbienhoa.com", label: "Gift Shop", Icon: Gift, badge: "Mới" },
   { key: "ranking", href: "/users/ranking", label: "Bảng xếp hạng", Icon: ChartNoAxesColumn },
   { key: "saved", href: "/saved", label: "Đã lưu", Icon: Bookmark },
 ];
