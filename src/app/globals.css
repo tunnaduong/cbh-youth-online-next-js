@@ -1110,3 +1110,126 @@ body.has-email-verification-alert [class*="mt-\\[4\\.3rem\\]"] {
 body {
   padding-top: var(--app-banner-h, 0px);
 }
+
+/* Thanh "có thay đổi chưa lưu" ở trang Giao diện hồ sơ rung lên khi người
+   dùng định rời đi mà chưa lưu (giống Discord). */
+@keyframes profileUnsavedShake {
+  0%, 100% { transform: translateX(0); }
+  20%, 60% { transform: translateX(-8px); }
+  40%, 80% { transform: translateX(8px); }
+}
+
+.profile-unsaved-shake {
+  animation: profileUnsavedShake 0.4s ease-in-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .profile-unsaved-shake {
+    animation: none;
+  }
+}
+
+/* Hiệu ứng tên hiển thị (src/lib/profileTheme.js getNameEffect) */
+@keyframes nameGradientShift {
+  from { background-position: 0% center; }
+  to { background-position: 200% center; }
+}
+
+.name-effect-gradient {
+  animation: nameGradientShift 4s linear infinite;
+}
+
+@keyframes nameNeonPulse {
+  0%, 100% { filter: brightness(1); }
+  50% { filter: brightness(1.25); }
+}
+
+.name-effect-neon {
+  animation: nameNeonPulse 2.4s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .name-effect-gradient,
+  .name-effect-neon {
+    animation: none;
+  }
+}
+
+/* Khung avatar xoay (src/lib/profileTheme.js AVATAR_FRAMES.veteran) */
+@keyframes avatarFrameSpin {
+  to { transform: rotate(360deg); }
+}
+
+.avatar-frame-spin {
+  animation: avatarFrameSpin 4s linear infinite;
+}
+
+/* Khung hồ sơ "Neon xoay" (src/components/profile/ProfileFrame.js) */
+@keyframes profileFrameSpin {
+  from { transform: translate(-50%, -50%) rotate(0deg); }
+  to { transform: translate(-50%, -50%) rotate(360deg); }
+}
+
+.profile-frame-spin {
+  /* Centered even when the animation is off (reduced motion). */
+  transform: translate(-50%, -50%);
+  animation: profileFrameSpin 5s linear infinite;
+}
+
+/* Hiệu ứng hồ sơ (src/components/profile/ProfileEffect.js) */
+@keyframes profileSparkle {
+  0%, 100% { opacity: 0; transform: scale(0.4) rotate(0deg); }
+  50% { opacity: 1; transform: scale(1) rotate(90deg); }
+}
+
+.profile-effect-sparkle {
+  opacity: 0;
+  animation: profileSparkle 1.8s ease-in-out infinite;
+  text-shadow: 0 0 6px currentColor;
+}
+
+@keyframes profileHeart {
+  0% { opacity: 0; transform: translateY(0) scale(0.6); }
+  15% { opacity: 1; }
+  100% { opacity: 0; transform: translateY(-240px) scale(1.1); }
+}
+
+.profile-effect-heart {
+  opacity: 0;
+  animation-name: profileHeart;
+  animation-timing-function: ease-out;
+  animation-iteration-count: infinite;
+}
+
+@keyframes profileSnow {
+  0% { opacity: 0; transform: translate(0, 0); }
+  10% { opacity: 1; }
+  100% { opacity: 0.2; transform: translate(24px, 420px); }
+}
+
+.profile-effect-snow {
+  opacity: 0;
+  animation-name: profileSnow;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+}
+
+@keyframes profileAurora {
+  0%, 100% { transform: translateX(-12%) scaleY(1); }
+  50% { transform: translateX(12%) scaleY(1.2); }
+}
+
+.profile-effect-aurora {
+  animation: profileAurora 6s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .avatar-frame-spin,
+  .profile-frame-spin {
+    animation: none;
+  }
+
+  .profile-effect {
+    display: none;
+  }
+}

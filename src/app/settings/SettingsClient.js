@@ -1,9 +1,10 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
+import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Button, DatePicker, Radio, Select, Switch, message } from "antd";
-import { Edit2Icon, User, Bell, Shield, Trash2, UserX, GraduationCap, CheckCircle2, Clock, XCircle } from "lucide-react";
+import { Edit2Icon, User, Bell, Shield, Trash2, UserX, GraduationCap, CheckCircle2, Clock, XCircle, Palette } from "lucide-react";
 import Input from "@/components/ui/input";
 import DefaultLayout from "@/layouts/DefaultLayout";
 import dayjs from "dayjs";
@@ -1818,6 +1819,13 @@ export default function SettingsClient({ initialUser, hasAuthError }) {
                   <User className="w-5 h-5 mr-3" />
                   Trang cá nhân
                 </button>
+                <Link
+                  href="/settings/appearance"
+                  className="w-full flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-neutral-800"
+                >
+                  <Palette className="w-5 h-5 mr-3" />
+                  Giao diện hồ sơ
+                </Link>
                 <button
                   onClick={() => setActiveTab("account")}
                   className={`w-full flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors ${activeTab === "account"

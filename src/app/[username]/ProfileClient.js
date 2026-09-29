@@ -7,10 +7,15 @@ import PostItem from "@/components/forum/PostItem";
 import { Button, message } from "antd";
 import { useState, useEffect } from "react";
 import FollowButton from "@/components/profile/FollowButton";
+import AvatarFrame from "@/components/profile/AvatarFrame";
+import StyledName from "@/components/profile/StyledName";
+import { getBannerStyle, getSurfaceStyle } from "@/lib/profileTheme";
+import ProfileEffect from "@/components/profile/ProfileEffect";
+import ProfileFrame from "@/components/profile/ProfileFrame";
 import { BsFillGearFill } from "react-icons/bs";
 import { IoChatbubbleEllipsesOutline } from "react-icons/io5";
 import { IoCalendarOutline, IoLocationOutline } from "react-icons/io5";
-import { Archive, Edit2Icon, Flag, X, MoreHorizontal, Ban } from "lucide-react";
+import { Archive, Edit2Icon, Flag, Palette, X, MoreHorizontal, Ban } from "lucide-react";
 import ProfilePhotoGallery from "@/components/profile/ProfilePhotoGallery";
 import MemberTierBadge from "@/components/ui/MemberTierBadge";
 import { useAuthContext, useChatContext } from "@/contexts/Support";
@@ -80,6 +85,7 @@ export default function ProfileClient({ initialProfile, activeTab, username }) {
         user.profile?.profile_picture ||
         `${process.env.NEXT_PUBLIC_API_URL}/v1.0/users/${user.username}/avatar`,
       cover_photo_url: user.profile?.cover_photo_url || null,
+      theme: user.profile?.theme || null,
       member_tier: user.member_tier || user.profile?.member_tier || null,
       points_milestones: user.points_milestones || user.profile?.points_milestones || [],
       stats: {
@@ -762,7 +768,7 @@ export default function ProfileClient({ initialProfile, activeTab, username }) {
                     </div>
                   </Link>
                   {currentUser &&
-                  follower.follower.username !== currentUser.username ? (
+                    follower.follower.username !== currentUser.username ? (
                     <div>
                       <FollowButton
                         isFollowing={follower.follower.isFollowing}
@@ -828,7 +834,7 @@ export default function ProfileClient({ initialProfile, activeTab, username }) {
                     </div>
                   </Link>
                   {currentUser &&
-                  following.followed.username !== currentUser.username ? (
+                    following.followed.username !== currentUser.username ? (
                     <div>
                       <FollowButton
                         isFollowing={following.followed.isFollowing}
@@ -868,6 +874,14 @@ export default function ProfileClient({ initialProfile, activeTab, username }) {
 
   const isOwnProfile = currentUser && currentUser.username == profile.username;
 
+  // Profile theme (Discord-style): tints the profile card, colors the active
+  // tab underline and, without a cover photo, replaces the avatar-as-cover
+  // fallback with the banner color / theme gradient.
+  const surfaceStyle = getSurfaceStyle(profile.theme);
+  const bannerStyle = profile.cover_photo_url ? null : getBannerStyle(profile.theme);
+  const themedCover = !!bannerStyle;
+  const tabColor = profile.theme?.primary_color || "#319527";
+
   // Mobile profile text sits on top of the cover photo, so it switches
   // between white (dark photo) and dark (light photo) based on the sampled
   // brightness above, instead of a single hardcoded color.
@@ -885,15 +899,27 @@ export default function ProfileClient({ initialProfile, activeTab, username }) {
       />
       <div>
         <div className="flex-1">
-          <div className="relative h-36 lg:h-96 overflow-hidden group/cover">
-            <img
-              src={coverImageUrl}
-              alt=""
-              aria-hidden="true"
-              className="cover-photo-bg absolute inset-0 w-full h-full object-cover"
-            />
+          <div className="relative isolate h-36 lg:h-96 overflow-hidden group/cover">
+            {themedCover ? (
+              <div
+                aria-hidden="true"
+                className="absolute inset-0"
+                style={bannerStyle}
+              />
+            ) : (
+              <img
+                src={coverImageUrl}
+                alt=""
+                aria-hidden="true"
+                className="cover-photo-bg absolute inset-0 w-full h-full object-cover"
+              />
+            )}
             {/* Scrim so the profile name/stats stay legible over any cover photo */}
-            <div className="lg:hidden absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-black/10" />
+            {!themedCover && (
+              <div className="lg:hidden absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-black/10" />
+            )}
+            <ProfileEffect theme={profile.theme} />
+            <ProfileFrame theme={profile.theme} />
             {isOwnProfile && (
               <>
                 <input
@@ -1092,7 +1118,10 @@ export default function ProfileClient({ initialProfile, activeTab, username }) {
           </div>
 
           {/* Mobile profile info card — sits BELOW the cover photo */}
-          <div className="lg:hidden bg-white dark:bg-neutral-800 border-b border-gray-200 dark:border-neutral-700 px-4 pb-4 w-full max-w-full box-border">
+          <div
+            className="lg:hidden bg-white dark:bg-neutral-800 border-b border-gray-200 dark:border-neutral-700 px-4 pb-4 w-full max-w-full box-border"
+            style={surfaceStyle || undefined}
+          >
             {/* Avatar peeks above the card */}
             <div className="flex flex-col items-center -mt-12 w-full max-w-full">
               <div className="relative group/avatar w-24 h-24 shrink-0">
@@ -1103,6 +1132,7 @@ export default function ProfileClient({ initialProfile, activeTab, username }) {
                     alt="avatar"
                   />
                 </a>
+                <AvatarFrame theme={profile.theme} />
                 {isOwnProfile && (
                   <>
                     <input type="file" id="avatar-upload-mobile" accept="image/*" onChange={handleAvatarUpload} style={{ display: "none" }} />
@@ -1120,7 +1150,7 @@ export default function ProfileClient({ initialProfile, activeTab, username }) {
               </div>
               <div className="flex flex-col items-center mt-2 w-full max-w-full min-w-0">
                 <h1 className="font-bold text-xl text-center text-gray-900 dark:text-white break-words max-w-full">
-                  {profile.profile_name}
+                  <StyledName theme={profile.theme}>{profile.profile_name}</StyledName>
                   {profile.verified == "1" && (
                     <svg stroke="currentColor" fill="currentColor" strokeWidth={0} viewBox="0 0 20 20" aria-hidden="true" className="relative inline shrink-0 text-xl leading-5 text-primary-500 ml-1" height="1em" width="1em" xmlns="http://www.w3.org/2000/svg">
                       <path fillRule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
@@ -1164,6 +1194,17 @@ export default function ProfileClient({ initialProfile, activeTab, username }) {
                 {profile.joined_at && <div className="flex items-center gap-x-1"><IoCalendarOutline className="text-base" /><span>{profile.joined_at}</span></div>}
               </div>
               <div className="flex justify-center items-center mt-4 gap-2">
+                {isOwnProfile && (
+                  <Link href="/settings/appearance">
+                    <Button
+                      shape="circle"
+                      icon={<Palette className="w-4 h-4" />}
+                      aria-label="Tùy chỉnh giao diện"
+                      title="Tùy chỉnh giao diện"
+                      className="!flex !items-center !justify-center"
+                    />
+                  </Link>
+                )}
                 {currentUser && currentUser.username == profile.username ? (
                   <Link href="/settings" className="flex items-center gap-x-2">
                     <Button className="rounded-full text-[#6c757d] px-4">
@@ -1205,7 +1246,14 @@ export default function ProfileClient({ initialProfile, activeTab, username }) {
             </div>
           </div>
 
-          <div className="lg:bg-white dark:!bg-neutral-700 h-16 lg:shadow-md">
+          <div
+            className="lg:bg-white dark:!bg-neutral-700 h-16 lg:shadow-md lg:[background-image:var(--profile-surface)]"
+            style={
+              surfaceStyle
+                ? { "--profile-surface": surfaceStyle.backgroundImage }
+                : undefined
+            }
+          >
             <div className="mx-auto max-w-[959px] h-full lg:flex hidden">
               <div
                 className="relative group/avatar-desktop w-[170px] h-[170px] flex-shrink-0"
@@ -1221,6 +1269,7 @@ export default function ProfileClient({ initialProfile, activeTab, username }) {
                     alt="avatar"
                   />
                 </a>
+                <AvatarFrame theme={profile.theme} />
                 {isOwnProfile && (
                   <>
                     <input
@@ -1255,7 +1304,7 @@ export default function ProfileClient({ initialProfile, activeTab, username }) {
                   style={{
                     borderBottom:
                       activeTab === "posts"
-                        ? "3px solid #319527"
+                        ? `3px solid ${tabColor}`
                         : "3px solid transparent",
                   }}
                 >
@@ -1274,7 +1323,7 @@ export default function ProfileClient({ initialProfile, activeTab, username }) {
                   style={{
                     borderBottom:
                       activeTab === "followers"
-                        ? "3px solid #319527"
+                        ? `3px solid ${tabColor}`
                         : "3px solid transparent",
                   }}
                 >
@@ -1293,7 +1342,7 @@ export default function ProfileClient({ initialProfile, activeTab, username }) {
                   style={{
                     borderBottom:
                       activeTab === "following"
-                        ? "3px solid #319527"
+                        ? `3px solid ${tabColor}`
                         : "3px solid transparent",
                   }}
                 >
@@ -1340,6 +1389,17 @@ export default function ProfileClient({ initialProfile, activeTab, username }) {
                 </button>
               </div>
               <div className="flex-1 flex justify-end items-center gap-2 order-4">
+                {isOwnProfile && (
+                  <Link href="/settings/appearance">
+                    <Button
+                      shape="circle"
+                      icon={<Palette className="w-4 h-4" />}
+                      aria-label="Tùy chỉnh giao diện"
+                      title="Tùy chỉnh giao diện"
+                      className="!flex !items-center !justify-center"
+                    />
+                  </Link>
+                )}
                 {currentUser && currentUser.username == profile.username ? (
                   <Link href="/settings" className="flex items-center gap-x-2">
                     <Button className="rounded-full text-[#6c757d] px-4">
@@ -1390,9 +1450,12 @@ export default function ProfileClient({ initialProfile, activeTab, username }) {
                 <div>
                   <h1 className="font-bold text-xl">
                     <span>
-                      <span className="mr-1 dark:text-neutral-300">
+                      <StyledName
+                        theme={profile.theme}
+                        className="mr-1 dark:text-neutral-300"
+                      >
                         {profile.profile_name}
-                      </span>
+                      </StyledName>
                       {profile.verified == "1" && (
                         <span>
                           <svg
@@ -1463,15 +1526,10 @@ export default function ProfileClient({ initialProfile, activeTab, username }) {
           </div>
         </div>
       </div>
-    </DefaultLayout>
 
-    {/* Milestones modal */}
-    {showMilestonesModal && (
-      <div
-        className="fixed inset-0 z-50 flex items-center justify-center p-4"
-        style={{ background: "rgba(0,0,0,0.5)" }}
-        onClick={() => setShowMilestonesModal(false)}
-      >
+
+      {/* Milestones modal */}
+      {showMilestonesModal && (
         <div
           className="bg-white dark:bg-neutral-900 rounded-2xl w-full max-w-md shadow-xl overflow-hidden"
           onClick={(e) => e.stopPropagation()}
@@ -1535,8 +1593,8 @@ export default function ProfileClient({ initialProfile, activeTab, username }) {
             })}
           </div>
         </div>
-      </div>
-    )}
+      )}
+    </DefaultLayout>
     </>
   );
 }
