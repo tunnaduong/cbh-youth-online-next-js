@@ -6,6 +6,7 @@ import { useAuthContext, useTopUsersContext } from "@/contexts/Support";
 import { usePostRefresh } from "@/contexts/PostRefreshContext";
 import { getForumData, createPost, updatePost, getPostDetail } from "@/app/Api";
 import { normalizeNewlines } from "@/utils/richInput";
+import { compressImageForUpload } from "@/utils/imageUpload";
 
 /**
  * All the state, refs, effects and handlers behind the post composer
@@ -47,6 +48,9 @@ export default function usePostComposer({ isEditMode = false, postData = null, o
   const [forumData, setForumData] = useState({ main_categories: [] });
   const [loading, setLoading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
+  // "compressing" while photos are shrunk in the browser, "uploading" while
+  // the request body is being sent, null otherwise.
+  const [uploadStage, setUploadStage] = useState(null);
 
   // Fetch forum data when the composer opens
   useEffect(() => {
@@ -168,6 +172,7 @@ export default function usePostComposer({ isEditMode = false, postData = null, o
     setVideoFiles([]);
     setVideoPreviews([]);
     setUploadProgress(0);
+    setUploadStage(null);
   };
 
   const handleSubmit = async (e) => {
@@ -221,10 +226,19 @@ export default function usePostComposer({ isEditMode = false, postData = null, o
         formData.append("_method", "PUT");
       }
 
-      // Add image files
-      imageFiles.forEach((file, index) => {
-        formData.append(`image_files[${index}]`, file);
-      });
+      // Add image files - shrunk first, since sending full-size camera
+      // photos made a dozen of them take minutes (or never finish).
+      // One at a time so a batch of 12+ big photos doesn't hold a dozen
+      // decoded bitmaps in memory at once.
+      if (imageFiles.length > 0) {
+        setUploadStage("compressing");
+        setUploadProgress(0);
+        for (let index = 0; index < imageFiles.length; index++) {
+          const file = await compressImageForUpload(imageFiles[index]);
+          formData.append(`image_files[${index}]`, file);
+          setUploadProgress(Math.round(((index + 1) * 100) / imageFiles.length));
+        }
+      }
 
       // Add document files
       documentFiles.forEach((file, index) => {
@@ -236,8 +250,12 @@ export default function usePostComposer({ isEditMode = false, postData = null, o
         formData.append(`video_files[${index}]`, file);
       });
 
+      setUploadStage("uploading");
       setUploadProgress(0);
       const config = {
+        // No timeout by default - a stalled upload would otherwise spin
+        // forever without telling the user anything.
+        timeout: 10 * 60 * 1000,
         onUploadProgress: (progressEvent) => {
           if (!progressEvent.total) return;
           setUploadProgress(Math.round((progressEvent.loaded * 100) / progressEvent.total));
@@ -294,8 +312,13 @@ export default function usePostComposer({ isEditMode = false, postData = null, o
     } catch (error) {
       console.error(`Error ${isEditMode ? 'updating' : 'creating'} post:`, error);
       setProcessing(false);
+      setUploadStage(null);
 
-      if (error.response?.data?.message) {
+      if (error.response?.status === 413) {
+        message.error("Tổng dung lượng tệp đính kèm quá lớn. Vui lòng bớt tệp và thử lại.");
+      } else if (!error.response && (error.code === "ECONNABORTED" || error.code === "ERR_NETWORK")) {
+        message.error("Tải lên bị gián đoạn hoặc quá lâu. Vui lòng kiểm tra kết nối mạng và thử lại.");
+      } else if (error.response?.data?.message) {
         message.error(error.response.data.message);
       } else if (error.response?.data?.errors) {
         // Handle validation errors
@@ -622,6 +645,7 @@ export default function usePostComposer({ isEditMode = false, postData = null, o
 
     // submit
     uploadProgress,
+    uploadStage,
     handleSubmit,
   };
 }
