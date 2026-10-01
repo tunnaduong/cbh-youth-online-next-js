@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import StyledName from "@/components/profile/StyledName";
 import { useEffect, useRef, useState } from "react";
 import {
   ChevronDown,
@@ -69,7 +70,12 @@ function PostRow({ post }) {
         <UserAvatar anonymous size={40} />
       ) : (
         <Link href={`/${post.author?.username}`} className="shrink-0">
-          <UserAvatar username={post.author?.username} name={authorName} size={40} />
+          <UserAvatar
+            username={post.author?.username}
+            name={authorName}
+            size={40}
+            theme={post.author?.profile_theme}
+          />
         </Link>
       )}
 
@@ -88,7 +94,9 @@ function PostRow({ post }) {
               href={`/${post.author?.username}`}
               className="inline-flex max-w-[140px] items-center font-medium text-primary-500 hover:underline dark:text-[#6bcf60] sm:max-w-[180px]"
             >
-              <span className="truncate">{authorName}</span>
+              <StyledName theme={post.author?.profile_theme} className="truncate">
+                {authorName}
+              </StyledName>
               {post.author?.verified && <Badges className="text-[13px]" />}
             </Link>
           )}

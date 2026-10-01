@@ -1,4 +1,6 @@
 import Link from "next/link";
+import UserAvatar from "@/components/profile/UserAvatar";
+import StyledName from "@/components/profile/StyledName";
 import { Button, Dropdown } from "antd";
 import { generatePostSlug } from "@/utils/slugify";
 import VerifiedBadge from "@/components/ui/Badges";
@@ -85,18 +87,22 @@ export default function SavedPostItem({ post, onUnsave }) {
             </span>
           ) : (
             <div className="flex items-center gap-2">
-              <img
-                src={`${process.env.NEXT_PUBLIC_API_URL}/v1.0/users/${author.username}/avatar`}
+              <UserAvatar
+                username={author.username}
+                theme={author.profile_theme}
                 alt={author.username}
-                className="w-7 h-7 rounded-full"
+                className="w-7 h-7"
               />
               <Link
                 href={getProfileUrl(author.username)}
                 className="text-[#319527] hover:underline inline-verified truncate"
               >
-                <span className="inline-verified__text truncate">
+                <StyledName
+                  theme={author.profile_theme}
+                  className="inline-verified__text truncate"
+                >
                   {author.profile_name || author.profile?.profile_name}
-                </span>
+                </StyledName>
                 {(author.verified == "1" ||
                   author?.profile?.verified == "1") && (
                   <VerifiedBadge className="inline-verified__badge" />

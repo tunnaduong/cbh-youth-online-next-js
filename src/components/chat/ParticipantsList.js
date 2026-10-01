@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import AvatarFrame from "@/components/profile/AvatarFrame";
 
 export default function ParticipantsList({ participants }) {
   const getAvatarInitial = (name) => {
@@ -68,7 +69,7 @@ export default function ParticipantsList({ participants }) {
           >
             {/* Avatar */}
             <div
-              className="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-semibold"
+              className="relative flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-semibold"
               style={{ backgroundColor: avatarColor }}
             >
               {participant.avatar_url ? (
@@ -80,6 +81,7 @@ export default function ParticipantsList({ participants }) {
               ) : (
                 avatarInitial
               )}
+              <AvatarFrame theme={participant.profile_theme} />
             </div>
 
             {/* Username */}

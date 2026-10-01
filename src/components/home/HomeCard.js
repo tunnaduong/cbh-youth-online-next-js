@@ -1,4 +1,5 @@
 import Link from "next/link";
+import AvatarFrameWrap from "@/components/profile/AvatarFrameWrap";
 import { ArrowRight } from "lucide-react";
 
 export function HomeCard({ as: Component = "section", className = "", children, ...props }) {
@@ -36,7 +37,7 @@ export function SectionHeader({ icon: Icon, iconClassName = "", title, href, lin
   );
 }
 
-export function UserAvatar({ username, name, anonymous, src, size = 32, className = "" }) {
+export function UserAvatar({ username, name, anonymous, src, size = 32, className = "", theme = null }) {
   const style = { width: size, height: size };
 
   if (anonymous || (!username && !src)) {
@@ -50,7 +51,7 @@ export function UserAvatar({ username, name, anonymous, src, size = 32, classNam
     );
   }
 
-  return (
+  const img = (
     <img
       src={src || `${process.env.NEXT_PUBLIC_API_URL}/v1.0/users/${username}/avatar`}
       alt={`Ảnh đại diện của ${name || username}`}
@@ -59,4 +60,7 @@ export function UserAvatar({ username, name, anonymous, src, size = 32, classNam
       className={`shrink-0 rounded-full border border-gray-100 bg-gray-200 object-cover dark:border-neutral-600 ${className}`}
     />
   );
+
+  // Avatar frame from the user's profile theme, if any.
+  return theme ? <AvatarFrameWrap theme={theme}>{img}</AvatarFrameWrap> : img;
 }

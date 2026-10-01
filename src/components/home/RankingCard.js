@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import StyledName from "@/components/profile/StyledName";
 import { Trophy } from "lucide-react";
 import { HomeCard, SectionHeader, UserAvatar } from "./HomeCard";
 import { formatThousands } from "./homeUtils";
@@ -23,7 +24,7 @@ function RankNumber({ rank }) {
   );
 }
 
-function RankRow({ rank, username, name, avatar, points, highlight }) {
+function RankRow({ rank, username, name, avatar, points, highlight, theme }) {
   return (
     <Link
       href={`/${username}`}
@@ -34,13 +35,13 @@ function RankRow({ rank, username, name, avatar, points, highlight }) {
       }`}
     >
       <RankNumber rank={rank} />
-      <UserAvatar username={username} name={name} src={avatar} size={28} />
+      <UserAvatar username={username} name={name} src={avatar} size={28} theme={theme} />
       <span
         className={`min-w-0 flex-1 truncate text-[13px] font-medium ${
           highlight ? "text-primary-600 dark:text-[#86dc7c]" : "text-gray-800 dark:text-neutral-200"
         }`}
       >
-        {name}
+        <StyledName theme={theme}>{name}</StyledName>
       </span>
       <span
         className={`shrink-0 text-[12px] ${
@@ -78,6 +79,7 @@ export default function RankingCard({ topUsers, loading, currentUser }) {
                 name={user.profile_name || user.username}
                 avatar={user.oauth_profile_picture}
                 points={user.total_points}
+                theme={user.profile_theme}
                 highlight={user.username === currentUser?.username}
               />
             ))}

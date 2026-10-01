@@ -3,6 +3,8 @@
 import { useState, useEffect } from "react";
 import HomeLayout from "@/layouts/HomeLayout";
 import Link from "next/link";
+import UserAvatar from "@/components/profile/UserAvatar";
+import StyledName from "@/components/profile/StyledName";
 import { getSubforumPosts, getForumCategories } from "@/app/Api";
 import { useForumData } from "@/contexts/ForumDataContext";
 import { generatePostSlug } from "@/utils/slugify";
@@ -304,12 +306,16 @@ export default function SubforumClient({
                                     username: topic.author.username,
                                   })}
                                 >
-                                  <img
-                                    className="h-6 w-6 rounded-full border"
-                                    src={`${process.env.NEXT_PUBLIC_API_URL}/v1.0/users/${topic.author.username}/avatar`}
+                                  <UserAvatar
+                                    username={topic.author.username}
+                                    theme={topic.author.profile_theme}
                                     alt="Avatar"
+                                    className="h-6 w-6"
+                                    imgClassName="border"
                                   />
-                                  {topic.author.profile_name}
+                                  <StyledName theme={topic.author.profile_theme}>
+                                    {topic.author.profile_name}
+                                  </StyledName>
                                   {topic.author.role === "admin" && (
                                     <svg
                                       stroke="currentColor"

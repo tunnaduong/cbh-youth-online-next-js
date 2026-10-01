@@ -1,6 +1,8 @@
 "use client";
 
 import Link from "next/link";
+import UserAvatar from "@/components/profile/UserAvatar";
+import StyledName from "@/components/profile/StyledName";
 import { usePathname } from "next/navigation";
 import { AddOutline, HelpCircleOutline, Mic } from "react-ionicons";
 import { Skeleton, message } from "antd";
@@ -182,22 +184,23 @@ export default function RightSidebar({ onHandleCreatePost }) {
             ) : Array.isArray(topUsers) && topUsers.length > 0 ? (
               topUsers.map((user, index) => (
                 <div key={user.uid} className="flex flex-row items-center mt-2">
-                  <Link href={`/${user.username}`}>
-                    <img
-                      src={
-                        user.oauth_profile_picture ||
-                        user.avatar_url ||
-                        `${process.env.NEXT_PUBLIC_API_URL}/v1.0/users/${user.username}/avatar`
-                      }
-                      className="w-8 h-8 bg-gray-300 rounded-full border object-cover"
+                  <Link href={`/${user.username}`} className="flex shrink-0">
+                    <UserAvatar
+                      username={user.username}
+                      src={user.oauth_profile_picture || user.avatar_url}
+                      theme={user.profile_theme}
                       alt={`${user.profile_name || user.username} avatar`}
+                      className="w-8 h-8"
+                      imgClassName="bg-gray-300 border"
                     />
                   </Link>
                   <Link
                     href={`/${user.username}`}
                     className="ml-1.5 font-semibold flex-1 truncate text-left dark:text-neutral-300"
                   >
-                    {user.profile_name || user.username}
+                    <StyledName theme={user.profile_theme}>
+                      {user.profile_name || user.username}
+                    </StyledName>
                   </Link>
                   <span className="mr-1.5 text-[#C1C1C1]">
                     {user.total_points} điểm

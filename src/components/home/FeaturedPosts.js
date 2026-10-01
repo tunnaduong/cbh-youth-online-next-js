@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import StyledName from "@/components/profile/StyledName";
 import { Eye, FileText, Heart, MessageSquare, Sparkles, Video } from "lucide-react";
 import Badges from "@/components/ui/Badges";
 import { HomeCard, SectionHeader, UserAvatar } from "./HomeCard";
@@ -68,11 +69,16 @@ function FeaturedCard({ post }) {
           name={post.author?.profile_name}
           anonymous={post.anonymous}
           size={20}
+          theme={post.anonymous ? null : post.author?.profile_theme}
         />
         <span className="truncate">
-          {post.anonymous
-            ? "Người dùng ẩn danh"
-            : post.author?.profile_name || post.author?.username}
+          {post.anonymous ? (
+            "Người dùng ẩn danh"
+          ) : (
+            <StyledName theme={post.author?.profile_theme}>
+              {post.author?.profile_name || post.author?.username}
+            </StyledName>
+          )}
         </span>
         {post.author?.verified && <Badges className="!ml-0 text-[13px]" />}
       </div>

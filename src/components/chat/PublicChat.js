@@ -2,6 +2,8 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useAuthContext } from "@/contexts/Support";
+import AvatarFrame from "@/components/profile/AvatarFrame";
+import StyledName from "@/components/profile/StyledName";
 import {
   getPublicChatMessages,
   sendPublicMessage,
@@ -966,7 +968,7 @@ export default function PublicChat() {
                   >
                     {/* Avatar */}
                     <div
-                      className="flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-semibold"
+                      className="relative flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-semibold"
                       style={{ backgroundColor: avatarColor }}
                     >
                       {message.sender?.avatar_url ? (
@@ -978,13 +980,14 @@ export default function PublicChat() {
                       ) : (
                         avatarInitial
                       )}
+                      <AvatarFrame theme={message.sender?.profile_theme} />
                     </div>
 
                     {/* Message Content */}
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1">
                         <span className="font-medium text-gray-900 dark:text-gray-100 text-sm">
-                          @{senderName}
+                          <StyledName theme={message.sender?.profile_theme}>@{senderName}</StyledName>
                         </span>
                         <span className="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1">
                           {formatTime(message.created_at)}

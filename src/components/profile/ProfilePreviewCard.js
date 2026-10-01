@@ -74,7 +74,7 @@ export default function ProfilePreviewCard({
           </div>
         </dl>
 
-        {/* How the name looks in posts/comments: font only, effect on hover */}
+        {/* How the name and avatar look next to posts/comments */}
         <div className="mt-5 pt-4 border-t border-gray-200/80 dark:border-neutral-600 flex items-center gap-2.5">
           <UserAvatar
             username={username}
@@ -85,11 +85,7 @@ export default function ProfilePreviewCard({
           />
           <div className="min-w-0">
             <p className="text-sm font-semibold truncate">
-              <StyledName
-                theme={theme}
-                variant="compact"
-                className="text-gray-900 dark:text-white cursor-default"
-              >
+              <StyledName theme={theme} className="text-gray-900 dark:text-white">
                 {profileName}
               </StyledName>
             </p>
