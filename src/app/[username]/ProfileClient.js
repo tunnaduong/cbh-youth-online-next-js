@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import UserAvatar from "@/components/profile/UserAvatar";
 import { useRouter } from "next/navigation";
 import DefaultLayout from "@/layouts/DefaultLayout";
 import PostItem from "@/components/forum/PostItem";
@@ -101,6 +102,7 @@ export default function ProfileClient({ initialProfile, activeTab, username }) {
           id: f.id,
           follower: {
             username: f.username,
+            profile_theme: f.profile_theme || null,
             profile: {
               profile_name: f.profile_name,
               verified: false,
@@ -113,6 +115,7 @@ export default function ProfileClient({ initialProfile, activeTab, username }) {
           id: f.id,
           followed: {
             username: f.username,
+            profile_theme: f.profile_theme || null,
             profile: {
               profile_name: f.profile_name,
               verified: false,
@@ -731,14 +734,18 @@ export default function ProfileClient({ initialProfile, activeTab, username }) {
                     className="flex-1 flex items-center gap-x-3"
                     href={`/${follower.follower.username}`}
                   >
-                    <img
-                      className="w-16 h-16 rounded-full border"
-                      src={`${process.env.NEXT_PUBLIC_API_URL}/v1.0/users/${follower.follower.username}/avatar`}
+                    <UserAvatar
+                      username={follower.follower.username}
+                      theme={follower.follower.profile_theme}
                       alt="avatar"
+                      className="w-16 h-16"
+                      imgClassName="border"
                     />
                     <div>
                       <h2 className="font-bold dark:text-neutral-300">
-                        {follower.follower.profile.profile_name}
+                        <StyledName theme={follower.follower.profile_theme}>
+                          {follower.follower.profile.profile_name}
+                        </StyledName>
                         {follower.follower.profile.verified == "1" && (
                           <span>
                             <svg
@@ -797,14 +804,18 @@ export default function ProfileClient({ initialProfile, activeTab, username }) {
                     className="flex-1 flex items-center gap-x-3"
                     href={`/${following.followed.username}`}
                   >
-                    <img
-                      className="w-16 h-16 rounded-full border"
-                      src={`${process.env.NEXT_PUBLIC_API_URL}/v1.0/users/${following.followed.username}/avatar`}
+                    <UserAvatar
+                      username={following.followed.username}
+                      theme={following.followed.profile_theme}
                       alt="avatar"
+                      className="w-16 h-16"
+                      imgClassName="border"
                     />
                     <div>
                       <h2 className="font-bold dark:text-neutral-300">
-                        {following.followed.profile.profile_name}
+                        <StyledName theme={following.followed.profile_theme}>
+                          {following.followed.profile.profile_name}
+                        </StyledName>
                         {following.followed.profile.verified == "1" && (
                           <span>
                             <svg

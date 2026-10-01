@@ -1,6 +1,8 @@
 "use client";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import AvatarFrameWrap from "@/components/profile/AvatarFrameWrap";
+import StyledName from "@/components/profile/StyledName";
 import { useChatContext } from "@/contexts/Support";
 import Image from "next/image";
 import moment from "moment";
@@ -155,6 +157,10 @@ export default function ChatThreadsList({ onSelectConversation }) {
     );
   }
 
+  // Profile theme of the other person in a 1-on-1 chat (groups have none).
+  const directTheme = (conversation) =>
+    conversation.type === "group" ? null : conversation.participants?.[0]?.profile_theme;
+
   return (
     <div className="flex flex-col h-full overflow-y-auto">
       {filteredConversations.map((conversation) => (
@@ -166,6 +172,7 @@ export default function ChatThreadsList({ onSelectConversation }) {
           {/* Avatar */}
           <div className="flex-shrink-0">
             {getThreadAvatar(conversation) ? (
+              <AvatarFrameWrap theme={directTheme(conversation)}>
               <Avatar className="w-10 h-10">
                 <AvatarImage
                   src={getThreadAvatar(conversation)}
@@ -176,6 +183,7 @@ export default function ChatThreadsList({ onSelectConversation }) {
                     "?"}
                 </AvatarFallback>
               </Avatar>
+              </AvatarFrameWrap>
             ) : (
               <div className="w-10 h-10 bg-gray-300 dark:bg-neutral-600 rounded-full flex items-center justify-center">
                 <span className="text-sm text-gray-600 dark:text-gray-300">
@@ -191,7 +199,9 @@ export default function ChatThreadsList({ onSelectConversation }) {
             <div className="flex items-center justify-between gap-2 mb-1">
               <div className="flex items-center gap-2 flex-1 min-w-0">
                 <h3 className="font-medium text-sm dark:text-white truncate">
-                  {getThreadDisplayName(conversation)}
+                  <StyledName theme={directTheme(conversation)}>
+                    {getThreadDisplayName(conversation)}
+                  </StyledName>
                 </h3>
                 {conversation.unread_count > 0 && (
                   <span className="inline-flex items-center justify-center px-2 py-0.5 text-xs font-medium bg-[#319527] text-white rounded-full flex-shrink-0">

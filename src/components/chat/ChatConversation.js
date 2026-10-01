@@ -5,6 +5,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { message as antdMessage, Dropdown } from "antd";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import AvatarFrameWrap from "@/components/profile/AvatarFrameWrap";
+import StyledName from "@/components/profile/StyledName";
 import { useChatContext } from "@/contexts/Support";
 import moment from "moment";
 import "moment/locale/vi";
@@ -1019,10 +1021,12 @@ export default function ChatConversation({
                     onOpenChange={(open) => open && loadSenderGroupMenuItems(message.sender)}
                   >
                     <button type="button" className="flex-shrink-0 self-end mb-2">
-                      <Avatar className="w-8 h-8">
-                        <AvatarImage src={message.sender?.avatar_url} alt={message.sender?.profile_name || message.sender?.username} />
-                        <AvatarFallback>{message.sender?.username?.[0]?.toUpperCase() || "?"}</AvatarFallback>
-                      </Avatar>
+                      <AvatarFrameWrap theme={message.sender?.profile_theme}>
+                        <Avatar className="w-8 h-8">
+                          <AvatarImage src={message.sender?.avatar_url} alt={message.sender?.profile_name || message.sender?.username} />
+                          <AvatarFallback>{message.sender?.username?.[0]?.toUpperCase() || "?"}</AvatarFallback>
+                        </Avatar>
+                      </AvatarFrameWrap>
                     </button>
                   </Dropdown>
                 )
@@ -1037,7 +1041,9 @@ export default function ChatConversation({
                       href={`/${message.sender.username}`}
                       className="text-xs font-medium dark:text-white truncate hover:underline"
                     >
-                      {message.sender?.profile_name || message.sender?.username}
+                      <StyledName theme={message.sender?.profile_theme}>
+                        {message.sender?.profile_name || message.sender?.username}
+                      </StyledName>
                     </Link>
                   ) : (
                     <span className="text-xs font-medium dark:text-white truncate">

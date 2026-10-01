@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import AvatarFrameWrap from "@/components/profile/AvatarFrameWrap";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuthContext, useNotificationContext } from "@/contexts/Support";
 import { useRouter } from "@bprogress/next/app";
@@ -291,6 +292,7 @@ export default function NotificationItem({ notification }) {
         }`}
       onClick={handleClick}
     >
+      <AvatarFrameWrap theme={isAnonymous ? null : notification.actor?.profile_theme}>
       <Avatar className={`h-10 w-10 flex-shrink-0 ${isAnonymous ? 'bg-gray-200 dark:bg-gray-700' : ''}`}>
         <AvatarImage src={avatarUrl} alt={avatarAlt} />
         <AvatarFallback className="text-gray-500 dark:text-gray-400">
@@ -303,6 +305,7 @@ export default function NotificationItem({ notification }) {
           )}
         </AvatarFallback>
       </Avatar>
+      </AvatarFrameWrap>
       <div className="flex-1 min-w-0">
         <p className="text-sm text-gray-900 dark:text-gray-100">
           {getNotificationMessage(notification)}

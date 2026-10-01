@@ -13,6 +13,8 @@ import {
 import { generatePostSlug } from "@/utils/slugify";
 import VerifiedBadge from "@/components/ui/Badges";
 import MemberTierBadge from "@/components/ui/MemberTierBadge";
+import StyledName from "@/components/profile/StyledName";
+import UserAvatar from "@/components/profile/UserAvatar";
 import PhotoCollage from "@/components/ui/PhotoCollage";
 import { useState, useEffect, useMemo } from "react";
 import { extractHeadingsAndInjectIds } from "@/utils/toc";
@@ -965,14 +967,13 @@ export default function PostItem({
               </>
             ) : (
               <>
-                <Link href={"/" + post.author.username}>
-                  <span className="relative flex shrink-0 overflow-hidden rounded-full w-8 h-8">
-                    <img
-                      className="border rounded-full aspect-square h-full w-full"
-                      alt={post.author.username + " avatar"}
-                      src={`${process.env.NEXT_PUBLIC_API_URL}/v1.0/users/${post.author.username}/avatar`}
-                    />
-                  </span>
+                <Link href={"/" + post.author.username} className="flex shrink-0">
+                  <UserAvatar
+                    username={post.author.username}
+                    theme={post.author.profile_theme}
+                    className="w-8 h-8"
+                    imgClassName="border"
+                  />
                 </Link>
                 <span className="text-gray-500 hidden md:block ml-2">
                   Đăng bởi
@@ -981,10 +982,13 @@ export default function PostItem({
                   className="flex flex-row items-center ml-2 md:ml-1 text-[#319527] hover:text-[#319527] font-bold hover:underline inline-verified truncate"
                   href={"/" + post.author.username}
                 >
-                  <span className="inline-verified__text truncate">
+                  <StyledName
+                    theme={post.author.profile_theme}
+                    className="inline-verified__text truncate"
+                  >
                     {post.author?.profile_name ||
                       post.author.profile?.profile_name}
-                  </span>
+                  </StyledName>
                   {(post.author.verified ||
                     post.author?.profile?.verified === true ||
                     post.author?.profile?.verified === "1") && (

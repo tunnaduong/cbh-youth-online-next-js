@@ -5,6 +5,8 @@ import Link from "next/link";
 import Modal from "@/components/ui/Modal";
 import Input from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import AvatarFrameWrap from "@/components/profile/AvatarFrameWrap";
+import StyledName from "@/components/profile/StyledName";
 import { Button, message as antdMessage, Popconfirm, Dropdown, Select } from "antd";
 import { X, Pencil, Check, UserPlus, LogOut, Trash2, Camera, Link as LinkIcon, MoreVertical, Image as ImageIcon, ShieldCheck } from "lucide-react";
 import {
@@ -494,16 +496,20 @@ export default function GroupInfoModal({ conversationId, show, onClose, onGroupU
                   className="flex items-center gap-3 p-3 border-b dark:border-neutral-600 last:border-b-0"
                 >
                   <Link href={`/${participant.username}`} className="flex-shrink-0">
-                    <Avatar className="w-9 h-9">
-                      <AvatarImage src={participant.avatar_url} alt={participant.username} />
-                      <AvatarFallback>
-                        {participant.username?.[0]?.toUpperCase() || "?"}
-                      </AvatarFallback>
-                    </Avatar>
+                    <AvatarFrameWrap theme={participant.profile_theme}>
+                      <Avatar className="w-9 h-9">
+                        <AvatarImage src={participant.avatar_url} alt={participant.username} />
+                        <AvatarFallback>
+                          {participant.username?.[0]?.toUpperCase() || "?"}
+                        </AvatarFallback>
+                      </Avatar>
+                    </AvatarFrameWrap>
                   </Link>
                   <Link href={`/${participant.username}`} className="flex-1 min-w-0">
                     <p className="text-sm dark:text-white truncate hover:underline">
-                      {participant.profile_name || participant.username}
+                      <StyledName theme={participant.profile_theme}>
+                        {participant.profile_name || participant.username}
+                      </StyledName>
                     </p>
                     {participant.role === "owner" && (
                       <p className="text-xs text-[#319527] dark:text-[#6bcf60]">Trưởng nhóm</p>

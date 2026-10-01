@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import UserAvatar from "@/components/profile/UserAvatar";
+import StyledName from "@/components/profile/StyledName";
 import { message } from "antd";
 import { Trophy } from "lucide-react";
 import HomeLayout from "@/layouts/HomeLayout";
@@ -81,14 +83,15 @@ export default function RankingClient() {
                     {i + 1}
                   </span>
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={`${process.env.NEXT_PUBLIC_API_URL}/v1.0/users/${u.username}/avatar`}
+                  <UserAvatar
+                    username={u.username}
+                    theme={u.profile_theme}
                     alt={u.username}
-                    className="w-10 h-10 rounded-full"
+                    className="w-10 h-10"
                   />
                   <div className="flex-1 min-w-0">
                     <p className="font-medium text-gray-900 dark:text-white truncate">
-                      {u.profile_name}
+                      <StyledName theme={u.profile_theme}>{u.profile_name}</StyledName>
                     </p>
                     <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
                       @{u.username}

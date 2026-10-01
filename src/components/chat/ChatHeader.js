@@ -15,6 +15,7 @@ import {
 import Link from "next/link";
 import { useState } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import AvatarFrameWrap from "@/components/profile/AvatarFrameWrap";
 import ReportModal from "@/components/ReportModal";
 
 export default function ChatHeader({
@@ -89,7 +90,13 @@ export default function ChatHeader({
                   : conversation?.display_name?.[0]?.toUpperCase() ||
                     conversation?.participants?.[0]?.username?.[0]?.toUpperCase();
 
+              const theme =
+                conversation?.type === "group"
+                  ? null
+                  : conversation?.participants?.[0]?.profile_theme;
+
               return avatarSrc ? (
+                <AvatarFrameWrap theme={theme}>
                 <Avatar className="w-6 h-6 flex-shrink-0">
                   <AvatarImage
                     src={avatarSrc}
@@ -102,6 +109,7 @@ export default function ChatHeader({
                   />
                   <AvatarFallback>{fallbackLetter || "?"}</AvatarFallback>
                 </Avatar>
+                </AvatarFrameWrap>
               ) : (
                 <div className="w-6 h-6 bg-gray-300 dark:bg-neutral-600 rounded-full flex items-center justify-center flex-shrink-0">
                   <span className="text-xs text-gray-600 dark:text-gray-300">

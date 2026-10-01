@@ -23,6 +23,8 @@ import CommentVotesModal from "./CommentVotesModal";
 import { useRouter } from "@bprogress/next/app";
 import Badges from "../ui/Badges";
 import MemberTierBadge from "../ui/MemberTierBadge";
+import StyledName from "@/components/profile/StyledName";
+import UserAvatar from "@/components/profile/UserAvatar";
 import MarkdownRenderer from "../ui/MarkdownRenderer";
 import { linkifyMentionsInHtml } from "@/utils/mentionRender";
 import { rewriteExternalLinksInHtml } from "@/utils/externalLink";
@@ -291,11 +293,13 @@ export default function Comment({
                 <span className="text-2xl text-primary-500 dark:text-neutral-300 font-medium">?</span>
               </div>
             ) : (
-              <Link href={`/${comment.author.username}`}>
-                <img
-                  src={`${process.env.NEXT_PUBLIC_API_URL}/v1.0/users/${comment.author.username}/avatar`}
+              <Link href={`/${comment.author.username}`} className="flex">
+                <UserAvatar
+                  username={comment.author.username}
+                  theme={comment.author.profile_theme}
                   alt={`${comment.author.profile_name}'s avatar`}
-                  className="w-10 h-10 rounded-full object-cover border border-gray-200"
+                  className="w-10 h-10"
+                  imgClassName="border border-gray-200"
                 />
               </Link>
             )}
@@ -312,9 +316,12 @@ export default function Comment({
               ) : (
                 <Link href={`/${comment.author.username}`}>
                   <span className="inline">
-                    <span className="line-clamp-1 inline dark:text-white">
+                    <StyledName
+                      theme={comment.author.profile_theme}
+                      className="line-clamp-1 inline dark:text-white"
+                    >
                       {comment.author.profile_name}
-                    </span>
+                    </StyledName>
                     {comment.author.verified && (
                       <Badges className="ml-1 mb-[1.9px]" />
                     )}
