@@ -21,6 +21,8 @@ import { extractHeadingsAndInjectIds } from "@/utils/toc";
 import ArticleToc from "./ArticleToc";
 import { linkifyMentionsInHtml } from "@/utils/mentionRender";
 import { rewriteExternalLinksInHtml } from "@/utils/externalLink";
+import { findPreviewableUrlInHtml } from "@/utils/linkPreview";
+import LinkPreviewCard from "@/components/ui/LinkPreviewCard";
 import CreatePostModal from "@/components/modals/CreatePostModal";
 
 import { Button, ConfigProvider, message, Tooltip, Dropdown, Modal } from "antd";
@@ -327,6 +329,17 @@ export default function PostItem({
   const youtubeEmbedIds = useMemo(
     () => extractYoutubeEmbedIds(post.content),
     [post.content]
+  );
+
+  // Facebook-style card for the first link in the body - only when the post
+  // has no media of its own, which would already fill that space.
+  const hasAttachedMedia =
+    post.image_urls?.length > 0 ||
+    post.video_urls?.length > 0 ||
+    post.document_urls?.length > 0;
+  const linkPreviewUrl = useMemo(
+    () => (hasAttachedMedia ? null : findPreviewableUrlInHtml(post.content)),
+    [hasAttachedMedia, post.content]
   );
 
   const handleShare = () => {
@@ -863,6 +876,10 @@ export default function PostItem({
                 </div>
               ))}
             </div>
+          )}
+
+          {linkPreviewUrl && (
+            <LinkPreviewCard url={linkPreviewUrl} className="mt-3" />
           )}
 
           {post.document_urls && post.document_urls.length > 0 && (
