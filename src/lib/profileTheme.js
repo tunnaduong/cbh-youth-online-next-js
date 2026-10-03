@@ -62,6 +62,8 @@ export const OPTION_LABELS = {
     pop: "Nổi khối",
     toon: "Hoạt hình",
     neon: "Neon",
+    rainbow: "Cầu vồng",
+    outline: "Viền chữ",
   },
   profile_effect: {
     none: "Không",
@@ -180,6 +182,8 @@ export function getSurfaceStyle(theme) {
  *   neon     — chữ sáng, phát quang theo màu, nhấp nháy nhẹ
  *   toon     — viền đậm và bóng đổ thẳng xuống như chữ hoạt hình
  *   pop      — bóng khối lệch chéo tạo cảm giác nổi 3D
+ *   rainbow  — bảy sắc cầu vồng chạy ngang chữ (không dùng màu người dùng chọn)
+ *   outline  — màu chữ (màu 1) có viền quanh chữ (màu 2), cả hai tự chọn
  */
 export function getNameEffect(theme) {
   const normalized = normalizeTheme(theme);
@@ -227,6 +231,30 @@ export function getNameEffect(theme) {
         style: {
           color: first,
           textShadow: `0.07em 0.07em 0 ${shade(first, -0.45)}`,
+        },
+        className: "",
+      };
+    case "rainbow":
+      return {
+        style: {
+          // Starts and ends on the same colour so the loop has no seam.
+          backgroundImage:
+            "linear-gradient(90deg, #ff4d4d, #ff9f1a, #ffe600, #2ed573, #1e90ff, #a55eea, #ff4d4d)",
+          backgroundSize: "200% auto",
+          WebkitBackgroundClip: "text",
+          backgroundClip: "text",
+          WebkitTextFillColor: "transparent",
+          color: "transparent",
+        },
+        className: "name-effect-rainbow",
+      };
+    case "outline":
+      return {
+        style: {
+          color: first,
+          // Stroke is painted under the fill, so only its outer half shows.
+          WebkitTextStroke: `0.12em ${second}`,
+          paintOrder: "stroke fill",
         },
         className: "",
       };

@@ -1570,7 +1570,8 @@ export default function ProfileClient({ initialProfile, activeTab, username }) {
                 trainee: "Mở khóa tùy chỉnh profile, tên nổi bật, khung avatar riêng và voucher 50% Gift Shop.",
                 active: "Được tặng điểm cho tác giả, tăng giới hạn đăng bài, ưu tiên hiển thị bình luận.",
                 distinguished: "Quy đổi điểm ra tiền mặt và đăng bài không cần duyệt.",
-                veteran: "Thành viên kỳ cựu của diễn đàn — danh hiệu cao quý nhất.",
+                veteran: "Thành viên kỳ cựu của diễn đàn: khung avatar cầu vồng, hiệu ứng cực quang và avatar GIF động.",
+                premium: "Hạng cao nhất của diễn đàn. Mở khóa hiệu ứng tên Cầu vồng và Viền chữ tự chọn màu.",
               };
               return (
                 <div

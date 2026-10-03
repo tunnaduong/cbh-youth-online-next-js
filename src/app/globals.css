@@ -1,4 +1,6 @@
 @import url("https://fonts.googleapis.com/css2?family=Inter:wght@200;300;400;500;600;700;800&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Google+Sans+Flex:wght@600&display=swap");
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -1129,6 +1131,17 @@ body {
   }
 }
 
+/* Phông tên nạp qua @import ở đầu file (src/lib/nameFonts.js: flex, grotesk) */
+.name-font-flex {
+  font-family: "Google Sans Flex", "Google Sans", ui-sans-serif, system-ui, sans-serif;
+  font-weight: 600;
+}
+
+.name-font-grotesk {
+  font-family: "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
+  font-weight: 600;
+}
+
 /* Hiệu ứng tên hiển thị (src/lib/profileTheme.js getNameEffect) */
 @keyframes nameGradientShift {
   from { background-position: 0% center; }
@@ -1148,8 +1161,13 @@ body {
   animation: nameNeonPulse 2.4s ease-in-out infinite;
 }
 
+.name-effect-rainbow {
+  animation: nameGradientShift 3s linear infinite;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .name-effect-gradient,
+  .name-effect-rainbow,
   .name-effect-neon {
     animation: none;
   }

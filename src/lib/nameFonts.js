@@ -19,7 +19,7 @@ import {
  * tên. `preload: false` nên file font chỉ được tải khi trang thực sự hiển
  * thị một tên dùng font đó.
  *
- * Key phải khớp ProfileThemeService::NAME_FONTS phía API.
+ * Key phải khớp ProfileThemeService::OPTIONS['name_font'] phía API.
  */
 // next/font needs literal options on every call (no shared object/spread).
 const oswald = Oswald({
@@ -105,6 +105,11 @@ export const NAME_FONTS = {
   tech: { label: "Công nghệ", className: tektur.className },
   heavy: { label: "Đậm chất", className: bungee.className },
   handwritten: { label: "Viết tay", className: patrickHand.className },
+  // These two come from the Google Fonts stylesheet imported at the top of
+  // globals.css (classes defined there), not next/font: Google Sans Flex is
+  // newer than the font list bundled with this Next version.
+  flex: { label: "Google Sans Flex", className: "name-font-flex" },
+  grotesk: { label: "Space Grotesk", className: "name-font-grotesk" },
 };
 
 export function getNameFontClass(key) {
