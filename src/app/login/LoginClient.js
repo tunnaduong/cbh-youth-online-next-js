@@ -374,7 +374,9 @@ function LoginClientInner() {
               )}
               <p className="mt-3 mb-4 text-sm text-center text-gray-500 dark:text-neutral-400">
                 {challengeMethod === "email"
-                  ? `Nhập mã 6 số được gửi tới ${challenge.email || "email của bạn"}.`
+                  ? emailSent
+                    ? `Nhập mã 6 số được gửi tới ${challenge.email || "email của bạn"}.`
+                    : `Bấm "Gửi lại mã" để nhận mã 6 số qua ${challenge.email || "email của bạn"}.`
                   : "Nhập mã 6 số từ ứng dụng xác thực của bạn."}
               </p>
               <form className="space-y-4" onSubmit={submitCode}>

@@ -304,7 +304,7 @@ export default function ComposerForm({
       {processing && uploadStage && (imageFiles.length > 0 || videoFiles.length > 0 || documentFiles.length > 0) && (
         <div className="mt-4 w-full">
           <div className="mb-1 flex justify-between text-xs text-gray-500 dark:text-gray-400">
-            <span>{uploadStage === "compressing" ? "Đang nén ảnh..." : "Đang tải lên..."}</span>
+            <span>{uploadStage === "compressing" ? "Đang nén ảnh/video..." : "Đang tải lên..."}</span>
             <span>{uploadProgress}%</span>
           </div>
           <div className="h-2 w-full overflow-hidden rounded-full bg-gray-200 dark:bg-neutral-600">

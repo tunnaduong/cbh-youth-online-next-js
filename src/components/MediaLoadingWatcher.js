@@ -20,8 +20,17 @@ export default function MediaLoadingWatcher() {
       }
     };
 
-    const events = ["load", "loadeddata", "error"];
+    const events = ["load", "loadeddata", "loadedmetadata", "error"];
     events.forEach((name) => document.addEventListener(name, done, true));
+
+    // Media that finished loading before this ran (cached, or server-rendered
+    // and loaded during hydration) never fires those events again.
+    document.querySelectorAll("img.media-loading").forEach((img) => {
+      if (img.complete) img.classList.remove("media-loading");
+    });
+    document.querySelectorAll("video.media-loading").forEach((video) => {
+      if (video.readyState >= 1) video.classList.remove("media-loading");
+    });
     return () => events.forEach((name) => document.removeEventListener(name, done, true));
   }, []);
 

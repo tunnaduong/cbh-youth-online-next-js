@@ -34,6 +34,7 @@ export default function PasskeyAppLoginPage() {
   const [status, setStatus] = useState("idle"); // idle | working | done | error
   const [error, setError] = useState("");
   const params = useRef({ appChallenge: "", scheme: "" });
+  const [returnUrl, setReturnUrl] = useState("");
 
   useEffect(() => {
     const hash = new URLSearchParams(window.location.hash.replace(/^#/, ""));
@@ -66,10 +67,12 @@ export default function PasskeyAppLoginPage() {
         app_challenge: params.current.appChallenge,
       });
 
-      setStatus("done");
       // Standard scheme://host form: the app's auth session matches the
       // return URL by this prefix.
-      window.location.href = `${params.current.scheme}://passkey?code=${encodeURIComponent(code)}`;
+      const url = `${params.current.scheme}://passkey?code=${encodeURIComponent(code)}`;
+      setReturnUrl(url);
+      setStatus("done");
+      window.location.href = url;
     } catch (err) {
       setStatus("idle");
       if (!isPasskeyCancel(err)) setError(err.message);
@@ -97,6 +100,14 @@ export default function PasskeyAppLoginPage() {
           >
             {status === "working" ? "Đang chờ passkey..." : "Tiếp tục"}
           </button>
+        )}
+        {status === "done" && returnUrl && (
+          <a
+            href={returnUrl}
+            className="mt-5 block w-full rounded-lg bg-[#319527] px-4 py-2.5 text-sm font-semibold text-white"
+          >
+            Quay lại ứng dụng
+          </a>
         )}
       </div>
     </div>

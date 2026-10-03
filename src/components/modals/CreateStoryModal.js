@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import { compressMediaForUpload } from "@/utils/mediaCompression";
 import {
   Modal,
   Upload,
@@ -53,7 +54,7 @@ const CreateStoryModal = ({ open, onClose, onStoryCreated }) => {
   const [errors, setErrors] = useState({});
   const [processing, setProcessing] = useState(false);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
     if (!currentUser) {
@@ -80,7 +81,10 @@ const CreateStoryModal = ({ open, onClose, onStoryCreated }) => {
 
     // Add media file if present
     if (mediaFile) {
-      formData.append("media_file", mediaFile);
+      // Compressed here, before upload (the API no longer does it). Marked
+      // as submitting first, so the button can't be pressed again meanwhile.
+      setIsSubmitting(true);
+      formData.append("media_file", await compressMediaForUpload(mediaFile));
     }
 
     if (mediaType === "video") {

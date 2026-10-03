@@ -310,7 +310,13 @@ export default function ProfileCustomizer({ username }) {
       <ColorPicker
         value={draft[key] || base}
         disabledAlpha
-        onChange={(color) => update({ [key]: pickHex(color) })}
+        allowClear
+        // Clearing comes through as a fully transparent colour; alpha is off
+        // here, so nothing else can produce one.
+        onChange={(color) =>
+          update({ [key]: color?.cleared || color?.toRgb?.().a === 0 ? null : pickHex(color) })
+        }
+        onClear={() => update({ [key]: null })}
       >
         {button}
       </ColorPicker>

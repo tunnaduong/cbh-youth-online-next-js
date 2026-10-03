@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
+import { compressMediaForUpload } from "@/utils/mediaCompression";
 import { useAuthContext } from "@/contexts/Support";
 import AvatarFrame from "@/components/profile/AvatarFrame";
 import StyledName from "@/components/profile/StyledName";
@@ -625,7 +626,8 @@ export default function PublicChat() {
     setSending(true);
     try {
       const formData = new FormData();
-      formData.append("file", file);
+      // Compressed here, before upload (the API no longer does it).
+      formData.append("file", await compressMediaForUpload(file));
       formData.append("type", type);
       formData.append("content", file.name);
 

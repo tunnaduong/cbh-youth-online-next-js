@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
+import { compressMediaForUpload } from "@/utils/mediaCompression";
 import PropTypes from "prop-types";
 import ChatContext from "../ChatContext";
 import {
@@ -434,11 +435,18 @@ const ChatProvider = ({ children }) => {
       setSending(true);
       let didFail = false;
       try {
+        // Photos and videos are compressed here, before upload (the API no
+        // longer does it); a video shows a "Đang nén video..." notice.
+        const uploads = [];
+        for (const original of files) {
+          uploads.push(await compressMediaForUpload(original));
+        }
+
         const formData = new FormData();
-        if (files.length > 1) {
-          files.forEach((f) => formData.append("files[]", f));
+        if (uploads.length > 1) {
+          uploads.forEach((f) => formData.append("files[]", f));
         } else {
-          formData.append("file", file);
+          formData.append("file", uploads[0]);
         }
         formData.append("type", type);
         formData.append("content", file.name);
