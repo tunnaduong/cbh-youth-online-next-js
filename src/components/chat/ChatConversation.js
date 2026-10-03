@@ -20,6 +20,8 @@ import Modal from "@/components/ui/Modal";
 import { CornerUpLeft, FileText, Download, PlayCircle, Forward, Loader2, AlertCircle, RotateCw, X } from "lucide-react";
 import NextLink from "next/link";
 import { safeLinkHref } from "@/utils/externalLink";
+import { findPreviewableUrl } from "@/utils/linkPreview";
+import LinkPreviewCard from "@/components/ui/LinkPreviewCard";
 import {
   recallMessage,
   editMessage,
@@ -1407,11 +1409,25 @@ export default function ChatConversation({
                         : null;
 
                       if (!sharedTopic) {
-                        return linkifyText(
+                        const previewUrl = message.is_recalled
+                          ? null
+                          : findPreviewableUrl(message.content);
+                        const text = linkifyText(
                           message.content,
                           "",
                           message.is_myself,
                           mentionSet
+                        );
+                        if (!previewUrl) return text;
+                        return (
+                          <>
+                            {text}
+                            <LinkPreviewCard
+                              url={previewUrl}
+                              compact
+                              className="mt-2"
+                            />
+                          </>
                         );
                       }
 
