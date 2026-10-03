@@ -144,13 +144,21 @@ export default function DeviceSessions() {
                   </p>
                 </div>
                 {!session.is_current && (
-                  <Button
-                    size="small"
-                    loading={busyId === session.id}
-                    onClick={() => logoutOne(session.id)}
+                  <Popconfirm
+                    title="Đăng xuất thiết bị này?"
+                    okText="Đăng xuất"
+                    cancelText="Hủy"
+                    onConfirm={() => logoutOne(session.id)}
                   >
-                    Đăng xuất
-                  </Button>
+                    {/* One at a time: each logout reloads the list. */}
+                    <Button
+                      size="small"
+                      loading={busyId === session.id}
+                      disabled={loggingOutAll || (busyId !== null && busyId !== session.id)}
+                    >
+                      Đăng xuất
+                    </Button>
+                  </Popconfirm>
                 )}
               </li>
             );

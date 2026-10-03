@@ -37,6 +37,8 @@ export default function TwoFactorSettings() {
   const [code, setCode] = useState("");
   const [recoveryCodes, setRecoveryCodes] = useState([]);
   const [busy, setBusy] = useState(false);
+  const [sendingCode, setSendingCode] = useState(false);
+  const [forgettingDevices, setForgettingDevices] = useState(false);
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -138,22 +140,33 @@ export default function TwoFactorSettings() {
       setMode("recovery");
     });
 
+  // sendingCode / forgettingDevices keep a double click from firing the
+  // request twice (the second "send code" would only hit the resend cooldown
+  // and show an error right after the success message).
   const sendEmailCode = async () => {
+    if (sendingCode) return;
+    setSendingCode(true);
     try {
       const res = await sendTwoFactorEmailCode();
       message.success(res.data?.message || "Đã gửi mã xác thực.");
     } catch (err) {
       message.error(errorMessage(err));
+    } finally {
+      setSendingCode(false);
     }
   };
 
   const forgetDevices = async () => {
+    if (forgettingDevices) return;
+    setForgettingDevices(true);
     try {
       const res = await forgetTwoFactorTrustedDevices();
       setStatus(res.data.status);
       message.success(res.data.message || "Đã xóa các thiết bị tin cậy.");
     } catch (err) {
       message.error(errorMessage(err));
+    } finally {
+      setForgettingDevices(false);
     }
   };
 
@@ -195,6 +208,15 @@ export default function TwoFactorSettings() {
     setMode(checked ? "choose" : "disable");
   };
 
+  // The confirm button stays off until its field has something in it, so an
+  // empty submit can't come back as a "wrong password" error.
+  const identityFilled = status?.password_required ? !!password : !!code.trim();
+
+  const submitIdentity = () => {
+    if (!identityFilled || busy) return;
+    return mode === "disable" ? confirmDisable() : confirmRegenerate();
+  };
+
   const labelClass =
     "block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2";
   const hintClass = "text-sm text-gray-500 dark:text-gray-400";
@@ -209,6 +231,7 @@ export default function TwoFactorSettings() {
             onChange={(e) => setPassword(e.target.value)}
             placeholder="Nhập mật khẩu hiện tại"
             autoComplete="current-password"
+            onPressEnter={submitIdentity}
           />
         </>
       ) : (
@@ -220,12 +243,14 @@ export default function TwoFactorSettings() {
             placeholder="Nhập mã"
             autoComplete="one-time-code"
             maxLength={20}
+            onPressEnter={submitIdentity}
           />
           {status?.method === "email" && (
             <button
               type="button"
               onClick={sendEmailCode}
-              className="mt-2 text-sm text-green-600 hover:underline"
+              disabled={sendingCode}
+              className="mt-2 text-sm text-green-600 hover:underline disabled:opacity-50"
             >
               Gửi mã tới {status.email || "email của tôi"}
             </button>
@@ -279,7 +304,7 @@ export default function TwoFactorSettings() {
           <div className="flex flex-wrap items-center gap-3">
             <span>Thiết bị đang được ghi nhớ: {status.trusted_devices}</span>
             {status.trusted_devices > 0 && (
-              <Button size="small" onClick={forgetDevices}>
+              <Button size="small" onClick={forgetDevices} loading={forgettingDevices}>
                 Xóa tất cả thiết bị tin cậy
               </Button>
             )}
@@ -316,7 +341,12 @@ export default function TwoFactorSettings() {
             </div>
           )}
           <div className="flex gap-2">
-            <Button type="primary" loading={busy} onClick={startSetup}>
+            <Button
+              type="primary"
+              loading={busy}
+              onClick={startSetup}
+              disabled={status.password_required && !password}
+            >
               Tiếp tục
             </Button>
             <Button onClick={reset} disabled={busy}>
@@ -334,7 +364,17 @@ export default function TwoFactorSettings() {
                 Quét mã QR bằng ứng dụng xác thực, hoặc nhập khóa bên dưới
                 vào ứng dụng, rồi nhập mã 6 số ứng dụng hiển thị.
               </p>
-              <QRCode value={setup.otpauth_url} size={180} bordered={false} className="bg-white p-2" />
+              {/* Fixed black-on-white: in dark mode antd draws the code in the
+                  light text colour, which is invisible on this white tile and
+                  can't be scanned anyway. */}
+              <QRCode
+                value={setup.otpauth_url}
+                size={180}
+                bordered={false}
+                color="#000000"
+                bgColor="#ffffff"
+                className="bg-white p-2"
+              />
               <p className="text-sm text-gray-700 dark:text-gray-300 break-all">
                 Khóa: <code className="font-mono">{setup.secret}</code>
               </p>
@@ -359,7 +399,8 @@ export default function TwoFactorSettings() {
               <button
                 type="button"
                 onClick={sendEmailCode}
-                className="mt-2 text-sm text-green-600 hover:underline"
+                disabled={sendingCode}
+                className="mt-2 text-sm text-green-600 hover:underline disabled:opacity-50"
               >
                 Gửi lại mã
               </button>
@@ -416,7 +457,8 @@ export default function TwoFactorSettings() {
               type="primary"
               danger={mode === "disable"}
               loading={busy}
-              onClick={mode === "disable" ? confirmDisable : confirmRegenerate}
+              disabled={!identityFilled}
+              onClick={submitIdentity}
             >
               {mode === "disable" ? "Tắt xác thực hai lớp" : "Tạo mã mới"}
             </Button>
