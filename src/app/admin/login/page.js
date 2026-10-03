@@ -9,6 +9,7 @@ import { LockOutlined, UserOutlined } from "@ant-design/icons";
 import { ADMIN_SESSION_KEY } from "../AdminShell";
 import * as Api from "@/app/Api";
 import { setAuthCookie, getAuthCookie } from "@/utils/cookies";
+import { getTwoFactorDeviceToken } from "@/utils/twoFactorDevice";
 
 // The admin page AdminShell sent us here from (?next=), limited to /admin
 // paths so the param can't redirect anywhere else.
@@ -43,7 +44,20 @@ export default function AdminLoginPage() {
     setLoading(true);
 
     try {
-      const response = await Api.loginRequest({ username, password });
+      const response = await Api.loginRequest({
+        username,
+        password,
+        // Lets a device the admin chose to remember skip the two-factor step
+        device_token: getTwoFactorDeviceToken() || undefined,
+      });
+
+      // Two-factor is on: this small form has no code step, so finish the
+      // login on the main login page and come back here afterwards.
+      if (response?.data?.two_factor_required) {
+        router.push(`/login?continue=${encodeURIComponent("/admin")}`);
+        return;
+      }
+
       const user = response?.data?.user || response?.user;
       const token = response?.data?.token || response?.token;
 

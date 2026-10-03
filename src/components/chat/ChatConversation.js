@@ -1132,13 +1132,13 @@ export default function ChatConversation({
                             preload="metadata"
                             muted
                             playsInline
-                            className="w-full h-full object-cover"
+                            className="media-loading w-full h-full object-cover"
                           />
                         ) : (
                           <img
                             src={resolveFileUrl(url)}
                             alt={message.content || "image"}
-                            className="w-full h-full object-cover"
+                            className="media-loading w-full h-full object-cover"
                           />
                         )}
                         {message.type === "video" && (
@@ -1177,7 +1177,7 @@ export default function ChatConversation({
                     <img
                       src={resolveFileUrl(message.file_url)}
                       alt={message.content || "image"}
-                      className="w-full h-auto max-h-[300px] object-cover"
+                      className="media-loading w-full h-auto min-h-[80px] max-h-[300px] object-cover"
                     />
                     {message.is_sending && (
                       <div className="absolute inset-0 flex flex-col items-center justify-center gap-1 bg-black/30">

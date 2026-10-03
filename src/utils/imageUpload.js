@@ -58,7 +58,7 @@ export async function uploadInlineImage(file, uid) {
   if (ownerId == null) throw new Error("Bạn cần đăng nhập để tải ảnh lên");
 
   const formData = new FormData();
-  formData.append("file", withImageExtension(file));
+  formData.append("file", await compressImageForUpload(withImageExtension(file)));
   formData.append("uid", ownerId);
 
   const res = await uploadFile(formData);
@@ -95,9 +95,11 @@ export function collectImageFiles(dataTransfer) {
 // Photos straight off a phone/camera are 3-5MB each at 4000px+; a dozen of
 // them made one ~35MB multipart request that took minutes on a home uplink
 // and could stall out entirely. Nothing on the site shows an attachment
-// wider than this, so downscale + re-encode before upload instead.
-const COMPRESS_MAX_DIMENSION = 2048;
-const COMPRESS_QUALITY = 0.82;
+// wider than this, so downscale + re-encode before upload instead. The API
+// no longer compresses uploads, so this is the only compression photos get:
+// same limits its job used (1470px wide, quality 85).
+const COMPRESS_MAX_WIDTH = 1470;
+const COMPRESS_QUALITY = 0.85;
 const COMPRESS_MIN_BYTES = 500 * 1024;
 
 /**
@@ -131,7 +133,7 @@ export async function compressImageForUpload(file) {
   }
 
   try {
-    const scale = Math.min(1, COMPRESS_MAX_DIMENSION / Math.max(bitmap.width, bitmap.height));
+    const scale = Math.min(1, COMPRESS_MAX_WIDTH / bitmap.width);
     const width = Math.round(bitmap.width * scale);
     const height = Math.round(bitmap.height * scale);
 

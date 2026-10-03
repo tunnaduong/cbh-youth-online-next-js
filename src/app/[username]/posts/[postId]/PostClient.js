@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import { compressMediaForUpload } from "@/utils/mediaCompression";
 import { useAuthContext, useTopUsersContext } from "@/contexts/Support";
 import { useForumData } from "@/contexts/ForumDataContext";
 import {
@@ -518,7 +519,10 @@ export default function PostClient({ params, initialPost = null }) {
       if (content) fd.append("comment", content);
       fd.append("topic_id", topicId);
       fd.append("is_anonymous", isAnonymous ? "1" : "0");
-      images.forEach((file, i) => fd.append(`images[${i}]`, file));
+      // Compressed here, before upload (the API no longer does it).
+      for (let i = 0; i < images.length; i++) {
+        fd.append(`images[${i}]`, await compressMediaForUpload(images[i]));
+      }
       const response = await commentPost(topicId, fd);
 
       const realComment = {

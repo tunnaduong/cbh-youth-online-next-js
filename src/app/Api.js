@@ -42,6 +42,16 @@ export const logoutDeviceSession = (id) => Api.deleteRequest(`/v1.0/sessions/${i
 // Logs out every device except this one
 export const logoutOtherDeviceSessions = () => Api.deleteRequest("/v1.0/sessions");
 
+// Passkeys: log in with the device's fingerprint/face/PIN - no password and
+// no two-factor step.
+export const getPasskeyLoginOptions = () => Api.postRequest("/v1.0/login/passkey/options");
+export const loginWithPasskey = (params) => Api.postRequest("/v1.0/login/passkey", params);
+export const getPasskeys = () => Api.getRequest("/v1.0/passkeys");
+export const getPasskeyRegistrationOptions = (params) =>
+  Api.postRequest("/v1.0/passkeys/options", params);
+export const storePasskey = (params) => Api.postRequest("/v1.0/passkeys", params);
+export const deletePasskey = (id) => Api.deleteRequest(`/v1.0/passkeys/${id}`);
+
 export const getFeedPosts = (page = 1) => {
   return Api.getRequest("/v1.0/topics?page=" + page);
 };

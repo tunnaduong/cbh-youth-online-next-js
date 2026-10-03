@@ -19,7 +19,7 @@ import {
  * tên. `preload: false` nên file font chỉ được tải khi trang thực sự hiển
  * thị một tên dùng font đó.
  *
- * Key phải khớp ProfileThemeService::NAME_FONTS phía API.
+ * Key phải khớp ProfileThemeService::OPTIONS['name_font'] phía API.
  */
 // next/font needs literal options on every call (no shared object/spread).
 const oswald = Oswald({
@@ -107,6 +107,58 @@ export const NAME_FONTS = {
   handwritten: { label: "Viết tay", className: patrickHand.className },
 };
 
+/**
+ * Fonts the API hosts (GET /v1.0/name-fonts): any `name_font` key that isn't
+ * bundled above. The list is fetched once; each font becomes an @font-face
+ * rule plus a `.name-font-srv-<key>` class, so the browser only downloads a
+ * font file when a name using it is actually on screen - and new fonts added
+ * on the server work without a new build.
+ */
+let serverFontsPromise = null;
+
+export function ensureServerNameFonts() {
+  if (typeof window === "undefined") return Promise.resolve([]);
+
+  if (!serverFontsPromise) {
+    serverFontsPromise = fetch(`${process.env.NEXT_PUBLIC_API_URL}/v1.0/name-fonts`, {
+      headers: { Accept: "application/json" },
+    })
+      .then((res) => (res.ok ? res.json() : { fonts: [] }))
+      .then(({ fonts = [] }) => {
+        const clean = (value) => String(value).replace(/["\\\n\r<>]/g, "");
+        const css = fonts
+          .filter((font) => /^[a-z0-9]+$/.test(font.key))
+          .map(
+            (font) =>
+              // The files are single-weight; the 100-900 range stops the
+              // browser from faking bold on top of them.
+              `@font-face{font-family:"${clean(font.family)}";src:url("${clean(font.url)}") format("truetype");font-weight:100 900;font-display:swap;}` +
+              `.name-font-srv-${font.key}{font-family:"${clean(font.family)}",ui-sans-serif,system-ui,sans-serif;}`
+          )
+          .join("\n");
+
+        const style = document.createElement("style");
+        style.dataset.nameFonts = "server";
+        style.textContent = css;
+        document.head.appendChild(style);
+
+        return fonts;
+      })
+      .catch(() => {
+        // Let a later render try again; names fall back to the default font.
+        serverFontsPromise = null;
+        return [];
+      });
+  }
+
+  return serverFontsPromise;
+}
+
 export function getNameFontClass(key) {
-  return NAME_FONTS[key]?.className || "";
+  if (!key || key === "default") return "";
+  if (NAME_FONTS[key]) return NAME_FONTS[key].className;
+  if (!/^[a-z0-9]+$/.test(key)) return "";
+
+  ensureServerNameFonts();
+  return `name-font-srv-${key}`;
 }

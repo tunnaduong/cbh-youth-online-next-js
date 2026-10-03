@@ -958,8 +958,13 @@ export default function PostItem({
                   key={`video-${post.id}-${index}`}
                   src={url}
                   controls
+                  playsInline
                   preload="metadata"
-                  className="w-full rounded-lg border dark:!border-neutral-500 bg-black max-h-[480px]"
+                  poster={post.video_thumbnail_urls?.[index] || undefined}
+                  // A fixed 16:9 box, so a video the browser can't decode (or
+                  // hasn't loaded yet) never collapses into a bare controls
+                  // bar that looks like an audio player.
+                  className="post-video media-loading aspect-video w-full rounded-lg border dark:!border-neutral-500 max-h-[480px] object-contain"
                 />
               ))}
             </div>

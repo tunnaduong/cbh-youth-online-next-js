@@ -15,6 +15,11 @@ export function ThemeProvider({ children }) {
     return "light";
   });
   const [mounted, setMounted] = useState(false);
+  // What is actually shown: "auto" resolved to light or dark. Components that
+  // can't read the body's `dark` class (antd's theme) use this.
+  // Starts as "light" on both server and client (so hydration matches) and
+  // is set for real by the effect below once mounted.
+  const [resolvedTheme, setResolvedTheme] = useState("light");
 
   // Handle hydration - just mark as mounted
   useEffect(() => {
@@ -25,6 +30,10 @@ export function ThemeProvider({ children }) {
   useEffect(() => {
     if (!mounted) return;
 
+    // Saved first: the "auto" branch below returns early (its cleanup), which
+    // used to skip this and lose the "auto" choice on reload.
+    localStorage.setItem("theme", theme);
+
     if (theme === "auto") {
       const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
       const updateTheme = (e) => {
@@ -33,6 +42,7 @@ export function ThemeProvider({ children }) {
         } else {
           document.body.classList.remove("dark");
         }
+        setResolvedTheme(e.matches ? "dark" : "light");
       };
 
       // Apply initial theme based on system preference
@@ -42,12 +52,12 @@ export function ThemeProvider({ children }) {
       return () => mediaQuery.removeEventListener("change", updateTheme);
     } else if (theme === "dark") {
       document.body.classList.add("dark");
+      setResolvedTheme("dark");
     } else {
       // light theme
       document.body.classList.remove("dark");
+      setResolvedTheme("light");
     }
-
-    localStorage.setItem("theme", theme);
   }, [theme, mounted]);
 
   const toggleTheme = () => {
@@ -59,7 +69,7 @@ export function ThemeProvider({ children }) {
   };
 
   return (
-    <ThemeContext.Provider value={{ theme, toggleTheme, changeTheme }}>
+    <ThemeContext.Provider value={{ theme, resolvedTheme, toggleTheme, changeTheme }}>
       {children}
     </ThemeContext.Provider>
   );
