@@ -925,6 +925,8 @@ export const adminUpdateUser = (id, params) => Api.patchRequest(`/v1.0/admin/use
 export const adminDeleteUser = (id) => Api.deleteRequest(`/v1.0/admin/users/${id}`);
 export const adminBanUser = (id, params) => Api.postRequest(`/v1.0/admin/users/${id}/ban`, params);
 export const adminUnbanUser = (id) => Api.postRequest(`/v1.0/admin/users/${id}/unban`);
+export const adminResetUserPassword = (id) => Api.postRequest(`/v1.0/admin/users/${id}/reset-password`);
+export const adminResetUserTwoFactor = (id) => Api.postRequest(`/v1.0/admin/users/${id}/reset-two-factor`);
 
 export const adminGetPendingDeposits = (params) => Api.getRequest("/v1.0/admin/pending-deposits", params);
 export const adminApproveDeposit = (id) => Api.postRequest(`/v1.0/admin/pending-deposits/${id}/approve`);
