@@ -6,11 +6,20 @@ import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
 import CustomColorButton from "@/components/ui/CustomColorButton";
 import InputError from "@/components/ui/InputError";
-import { Input } from "antd";
-import { LockOutlined, UserOutlined } from "@ant-design/icons";
+import { Checkbox, Input, message } from "antd";
+import { LockOutlined, SafetyOutlined, UserOutlined } from "@ant-design/icons";
 import { useAuthContext } from "@/contexts/Support";
-import { loginRequest } from "../Api";
+import {
+  loginRequest,
+  resendTwoFactorLoginCode,
+  verifyTwoFactorLogin,
+} from "../Api";
 import { activateSavedAccount, getSavedAccounts } from "@/utils/savedAccounts";
+import {
+  getTwoFactorDeviceToken,
+  setTwoFactorDeviceToken,
+  takeTwoFactorChallengeCookie,
+} from "@/utils/twoFactorDevice";
 
 function LoginClientInner() {
   const { setCurrentUser, setUserToken, loggedIn } = useAuthContext();
@@ -29,9 +38,106 @@ function LoginClientInner() {
   const [error, setError] = useState(null);
   const [savedAccounts, setSavedAccounts] = useState([]);
 
+  // Two-factor: set once the password (or Google/Facebook) step passed and
+  // the API asked for a code before it will issue a token.
+  const [challenge, setChallenge] = useState(null);
+  const [code, setCode] = useState("");
+  const [rememberDevice, setRememberDevice] = useState(true);
+  const [resending, setResending] = useState(false);
+
   useEffect(() => {
     setSavedAccounts(getSavedAccounts());
   }, []);
+
+  // A Google/Facebook login that needs two-factor comes back here with the
+  // pending challenge in a short-lived cookie (set by the OAuth callback).
+  useEffect(() => {
+    const pending = takeTwoFactorChallengeCookie();
+    if (pending) setChallenge(pending);
+  }, []);
+
+  const getRedirectUrl = () => {
+    const returnUrl = searchParams.get("continue");
+    return returnUrl && returnUrl.trim() !== ""
+      ? decodeURIComponent(returnUrl)
+      : "/";
+  };
+
+  const leaveChallenge = () => {
+    setChallenge(null);
+    setCode("");
+    setErrors({});
+  };
+
+  const submitCode = async (e) => {
+    e.preventDefault();
+    if (!code.trim()) return;
+    setProcessing(true);
+    setErrors({});
+    setError(null);
+    manualRedirectRef.current = false;
+
+    try {
+      const response = await verifyTwoFactorLogin({
+        challenge_token: challenge.challenge_token,
+        code: code.trim(),
+        remember_device: rememberDevice,
+        device_token: getTwoFactorDeviceToken() || undefined,
+      });
+
+      if (!response.data?.user || !response.data?.token) {
+        throw new Error("Phản hồi không hợp lệ!");
+      }
+
+      if (response.data.device_token) {
+        setTwoFactorDeviceToken(response.data.device_token);
+      }
+      if (typeof response.data.recovery_codes_remaining === "number") {
+        message.warning(
+          `Bạn vừa dùng một mã khôi phục. Còn lại ${response.data.recovery_codes_remaining} mã - hãy tạo mã mới trong Cài đặt nếu sắp hết.`,
+          8
+        );
+      }
+
+      setCurrentUser(response.data.user);
+      setUserToken(response.data.token);
+      manualRedirectRef.current = true;
+      setProcessing(false);
+      router.replace(getRedirectUrl());
+    } catch (error) {
+      setProcessing(false);
+
+      const data = error.response?.data;
+      if (data?.challenge_expired) {
+        // Expired or out of attempts: back to the password step.
+        leaveChallenge();
+        setError(data.message);
+      } else if (data?.errors) {
+        setErrors(data.errors);
+      } else {
+        setError(data?.message || error.message);
+      }
+    }
+  };
+
+  const resendCode = async () => {
+    setResending(true);
+    setError(null);
+    try {
+      const response = await resendTwoFactorLoginCode({
+        challenge_token: challenge.challenge_token,
+      });
+      message.success(response.data?.message || "Đã gửi lại mã xác thực.");
+    } catch (error) {
+      const data = error.response?.data;
+      if (data?.challenge_expired) {
+        leaveChallenge();
+      }
+      setError(data?.message || error.message);
+    } finally {
+      setResending(false);
+    }
+  };
 
   // Check if user is already logged in
   // Skip redirect if we're processing or if we manually handled redirect
@@ -103,7 +209,17 @@ function LoginClientInner() {
       const response = await loginRequest({
         username: data.email, // Using email as username for API
         password: data.password,
+        // Lets a device the user chose to remember skip the two-factor step
+        device_token: getTwoFactorDeviceToken() || undefined,
       });
+
+      if (response.data?.two_factor_required) {
+        setError(null);
+        setCode("");
+        setChallenge(response.data);
+        setProcessing(false);
+        return;
+      }
 
       if (response.data && response.data.user && response.data.token) {
         setCurrentUser(response.data.user);
@@ -160,6 +276,73 @@ function LoginClientInner() {
               </Link>
             </div>
           </div>
+          {challenge ? (
+            <div className="p-6 pt-0 mt-6">
+              <h2 className="text-base font-semibold text-center dark:text-neutral-100">
+                Xác thực hai lớp
+              </h2>
+              <p className="mt-1 mb-4 text-sm text-center text-gray-500 dark:text-neutral-400">
+                {challenge.method === "email"
+                  ? `Nhập mã 6 số vừa được gửi tới ${challenge.email || "email của bạn"}.`
+                  : "Nhập mã 6 số từ ứng dụng xác thực của bạn."}
+              </p>
+              <form className="space-y-4" onSubmit={submitCode}>
+                <div className="space-y-2">
+                  <Input
+                    autoFocus
+                    placeholder="Mã xác thực"
+                    prefix={<SafetyOutlined />}
+                    name="code"
+                    autoComplete="one-time-code"
+                    maxLength={20}
+                    value={code}
+                    onChange={(e) => setCode(e.target.value)}
+                    status={errors.code ? "error" : ""}
+                  />
+                  <InputError message={errors.code} className="mt-2" />
+                </div>
+                <Checkbox
+                  checked={rememberDevice}
+                  onChange={(e) => setRememberDevice(e.target.checked)}
+                  className="dark:text-neutral-200"
+                >
+                  Ghi nhớ thiết bị này trong 60 ngày
+                </Checkbox>
+                <CustomColorButton
+                  bgColor={"#319527"}
+                  block
+                  className="text-white font-semibold py-[17px] mb-1.5 rounded"
+                  loading={processing}
+                  htmlType="submit"
+                >
+                  Xác nhận
+                </CustomColorButton>
+                <div className="flex justify-between text-sm">
+                  <button
+                    type="button"
+                    onClick={leaveChallenge}
+                    className="text-primary-500 hover:underline"
+                  >
+                    Quay lại đăng nhập
+                  </button>
+                  {challenge.method === "email" && (
+                    <button
+                      type="button"
+                      onClick={resendCode}
+                      disabled={resending}
+                      className="text-primary-500 hover:underline disabled:opacity-50"
+                    >
+                      {resending ? "Đang gửi..." : "Gửi lại mã"}
+                    </button>
+                  )}
+                </div>
+                <p className="text-xs text-center text-gray-500 dark:text-neutral-400">
+                  Không lấy được mã? Bạn có thể nhập một mã khôi phục vào ô
+                  trên.
+                </p>
+              </form>
+            </div>
+          ) : (
           <div className="p-6 pt-0">
             {savedAccounts.length > 0 && !loggedIn && (
               <div className="mb-5 mt-6 space-y-2">
@@ -266,10 +449,11 @@ function LoginClientInner() {
               </div>
             </form>
           </div>
-          {error && (
-            <div className="text-red-500 text-center mb-3">{error}</div>
           )}
-          <div className="flex items-center p-6 pt-0">
+          {error && (
+            <div className="text-red-500 text-center mb-3 px-6">{error}</div>
+          )}
+          <div className={challenge ? "hidden" : "flex items-center p-6 pt-0"}>
             <div className="w-full space-y-2">
               <div className="text-center text-gray-500 text-sm mb-2">
                 Đăng nhập bằng
