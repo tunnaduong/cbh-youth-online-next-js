@@ -44,6 +44,18 @@ function LoginClientInner() {
   const [code, setCode] = useState("");
   const [rememberDevice, setRememberDevice] = useState(true);
   const [resending, setResending] = useState(false);
+  // Which method the code is for (an account can have several on), and
+  // whether an email code has gone out yet - the API only sends one up front
+  // when email is the method it offers first.
+  const [challengeMethod, setChallengeMethod] = useState(null);
+  const [emailSent, setEmailSent] = useState(false);
+
+  const openChallenge = (data) => {
+    setChallenge(data);
+    setChallengeMethod(data.method);
+    setEmailSent(data.method === "email" && data.email_sent !== false);
+    setCode("");
+  };
 
   useEffect(() => {
     setSavedAccounts(getSavedAccounts());
@@ -53,7 +65,7 @@ function LoginClientInner() {
   // pending challenge in a short-lived cookie (set by the OAuth callback).
   useEffect(() => {
     const pending = takeTwoFactorChallengeCookie();
-    if (pending) setChallenge(pending);
+    if (pending) openChallenge(pending);
   }, []);
 
   const getRedirectUrl = () => {
@@ -81,6 +93,7 @@ function LoginClientInner() {
       const response = await verifyTwoFactorLogin({
         challenge_token: challenge.challenge_token,
         code: code.trim(),
+        method: challengeMethod || undefined,
         remember_device: rememberDevice,
         device_token: getTwoFactorDeviceToken() || undefined,
       });
@@ -127,6 +140,7 @@ function LoginClientInner() {
       const response = await resendTwoFactorLoginCode({
         challenge_token: challenge.challenge_token,
       });
+      setEmailSent(true);
       message.success(response.data?.message || "Đã gửi lại mã xác thực.");
     } catch (error) {
       const data = error.response?.data;
@@ -137,6 +151,23 @@ function LoginClientInner() {
     } finally {
       setResending(false);
     }
+  };
+
+  // Every method the account has on; older API responses only name one.
+  const challengeMethods = challenge?.methods?.length
+    ? challenge.methods
+    : challenge
+      ? [challenge.method]
+      : [];
+
+  const chooseMethod = (method) => {
+    if (method === challengeMethod || processing) return;
+    setChallengeMethod(method);
+    setCode("");
+    setErrors({});
+    setError(null);
+    // First time email is picked: nothing was sent yet, so send it now.
+    if (method === "email" && !emailSent && !resending) resendCode();
   };
 
   // Check if user is already logged in
@@ -215,8 +246,7 @@ function LoginClientInner() {
 
       if (response.data?.two_factor_required) {
         setError(null);
-        setCode("");
-        setChallenge(response.data);
+        openChallenge(response.data);
         setProcessing(false);
         return;
       }
@@ -281,9 +311,28 @@ function LoginClientInner() {
               <h2 className="text-base font-semibold text-center dark:text-neutral-100">
                 Xác thực hai lớp
               </h2>
-              <p className="mt-1 mb-4 text-sm text-center text-gray-500 dark:text-neutral-400">
-                {challenge.method === "email"
-                  ? `Nhập mã 6 số vừa được gửi tới ${challenge.email || "email của bạn"}.`
+              {challengeMethods.length > 1 && (
+                <div className="mt-3 flex rounded-md border border-gray-200 p-0.5 text-sm dark:border-neutral-500">
+                  {challengeMethods.map((item) => (
+                    <button
+                      key={item}
+                      type="button"
+                      onClick={() => chooseMethod(item)}
+                      disabled={processing}
+                      className={`flex-1 rounded px-2 py-1.5 transition-colors ${
+                        item === challengeMethod
+                          ? "bg-[#319527] font-medium text-white"
+                          : "text-gray-600 hover:bg-gray-50 dark:text-neutral-300 dark:hover:bg-neutral-600"
+                      }`}
+                    >
+                      {item === "email" ? "Mã qua email" : "Ứng dụng xác thực"}
+                    </button>
+                  ))}
+                </div>
+              )}
+              <p className="mt-3 mb-4 text-sm text-center text-gray-500 dark:text-neutral-400">
+                {challengeMethod === "email"
+                  ? `Nhập mã 6 số được gửi tới ${challenge.email || "email của bạn"}.`
                   : "Nhập mã 6 số từ ứng dụng xác thực của bạn."}
               </p>
               <form className="space-y-4" onSubmit={submitCode}>
@@ -330,7 +379,7 @@ function LoginClientInner() {
                   >
                     Quay lại đăng nhập
                   </button>
-                  {challenge.method === "email" && (
+                  {challengeMethod === "email" && (
                     <button
                       type="button"
                       onClick={resendCode}

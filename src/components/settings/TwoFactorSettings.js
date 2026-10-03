@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Button, Input, QRCode, Radio, Switch, message } from "antd";
+import { Button, Input, QRCode, Switch, message } from "antd";
 import {
   getTwoFactorStatus,
   setupTwoFactorTotp,
@@ -13,25 +13,37 @@ import {
   forgetTwoFactorTrustedDevices,
 } from "@/app/Api";
 
-const METHOD_LABELS = {
-  email: "Mã gửi qua email",
-  totp: "Ứng dụng xác thực",
-};
+// Every method can be on at the same time; at login the user picks one.
+const METHODS = [
+  {
+    id: "email",
+    label: "Mã gửi qua email",
+    hint: "Nhận mã 6 số qua email mỗi lần đăng nhập trên thiết bị mới.",
+  },
+  {
+    id: "totp",
+    label: "Ứng dụng xác thực",
+    hint: "Lấy mã từ Google Authenticator, Microsoft Authenticator...",
+  },
+];
+
+const RECOVERY_FILE_NAME = "cbh-youth-online-recovery-codes.txt";
 
 const errorMessage = (error) =>
   error.response?.data?.message || error.message || "Có lỗi xảy ra.";
 
 /**
- * Two-factor authentication section of the account settings: turn it on
- * (email code or authenticator app), turn it off, recovery codes and
- * remembered devices.
+ * Two-factor authentication section of the account settings: one switch per
+ * method (email code, authenticator app), recovery codes and remembered
+ * devices.
  */
 export default function TwoFactorSettings() {
   const [status, setStatus] = useState(null);
   const [loadError, setLoadError] = useState(false);
-  // null | "choose" | "confirm" | "recovery" | "disable" | "regenerate"
-  const [mode, setMode] = useState(null);
-  const [method, setMethod] = useState("email");
+  // The step in progress, if any:
+  //   { type: "setup" | "confirm" | "disable", method }
+  //   { type: "recovery" } | { type: "regenerate" }
+  const [flow, setFlow] = useState(null);
   const [setup, setSetup] = useState(null);
   const [password, setPassword] = useState("");
   const [code, setCode] = useState("");
@@ -45,10 +57,7 @@ export default function TwoFactorSettings() {
     let cancelled = false;
     getTwoFactorStatus()
       .then((res) => {
-        if (cancelled) return;
-        setStatus(res.data);
-        // Email codes need a verified address to be sent to.
-        if (!res.data.email_verified) setMethod("totp");
+        if (!cancelled) setStatus(res.data);
       })
       .catch(() => {
         if (!cancelled) setLoadError(true);
@@ -58,8 +67,11 @@ export default function TwoFactorSettings() {
     };
   }, []);
 
+  const enabledMethods = status?.methods || [];
+  const isOn = (method) => enabledMethods.includes(method);
+
   const reset = () => {
-    setMode(null);
+    setFlow(null);
     setSetup(null);
     setPassword("");
     setCode("");
@@ -71,21 +83,23 @@ export default function TwoFactorSettings() {
     setError("");
     try {
       await action();
+      return true;
     } catch (err) {
       setError(errorMessage(err));
+      return false;
     } finally {
       setBusy(false);
     }
   };
 
-  const startSetup = () =>
+  const startSetup = (method) =>
     run(async () => {
       const request = method === "totp" ? setupTwoFactorTotp : setupTwoFactorEmail;
       const res = await request({ password });
       setSetup(res.data);
       setPassword("");
       setCode("");
-      setMode("confirm");
+      setFlow({ type: "confirm", method });
     });
 
   const confirmSetup = () => {
@@ -93,22 +107,30 @@ export default function TwoFactorSettings() {
     if (!code.trim() || busy) return;
 
     return run(async () => {
-      const res = await confirmTwoFactor({ code: code.trim() });
-      setRecoveryCodes(res.data.recovery_codes || []);
+      const res = await confirmTwoFactor({ method: flow.method, code: code.trim() });
       setStatus(res.data.status);
       setSetup(null);
       setCode("");
-      setMode("recovery");
+
+      // Recovery codes only come with the first method; adding another one
+      // keeps the codes the user already has.
+      if (res.data.recovery_codes?.length) {
+        setRecoveryCodes(res.data.recovery_codes);
+        setFlow({ type: "recovery" });
+      } else {
+        reset();
+        message.success(res.data.message || "Đã bật phương thức xác thực.");
+      }
     });
   };
 
   // Drop the half-finished setup on the server too (nothing was enforced
   // yet). Awaited, with the controls locked meanwhile: if the user started a
   // new setup straight away, this request could land after it and wipe it.
-  const cancelSetup = async () => {
+  const cancelSetup = async (method) => {
     setBusy(true);
     try {
-      await disableTwoFactor();
+      await disableTwoFactor({ method });
     } catch {
       // A leftover unconfirmed setup is harmless and is replaced by the next one.
     } finally {
@@ -117,17 +139,21 @@ export default function TwoFactorSettings() {
     reset();
   };
 
-  // Turning two-factor off and replacing recovery codes both need the
+  // Turning a method off and replacing recovery codes both need the
   // password, or a current code for accounts without a usable password.
   const identityParams = () =>
     status.password_required ? { password } : { code: code.trim() };
 
+  // The confirm button stays off until its field has something in it, so an
+  // empty submit can't come back as a "wrong password" error.
+  const identityFilled = status?.password_required ? !!password : !!code.trim();
+
   const confirmDisable = () =>
     run(async () => {
-      const res = await disableTwoFactor(identityParams());
+      const res = await disableTwoFactor({ method: flow.method, ...identityParams() });
       setStatus(res.data.status);
       reset();
-      message.success(res.data.message || "Đã tắt xác thực hai lớp.");
+      message.success(res.data.message || "Đã tắt phương thức xác thực.");
     });
 
   const confirmRegenerate = () =>
@@ -137,8 +163,13 @@ export default function TwoFactorSettings() {
       setStatus(res.data.status);
       setPassword("");
       setCode("");
-      setMode("recovery");
+      setFlow({ type: "recovery" });
     });
+
+  const submitIdentity = () => {
+    if (!identityFilled || busy) return;
+    return flow.type === "disable" ? confirmDisable() : confirmRegenerate();
+  };
 
   // sendingCode / forgettingDevices keep a double click from firing the
   // request twice (the second "send code" would only hit the resend cooldown
@@ -175,51 +206,77 @@ export default function TwoFactorSettings() {
       await navigator.clipboard.writeText(recoveryCodes.join("\n"));
       message.success("Đã sao chép mã khôi phục.");
     } catch {
-      message.error("Không thể sao chép. Hãy chép tay các mã này.");
+      message.error("Không thể sao chép. Hãy tải tệp hoặc chép tay các mã này.");
     }
   };
 
-  // The switch shows where the user is heading, not just what is saved.
-  // Before, it stayed put (and locked) while a step was open, so clicking it
-  // looked like nothing happened and there was no way to click it back.
-  const switchChecked =
-    mode === "choose" || mode === "confirm"
-      ? true
-      : mode === "disable"
-        ? false
-        : !!status?.enabled;
+  const downloadRecoveryCodes = () => {
+    const text = [
+      "Mã khôi phục CBH Youth Online",
+      `Tạo lúc: ${new Date().toLocaleString("vi-VN")}`,
+      "Mỗi mã chỉ dùng được một lần. Hãy cất tệp này ở nơi an toàn.",
+      "",
+      ...recoveryCodes,
+      "",
+    ].join("\r\n");
 
-  const onToggle = (checked) => {
+    const url = URL.createObjectURL(
+      new Blob([text], { type: "text/plain;charset=utf-8" })
+    );
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = RECOVERY_FILE_NAME;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+  };
+
+  // A switch shows where the user is heading with that method, not just
+  // what is saved, and clicking it back cancels the step in progress.
+  const switchChecked = (method) => {
+    if (flow?.method === method) return flow.type !== "disable";
+    return isOn(method);
+  };
+
+  const onToggle = (method) => {
     if (busy) return;
 
-    // Flipping it back while a step is open cancels that step.
-    if (mode === "confirm") {
-      cancelSetup();
-      return;
-    }
-    if (mode === "choose" || mode === "disable") {
-      reset();
+    if (flow?.method === method) {
+      if (flow.type === "confirm") {
+        cancelSetup(method);
+      } else {
+        reset();
+      }
       return;
     }
 
     setError("");
     setPassword("");
     setCode("");
-    setMode(checked ? "choose" : "disable");
-  };
 
-  // The confirm button stays off until its field has something in it, so an
-  // empty submit can't come back as a "wrong password" error.
-  const identityFilled = status?.password_required ? !!password : !!code.trim();
-
-  const submitIdentity = () => {
-    if (!identityFilled || busy) return;
-    return mode === "disable" ? confirmDisable() : confirmRegenerate();
+    if (isOn(method)) {
+      setFlow({ type: "disable", method });
+    } else if (status.password_required) {
+      setFlow({ type: "setup", method });
+    } else {
+      // Nothing to ask first: go straight to the code step. If that fails
+      // (e.g. the resend cooldown) the switch goes back off, with the error
+      // left on screen.
+      setFlow({ type: "setup", method });
+      startSetup(method).then((started) => {
+        if (!started) setFlow(null);
+      });
+    }
   };
 
   const labelClass =
     "block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2";
   const hintClass = "text-sm text-gray-500 dark:text-gray-400";
+  const linkClass =
+    "mt-2 text-sm text-green-600 hover:underline disabled:opacity-50";
+
+  const flowMethod = METHODS.find((item) => item.id === flow?.method);
 
   const identityFields = (
     <div className="max-w-sm">
@@ -245,12 +302,12 @@ export default function TwoFactorSettings() {
             maxLength={20}
             onPressEnter={submitIdentity}
           />
-          {status?.method === "email" && (
+          {isOn("email") && (
             <button
               type="button"
               onClick={sendEmailCode}
               disabled={sendingCode}
-              className="mt-2 text-sm text-green-600 hover:underline disabled:opacity-50"
+              className={linkClass}
             >
               Gửi mã tới {status.email || "email của tôi"}
             </button>
@@ -270,82 +327,77 @@ export default function TwoFactorSettings() {
 
   return (
     <div>
-      <div className="flex items-center justify-between">
-        <div>
-          <h3 className="text-base font-semibold text-gray-900 dark:text-white">
-            Xác thực hai lớp
-          </h3>
-          <p className={hintClass}>
-            Khi bật, đăng nhập trên thiết bị mới cần thêm một mã xác thực
-            ngoài mật khẩu.
-          </p>
-        </div>
-        <Switch
-          checked={switchChecked}
-          loading={!status || busy}
-          disabled={!status || busy || mode === "recovery" || mode === "regenerate"}
-          onChange={onToggle}
-          className="ml-4 flex-shrink-0"
-        />
-      </div>
+      <h3 className="text-base font-semibold text-gray-900 dark:text-white">
+        Xác thực hai lớp
+      </h3>
+      <p className={hintClass}>
+        Khi bật, đăng nhập trên thiết bị mới cần thêm một mã xác thực ngoài
+        mật khẩu. Bạn có thể bật nhiều phương thức cùng lúc và chọn một
+        phương thức khi đăng nhập.
+      </p>
 
-      {status?.enabled && mode === null && (
-        <div className="mt-4 space-y-3 text-sm text-gray-700 dark:text-gray-300">
-          <p>
-            Đang bật: <strong>{METHOD_LABELS[status.method]}</strong>
-            {status.method === "email" && status.email ? ` (${status.email})` : ""}
-          </p>
-          <div className="flex flex-wrap items-center gap-3">
-            <span>Mã khôi phục còn lại: {status.recovery_codes_remaining}</span>
-            <Button size="small" onClick={() => setMode("regenerate")}>
-              Tạo mã khôi phục mới
-            </Button>
-          </div>
-          <div className="flex flex-wrap items-center gap-3">
-            <span>Thiết bị đang được ghi nhớ: {status.trusted_devices}</span>
-            {status.trusted_devices > 0 && (
-              <Button size="small" onClick={forgetDevices} loading={forgettingDevices}>
-                Xóa tất cả thiết bị tin cậy
-              </Button>
-            )}
-          </div>
+      {!status && <p className={`${hintClass} mt-4`}>Đang tải...</p>}
+
+      {status && (
+        <div className="mt-4 divide-y divide-gray-200 dark:divide-gray-700">
+          {METHODS.map((method) => {
+            const needsVerifiedEmail =
+              method.id === "email" && !status.email_verified && !isOn("email");
+            // One step at a time: the other switch waits until this one is done.
+            const blocked = flow !== null && flow.method !== method.id;
+
+            return (
+              <div
+                key={method.id}
+                className="flex items-center justify-between py-3"
+              >
+                <div className="min-w-0">
+                  <h4 className="text-sm font-medium text-gray-800 dark:text-gray-200">
+                    {method.label}
+                    {method.id === "email" && status.email
+                      ? ` (${status.email})`
+                      : ""}
+                  </h4>
+                  <p className={hintClass}>
+                    {needsVerifiedEmail
+                      ? "Cần xác minh địa chỉ email trước khi bật."
+                      : method.hint}
+                  </p>
+                </div>
+                <Switch
+                  checked={switchChecked(method.id)}
+                  loading={busy && flow?.method === method.id}
+                  disabled={busy || blocked || needsVerifiedEmail}
+                  onChange={() => onToggle(method.id)}
+                  className="ml-4 flex-shrink-0"
+                />
+              </div>
+            );
+          })}
         </div>
       )}
 
-      {mode === "choose" && (
+      {flow?.type === "setup" && status?.password_required && (
         <div className="mt-4 space-y-4">
-          <Radio.Group
-            value={method}
-            onChange={(e) => setMethod(e.target.value)}
-            className="flex flex-col gap-2"
-          >
-            <Radio value="email" disabled={!status.email_verified}>
-              Mã gửi qua email
-              {status.email ? ` (${status.email})` : ""}
-              {!status.email_verified && " - cần xác minh email trước"}
-            </Radio>
-            <Radio value="totp">
-              Ứng dụng xác thực (Google Authenticator, Microsoft
-              Authenticator...)
-            </Radio>
-          </Radio.Group>
-          {status.password_required && (
-            <div className="max-w-sm">
-              <label className={labelClass}>Mật khẩu hiện tại</label>
-              <Input.Password
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="Nhập mật khẩu để tiếp tục"
-                autoComplete="current-password"
-              />
-            </div>
-          )}
+          <p className={hintClass}>
+            Nhập mật khẩu để bật “{flowMethod?.label}”.
+          </p>
+          <div className="max-w-sm">
+            <label className={labelClass}>Mật khẩu hiện tại</label>
+            <Input.Password
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="Nhập mật khẩu để tiếp tục"
+              autoComplete="current-password"
+              onPressEnter={() => password && !busy && startSetup(flow.method)}
+            />
+          </div>
           <div className="flex gap-2">
             <Button
               type="primary"
               loading={busy}
-              onClick={startSetup}
-              disabled={status.password_required && !password}
+              disabled={!password}
+              onClick={() => startSetup(flow.method)}
             >
               Tiếp tục
             </Button>
@@ -356,9 +408,9 @@ export default function TwoFactorSettings() {
         </div>
       )}
 
-      {mode === "confirm" && setup && (
+      {flow?.type === "confirm" && setup && (
         <div className="mt-4 space-y-4">
-          {setup.method === "totp" ? (
+          {flow.method === "totp" ? (
             <>
               <p className={hintClass}>
                 Quét mã QR bằng ứng dụng xác thực, hoặc nhập khóa bên dưới
@@ -395,29 +447,34 @@ export default function TwoFactorSettings() {
               maxLength={7}
               onPressEnter={confirmSetup}
             />
-            {setup.method === "email" && (
+            {flow.method === "email" && (
               <button
                 type="button"
                 onClick={sendEmailCode}
                 disabled={sendingCode}
-                className="mt-2 text-sm text-green-600 hover:underline disabled:opacity-50"
+                className={linkClass}
               >
                 Gửi lại mã
               </button>
             )}
           </div>
           <div className="flex gap-2">
-            <Button type="primary" loading={busy} onClick={confirmSetup} disabled={!code.trim()}>
-              Bật xác thực hai lớp
+            <Button
+              type="primary"
+              loading={busy}
+              onClick={confirmSetup}
+              disabled={!code.trim()}
+            >
+              Bật phương thức này
             </Button>
-            <Button onClick={cancelSetup} disabled={busy}>
+            <Button onClick={() => cancelSetup(flow.method)} disabled={busy}>
               Hủy
             </Button>
           </div>
         </div>
       )}
 
-      {mode === "recovery" && (
+      {flow?.type === "recovery" && (
         <div className="mt-4 space-y-3">
           <p className="text-sm font-medium text-gray-800 dark:text-gray-200">
             Lưu các mã khôi phục này ở nơi an toàn. Mỗi mã dùng được một lần
@@ -429,8 +486,9 @@ export default function TwoFactorSettings() {
               <span key={item}>{item}</span>
             ))}
           </div>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             <Button onClick={copyRecoveryCodes}>Sao chép</Button>
+            <Button onClick={downloadRecoveryCodes}>Tải tệp .txt</Button>
             <Button
               type="primary"
               onClick={() => {
@@ -444,27 +502,52 @@ export default function TwoFactorSettings() {
         </div>
       )}
 
-      {(mode === "disable" || mode === "regenerate") && (
+      {(flow?.type === "disable" || flow?.type === "regenerate") && (
         <div className="mt-4 space-y-4">
           <p className={hintClass}>
-            {mode === "disable"
-              ? "Xác nhận để tắt xác thực hai lớp. Tài khoản của bạn sẽ chỉ còn được bảo vệ bằng mật khẩu."
-              : "Xác nhận để tạo bộ mã khôi phục mới. Các mã cũ sẽ không còn dùng được."}
+            {flow.type === "regenerate"
+              ? "Xác nhận để tạo bộ mã khôi phục mới. Các mã cũ sẽ không còn dùng được."
+              : enabledMethods.length > 1
+                ? `Xác nhận để tắt “${flowMethod?.label}”. Phương thức còn lại vẫn được giữ.`
+                : `Xác nhận để tắt “${flowMethod?.label}”. Đây là phương thức cuối cùng, nên tài khoản sẽ chỉ còn được bảo vệ bằng mật khẩu.`}
           </p>
           {identityFields}
           <div className="flex gap-2">
             <Button
               type="primary"
-              danger={mode === "disable"}
+              danger={flow.type === "disable"}
               loading={busy}
               disabled={!identityFilled}
               onClick={submitIdentity}
             >
-              {mode === "disable" ? "Tắt xác thực hai lớp" : "Tạo mã mới"}
+              {flow.type === "disable" ? "Tắt phương thức này" : "Tạo mã mới"}
             </Button>
             <Button onClick={reset} disabled={busy}>
               Hủy
             </Button>
+          </div>
+        </div>
+      )}
+
+      {status?.enabled && flow === null && (
+        <div className="mt-4 space-y-3 text-sm text-gray-700 dark:text-gray-300">
+          <div className="flex flex-wrap items-center gap-3">
+            <span>Mã khôi phục còn lại: {status.recovery_codes_remaining}</span>
+            <Button size="small" onClick={() => setFlow({ type: "regenerate" })}>
+              Tạo mã khôi phục mới
+            </Button>
+          </div>
+          <div className="flex flex-wrap items-center gap-3">
+            <span>Thiết bị đang được ghi nhớ: {status.trusted_devices}</span>
+            {status.trusted_devices > 0 && (
+              <Button
+                size="small"
+                onClick={forgetDevices}
+                loading={forgettingDevices}
+              >
+                Xóa tất cả thiết bị tin cậy
+              </Button>
+            )}
           </div>
         </div>
       )}

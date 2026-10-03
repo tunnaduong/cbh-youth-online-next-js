@@ -242,7 +242,9 @@ export async function GET(request) {
           JSON.stringify({
             challenge_token: apiResponse.challenge_token,
             method: apiResponse.method,
+            methods: apiResponse.methods,
             email: apiResponse.email,
+            email_sent: apiResponse.email_sent,
           })
         ).toString("base64url"),
         {
