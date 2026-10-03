@@ -56,7 +56,7 @@ The web app at **https://chuyenbienhoa.com** (also `www.`): the student communit
 | Search / saved / archives | `/search`, `/saved`, `/my-archives` |
 | Lookup | `/lookup`, `/lookup/grades` |
 | Content pages | `/youth-news`, `/jobs`, `/ads`, `/about`, `/contact`, `/help` (+`[categorySlug]`), `/policy/{forum-rules,privacy,terms}`, `/feedback` |
-| Account | `/login` (+ Google/Facebook OAuth), `/register`, `/password/reset`, `/email/verify`, `/settings` (+`appearance`), `/unsubscribe`, `/auth/{set-token,complete}` |
+| Account | `/login` (+ Google/Facebook OAuth, two-factor code step), `/register`, `/password/reset`, `/email/verify`, `/settings` (+`appearance`; the Account tab holds two-factor settings and logged-in devices, `src/components/settings`), `/unsubscribe`, `/auth/{set-token,complete}` |
 | Links | `/link/[token]` (outbound-link warning page; the token is the URL in base64url, shared format with the app), `/open/[type]/[value]` (app deep-link opener), `/api/link-preview` (OG preview cards) |
 | Easter egg | `/egg` (rewritten to `public/egg.html` in `next.config.mjs`) |
 | Admin | `/admin/*`: dashboard, posts, comments, moderation, reports, users, student verifications, deposits, withdrawals, feedback, messages, notifications, study materials, shop (categories, products, orders) |
@@ -75,7 +75,7 @@ src/
 │   ├── admin/            # Admin dashboard (antd). AdminShell.js = layout/nav/auth gate, _components/ = ResourceTable, charts
 │   ├── auth/set-token/   # Login handoff (OAuth callbacks + mobile ?code=)
 │   └── api/link-preview/ # Route handler for OG link previews
-├── components/           # UI by area: chat, forum, home, profile, stories, wallet, shop, modals, ui (shadcn-style), maintenance
+├── components/           # UI by area: chat, forum, home, profile, stories, wallet, shop, settings, modals, ui (shadcn-style), maintenance
 │   ├── AppBanner.js      # "Open in app" banner (hidden in app mode)
 │   └── LoadingWrapper.js # Initial web splash (hidden in app mode)
 ├── contexts/             # Auth, Chat, ForumData, Notification, TopUsers, theme; provider/ holds the providers
@@ -83,7 +83,7 @@ src/
 ├── layouts/              # DefaultLayout, HomeLayout, HelpCenterLayout
 ├── lib/                  # echo.js (realtime), deepLink.js, profileTheme, nameFonts, storyOverlays, mentionMarkdown
 ├── services/api/         # AxiosCustom.js (instance + interceptors), ApiByAxios.js (get/post/put/patch/delete)
-├── utils/                # cookies.js (auth cookie), appMode.js, serverFetch.js, savedAccounts.js (account switcher), externalLink, linkPreview, seo, pushNotifications…
+├── utils/                # cookies.js (auth cookie), appMode.js, serverFetch.js, savedAccounts.js (account switcher), clientInfo.js (device headers), twoFactorDevice.js (remembered-device cookie), externalLink, linkPreview, seo, pushNotifications…
 └── data/                 # Static content: help articles, explore features
 public/                   # sw.js (push), egg.html, images, robots.txt, ads.txt
 e2e/                      # Playwright: smoke.spec.ts, routes.spec.ts (every static route must render)
@@ -138,6 +138,12 @@ The first time, run `npx playwright install chromium` before `test:e2e`.
 - **Client-only checks** (`window`, sessionStorage, app mode) belong in a `useEffect` so hydration matches the server render.
 
 ## Recent work (newest first, as of 2026-10)
+- **Two-factor login, 2FA settings, logged-in devices (PR #31, branch `feat/two-factor-auth`; written on a machine without Node, so check the PR's CI and try it before merging).** Needs the API changes already on the API repo's `main` (two-factor endpoints, `/v1.0/sessions`, four migrations).
+  - **Login** (`src/app/login/LoginClient.js`): when `POST /v1.0/login` answers `two_factor_required`, the page shows a code step (app/email code or a recovery code, "remember this device", resend for email) and finishes through `verifyTwoFactorLogin`. A 410 `challenge_expired` sends the user back to the password step.
+  - **Google/Facebook** (`src/app/login/{google,facebook}/callback/route.js`): a challenge from `/login/oauth` is handed to `/login` in a 10-minute `two_factor_challenge` cookie; the routes also forward the `tf_device` cookie and the browser's device headers.
+  - **Remembered device token** lives in the `tf_device` cookie (60 days, `src/utils/twoFactorDevice.js`), a cookie rather than localStorage so the OAuth server routes can read it.
+  - **Settings → Tài khoản** (`src/components/settings/`): `TwoFactorSettings.js` (switch, email code or authenticator app with antd `QRCode`, recovery codes, remembered devices) and `DeviceSessions.js` (device name, model, platform + version, last active; log out one / all others).
+  - **Device headers**: `src/utils/clientInfo.js` builds `X-Client-Platform: web`, `X-Client-Version`, `X-Device-Name` (OS) and `X-Device-Model` (browser), added to every axios request in `AxiosCustom.js`. `NEXT_PUBLIC_APP_VERSION` is set from `package.json` in `next.config.mjs`.
 - **App mode for admin (PR #29, merged):** added `utils/appMode.js` and made the splash and app banner hide for the whole session. In app mode admin hides home/theme/logout. Admin no longer scrolls sideways on phones: the inner `Layout` has `minWidth: 0` so wide tables scroll inside their own box, and the header padding is 12px on small screens.
 - **Admin returns to the right page after login (PR #29, merged):** `AdminShell` passes `?next=` and `/admin/login` returns there, including when a cookie is already present.
 - **Login handoff from the mobile app (PR #29, merged):** `/auth/set-token?code=` redeems the code through the API, and `return` is limited to same-site paths. Matching API endpoints: `POST /v1.0/web-session/{handoff,redeem}`.
