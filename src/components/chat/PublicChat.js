@@ -21,6 +21,8 @@ import ReplyPreviewBubble from "./ReplyPreviewBubble";
 import { reactToMessage, removeMessageReaction, recallMessage, editMessage, deleteMessage } from "@/app/Api";
 import { Popover, message as antdMessage } from "antd";
 import { safeLinkHref } from "@/utils/externalLink";
+import { findPreviewableUrl } from "@/utils/linkPreview";
+import LinkPreviewCard from "@/components/ui/LinkPreviewCard";
 
 const URL_RE = /(https?:\/\/[^\s]+)/g;
 const MENTION_RE = /(@[\w.-]+)/g;
@@ -1162,6 +1164,14 @@ export default function PublicChat() {
                               ? new Set(message.mentions.map((m) => m.username.toLowerCase()))
                               : null
                           )}
+                          {(() => {
+                            const previewUrl = message.is_recalled
+                              ? null
+                              : findPreviewableUrl(message.content);
+                            return previewUrl ? (
+                              <LinkPreviewCard url={previewUrl} compact className="mt-2" />
+                            ) : null;
+                          })()}
                         </div>
                       )}
 
