@@ -9,6 +9,7 @@ import viVN from "antd/locale/vi_VN";
 import { SunOutlined, MoonOutlined } from "@ant-design/icons";
 import { useTheme } from "@/contexts/themeContext";
 import { useIsDarkMode } from "@/hooks/useIsDarkMode";
+import { isInApp } from "@/utils/appMode";
 import {
   DashboardOutlined,
   FlagOutlined,
@@ -117,7 +118,7 @@ const ALL_ITEMS = NAV_GROUPS.flatMap((g) => g.children || [g]);
 
 const toItem = ({ key, icon, label }) => ({ key, icon, label: <Link href={key}>{label}</Link> });
 
-function SidebarContent({ selectedKey, onNavigate }) {
+function SidebarContent({ selectedKey, onNavigate, inApp }) {
   const items = NAV_GROUPS.map((g) =>
     g.children ? { type: "group", key: g.label, label: g.label, children: g.children.map(toItem) } : toItem(g)
   );
@@ -142,14 +143,18 @@ function SidebarContent({ selectedKey, onNavigate }) {
         />
       </div>
 
-      <div className="p-3 border-t border-gray-100 dark:border-neutral-700">
-        <Link
-          href="/"
-          className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-neutral-700 hover:text-gray-800 dark:hover:text-gray-100"
-        >
-          <HomeOutlined /> Về trang chủ
-        </Link>
-      </div>
+      {/* In the app's admin screen the rest of the site isn't reachable
+          (the app has its own home) - nothing to go back to. */}
+      {!inApp && (
+        <div className="p-3 border-t border-gray-100 dark:border-neutral-700">
+          <Link
+            href="/"
+            className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-neutral-700 hover:text-gray-800 dark:hover:text-gray-100"
+          >
+            <HomeOutlined /> Về trang chủ
+          </Link>
+        </div>
+      )}
     </div>
   );
 }
@@ -173,12 +178,19 @@ export default function AdminShell({ children }) {
   const flipTheme = () => changeTheme(isDark ? "light" : "dark");
 
   const isLoginPage = pathname === "/admin/login";
+  // Inside the mobile app's admin screen: the app owns the login and the
+  // theme, so sign-out, the theme toggle and links out to the site are hidden.
+  const [inApp, setInApp] = useState(false);
+  useEffect(() => setInApp(isInApp()), []);
 
   useEffect(() => {
     if (isLoginPage) return;
     const session = sessionStorage.getItem(ADMIN_SESSION_KEY);
     if (!session) {
-      router.replace("/admin/login");
+      // Remember where we were headed: someone arriving already signed in
+      // (e.g. from the mobile app's in-app browser) is bounced straight back
+      // here by the login page instead of landing on the dashboard.
+      router.replace(`/admin/login?next=${encodeURIComponent(pathname)}`);
     } else {
       setAuthed(true);
       try {
@@ -187,7 +199,7 @@ export default function AdminShell({ children }) {
         setMe(null);
       }
     }
-  }, [router, isLoginPage]);
+  }, [router, isLoginPage, pathname]);
 
   if (isLoginPage)
     return (
@@ -225,7 +237,7 @@ export default function AdminShell({ children }) {
               height: "100vh",
             }}
           >
-            <SidebarContent selectedKey={current.key} />
+            <SidebarContent selectedKey={current.key} inApp={inApp} />
           </Sider>
         ) : (
           <Drawer
@@ -236,11 +248,14 @@ export default function AdminShell({ children }) {
             closable={false}
             styles={{ body: { padding: 0 } }}
           >
-            <SidebarContent selectedKey={current.key} onNavigate={() => setDrawerOpen(false)} />
+            <SidebarContent selectedKey={current.key} onNavigate={() => setDrawerOpen(false)} inApp={inApp} />
           </Drawer>
         )}
 
-        <Layout>
+        {/* minWidth 0: a flex child otherwise grows to its widest content, so a
+            wide table widened the whole page into a sideways scroll on phones
+            instead of scrolling inside its own box. */}
+        <Layout style={{ minWidth: 0 }}>
           <Header
             style={{
               position: "sticky",
@@ -248,7 +263,7 @@ export default function AdminShell({ children }) {
               zIndex: 20,
               backdropFilter: "blur(8px)",
               borderBottom: `1px solid ${isDark ? "#2a2e2a" : "#eef0ee"}`,
-              padding: "0 24px",
+              padding: isDesktop ? "0 24px" : "0 12px",
               display: "flex",
               alignItems: "center",
               gap: 12,
@@ -266,16 +281,19 @@ export default function AdminShell({ children }) {
               </span>
             </div>
             <div className="flex-1" />
-            <Tooltip title={isDark ? "Chuyển sang giao diện sáng" : "Chuyển sang giao diện tối"}>
-              <Button
-                type="text"
-                aria-label="Đổi giao diện sáng/tối"
-                icon={isDark ? <SunOutlined /> : <MoonOutlined />}
-                onClick={flipTheme}
-              />
-            </Tooltip>
+            {!inApp && (
+              <Tooltip title={isDark ? "Chuyển sang giao diện sáng" : "Chuyển sang giao diện tối"}>
+                <Button
+                  type="text"
+                  aria-label="Đổi giao diện sáng/tối"
+                  icon={isDark ? <SunOutlined /> : <MoonOutlined />}
+                  onClick={flipTheme}
+                />
+              </Tooltip>
+            )}
             <Dropdown
               trigger={["click"]}
+              disabled={inApp}
               menu={{
                 items: [
                   { key: "home", icon: <HomeOutlined />, label: <Link href="/">Trang chủ</Link> },

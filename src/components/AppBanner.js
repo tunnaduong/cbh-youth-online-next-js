@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { X } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { openDeepLink, isIOSDevice } from "@/lib/deepLink";
+import { isInApp } from "@/utils/appMode";
 
 export default function AppBanner() {
   const pathname = usePathname();
@@ -68,7 +69,7 @@ export default function AppBanner() {
 
       // Already inside the app's own webview (?app=true), or actively
       // playing a game - the banner would just cover the game iframe.
-      if (params.get("app") === "true" || /^\/explore\/games\/[^/]+/.test(pathname)) {
+      if (isInApp() || /^\/explore\/games\/[^/]+/.test(pathname)) {
         setVisible(false);
         return;
       }

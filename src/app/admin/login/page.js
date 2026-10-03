@@ -10,6 +10,15 @@ import { ADMIN_SESSION_KEY } from "../AdminShell";
 import * as Api from "@/app/Api";
 import { setAuthCookie, getAuthCookie } from "@/utils/cookies";
 
+// The admin page AdminShell sent us here from (?next=), limited to /admin
+// paths so the param can't redirect anywhere else.
+function getNextPath() {
+  const next = new URLSearchParams(window.location.search).get("next");
+  return next && /^\/admin(\/|$)/.test(next) && next !== "/admin/login"
+    ? next
+    : "/admin";
+}
+
 export default function AdminLoginPage() {
   const router = useRouter();
   const [username, setUsername] = useState("");
@@ -22,7 +31,7 @@ export default function AdminLoginPage() {
     const authToken = getAuthCookie();
     if (authToken) {
       sessionStorage.setItem(ADMIN_SESSION_KEY, "1");
-      router.replace("/admin");
+      router.replace(getNextPath());
     } else {
       setLoading(false);
     }
@@ -56,7 +65,7 @@ export default function AdminLoginPage() {
       sessionStorage.setItem(ADMIN_SESSION_KEY, "1");
       localStorage.setItem("CURRENT_USER", JSON.stringify(user));
 
-      router.replace("/admin");
+      router.replace(getNextPath());
     } catch (err) {
       const errorMessage = err.response?.data?.message || err.message || "Tên đăng nhập hoặc mật khẩu không đúng.";
       setError(errorMessage);

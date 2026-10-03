@@ -18,12 +18,20 @@ function SetTokenInner() {
   const { setCurrentUser, setUserToken } = useAuthContext();
 
   useEffect(() => {
-    const access = searchParams.get("access") || getCookie("auth_token");
+    // `code` comes from the mobile app opening the site in its in-app
+    // browser: a single-use code that's swapped for a token below, so the
+    // token itself never sits in a URL (and the browser history).
+    const handoffCode = searchParams.get("code");
+    let access = searchParams.get("access") || getCookie("auth_token");
     const refresh = searchParams.get("refresh") || getCookie("refresh_token");
     // Get return URL and ensure it's valid (not null/empty), default to "/"
     const returnParam = searchParams.get("return");
+    // Only same-site paths: absolute URLs and "//evil.example" (or "/\evil",
+    // which browsers read the same way) would turn this into an open redirect.
     const returnUrl =
-      returnParam && returnParam.trim() !== "" ? returnParam : "/";
+      returnParam && returnParam.startsWith("/") && !/^\/[/\\]/.test(returnParam)
+        ? returnParam
+        : "/";
     const userB64 = getCookie("oauth_user");
     let userObj = null;
     if (userB64) {
@@ -39,6 +47,30 @@ function SetTokenInner() {
 
     (async () => {
       try {
+        if (handoffCode) {
+          // Plain fetch, not the axios instance: a rejected code answers 401,
+          // and the axios interceptor treats any 401 as "this browser's token
+          // is dead" and signs out whoever is already logged in here.
+          try {
+            const res = await fetch(
+              `${process.env.NEXT_PUBLIC_API_URL}/v1.0/web-session/redeem`,
+              {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                  Accept: "application/json",
+                },
+                body: JSON.stringify({ code: handoffCode }),
+              }
+            );
+            const data = res.ok ? await res.json() : null;
+            if (data?.token) access = data.token;
+          } catch {
+            // Expired/used code: carry on with whatever session the browser
+            // already has rather than stranding the user on a blank page.
+          }
+        }
+
         if (access) {
           // sync to context, cookies and localStorage
           setUserToken(access);

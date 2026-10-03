@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { usePathname } from "next/navigation";
 import LoadingScreen from "./ui/LoadingScreen";
+import { isInApp } from "@/utils/appMode";
 
 export default function LoadingWrapper({ children }) {
   const pathname = usePathname();
@@ -18,9 +19,7 @@ export default function LoadingWrapper({ children }) {
     // shows its own native splash, so a second web one is just a flash of a
     // duplicate loading screen. Checked client-side only (window isn't
     // available during SSR) so it can't cause a hydration mismatch.
-    const isInApp = new URLSearchParams(window.location.search).get("app") === "true";
-
-    if (hideLoading || isInApp) {
+    if (hideLoading || isInApp()) {
       setIsInitialLoading(false);
       return;
     }
