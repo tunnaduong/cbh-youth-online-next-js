@@ -138,9 +138,9 @@ The first time, run `npx playwright install chromium` before `test:e2e`.
 - **Client-only checks** (`window`, sessionStorage, app mode) belong in a `useEffect` so hydration matches the server render.
 
 ## Recent work (newest first, as of 2026-10)
-- **App mode for admin (PR #29, `feat/mobile-web-session`):** added `utils/appMode.js` and made the splash and app banner hide for the whole session. In app mode admin hides home/theme/logout. Admin no longer scrolls sideways on phones: the inner `Layout` has `minWidth: 0` so wide tables scroll inside their own box, and the header padding is 12px on small screens.
-- **Admin returns to the right page after login (PR #29):** `AdminShell` passes `?next=` and `/admin/login` returns there, including when a cookie is already present.
-- **Login handoff from the mobile app (PR #29):** `/auth/set-token?code=` redeems the code through the API, and `return` is limited to same-site paths. Matching API endpoints: `POST /v1.0/web-session/{handoff,redeem}`.
+- **App mode for admin (PR #29, merged):** added `utils/appMode.js` and made the splash and app banner hide for the whole session. In app mode admin hides home/theme/logout. Admin no longer scrolls sideways on phones: the inner `Layout` has `minWidth: 0` so wide tables scroll inside their own box, and the header padding is 12px on small screens.
+- **Admin returns to the right page after login (PR #29, merged):** `AdminShell` passes `?next=` and `/admin/login` returns there, including when a cookie is already present.
+- **Login handoff from the mobile app (PR #29, merged):** `/auth/set-token?code=` redeems the code through the API, and `return` is limited to same-site paths. Matching API endpoints: `POST /v1.0/web-session/{handoff,redeem}`.
 - **OG link preview cards** in posts and chat messages (`/api/link-preview`, `utils/linkPreview.js`; PR #28).
 - **Discord-style profile customization:** name styles and avatar frames shown on posts, comments, chat, rankings and notifications; theme editor with frames, effects and points milestones.
 - **Composer:** compresses images before upload so posting many images no longer hangs (#25).
