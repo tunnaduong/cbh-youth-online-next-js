@@ -1,5 +1,16 @@
+import { readFileSync } from "fs";
+
+const { version } = JSON.parse(
+  readFileSync(new URL("./package.json", import.meta.url), "utf8")
+);
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  env: {
+    // Sent to the API with each request so "logged-in devices" can show
+    // which web version a browser last used.
+    NEXT_PUBLIC_APP_VERSION: version,
+  },
   images: {
     remotePatterns: [
       {

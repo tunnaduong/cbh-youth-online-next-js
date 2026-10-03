@@ -28,6 +28,7 @@ Các repo liên quan: [cbh-youth-online-api](https://github.com/tunnaduong/cbh-y
 - **Ví điểm & cửa hàng**: Nạp điểm qua SePay QR, rút điểm, tặng điểm cho bài viết, cửa hàng đổi điểm (`src/app/wallet`, `src/app/shop`).
 - **Trang quản trị**: Dashboard `/admin` (Ant Design) quản lý bài viết, bình luận, người dùng, báo cáo, kiểm duyệt, nạp/rút, cửa hàng, xác minh học sinh, góp ý (`src/app/admin`).
 - **Nhúng trong ứng dụng di động**: Trang mở với `?app=true` (ghi nhớ theo phiên, `src/utils/appMode.js`) ẩn màn chờ, banner tải app và các nút đăng xuất/về trang chủ trong admin; `/auth/set-token?code=` nhận mã đăng nhập một lần từ app để mở web đã đăng nhập sẵn.
+- **Bảo mật tài khoản**: Xác thực hai lớp khi đăng nhập (mã gửi qua email hoặc ứng dụng xác thực, mã khôi phục, ghi nhớ thiết bị) và danh sách thiết bị đã đăng nhập kèm đăng xuất từ xa, trong Cài đặt → Tài khoản (`src/components/settings`, `src/app/login`).
 - **Nội dung mở rộng**: Chuyên trang youth news, việc làm, quảng cáo, chính sách và landing (`src/app/youth-news`, `src/app/jobs`, `src/app/ads`, `src/app/policy`).
 
 ## Kiến trúc & công nghệ

@@ -1,10 +1,18 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { Button, Form, Input, InputNumber, Modal, Popconfirm, Select, Space, Tag, Tooltip, message } from "antd";
+import { Button, Form, Input, InputNumber, Modal, Popconfirm, Select, Space, Tag, Tooltip, Typography, message } from "antd";
 import { DeleteOutlined } from "@ant-design/icons";
 import ResourceTable, { fmtDate, fmtNumber, errMsg } from "../_components/ResourceTable";
-import { adminGetUsers, adminUpdateUser, adminBanUser, adminUnbanUser, adminDeleteUser } from "@/app/Api";
+import {
+  adminGetUsers,
+  adminUpdateUser,
+  adminBanUser,
+  adminUnbanUser,
+  adminDeleteUser,
+  adminResetUserPassword,
+  adminResetUserTwoFactor,
+} from "@/app/Api";
 
 const ROLE_OPTIONS = [
   { value: "user", label: "Người dùng" },
@@ -41,6 +49,32 @@ export default function AdminUsersPage() {
     }
   };
 
+  // The temporary password is only returned once, so it is shown in a dialog
+  // that stays open until the admin closes it (a toast would vanish).
+  const resetPassword = async (u) => {
+    setSaving(true);
+    try {
+      const res = await adminResetUserPassword(u.id);
+      Modal.info({
+        title: `Mật khẩu tạm của @${u.username}`,
+        content: (
+          <div>
+            <p>{res.data?.message}</p>
+            <Typography.Text code copyable style={{ fontSize: 16 }}>
+              {res.data?.password}
+            </Typography.Text>
+          </div>
+        ),
+        okText: "Đã lưu lại",
+      });
+      reload();
+    } catch (err) {
+      message.error(errMsg(err, "Thao tác thất bại"));
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const columns = [
     { title: "ID", dataIndex: "id", width: 70 },
     {
@@ -68,7 +102,10 @@ export default function AdminUsersPage() {
             Bị khóa {u.banned_until ? `đến ${fmtDate(u.banned_until)}` : "vĩnh viễn"}
           </Tag>
         ) : (
-          <Tag color="green">Hoạt động</Tag>
+          <>
+            <Tag color="green">Hoạt động</Tag>
+            {u.two_factor_confirmed_at && <Tag color="blue">2FA</Tag>}
+          </>
         ),
     },
     { title: "Ngày tạo", dataIndex: "created_at", render: fmtDate },
@@ -108,6 +145,32 @@ export default function AdminUsersPage() {
             >
               Khóa
             </Button>
+          )}
+          {/* For users locked out of their account. Other admins' passwords
+              can't be reset here (the API refuses), same rule as banning. */}
+          <Popconfirm
+            title={`Đặt lại mật khẩu của @${u.username}?`}
+            description="Tạo một mật khẩu tạm và đăng xuất tài khoản này khỏi mọi thiết bị."
+            okText="Đặt lại"
+            cancelText="Hủy"
+            disabled={u.role === "admin"}
+            onConfirm={() => resetPassword(u)}
+          >
+            <Button size="small" disabled={u.role === "admin"}>
+              Đặt lại mật khẩu
+            </Button>
+          </Popconfirm>
+          {u.two_factor_confirmed_at && (
+            <Popconfirm
+              title={`Tắt xác thực hai lớp của @${u.username}?`}
+              description="Dùng khi người dùng mất ứng dụng xác thực, email và mã khôi phục. Mật khẩu không thay đổi."
+              okText="Tắt 2FA"
+              okButtonProps={{ danger: true }}
+              cancelText="Hủy"
+              onConfirm={() => submit(() => adminResetUserTwoFactor(u.id), () => {})}
+            >
+              <Button size="small">Tắt 2FA</Button>
+            </Popconfirm>
           )}
           {/* Admins have to be demoted before they can be deleted, same rule as banning. */}
           <Popconfirm

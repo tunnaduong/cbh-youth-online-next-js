@@ -1,6 +1,7 @@
 import axios from "axios";
 import { getTokenFromAnywhere } from "@/utils/cookies";
 import { getSocketId } from "@/lib/echo";
+import { getClientHeaders } from "@/utils/clientInfo";
 import { isApiDownError, notifyApiDown } from "@/components/maintenance/apiStatus";
 
 // Hàm tạo một instance của axios với cấu hình tùy chỉnh
@@ -21,6 +22,9 @@ axiosInstance.interceptors.request.use((config) => {
       if (token && token.trim() !== "") {
         config.headers.Authorization = `Bearer ${token}`;
       }
+
+      // Tells the API which browser/OS this is, for the "logged-in devices" list
+      Object.assign(config.headers, getClientHeaders());
 
       // Lets broadcast()->toOthers() on the backend exclude this tab's own socket
       const socketId = getSocketId();
