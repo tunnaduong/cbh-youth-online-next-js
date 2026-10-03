@@ -119,7 +119,7 @@ export default function ProfilePhotoGallery({
                       src={photo.url}
                       alt={photo.post_title || "Ảnh bài viết"}
                       loading="lazy"
-                      className="h-full w-full object-cover transition-transform duration-200 hover:scale-105"
+                      className="media-loading h-full w-full object-cover transition-transform duration-200 hover:scale-105"
                     />
                   </Link>
                 ))}

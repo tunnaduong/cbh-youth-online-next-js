@@ -1,6 +1,7 @@
 import "./globals.css";
 import ClientProviders from "./ClientProviders";
 import GlobalConsoleMessage from "../components/GlobalConsoleMessage";
+import MediaLoadingWatcher from "../components/MediaLoadingWatcher";
 import { Analytics } from "@vercel/analytics/next";
 import Script from "next/script";
 
@@ -67,6 +68,7 @@ export default function RootLayout({ children }) {
           `}
         </Script>
         <GlobalConsoleMessage />
+        <MediaLoadingWatcher />
         <ClientProviders>{children}</ClientProviders>
         <Analytics />
       </body>

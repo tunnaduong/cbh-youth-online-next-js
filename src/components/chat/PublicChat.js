@@ -1075,7 +1075,7 @@ export default function PublicChat() {
                           <img
                             src={resolveFileUrl(message.file_url)}
                             alt={message.content || "image"}
-                            className="w-full h-auto max-h-[300px] object-cover"
+                            className="media-loading w-full h-auto min-h-[80px] max-h-[300px] object-cover"
                           />
                         </div>
                       ) : message.type === "video" ? (

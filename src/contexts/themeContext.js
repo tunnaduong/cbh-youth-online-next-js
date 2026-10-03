@@ -15,6 +15,9 @@ export function ThemeProvider({ children }) {
     return "light";
   });
   const [mounted, setMounted] = useState(false);
+  // What is actually shown: "auto" resolved to light or dark. Components that
+  // can't read the body's `dark` class (antd's theme) use this.
+  const [resolvedTheme, setResolvedTheme] = useState("light");
 
   // Handle hydration - just mark as mounted
   useEffect(() => {
@@ -33,6 +36,7 @@ export function ThemeProvider({ children }) {
         } else {
           document.body.classList.remove("dark");
         }
+        setResolvedTheme(e.matches ? "dark" : "light");
       };
 
       // Apply initial theme based on system preference
@@ -42,9 +46,11 @@ export function ThemeProvider({ children }) {
       return () => mediaQuery.removeEventListener("change", updateTheme);
     } else if (theme === "dark") {
       document.body.classList.add("dark");
+      setResolvedTheme("dark");
     } else {
       // light theme
       document.body.classList.remove("dark");
+      setResolvedTheme("light");
     }
 
     localStorage.setItem("theme", theme);
@@ -59,7 +65,7 @@ export function ThemeProvider({ children }) {
   };
 
   return (
-    <ThemeContext.Provider value={{ theme, toggleTheme, changeTheme }}>
+    <ThemeContext.Provider value={{ theme, resolvedTheme, toggleTheme, changeTheme }}>
       {children}
     </ThemeContext.Provider>
   );

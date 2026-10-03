@@ -94,6 +94,11 @@ export function normalizeTheme(theme) {
     primary_color: color(theme.primary_color, null),
     accent_color: color(theme.accent_color, null),
     banner_color: color(theme.banner_color, null),
+    // Second colour of each of the three above (1500-point tier): when set,
+    // that colour is drawn as a gradient. Null = solid.
+    primary_color_2: color(theme.primary_color_2, null),
+    accent_color_2: color(theme.accent_color_2, null),
+    banner_color_2: color(theme.banner_color_2, null),
     name_font: theme.name_font || "default",
     name_effect: theme.name_effect || "none",
     name_colors: [
@@ -140,9 +145,17 @@ export function themeColors(theme) {
   ];
 }
 
-export function themeGradient(theme, angle = 135) {
+/**
+ * Every colour stop of the theme gradient, in order: primary (+ its second
+ * colour), accent (+ its second colour). Two stops without gradient colours.
+ */
+export function themeStops(theme) {
   const [primary, accent] = themeColors(theme);
-  return `linear-gradient(${angle}deg, ${primary}, ${accent})`;
+  return [primary, theme?.primary_color_2, accent, theme?.accent_color_2].filter(Boolean);
+}
+
+export function themeGradient(theme, angle = 135) {
+  return `linear-gradient(${angle}deg, ${themeStops(theme).join(", ")})`;
 }
 
 /**
@@ -152,6 +165,11 @@ export function themeGradient(theme, angle = 135) {
 export function getBannerStyle(theme) {
   const normalized = normalizeTheme(theme);
   if (!normalized) return null;
+  if (normalized.banner_color && normalized.banner_color_2) {
+    return {
+      backgroundImage: `linear-gradient(135deg, ${normalized.banner_color}, ${normalized.banner_color_2})`,
+    };
+  }
   if (normalized.banner_color) return { backgroundColor: normalized.banner_color };
   if (hasThemeColors(normalized)) return { backgroundImage: themeGradient(normalized) };
   return null;
@@ -165,9 +183,9 @@ export function getBannerStyle(theme) {
 export function getSurfaceStyle(theme) {
   if (!hasThemeColors(theme)) return null;
 
-  const [primary, accent] = themeColors(normalizeTheme(theme));
+  const stops = themeStops(normalizeTheme(theme)).map((stop) => `${stop}33`);
   return {
-    backgroundImage: `linear-gradient(135deg, ${primary}33, ${accent}33)`,
+    backgroundImage: `linear-gradient(135deg, ${stops.join(", ")})`,
   };
 }
 

@@ -62,7 +62,7 @@ export default function LinkPreviewCard({ url, compact = false, className = "" }
           loading="lazy"
           referrerPolicy="no-referrer"
           onError={() => setImageFailed(true)}
-          className={`w-full object-cover bg-gray-100 dark:bg-neutral-600 ${
+          className={`media-loading w-full object-cover ${
             compact ? "h-28" : "aspect-[1.91/1]"
           }`}
         />

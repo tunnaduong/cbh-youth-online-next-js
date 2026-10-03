@@ -79,7 +79,7 @@ export default function NameStyleModal({ open, theme, options, profileName, onAp
                 theme={{ ...preview, name_font: option.key, name_effect: "none" }}
                 className="text-base text-gray-900 dark:text-neutral-100 truncate max-w-full"
               >
-                {NAME_FONTS[option.key]?.label || option.key}
+                {NAME_FONTS[option.key]?.label || option.label || option.key}
               </StyledName>
             </OptionTile>
           ))}

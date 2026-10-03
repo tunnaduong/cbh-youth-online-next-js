@@ -959,7 +959,7 @@ export default function PostItem({
                   src={url}
                   controls
                   preload="metadata"
-                  className="w-full rounded-lg border dark:!border-neutral-500 bg-black max-h-[480px]"
+                  className="media-loading w-full rounded-lg border dark:!border-neutral-500 max-h-[480px]"
                 />
               ))}
             </div>

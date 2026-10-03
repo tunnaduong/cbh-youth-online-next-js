@@ -922,7 +922,7 @@ export default function ProfileClient({ initialProfile, activeTab, username }) {
                 src={coverImageUrl}
                 alt=""
                 aria-hidden="true"
-                className="cover-photo-bg absolute inset-0 w-full h-full object-cover"
+                className="cover-photo-bg media-loading absolute inset-0 w-full h-full object-cover"
               />
             )}
             {/* Scrim so the profile name/stats stay legible over any cover photo */}

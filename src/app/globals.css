@@ -1,6 +1,4 @@
 @import url("https://fonts.googleapis.com/css2?family=Inter:wght@200;300;400;500;600;700;800&display=swap");
-@import url("https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600&display=swap");
-@import url("https://fonts.googleapis.com/css2?family=Google+Sans+Flex:wght@600&display=swap");
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -88,6 +86,36 @@
 .dark .loading-shimmer {
   background: linear-gradient(90deg, #374151 25%, #4b5563 50%, #374151 75%);
   background-size: 200px 100%;
+}
+
+/* Shimmer shown in the box of an image/video/embed while it loads, instead
+   of an empty or black rectangle. Put the class on the <img>/<video> itself
+   (MediaLoadingWatcher removes it once loaded) or on a wrapper behind the
+   content. */
+@keyframes mediaShimmer {
+  from { background-position: 200% 0; }
+  to { background-position: -200% 0; }
+}
+
+.media-loading,
+.iframe-wrapper {
+  background-color: #e5e7eb;
+  background-image: linear-gradient(90deg, #e5e7eb 25%, #f3f4f6 50%, #e5e7eb 75%);
+  background-size: 200% 100%;
+  animation: mediaShimmer 1.4s linear infinite;
+}
+
+.dark .media-loading,
+.dark .iframe-wrapper {
+  background-color: #262626;
+  background-image: linear-gradient(90deg, #262626 25%, #404040 50%, #262626 75%);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .media-loading,
+  .iframe-wrapper {
+    animation: none;
+  }
 }
 
 * {
@@ -1129,17 +1157,6 @@ body {
   .profile-unsaved-shake {
     animation: none;
   }
-}
-
-/* Phông tên nạp qua @import ở đầu file (src/lib/nameFonts.js: flex, grotesk) */
-.name-font-flex {
-  font-family: "Google Sans Flex", "Google Sans", ui-sans-serif, system-ui, sans-serif;
-  font-weight: 600;
-}
-
-.name-font-grotesk {
-  font-family: "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
-  font-weight: 600;
 }
 
 /* Hiệu ứng tên hiển thị (src/lib/profileTheme.js getNameEffect) */

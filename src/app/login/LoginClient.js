@@ -7,13 +7,16 @@ import { useRouter, useSearchParams } from "next/navigation";
 import CustomColorButton from "@/components/ui/CustomColorButton";
 import InputError from "@/components/ui/InputError";
 import { Checkbox, Input, message } from "antd";
-import { LockOutlined, SafetyOutlined, UserOutlined } from "@ant-design/icons";
+import { KeyOutlined, LockOutlined, SafetyOutlined, UserOutlined } from "@ant-design/icons";
 import { useAuthContext } from "@/contexts/Support";
 import {
   loginRequest,
   resendTwoFactorLoginCode,
   verifyTwoFactorLogin,
+  getPasskeyLoginOptions,
+  loginWithPasskey,
 } from "../Api";
+import { getPasskey, isPasskeyCancel, passkeysSupported } from "@/utils/webauthn";
 import { activateSavedAccount, getSavedAccounts } from "@/utils/savedAccounts";
 import {
   getTwoFactorDeviceToken,
@@ -168,6 +171,45 @@ function LoginClientInner() {
     setError(null);
     // First time email is picked: nothing was sent yet, so send it now.
     if (method === "email" && !emailSent && !resending) resendCode();
+  };
+
+  // Passkey: the device's fingerprint/face/PIN is the whole login - nothing
+  // to type, and no two-factor step afterwards.
+  const handlePasskeyLogin = async () => {
+    if (processing) return;
+    if (!passkeysSupported()) {
+      setError("Trình duyệt này không hỗ trợ passkey.");
+      return;
+    }
+
+    setProcessing(true);
+    setErrors({});
+    setError(null);
+    manualRedirectRef.current = false;
+
+    try {
+      const options = await getPasskeyLoginOptions();
+      const credential = await getPasskey(options.data.publicKey);
+      const response = await loginWithPasskey({
+        request_id: options.data.request_id,
+        credential,
+      });
+
+      if (!response.data?.user || !response.data?.token) {
+        throw new Error("Phản hồi không hợp lệ!");
+      }
+
+      setCurrentUser(response.data.user);
+      setUserToken(response.data.token);
+      manualRedirectRef.current = true;
+      setProcessing(false);
+      router.replace(getRedirectUrl());
+    } catch (error) {
+      setProcessing(false);
+      // Closing the browser's passkey prompt is not an error worth showing.
+      if (isPasskeyCancel(error)) return;
+      setError(error.response?.data?.message || error.message);
+    }
   };
 
   // Check if user is already logged in
@@ -513,6 +555,16 @@ function LoginClientInner() {
                 Đăng nhập bằng
               </div>
               <div className="flex justify-center space-x-4">
+                <button
+                  type="button"
+                  onClick={handlePasskeyLogin}
+                  disabled={processing}
+                  title="Đăng nhập bằng passkey"
+                  className="inline-flex dark:!border-neutral-500 dark:bg-[#2c2c2c] dark:text-neutral-200 items-center justify-center rounded-md text-base transition-colors disabled:pointer-events-none disabled:opacity-50 border border-input shadow-sm hover:bg-[#eeeeee] w-10 h-10"
+                >
+                  <KeyOutlined />
+                  <span className="sr-only">Passkey</span>
+                </button>
                 <a
                   href={`/login/facebook?continue=${encodeURIComponent(
                     (() => {

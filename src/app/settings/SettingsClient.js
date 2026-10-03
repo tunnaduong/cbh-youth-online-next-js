@@ -29,6 +29,7 @@ import {
 import axiosInstance from "@/services/api/AxiosCustom";
 import TwoFactorSettings from "@/components/settings/TwoFactorSettings";
 import DeviceSessions from "@/components/settings/DeviceSessions";
+import PasskeySettings from "@/components/settings/PasskeySettings";
 
 export default function SettingsClient({ initialUser, hasAuthError }) {
   const { currentUser, setCurrentUser, loggedIn, userToken, setUserToken } =
@@ -1331,6 +1332,11 @@ export default function SettingsClient({ initialUser, hasAuthError }) {
             {/* Two-factor authentication */}
             <div className="mt-8 pt-8 border-t border-gray-200 dark:border-gray-700">
               <TwoFactorSettings />
+            </div>
+
+            {/* Passkeys (password-less login) */}
+            <div className="mt-8 pt-8 border-t border-gray-200 dark:border-gray-700">
+              <PasskeySettings />
             </div>
 
             {/* Logged-in devices */}
