@@ -3,6 +3,11 @@
  * "logged-in devices" list (Settings > Account).
  */
 
+import { isSessionFromApp } from "@/utils/cookies";
+
+// The mobile app's WebViews append this to their user agent.
+const APP_WEBVIEW_UA = /CBHYouthApp\//;
+
 const BROWSERS = [
   // Order matters: most of these also contain "Chrome" and "Safari".
   ["Edge", /Edg(?:e|A|iOS)?\/(\d+)/],
@@ -38,7 +43,7 @@ function detectBrowser(ua) {
  * URL-encoded because HTTP headers can't carry non-ASCII text (the API
  * decodes them).
  */
-export function clientHeadersFromUserAgent(ua = "") {
+export function clientHeadersFromUserAgent(ua = "", { fromApp = false } = {}) {
   const headers = {
     "X-Client-Platform": "web",
   };
@@ -49,18 +54,34 @@ export function clientHeadersFromUserAgent(ua = "") {
 
   if (version) headers["X-Client-Version"] = encodeURIComponent(version);
   if (os) headers["X-Device-Name"] = encodeURIComponent(os);
-  if (browser) headers["X-Device-Model"] = encodeURIComponent(browser);
+  // Sessions the mobile app created are labelled as such, so they can't be
+  // mistaken for the user signing in on the web themselves: the app's own
+  // WebView (gift shop, admin, games), or a browser the app opened and
+  // signed in (/auth/set-token?code=).
+  let model = browser;
+  if (APP_WEBVIEW_UA.test(ua)) {
+    model = "WebView trong ứng dụng CBH Youth";
+  } else if (fromApp) {
+    model = browser ? `${browser} · mở từ ứng dụng` : "Mở từ ứng dụng CBH Youth";
+  }
+  if (model) headers["X-Device-Model"] = encodeURIComponent(model);
 
   return headers;
 }
 
-let cached = null;
+const cached = {};
 
 /**
  * Headers sent with every API request made from the browser.
  */
 export function getClientHeaders() {
   if (typeof navigator === "undefined") return {};
-  if (!cached) cached = clientHeadersFromUserAgent(navigator.userAgent || "");
-  return cached;
+  // Whether the session came from the app can change mid-visit (set-token),
+  // so it's checked on every call; the user agent part is cached per value.
+  const fromApp = isSessionFromApp();
+  const key = fromApp ? "app" : "web";
+  if (!cached[key]) {
+    cached[key] = clientHeadersFromUserAgent(navigator.userAgent || "", { fromApp });
+  }
+  return cached[key];
 }

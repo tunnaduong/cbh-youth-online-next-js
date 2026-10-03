@@ -3,7 +3,12 @@
 import { Suspense, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuthContext } from "@/contexts/Support";
-import { setAuthCookie } from "@/utils/cookies";
+import {
+  setAuthCookie,
+  removeAuthCookie,
+  markSessionFromApp,
+  isSessionFromApp,
+} from "@/utils/cookies";
 import { getRequest } from "@/services/api/ApiByAxios";
 
 function getCookie(name) {
@@ -32,6 +37,31 @@ function SetTokenInner() {
       returnParam && returnParam.startsWith("/") && !/^\/[/\\]/.test(returnParam)
         ? returnParam
         : "/";
+    // ?logout=1: the mobile app has no signed-in account any more (signed
+    // out, or "add account"), and its browser mustn't stay signed in either.
+    // A session the app handed over is revoked on the API too; one the user
+    // signed into here themselves only loses its cookie here.
+    if (searchParams.get("logout") === "1") {
+      (async () => {
+        const token = getCookie("auth_token");
+        if (token && isSessionFromApp()) {
+          try {
+            await fetch(`${process.env.NEXT_PUBLIC_API_URL}/v1.0/logout`, {
+              method: "POST",
+              headers: { Accept: "application/json", Authorization: `Bearer ${token}` },
+            });
+          } catch {}
+        }
+        removeAuthCookie();
+        ["TOKEN", "auth_token", "refresh_token", "CURRENT_USER"].forEach((key) =>
+          localStorage.removeItem(key)
+        );
+        // A full load, so every provider starts over signed out.
+        window.location.replace(returnUrl);
+      })();
+      return;
+    }
+
     const userB64 = getCookie("oauth_user");
     let userObj = null;
     if (userB64) {
@@ -46,6 +76,7 @@ function SetTokenInner() {
     }
 
     (async () => {
+      let redeemedFromApp = false;
       try {
         if (handoffCode) {
           // Plain fetch, not the axios instance: a rejected code answers 401,
@@ -64,7 +95,22 @@ function SetTokenInner() {
               }
             );
             const data = res.ok ? await res.json() : null;
-            if (data?.token) access = data.token;
+            if (data?.token) {
+              // Switching accounts in the app hands over a new session: end
+              // the one it handed over before, so it doesn't linger in the
+              // devices list. Never touches a session the user signed into
+              // themselves.
+              const previous = getCookie("auth_token");
+              if (previous && previous !== data.token && isSessionFromApp()) {
+                fetch(`${process.env.NEXT_PUBLIC_API_URL}/v1.0/logout`, {
+                  method: "POST",
+                  headers: { Accept: "application/json", Authorization: `Bearer ${previous}` },
+                  keepalive: true,
+                }).catch(() => {});
+              }
+              access = data.token;
+              redeemedFromApp = true;
+            }
           } catch {
             // Expired/used code: carry on with whatever session the browser
             // already has rather than stranding the user on a blank page.
@@ -75,6 +121,7 @@ function SetTokenInner() {
           // sync to context, cookies and localStorage
           setUserToken(access);
           setAuthCookie(access);
+          if (redeemedFromApp) markSessionFromApp();
           localStorage.setItem("TOKEN", access);
           localStorage.setItem("auth_token", access);
         }

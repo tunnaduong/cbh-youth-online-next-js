@@ -55,6 +55,41 @@ export function setAuthCookie(token, options = {}) {
   }
 
   document.cookie = parts.join("; ");
+  // A fresh login here starts a session of its own; /auth/set-token marks it
+  // again right after when the session was actually handed over by the app.
+  clearSessionSource();
+}
+
+// "cbh_session_source=app" marks a session the mobile app handed to this
+// browser (/auth/set-token?code=). It's what lets the logged-in devices list
+// say "opened from the app", and what allows /auth/set-token?logout=1 to
+// revoke the session when the app signs out. On the shared domain like
+// auth_token, so the gift shop sees it too.
+const SESSION_SOURCE_COOKIE = "cbh_session_source";
+
+export function markSessionFromApp() {
+  if (typeof document === "undefined") return;
+  const domain = getSharedCookieDomain();
+  document.cookie =
+    `${SESSION_SOURCE_COOKIE}=app; path=/; max-age=${60 * 60 * 24 * 30}; samesite=lax` +
+    (location.protocol === "https:" ? "; secure" : "") +
+    (domain ? `; domain=${domain}` : "");
+}
+
+export function isSessionFromApp() {
+  if (typeof document === "undefined") return false;
+  return document.cookie
+    .split(";")
+    .some((cookie) => cookie.trim() === `${SESSION_SOURCE_COOKIE}=app`);
+}
+
+export function clearSessionSource() {
+  if (typeof document === "undefined") return;
+  const domain = getSharedCookieDomain();
+  if (domain) {
+    document.cookie = `${SESSION_SOURCE_COOKIE}=; path=/; domain=${domain}; max-age=0`;
+  }
+  document.cookie = `${SESSION_SOURCE_COOKIE}=; path=/; max-age=0`;
 }
 
 function getSharedCookieDomain() {
@@ -104,6 +139,7 @@ export function removeAuthCookie() {
   }
   document.cookie =
     "auth_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+  clearSessionSource();
 }
 
 /**
