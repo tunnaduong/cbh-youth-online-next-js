@@ -86,8 +86,11 @@ export default function TwoFactorSettings() {
       setMode("confirm");
     });
 
-  const confirmSetup = () =>
-    run(async () => {
+  const confirmSetup = () => {
+    // Enter in the empty code box would otherwise send an empty code.
+    if (!code.trim() || busy) return;
+
+    return run(async () => {
       const res = await confirmTwoFactor({ code: code.trim() });
       setRecoveryCodes(res.data.recovery_codes || []);
       setStatus(res.data.status);
@@ -95,10 +98,20 @@ export default function TwoFactorSettings() {
       setCode("");
       setMode("recovery");
     });
+  };
 
-  const cancelSetup = () => {
-    // Drop the half-finished setup on the server too (nothing was enforced yet).
-    disableTwoFactor().catch(() => {});
+  // Drop the half-finished setup on the server too (nothing was enforced
+  // yet). Awaited, with the controls locked meanwhile: if the user started a
+  // new setup straight away, this request could land after it and wipe it.
+  const cancelSetup = async () => {
+    setBusy(true);
+    try {
+      await disableTwoFactor();
+    } catch {
+      // A leftover unconfirmed setup is harmless and is replaced by the next one.
+    } finally {
+      setBusy(false);
+    }
     reset();
   };
 
@@ -153,7 +166,29 @@ export default function TwoFactorSettings() {
     }
   };
 
+  // The switch shows where the user is heading, not just what is saved.
+  // Before, it stayed put (and locked) while a step was open, so clicking it
+  // looked like nothing happened and there was no way to click it back.
+  const switchChecked =
+    mode === "choose" || mode === "confirm"
+      ? true
+      : mode === "disable"
+        ? false
+        : !!status?.enabled;
+
   const onToggle = (checked) => {
+    if (busy) return;
+
+    // Flipping it back while a step is open cancels that step.
+    if (mode === "confirm") {
+      cancelSetup();
+      return;
+    }
+    if (mode === "choose" || mode === "disable") {
+      reset();
+      return;
+    }
+
     setError("");
     setPassword("");
     setCode("");
@@ -221,11 +256,11 @@ export default function TwoFactorSettings() {
           </p>
         </div>
         <Switch
-          checked={!!status?.enabled}
-          loading={!status}
-          disabled={!status || mode !== null}
+          checked={switchChecked}
+          loading={!status || busy}
+          disabled={!status || busy || mode === "recovery" || mode === "regenerate"}
           onChange={onToggle}
-          className="ml-4"
+          className="ml-4 flex-shrink-0"
         />
       </div>
 

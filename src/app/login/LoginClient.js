@@ -320,8 +320,13 @@ function LoginClientInner() {
                 <div className="flex justify-between text-sm">
                   <button
                     type="button"
-                    onClick={leaveChallenge}
-                    className="text-primary-500 hover:underline"
+                    onClick={() => {
+                      leaveChallenge();
+                      // Don't carry a wrong-code message over to the login form
+                      setError(null);
+                    }}
+                    disabled={processing}
+                    className="text-primary-500 hover:underline disabled:opacity-50"
                   >
                     Quay lại đăng nhập
                   </button>
