@@ -178,7 +178,10 @@ export default function AdminShell({ children }) {
     if (isLoginPage) return;
     const session = sessionStorage.getItem(ADMIN_SESSION_KEY);
     if (!session) {
-      router.replace("/admin/login");
+      // Remember where we were headed: someone arriving already signed in
+      // (e.g. from the mobile app's in-app browser) is bounced straight back
+      // here by the login page instead of landing on the dashboard.
+      router.replace(`/admin/login?next=${encodeURIComponent(pathname)}`);
     } else {
       setAuthed(true);
       try {
@@ -187,7 +190,7 @@ export default function AdminShell({ children }) {
         setMe(null);
       }
     }
-  }, [router, isLoginPage]);
+  }, [router, isLoginPage, pathname]);
 
   if (isLoginPage)
     return (
