@@ -92,6 +92,12 @@
    of an empty or black rectangle. Put the class on the <img>/<video> itself
    (MediaLoadingWatcher removes it once loaded) or on a wrapper behind the
    content. */
+/* Letterbox colour of post videos once loaded; while loading, .media-loading
+   (declared after this) paints the shimmer instead. */
+.post-video {
+  background-color: #000;
+}
+
 @keyframes mediaShimmer {
   from { background-position: 200% 0; }
   to { background-position: -200% 0; }
