@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { postServer } from "../../../../utils/serverFetch";
+import { clientHeadersFromUserAgent } from "../../../../utils/clientInfo";
 
 export const runtime = "nodejs";
 
@@ -184,6 +185,14 @@ export async function GET(request) {
         provider: "facebook",
         accessToken,
         profile,
+        // Lets a device the user chose to remember skip the two-factor step
+        device_token: request.cookies.get("tf_device")?.value || undefined,
+      }, {
+        // This call comes from the server, so pass the browser's details along
+        // for the "logged-in devices" list and the new-device login email.
+        headers: clientHeadersFromUserAgent(
+          request.headers.get("user-agent") || ""
+        ),
       });
     } catch (err) {
       const redirect = NextResponse.redirect(new URL(`/login`, url.origin));
@@ -209,6 +218,35 @@ export async function GET(request) {
           sameSite: "lax",
           secure: true,
           maxAge: 60,
+        }
+      );
+      return redirect;
+    }
+
+    // The account has two-factor on, so the API issued no token yet. Hand
+    // the pending challenge to the login page, which asks for the code and
+    // finishes the login from there.
+    if (apiResponse?.two_factor_required) {
+      const loginUrl = new URL("/login", url.origin);
+      loginUrl.searchParams.set("continue", returnUrl);
+      const redirect = NextResponse.redirect(loginUrl);
+      redirect.cookies.set(
+        "two_factor_challenge",
+        Buffer.from(
+          JSON.stringify({
+            challenge_token: apiResponse.challenge_token,
+            method: apiResponse.method,
+            methods: apiResponse.methods,
+            email: apiResponse.email,
+            email_sent: apiResponse.email_sent,
+          })
+        ).toString("base64url"),
+        {
+          path: "/",
+          httpOnly: false,
+          sameSite: "lax",
+          secure: true,
+          maxAge: 600,
         }
       );
       return redirect;

@@ -27,6 +27,8 @@ import {
   uploadFile,
 } from "@/app/Api";
 import axiosInstance from "@/services/api/AxiosCustom";
+import TwoFactorSettings from "@/components/settings/TwoFactorSettings";
+import DeviceSessions from "@/components/settings/DeviceSessions";
 
 export default function SettingsClient({ initialUser, hasAuthError }) {
   const { currentUser, setCurrentUser, loggedIn, userToken, setUserToken } =
@@ -1324,6 +1326,16 @@ export default function SettingsClient({ initialUser, hasAuthError }) {
                   className="ml-4"
                 />
               </div>
+            </div>
+
+            {/* Two-factor authentication */}
+            <div className="mt-8 pt-8 border-t border-gray-200 dark:border-gray-700">
+              <TwoFactorSettings />
+            </div>
+
+            {/* Logged-in devices */}
+            <div className="mt-8 pt-8 border-t border-gray-200 dark:border-gray-700">
+              <DeviceSessions />
             </div>
 
             {/* Delete Account Section */}

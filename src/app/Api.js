@@ -13,6 +13,35 @@ export const signupRequest = (params) => {
   return Api.postRequest("/v1.0/register", params);
 };
 
+// Two-factor authentication
+// Login: when /login (or /login/oauth) answers `two_factor_required`, the
+// token is only issued after the code is checked here.
+export const verifyTwoFactorLogin = (params) => {
+  return Api.postRequest("/v1.0/login/two-factor", params);
+};
+
+export const resendTwoFactorLoginCode = (params) => {
+  return Api.postRequest("/v1.0/login/two-factor/resend", params);
+};
+
+// Settings
+export const getTwoFactorStatus = () => Api.getRequest("/v1.0/two-factor");
+export const setupTwoFactorTotp = (params) => Api.postRequest("/v1.0/two-factor/totp", params);
+export const setupTwoFactorEmail = (params) => Api.postRequest("/v1.0/two-factor/email", params);
+export const sendTwoFactorEmailCode = () => Api.postRequest("/v1.0/two-factor/email/send");
+export const confirmTwoFactor = (params) => Api.postRequest("/v1.0/two-factor/confirm", params);
+export const disableTwoFactor = (params) => Api.postRequest("/v1.0/two-factor/disable", params);
+export const regenerateTwoFactorRecoveryCodes = (params) =>
+  Api.postRequest("/v1.0/two-factor/recovery-codes", params);
+export const forgetTwoFactorTrustedDevices = () =>
+  Api.deleteRequest("/v1.0/two-factor/trusted-devices");
+
+// Logged-in devices
+export const getDeviceSessions = () => Api.getRequest("/v1.0/sessions");
+export const logoutDeviceSession = (id) => Api.deleteRequest(`/v1.0/sessions/${id}`);
+// Logs out every device except this one
+export const logoutOtherDeviceSessions = () => Api.deleteRequest("/v1.0/sessions");
+
 export const getFeedPosts = (page = 1) => {
   return Api.getRequest("/v1.0/topics?page=" + page);
 };
@@ -896,6 +925,8 @@ export const adminUpdateUser = (id, params) => Api.patchRequest(`/v1.0/admin/use
 export const adminDeleteUser = (id) => Api.deleteRequest(`/v1.0/admin/users/${id}`);
 export const adminBanUser = (id, params) => Api.postRequest(`/v1.0/admin/users/${id}/ban`, params);
 export const adminUnbanUser = (id) => Api.postRequest(`/v1.0/admin/users/${id}/unban`);
+export const adminResetUserPassword = (id) => Api.postRequest(`/v1.0/admin/users/${id}/reset-password`);
+export const adminResetUserTwoFactor = (id) => Api.postRequest(`/v1.0/admin/users/${id}/reset-two-factor`);
 
 export const adminGetPendingDeposits = (params) => Api.getRequest("/v1.0/admin/pending-deposits", params);
 export const adminApproveDeposit = (id) => Api.postRequest(`/v1.0/admin/pending-deposits/${id}/approve`);
