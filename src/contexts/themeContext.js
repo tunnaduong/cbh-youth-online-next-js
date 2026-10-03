@@ -17,7 +17,14 @@ export function ThemeProvider({ children }) {
   const [mounted, setMounted] = useState(false);
   // What is actually shown: "auto" resolved to light or dark. Components that
   // can't read the body's `dark` class (antd's theme) use this.
-  const [resolvedTheme, setResolvedTheme] = useState("light");
+  const [resolvedTheme, setResolvedTheme] = useState(() => {
+    if (typeof window === "undefined") return "light";
+    const saved = localStorage.getItem("theme");
+    if (saved === "auto") {
+      return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+    }
+    return saved === "dark" ? "dark" : "light";
+  });
 
   // Handle hydration - just mark as mounted
   useEffect(() => {

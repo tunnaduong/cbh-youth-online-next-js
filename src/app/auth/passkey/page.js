@@ -67,9 +67,9 @@ export default function PasskeyAppLoginPage() {
       });
 
       setStatus("done");
-      // Single colon (not ://), like the OAuth callback: some Android
-      // browsers mangle the other form.
-      window.location.href = `${params.current.scheme}:passkey?code=${encodeURIComponent(code)}`;
+      // Standard scheme://host form: the app's auth session matches the
+      // return URL by this prefix.
+      window.location.href = `${params.current.scheme}://passkey?code=${encodeURIComponent(code)}`;
     } catch (err) {
       setStatus("idle");
       if (!isPasskeyCancel(err)) setError(err.message);
