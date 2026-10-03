@@ -2,6 +2,8 @@
 
 > **For AI agents.** Project map for agents working in this repo: how it connects to the sibling repos, features, structure, setup, conventions and recent work. Humans: see `README.md`. Keep this file current - add to **Recent work** and update other sections whenever you change the repo.
 
+- **Default branch: `main`** - unless the user names another branch, branch off an up-to-date `main` and open a PR into it (direct pushes are rejected).
+
 The web app at **https://chuyenbienhoa.com** (also `www.`): the student community/forum for THPT Chuyên Biên Hòa (Hà Nam). It's built with Next.js 14 (App Router) and React 18. The UI text is in Vietnamese. All data comes from the Laravel API.
 
 > Read **How the repos connect** and **Conventions** before changing auth, cookies or anything under `/admin`.

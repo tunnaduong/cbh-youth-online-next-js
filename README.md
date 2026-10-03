@@ -126,6 +126,7 @@ e2e/                     # Kiểm thử Playwright
   - Thiết lập `NEXT_PUBLIC_*` trong dashboard môi trường.
   - Bật build cache cho npm.
   - Cấu hình domain client (`https://chuyenbienhoa.com`) để khớp với API backend.
+- Nhánh mặc định: **`main`** - nếu không có yêu cầu khác, tạo nhánh mới từ `main` mới nhất rồi mở pull request vào `main`.
 - Nhánh `main` được bảo vệ: mọi thay đổi phải qua pull request, cần review và vượt qua kiểm thử Playwright E2E cùng các bản deploy Vercel.
 - Nếu deploy self-hosted, dùng `npm run build && npm start` sau khi reverse proxy qua Nginx/PM2.
 
