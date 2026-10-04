@@ -7,6 +7,7 @@ import { usePostRefresh } from "@/contexts/PostRefreshContext";
 import { getForumData, createPost, updatePost, getPostDetail } from "@/app/Api";
 import { normalizeNewlines } from "@/utils/richInput";
 import { compressImageForUpload } from "@/utils/imageUpload";
+import { compressVideoForUpload } from "@/utils/videoCompression";
 
 /**
  * All the state, refs, effects and handlers behind the post composer
@@ -245,10 +246,19 @@ export default function usePostComposer({ isEditMode = false, postData = null, o
         formData.append(`document_files[${index}]`, file);
       });
 
-      // Add video files
-      videoFiles.forEach((file, index) => {
-        formData.append(`video_files[${index}]`, file);
-      });
+      // Add video files - compressed here (720p H.264), since the API no
+      // longer does it. The progress bar shows the "compressing" stage.
+      if (videoFiles.length > 0) {
+        setUploadStage("compressing");
+        setUploadProgress(0);
+        for (let index = 0; index < videoFiles.length; index++) {
+          const file = await compressVideoForUpload(videoFiles[index], {
+            onProgress: (ratio) =>
+              setUploadProgress(Math.round(((index + ratio) * 100) / videoFiles.length)),
+          });
+          formData.append(`video_files[${index}]`, file);
+        }
+      }
 
       setUploadStage("uploading");
       setUploadProgress(0);

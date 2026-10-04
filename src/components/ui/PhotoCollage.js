@@ -50,7 +50,7 @@ export default function PhotoCollage({ images, className = "" }) {
                     rootClassName="!block w-full h-full"
                     className="!w-full !h-full object-cover cursor-pointer transition-[filter] duration-200 hover:brightness-90"
                     placeholder={
-                      <div className="w-full h-full bg-gray-100 dark:bg-neutral-800 animate-pulse" />
+                      <div className="media-loading w-full h-full" />
                     }
                     preview={{ mask: false }}
                   />

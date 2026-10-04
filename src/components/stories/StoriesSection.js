@@ -9,6 +9,9 @@ import { StoryViewer } from "./StoryViewer";
 import { useRouter } from "@bprogress/next/app";
 import { useAuthContext } from "@/contexts/Support";
 import { getStories } from "@/app/Api";
+import StyledName from "@/components/profile/StyledName";
+import AvatarFrame from "@/components/profile/AvatarFrame";
+import { getAvatarFrame } from "@/lib/profileTheme";
 
 function StoriesSection() {
   const router = useRouter();
@@ -293,17 +296,34 @@ function StoriesSection() {
               className="overflow-hidden rounded-xl shadow-sm w-[90px] h-[160px] sm:w-[115px] sm:h-[195px] flex flex-col relative cursor-pointer hover:opacity-90 transition-opacity flex-shrink-0"
               onClick={() => handleViewStory(userStories)}
             >
-              <div
-                className={`absolute top-3 left-2.5 border-[4px] ${
-                  hasUnviewedStories ? "border-primary-500" : "border-gray-400"
-                } rounded-full p-0.5`}
-              >
-                <img
-                  src={`${process.env.NEXT_PUBLIC_API_URL}/v1.0/users/${userStories.username}/avatar`}
-                  className="rounded-full w-[25px] h-[25px]"
-                  alt={userStories.name}
-                />
-              </div>
+              {getAvatarFrame(userStories.profile_theme) ? (
+                // The author picked an avatar frame (Khung) in their profile
+                // appearance: it replaces the plain ring. Seen stories dim it.
+                <div
+                  className={`absolute top-3.5 left-3 w-[33px] h-[33px] ${
+                    hasUnviewedStories ? "" : "opacity-60"
+                  }`}
+                >
+                  <img
+                    src={`${process.env.NEXT_PUBLIC_API_URL}/v1.0/users/${userStories.username}/avatar`}
+                    className="rounded-full w-full h-full object-cover"
+                    alt={userStories.name}
+                  />
+                  <AvatarFrame theme={userStories.profile_theme} />
+                </div>
+              ) : (
+                <div
+                  className={`absolute top-3 left-2.5 border-[4px] ${
+                    hasUnviewedStories ? "border-primary-500" : "border-gray-400"
+                  } rounded-full p-0.5`}
+                >
+                  <img
+                    src={`${process.env.NEXT_PUBLIC_API_URL}/v1.0/users/${userStories.username}/avatar`}
+                    className="rounded-full w-[25px] h-[25px]"
+                    alt={userStories.name}
+                  />
+                </div>
+              )}
               {firstStory.type === "text" ? (
                 <div
                   className="w-full flex-1 flex items-center justify-center text-white text-lg sm:text-2xl font-bold text-center p-2 sm:p-4"
@@ -338,7 +358,7 @@ function StoriesSection() {
                 <img
                   src={process.env.NEXT_PUBLIC_API_URL + firstStory.media_url}
                   alt={userStories.name}
-                  className="w-full h-full object-cover"
+                  className="media-loading w-full h-full object-cover"
                   loading="lazy"
                 />
               ) : firstStory.type === "video" && firstStory.video_first_frame_url ? (
@@ -348,7 +368,7 @@ function StoriesSection() {
                     firstStory.video_first_frame_url
                   }
                   alt={userStories.name}
-                  className="w-full h-full object-cover"
+                  className="media-loading w-full h-full object-cover"
                   loading="lazy"
                 />
               ) : (
@@ -370,7 +390,7 @@ function StoriesSection() {
                 }}
               >
                 <p className="text-white text-xs sm:text-sm font-semibold px-1 line-clamp-2 drop-shadow hover:underline">
-                  {userStories.name}
+                  <StyledName theme={userStories.profile_theme}>{userStories.name}</StyledName>
                 </p>
               </div>
             </div>

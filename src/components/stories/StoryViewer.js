@@ -15,6 +15,9 @@ import { openDeepLink } from "@/lib/deepLink";
 import ReportModal from "@/components/ReportModal";
 import StoryOverlayLayer from "@/components/stories/StoryOverlayLayer";
 import StoryMusicPlayer from "@/components/stories/StoryMusicPlayer";
+import StyledName from "@/components/profile/StyledName";
+import AvatarFrame from "@/components/profile/AvatarFrame";
+import { getAvatarFrame } from "@/lib/profileTheme";
 import { getStoryFilterCss, parseStoryMusic, parseStoryOverlays } from "@/lib/storyOverlays";
 
 // Import Swiper styles
@@ -140,17 +143,20 @@ const UserHeader = ({
   return (
     <div className="absolute top-10 left-4 right-4 z-50 flex items-center justify-between gap-2">
       <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
-        <Link href={`/${user.username}`} className="flex-shrink-0">
+        <Link href={`/${user.username}`} className="relative flex-shrink-0">
           <img
             src={`${process.env.NEXT_PUBLIC_API_URL}/v1.0/users/${user.username}/avatar`}
             alt={user.name}
-            className="w-8 h-8 sm:w-10 sm:h-10 rounded-full border-2 border-white object-cover"
+            className={`w-8 h-8 sm:w-10 sm:h-10 rounded-full object-cover ${
+              getAvatarFrame(user.profile_theme) ? "" : "border-2 border-white"
+            }`}
           />
+          <AvatarFrame theme={user.profile_theme} />
         </Link>
         <div className="flex flex-col leading-tight min-w-0">
           <Link href={`/${user.username}`}>
             <span className="text-white font-medium text-xs sm:text-sm drop-shadow truncate block">
-              {user.name}
+              <StyledName theme={user.profile_theme}>{user.name}</StyledName>
             </span>
           </Link>
           {createdAt && (

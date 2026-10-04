@@ -52,6 +52,17 @@ const TIER_CONFIG = {
     color: "text-purple-500",
     bg: "bg-purple-50 dark:bg-purple-900/30",
   },
+  premium: {
+    label: "Thành viên cao cấp",
+    icon: (
+      // Diamond / kim cương
+      <svg viewBox="0 0 20 20" fill="currentColor" xmlns="http://www.w3.org/2000/svg" className="tier-badge__icon">
+        <path d="M5.5 3h9a1 1 0 01.8.4l2.5 3.33a1 1 0 01-.05 1.26l-7 8a1 1 0 01-1.5 0l-7-8a1 1 0 01-.05-1.26L4.7 3.4A1 1 0 015.5 3zm.5 2L4.5 7h3.1l.9-2H6zm4.7 0l.9 2h-3.2l.9-2h1.4zm3.3 0h-2.5l.9 2h3.1L14 5zm.9 4h-2.6L10 14.2 14.9 9zM7.7 9H5.1L10 14.2 7.7 9z" />
+      </svg>
+    ),
+    color: "text-rose-500",
+    bg: "bg-rose-50 dark:bg-rose-900/30",
+  },
 };
 
 export default function MemberTierBadge({ tier, className = "" }) {

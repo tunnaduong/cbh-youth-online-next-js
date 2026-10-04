@@ -79,7 +79,7 @@ export default function NameStyleModal({ open, theme, options, profileName, onAp
                 theme={{ ...preview, name_font: option.key, name_effect: "none" }}
                 className="text-base text-gray-900 dark:text-neutral-100 truncate max-w-full"
               >
-                {NAME_FONTS[option.key]?.label || option.key}
+                {NAME_FONTS[option.key]?.label || option.label || option.key}
               </StyledName>
             </OptionTile>
           ))}
@@ -107,11 +107,13 @@ export default function NameStyleModal({ open, theme, options, profileName, onAp
           ))}
         </div>
 
-        {style.name_effect !== "none" && (
+        {style.name_effect !== "none" && style.name_effect !== "rainbow" && (
           <>
-            <p className="text-sm font-semibold mt-5 mb-2 dark:text-neutral-200">Màu</p>
+            <p className="text-sm font-semibold mt-5 mb-2 dark:text-neutral-200">
+              {style.name_effect === "outline" ? "Màu chữ và màu viền" : "Màu"}
+            </p>
             <div className="flex gap-3">
-              {(style.name_effect === "gradient" ? [0, 1] : [0]).map((index) => (
+              {(["gradient", "outline"].includes(style.name_effect) ? [0, 1] : [0]).map((index) => (
                 <ColorPicker
                   key={index}
                   value={style.name_colors[index]}

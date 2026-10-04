@@ -1,11 +1,14 @@
 "use client";
 
+import { useEffect } from "react";
 import { ConfigProvider, theme as antdTheme } from "antd";
 import { useTheme } from "@/contexts/themeContext";
 import viVN from "antd/locale/vi_VN";
 
 export default function AntdProvider({ children }) {
-  const { theme } = useTheme();
+  // The resolved theme, not the setting: with "auto" on a dark system the page
+  // is dark, and antd controls (modals, inputs, pickers) have to follow.
+  const { resolvedTheme: theme } = useTheme();
 
   const configProviderProps = {
     locale: viVN,
@@ -57,6 +60,17 @@ export default function AntdProvider({ children }) {
         theme === "dark" ? antdTheme.darkAlgorithm : antdTheme.defaultAlgorithm,
     },
   };
+
+  // Modal.confirm() / message.*() render outside this tree, so they need the
+  // theme handed to them separately.
+  useEffect(() => {
+    ConfigProvider.config({
+      holderRender: (holderChildren) => (
+        <ConfigProvider {...configProviderProps}>{holderChildren}</ConfigProvider>
+      ),
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [theme]);
 
   return <ConfigProvider {...configProviderProps}>{children}</ConfigProvider>;
 }

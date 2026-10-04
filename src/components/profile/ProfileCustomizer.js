@@ -22,6 +22,9 @@ const DEFAULT_THEME = {
   primary_color: null,
   accent_color: null,
   banner_color: null,
+  primary_color_2: null,
+  accent_color_2: null,
+  banner_color_2: null,
   name_font: "default",
   name_effect: "none",
   name_colors: [DEFAULT_PRIMARY, DEFAULT_ACCENT],
@@ -31,6 +34,7 @@ const DEFAULT_THEME = {
 };
 
 const OPTION_FIELDS = ["name_font", "name_effect", "avatar_frame", "profile_effect", "profile_frame"];
+const GRADIENT_FIELDS = ["primary_color_2", "accent_color_2", "banner_color_2"];
 
 const sameTheme = (a, b) =>
   Object.keys(DEFAULT_THEME).every(
@@ -47,7 +51,12 @@ const withoutLockedOptions = (theme, editor) =>
       result[field] = DEFAULT_THEME[field];
     }
     return result;
-  }, { ...theme });
+  }, {
+    ...theme,
+    ...(editor.color_gradient?.unlocked
+      ? null
+      : Object.fromEntries(GRADIENT_FIELDS.map((field) => [field, null]))),
+  });
 
 const pickHex = (color) => color.toHexString().slice(0, 7).toLowerCase();
 
@@ -263,6 +272,65 @@ export default function ProfileCustomizer({ username }) {
     </ColorPicker>
   );
 
+  // Second colour of a theme colour = draw it as a gradient (1500-point tier).
+  const gradientUnlocked = !!editor.color_gradient?.unlocked;
+  const gradientSwatch = (label, key, baseKey) => {
+    const base = draft[baseKey];
+    const disabled = !gradientUnlocked || !base;
+    const button = (
+      <button
+        type="button"
+        disabled={disabled}
+        aria-label={label}
+        title={
+          !gradientUnlocked
+            ? `${label} · cần ${editor.color_gradient?.required_points ?? 1500} điểm`
+            : base
+              ? label
+              : "Chọn màu trước"
+        }
+        className={`flex h-8 flex-1 items-center justify-center rounded-lg border text-xs text-gray-500 dark:text-neutral-300 ${
+          draft[key]
+            ? "border-gray-300 dark:border-neutral-500"
+            : "border-dashed border-gray-400 dark:border-neutral-400"
+        } ${disabled ? "cursor-not-allowed opacity-50" : ""}`}
+        style={
+          draft[key] && base
+            ? { backgroundImage: `linear-gradient(90deg, ${base}, ${draft[key]})` }
+            : undefined
+        }
+      >
+        {!draft[key] && (gradientUnlocked ? "+" : <Lock className="w-3 h-3" />)}
+      </button>
+    );
+
+    if (disabled) return button;
+
+    return (
+      <ColorPicker
+        value={draft[key] || base}
+        disabledAlpha
+        allowClear
+        // Clearing comes through as a fully transparent colour; alpha is off
+        // here, so nothing else can produce one.
+        onChange={(color) =>
+          update({ [key]: color?.cleared || color?.toRgb?.().a === 0 ? null : pickHex(color) })
+        }
+        onClear={() => update({ [key]: null })}
+      >
+        {button}
+      </ColorPicker>
+    );
+  };
+
+  const gradientHint = (
+    <p className="mt-2 mb-1 flex items-center gap-1 text-xs text-gray-500 dark:text-neutral-400">
+      {!gradientUnlocked && <Lock className="w-3 h-3" />}
+      Màu chuyển sắc
+      {!gradientUnlocked && ` · ${editor.color_gradient?.required_points ?? 1500} điểm`}
+    </p>
+  );
+
   const profileName = profile.profile?.profile_name || profile.username;
   const avatarUrl = profile.profile?.profile_picture;
   const coverUrl = profile.profile?.cover_photo_url;
@@ -385,8 +453,18 @@ export default function ProfileCustomizer({ username }) {
                 )}
               </Slot>
             </div>
+            {gradientHint}
+            <div className="flex gap-2">
+              {gradientSwatch("Màu chuyển sắc của ảnh bìa", "banner_color_2", "banner_color")}
+              <span className="flex-1" />
+            </div>
             {draft.banner_color && (
-              <Button type="link" size="small" className="!px-0 mt-1" onClick={() => update({ banner_color: null })}>
+              <Button
+                type="link"
+                size="small"
+                className="!px-0 mt-1"
+                onClick={() => update({ banner_color: null, banner_color_2: null })}
+              >
                 Bỏ màu ảnh bìa
               </Button>
             )}
@@ -445,12 +523,24 @@ export default function ProfileCustomizer({ username }) {
               {colorSwatch("Màu chính", "primary_color")}
               {colorSwatch("Màu phụ", "accent_color")}
             </div>
+            {gradientHint}
+            <div className="flex gap-2">
+              {gradientSwatch("Màu chuyển sắc của màu chính", "primary_color_2", "primary_color")}
+              {gradientSwatch("Màu chuyển sắc của màu phụ", "accent_color_2", "accent_color")}
+            </div>
             {(draft.primary_color || draft.accent_color) && (
               <Button
                 type="link"
                 size="small"
                 className="!px-0 mt-1"
-                onClick={() => update({ primary_color: null, accent_color: null })}
+                onClick={() =>
+                  update({
+                    primary_color: null,
+                    accent_color: null,
+                    primary_color_2: null,
+                    accent_color_2: null,
+                  })
+                }
               >
                 Bỏ màu giao diện
               </Button>

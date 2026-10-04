@@ -438,6 +438,7 @@ export default function Comment({
                             alt={`Ảnh ${idx + 1}`}
                             rootClassName="rounded-lg overflow-hidden border dark:border-neutral-600"
                             className="max-h-48 max-w-[200px] object-cover cursor-pointer transition-[filter] duration-200 hover:brightness-90"
+                            placeholder={<div className="media-loading h-32 w-40" />}
                             preview={{ mask: false }}
                           />
                         ))}

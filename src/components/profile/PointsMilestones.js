@@ -16,9 +16,10 @@ const GROUP_LABELS = {
 
 const EFFECT_SYMBOLS = { sparkles: "✦", hearts: "♥", snow: "❄", aurora: "✺" };
 
-const optionLabel = (field, key) =>
+// `fallback` is the label the API sends for server-hosted fonts.
+const optionLabel = (field, key, fallback) =>
   field === "name_font"
-    ? NAME_FONTS[key]?.label || key
+    ? NAME_FONTS[key]?.label || fallback || key
     : OPTION_LABELS[field]?.[key] || key;
 
 /**
@@ -106,7 +107,7 @@ export default function PointsMilestones({ editor, theme, username, avatarUrl, o
       options
         .filter((o) => o.required_points === minPoints && !["none", "default"].includes(o.key))
         .forEach((o) =>
-          items.push({ field, key: o.key, label: `${GROUP_LABELS[field]}: ${optionLabel(field, o.key)}` })
+          items.push({ field, key: o.key, label: `${GROUP_LABELS[field]}: ${optionLabel(field, o.key, o.label)}` })
         );
     });
     if (editor.animated_avatar.required_points === minPoints) {

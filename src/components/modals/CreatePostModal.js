@@ -18,6 +18,7 @@ import { getForumData, createPost, updatePost, getPostDetail } from "@/app/Api";
 import { useForumData } from "@/contexts/ForumDataContext";
 import { useMentionInput } from "@/hooks/useMentionInput";
 import { uploadInlineImage, collectImageFiles, compressImageForUpload } from "@/utils/imageUpload";
+import { compressVideoForUpload } from "@/utils/videoCompression";
 import MentionSuggestionsDropdown from "../ui/MentionSuggestionsDropdown";
 import {
   buildHtml,
@@ -444,10 +445,19 @@ const CreatePostModal = ({ open, onClose, isEditMode = false, postData = null, o
         formData.append(`document_files[${index}]`, file);
       });
 
-      // Add video files
-      videoFiles.forEach((file, index) => {
-        formData.append(`video_files[${index}]`, file);
-      });
+      // Add video files - compressed here (720p H.264), since the API no
+      // longer does it. The progress bar shows the "compressing" stage.
+      if (videoFiles.length > 0) {
+        setUploadStage("compressing");
+        setUploadProgress(0);
+        for (let index = 0; index < videoFiles.length; index++) {
+          const file = await compressVideoForUpload(videoFiles[index], {
+            onProgress: (ratio) =>
+              setUploadProgress(Math.round(((index + ratio) * 100) / videoFiles.length)),
+          });
+          formData.append(`video_files[${index}]`, file);
+        }
+      }
 
       setUploadStage("uploading");
       setUploadProgress(0);
@@ -1521,7 +1531,7 @@ const CreatePostModal = ({ open, onClose, isEditMode = false, postData = null, o
             {processing && uploadStage && (imageFiles.length > 0 || videoFiles.length > 0 || documentFiles.length > 0) && (
               <div className="w-full">
                 <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400 mb-1">
-                  <span>{uploadStage === "compressing" ? "Đang nén ảnh..." : "Đang tải lên..."}</span>
+                  <span>{uploadStage === "compressing" ? "Đang nén ảnh/video..." : "Đang tải lên..."}</span>
                   <span>{uploadProgress}%</span>
                 </div>
                 <div className="w-full h-2 bg-gray-200 dark:bg-neutral-600 rounded-full overflow-hidden">

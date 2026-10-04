@@ -62,6 +62,8 @@ export const OPTION_LABELS = {
     pop: "Nổi khối",
     toon: "Hoạt hình",
     neon: "Neon",
+    rainbow: "Cầu vồng",
+    outline: "Viền chữ",
   },
   profile_effect: {
     none: "Không",
@@ -92,6 +94,11 @@ export function normalizeTheme(theme) {
     primary_color: color(theme.primary_color, null),
     accent_color: color(theme.accent_color, null),
     banner_color: color(theme.banner_color, null),
+    // Second colour of each of the three above (1500-point tier): when set,
+    // that colour is drawn as a gradient. Null = solid.
+    primary_color_2: color(theme.primary_color_2, null),
+    accent_color_2: color(theme.accent_color_2, null),
+    banner_color_2: color(theme.banner_color_2, null),
     name_font: theme.name_font || "default",
     name_effect: theme.name_effect || "none",
     name_colors: [
@@ -138,9 +145,17 @@ export function themeColors(theme) {
   ];
 }
 
-export function themeGradient(theme, angle = 135) {
+/**
+ * Every colour stop of the theme gradient, in order: primary (+ its second
+ * colour), accent (+ its second colour). Two stops without gradient colours.
+ */
+export function themeStops(theme) {
   const [primary, accent] = themeColors(theme);
-  return `linear-gradient(${angle}deg, ${primary}, ${accent})`;
+  return [primary, theme?.primary_color_2, accent, theme?.accent_color_2].filter(Boolean);
+}
+
+export function themeGradient(theme, angle = 135) {
+  return `linear-gradient(${angle}deg, ${themeStops(theme).join(", ")})`;
 }
 
 /**
@@ -150,6 +165,11 @@ export function themeGradient(theme, angle = 135) {
 export function getBannerStyle(theme) {
   const normalized = normalizeTheme(theme);
   if (!normalized) return null;
+  if (normalized.banner_color && normalized.banner_color_2) {
+    return {
+      backgroundImage: `linear-gradient(135deg, ${normalized.banner_color}, ${normalized.banner_color_2})`,
+    };
+  }
   if (normalized.banner_color) return { backgroundColor: normalized.banner_color };
   if (hasThemeColors(normalized)) return { backgroundImage: themeGradient(normalized) };
   return null;
@@ -163,9 +183,9 @@ export function getBannerStyle(theme) {
 export function getSurfaceStyle(theme) {
   if (!hasThemeColors(theme)) return null;
 
-  const [primary, accent] = themeColors(normalizeTheme(theme));
+  const stops = themeStops(normalizeTheme(theme)).map((stop) => `${stop}33`);
   return {
-    backgroundImage: `linear-gradient(135deg, ${primary}33, ${accent}33)`,
+    backgroundImage: `linear-gradient(135deg, ${stops.join(", ")})`,
   };
 }
 
@@ -180,6 +200,8 @@ export function getSurfaceStyle(theme) {
  *   neon     — chữ sáng, phát quang theo màu, nhấp nháy nhẹ
  *   toon     — viền đậm và bóng đổ thẳng xuống như chữ hoạt hình
  *   pop      — bóng khối lệch chéo tạo cảm giác nổi 3D
+ *   rainbow  — bảy sắc cầu vồng chạy ngang chữ (không dùng màu người dùng chọn)
+ *   outline  — màu chữ (màu 1) có viền quanh chữ (màu 2), cả hai tự chọn
  */
 export function getNameEffect(theme) {
   const normalized = normalizeTheme(theme);
@@ -227,6 +249,30 @@ export function getNameEffect(theme) {
         style: {
           color: first,
           textShadow: `0.07em 0.07em 0 ${shade(first, -0.45)}`,
+        },
+        className: "",
+      };
+    case "rainbow":
+      return {
+        style: {
+          // Starts and ends on the same colour so the loop has no seam.
+          backgroundImage:
+            "linear-gradient(90deg, #ff4d4d, #ff9f1a, #ffe600, #2ed573, #1e90ff, #a55eea, #ff4d4d)",
+          backgroundSize: "200% auto",
+          WebkitBackgroundClip: "text",
+          backgroundClip: "text",
+          WebkitTextFillColor: "transparent",
+          color: "transparent",
+        },
+        className: "name-effect-rainbow",
+      };
+    case "outline":
+      return {
+        style: {
+          color: first,
+          // Stroke is painted under the fill, so only its outer half shows.
+          WebkitTextStroke: `0.12em ${second}`,
+          paintOrder: "stroke fill",
         },
         className: "",
       };
