@@ -28,9 +28,112 @@ export function passkeysSupported() {
   );
 }
 
-/** True when the user closed or cancelled the browser's passkey prompt. */
-export function isPasskeyCancel(error) {
-  return error?.name === "NotAllowedError" || error?.name === "AbortError";
+/**
+ * What to tell the user when the browser's passkey prompt fails.
+ *
+ * The browser reports "NotAllowedError" for all of: the user closed the
+ * prompt, the prompt timed out, and - on purpose, for privacy - "this device
+ * has no passkey for this site" or "this device can't make one". It can't be
+ * told apart from a cancel, so staying silent (as this used to) left the
+ * button looking dead on a device without a passkey. Say what to do instead.
+ *
+ * @param {unknown} error
+ * @param {"login" | "create"} mode
+ * @returns {string | null} null when there is nothing worth showing
+ */
+export function passkeyErrorMessage(error, mode) {
+  // An error answered by the API: its message is already for the user.
+  if (error?.response?.data?.message) return error.response.data.message;
+
+  switch (error?.name) {
+    case "AbortError":
+      return null;
+    case "NotAllowedError":
+      return mode === "create"
+        ? "Chưa tạo được passkey. Thiết bị cần có khóa màn hình (vân tay, khuôn mặt, mã PIN hoặc Windows Hello); nếu không, hãy chọn dùng điện thoại hoặc khóa bảo mật trong hộp thoại của trình duyệt."
+        : "Chưa đăng nhập được bằng passkey. Nếu thiết bị này chưa có passkey của bạn, hãy đăng nhập bằng mật khẩu rồi thêm passkey trong Cài đặt → Tài khoản.";
+    case "InvalidStateError":
+      return "Thiết bị này đã có passkey cho tài khoản của bạn.";
+    case "SecurityError":
+      return "Passkey chỉ dùng được trên chuyenbienhoa.com.";
+    case "NotSupportedError":
+      return "Thiết bị hoặc trình duyệt này không hỗ trợ loại passkey cần dùng.";
+    default:
+      return error?.message || "Có lỗi xảy ra với passkey. Vui lòng thử lại.";
+  }
+}
+
+/**
+ * Whether this device can hold a passkey itself (screen lock / Windows
+ * Hello / Touch ID). When it can't, a phone or a security key still works.
+ */
+export async function platformPasskeyAvailable() {
+  try {
+    return (
+      passkeysSupported() &&
+      typeof window.PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable === "function" &&
+      (await window.PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable())
+    );
+  } catch {
+    return false;
+  }
+}
+
+// The API's login challenge lives 5 minutes; stop using a fetched one a bit
+// before that.
+const LOGIN_OPTIONS_MAX_AGE_MS = 4 * 60 * 1000;
+
+/**
+ * Keeps login options ready before the user taps the passkey button.
+ *
+ * Safari (iPhone, iPad, Mac) only opens the passkey prompt while it is
+ * still handling the tap. Asking the API for the options first puts a
+ * network request between the tap and the prompt, and Safari then refuses
+ * with NotAllowedError. With the options fetched ahead, the tap goes
+ * straight to the prompt on every browser.
+ *
+ *   const prepared = prepareLoginOptions(fetchOptions);   // on mount
+ *   const options = await prepared.take();                 // in the click
+ *
+ * `fetchOptions` resolves to the API's { request_id, publicKey }. Each set
+ * of options is handed out once (the API accepts a challenge once), and the
+ * next one is fetched right away.
+ */
+export function prepareLoginOptions(fetchOptions) {
+  let ready = null; // { options, at }
+  let loading = null;
+
+  const load = () => {
+    loading = fetchOptions()
+      .then((options) => {
+        ready = { options, at: Date.now() };
+      })
+      .catch(() => {
+        ready = null;
+      })
+      .finally(() => {
+        loading = null;
+      });
+    return loading;
+  };
+
+  load();
+
+  return {
+    async take() {
+      const fresh = ready && Date.now() - ready.at < LOGIN_OPTIONS_MAX_AGE_MS ? ready.options : null;
+      ready = null;
+      if (fresh) {
+        load();
+        return fresh;
+      }
+      // Nothing usable yet (slow network, or the page sat open): fetch now.
+      // On Safari this attempt may be refused; the next tap has options ready.
+      const options = await fetchOptions();
+      load();
+      return options;
+    },
+  };
 }
 
 /**

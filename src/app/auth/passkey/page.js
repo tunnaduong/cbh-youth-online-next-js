@@ -1,7 +1,12 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { getPasskey, isPasskeyCancel, passkeysSupported } from "@/utils/webauthn";
+import {
+  getPasskey,
+  passkeyErrorMessage,
+  passkeysSupported,
+  prepareLoginOptions,
+} from "@/utils/webauthn";
 
 // App schemes this page may hand a login back to (same list as the API's
 // OAuth callback page).
@@ -35,6 +40,8 @@ export default function PasskeyAppLoginPage() {
   const [error, setError] = useState("");
   const params = useRef({ appChallenge: "", scheme: "" });
   const [returnUrl, setReturnUrl] = useState("");
+  // Login options fetched ahead of the tap (see prepareLoginOptions).
+  const prepared = useRef(null);
 
   useEffect(() => {
     const hash = new URLSearchParams(window.location.hash.replace(/^#/, ""));
@@ -51,7 +58,9 @@ export default function PasskeyAppLoginPage() {
     if (!passkeysSupported()) {
       setStatus("error");
       setError("Thiết bị này không hỗ trợ passkey.");
+      return;
     }
+    prepared.current = prepareLoginOptions(() => post("/v1.0/login/passkey/options"));
   }, []);
 
   const login = async () => {
@@ -59,7 +68,9 @@ export default function PasskeyAppLoginPage() {
     setStatus("working");
     setError("");
     try {
-      const options = await post("/v1.0/login/passkey/options");
+      const options = prepared.current
+        ? await prepared.current.take()
+        : await post("/v1.0/login/passkey/options");
       const credential = await getPasskey(options.publicKey);
       const { code } = await post("/v1.0/login/passkey", {
         request_id: options.request_id,
@@ -75,7 +86,7 @@ export default function PasskeyAppLoginPage() {
       window.location.href = url;
     } catch (err) {
       setStatus("idle");
-      if (!isPasskeyCancel(err)) setError(err.message);
+      setError(passkeyErrorMessage(err, "login") || "");
     }
   };
 
