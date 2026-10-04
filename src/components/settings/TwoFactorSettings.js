@@ -11,6 +11,7 @@ import {
   disableTwoFactor,
   regenerateTwoFactorRecoveryCodes,
   forgetTwoFactorTrustedDevices,
+  setTwoFactorSocialLogin,
 } from "@/app/Api";
 
 // Every method can be on at the same time; at login the user picks one.
@@ -184,6 +185,26 @@ export default function TwoFactorSettings() {
       message.error(errorMessage(err));
     } finally {
       setSendingCode(false);
+    }
+  };
+
+  // Whether Google/Facebook/Apple logins skip the second step. The switch
+  // flips at once and goes back if the API refuses.
+  const [savingSocial, setSavingSocial] = useState(false);
+  const toggleSocialLogin = async (skip) => {
+    if (savingSocial) return;
+    setSavingSocial(true);
+    const before = status;
+    setStatus({ ...status, skip_social_login: skip });
+    try {
+      const res = await setTwoFactorSocialLogin(skip);
+      setStatus(res.data.status);
+      message.success(res.data.message);
+    } catch (err) {
+      setStatus(before);
+      message.error(errorMessage(err));
+    } finally {
+      setSavingSocial(false);
     }
   };
 
@@ -548,6 +569,23 @@ export default function TwoFactorSettings() {
                 Xóa tất cả thiết bị tin cậy
               </Button>
             )}
+          </div>
+          <div className="flex items-start justify-between gap-3 pt-1">
+            <div className="min-w-0">
+              <p className="font-medium text-gray-900 dark:text-white">
+                Bỏ qua xác thực hai lớp khi đăng nhập bằng Google, Facebook, Apple
+              </p>
+              <p className="text-sm text-gray-500 dark:text-gray-400">
+                Bật: đăng nhập qua các dịch vụ này vào thẳng tài khoản. Tắt: vẫn
+                phải nhập mã như khi đăng nhập bằng mật khẩu.
+              </p>
+            </div>
+            <Switch
+              checked={status.skip_social_login !== false}
+              onChange={toggleSocialLogin}
+              loading={savingSocial}
+              aria-label="Bỏ qua xác thực hai lớp khi đăng nhập bằng Google, Facebook, Apple"
+            />
           </div>
         </div>
       )}
