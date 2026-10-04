@@ -88,7 +88,13 @@ const CLIENT_CRASH_MARKERS = [
 ];
 
 async function expectNoCrash(page: Page, path: string) {
-  const response = await page.goto(path, { waitUntil: "networkidle" });
+  // Not `waitUntil: "networkidle"`: the home page (and the routes that send a
+  // guest there, /chat and /auth/set-token) polls the public chat and keeps
+  // third-party requests open, so it may never be idle for 500ms and the
+  // navigation timed out although the page had rendered fine. Wait for the
+  // document, then give client-side rendering a bounded moment to settle.
+  const response = await page.goto(path, { waitUntil: "domcontentloaded" });
+  await page.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
 
   expect(response, `no response for ${path}`).not.toBeNull();
   expect(
