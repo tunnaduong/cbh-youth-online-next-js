@@ -28,6 +28,39 @@ export function passkeysSupported() {
   );
 }
 
+// A prompt the user saw can't be closed this fast: a failure inside this
+// window means the browser never opened it.
+const INSTANT_FAILURE_MS = 1000;
+const instantFailures = new WeakSet();
+
+async function runPrompt(start) {
+  const startedAt = Date.now();
+  try {
+    return await start();
+  } catch (error) {
+    if (error && typeof error === "object" && Date.now() - startedAt < INSTANT_FAILURE_MS) {
+      instantFailures.add(error);
+    }
+    throw error;
+  }
+}
+
+/**
+ * True inside another app's built-in browser (Android WebView, Facebook,
+ * Messenger, Instagram, Zalo, TikTok, Line). These expose the passkey API
+ * but refuse every request, so the prompt never shows.
+ */
+export function inEmbeddedBrowser() {
+  if (typeof navigator === "undefined") return false;
+  return /; wv\)|FBAN|FBAV|FB_IAB|Instagram|Zalo|TikTok|musical_ly|Line\//i.test(
+    navigator.userAgent || ""
+  );
+}
+
+function onAndroid() {
+  return typeof navigator !== "undefined" && /Android/i.test(navigator.userAgent || "");
+}
+
 /**
  * What to tell the user when the browser's passkey prompt fails.
  *
@@ -45,13 +78,28 @@ export function passkeyErrorMessage(error, mode) {
   // An error answered by the API: its message is already for the user.
   if (error?.response?.data?.message) return error.response.data.message;
 
+  const refused = error?.name === "NotAllowedError" || error?.name === "NotSupportedError";
+  if (refused && inEmbeddedBrowser()) {
+    return "Trình duyệt bên trong ứng dụng này không dùng được passkey. Hãy mở chuyenbienhoa.com bằng Chrome hoặc Safari rồi thử lại.";
+  }
+
   switch (error?.name) {
     case "AbortError":
       return null;
     case "NotAllowedError":
-      return mode === "create"
-        ? "Chưa tạo được passkey. Thiết bị cần có khóa màn hình (vân tay, khuôn mặt, mã PIN hoặc Windows Hello); nếu không, hãy chọn dùng điện thoại hoặc khóa bảo mật trong hộp thoại của trình duyệt."
-        : "Chưa đăng nhập được bằng passkey. Nếu thiết bị này chưa có passkey của bạn, hãy đăng nhập bằng mật khẩu rồi thêm passkey trong Cài đặt → Tài khoản.";
+      // Typical of Android browsers other than Chrome (and of phones without
+      // Google Play services): the API is there but nothing answers it.
+      if (instantFailures.has(error)) {
+        return onAndroid()
+          ? "Trình duyệt này không mở được hộp thoại passkey. Hãy thử lại; nếu vẫn không được, hãy mở trang bằng Chrome và kiểm tra điện thoại đã bật khóa màn hình và đã đăng nhập tài khoản Google."
+          : "Trình duyệt này không mở được hộp thoại passkey. Hãy thử lại; nếu vẫn không được, hãy mở trang bằng Chrome hoặc Safari.";
+      }
+      if (mode !== "create") {
+        return "Chưa đăng nhập được bằng passkey. Nếu thiết bị này chưa có passkey của bạn, hãy đăng nhập bằng mật khẩu rồi thêm passkey trong Cài đặt → Tài khoản.";
+      }
+      return onAndroid()
+        ? "Chưa tạo được passkey. Điện thoại cần có khóa màn hình (vân tay, khuôn mặt hoặc mã PIN) và đã đăng nhập tài khoản Google để lưu passkey; hãy dùng Chrome nếu trình duyệt này không lưu được."
+        : "Chưa tạo được passkey. Thiết bị cần có khóa màn hình (vân tay, khuôn mặt, mã PIN hoặc Windows Hello); nếu không, hãy chọn dùng điện thoại hoặc khóa bảo mật trong hộp thoại của trình duyệt.";
     case "InvalidStateError":
       return "Thiết bị này đã có passkey cho tài khoản của bạn.";
     case "SecurityError":
@@ -121,6 +169,8 @@ export function prepareLoginOptions(fetchOptions) {
 
   return {
     async take() {
+      // A fetch already on its way is quicker than starting another.
+      if (!ready && loading) await loading;
       const fresh = ready && Date.now() - ready.at < LOGIN_OPTIONS_MAX_AGE_MS ? ready.options : null;
       ready = null;
       if (fresh) {
@@ -141,7 +191,7 @@ export function prepareLoginOptions(fetchOptions) {
  * (POST /v1.0/passkeys/options). Returns the payload for POST /v1.0/passkeys.
  */
 export async function createPasskey(publicKey) {
-  const credential = await navigator.credentials.create({
+  const options = {
     publicKey: {
       ...publicKey,
       challenge: toBuffer(publicKey.challenge),
@@ -151,7 +201,8 @@ export async function createPasskey(publicKey) {
         id: toBuffer(item.id),
       })),
     },
-  });
+  };
+  const credential = await runPrompt(() => navigator.credentials.create(options));
 
   return {
     id: credential.id,
@@ -168,7 +219,7 @@ export async function createPasskey(publicKey) {
  * POST /v1.0/login/passkey.
  */
 export async function getPasskey(publicKey) {
-  const credential = await navigator.credentials.get({
+  const options = {
     publicKey: {
       ...publicKey,
       challenge: toBuffer(publicKey.challenge),
@@ -177,7 +228,8 @@ export async function getPasskey(publicKey) {
         id: toBuffer(item.id),
       })),
     },
-  });
+  };
+  const credential = await runPrompt(() => navigator.credentials.get(options));
 
   return {
     id: credential.id,

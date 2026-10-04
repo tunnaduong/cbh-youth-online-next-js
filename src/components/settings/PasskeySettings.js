@@ -12,6 +12,7 @@ import {
 } from "@/app/Api";
 import {
   createPasskey,
+  inEmbeddedBrowser,
   passkeyErrorMessage,
   passkeysSupported,
   platformPasskeyAvailable,
@@ -36,6 +37,8 @@ export default function PasskeySettings() {
   const [supported, setSupported] = useState(true);
   // null until checked; false = no screen lock / Windows Hello on this device.
   const [platformReady, setPlatformReady] = useState(null);
+  // Inside another app's built-in browser, where passkey prompts never open.
+  const [embedded, setEmbedded] = useState(false);
   // Registration options already fetched, kept so the prompt can be opened
   // again straight from a tap (Safari refuses it after a network request).
   const [pendingOptions, setPendingOptions] = useState(null);
@@ -47,6 +50,7 @@ export default function PasskeySettings() {
 
   useEffect(() => {
     setSupported(passkeysSupported());
+    setEmbedded(inEmbeddedBrowser());
     platformPasskeyAvailable().then(setPlatformReady);
     let cancelled = false;
     getPasskeys()
@@ -163,7 +167,14 @@ export default function PasskeySettings() {
         </p>
       )}
 
-      {supported && platformReady === false && (
+      {supported && embedded && (
+        <p className={`${hintClass} mt-3`}>
+          Bạn đang mở trang trong trình duyệt của một ứng dụng khác, nơi không
+          tạo được passkey. Hãy mở chuyenbienhoa.com bằng Chrome hoặc Safari.
+        </p>
+      )}
+
+      {supported && !embedded && platformReady === false && (
         <p className={`${hintClass} mt-3`}>
           Thiết bị này chưa bật khóa màn hình (vân tay, khuôn mặt, mã PIN hoặc
           Windows Hello) nên không tự lưu được passkey. Bạn vẫn có thể tạo
