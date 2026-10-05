@@ -39,9 +39,24 @@ function LoginClientInner() {
   const passkeyOptionsRef = useRef(null);
   useEffect(() => {
     if (!passkeysSupported()) return;
-    passkeyOptionsRef.current = prepareLoginOptions(() =>
+    const prepared = prepareLoginOptions(() =>
       getPasskeyLoginOptions().then((res) => res.data)
     );
+    passkeyOptionsRef.current = prepared;
+
+    // Keep them fresh while the page stays open or comes back from the
+    // background: the tap must never have to wait for the network.
+    const timer = setInterval(() => prepared.refresh(), 60 * 1000);
+    const onVisible = () => {
+      if (document.visibilityState === "visible") prepared.refresh();
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    window.addEventListener("pageshow", onVisible);
+    return () => {
+      clearInterval(timer);
+      document.removeEventListener("visibilitychange", onVisible);
+      window.removeEventListener("pageshow", onVisible);
+    };
   }, []);
 
   // Replace useForm with React state
@@ -212,16 +227,29 @@ function LoginClientInner() {
       return;
     }
 
+    // First thing, before any state update or `await`: start the system
+    // passkey sheet in the same turn as the tap. Mobile browsers (Safari on
+    // iPhone/iPad above all) do not open it once the tap is "over".
+    const readyOptions = passkeyOptionsRef.current?.takeReady() || null;
+    const prompt = readyOptions ? getPasskey(readyOptions.publicKey) : null;
+    // Awaited below; this only keeps a quick failure from being "unhandled".
+    prompt?.catch(() => {});
+
     setProcessing(true);
     setErrors({});
     setError(null);
     manualRedirectRef.current = false;
 
     try {
-      const options = passkeyOptionsRef.current
-        ? await passkeyOptionsRef.current.take()
-        : (await getPasskeyLoginOptions()).data;
-      const credential = await getPasskey(options.publicKey);
+      // No options in hand (first seconds of the page, or the network was
+      // slow): fetch them now and prompt after - fine on desktop and Android,
+      // and a second tap covers Safari.
+      const options =
+        readyOptions ||
+        (passkeyOptionsRef.current
+          ? await passkeyOptionsRef.current.take()
+          : (await getPasskeyLoginOptions()).data);
+      const credential = prompt ? await prompt : await getPasskey(options.publicKey);
       const response = await loginWithPasskey({
         request_id: options.request_id,
         credential,
