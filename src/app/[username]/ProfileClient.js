@@ -10,6 +10,7 @@ import { useState, useEffect } from "react";
 import FollowButton from "@/components/profile/FollowButton";
 import AvatarFrame from "@/components/profile/AvatarFrame";
 import UserName from "@/components/profile/UserName";
+import NameIcon from "@/components/profile/NameIcon";
 import useOwnProfileTheme from "@/hooks/useOwnProfileTheme";
 import StyledUsername from "@/components/profile/StyledUsername";
 import { getBannerStyle, getSurfaceStyle } from "@/lib/profileTheme";
@@ -987,7 +988,7 @@ export default function ProfileClient({ initialProfile, activeTab, username }) {
                         </svg>
                       </span>
                     )}
-                    <MemberTierBadge tier={profile.member_tier} className="text-xl" />
+                    <NameIcon theme={profile.theme} tier={profile.member_tier} className="text-xl" />
                   </span>
                 </h1>
                 <p className={`text-sm ${mobileMutedTextClass}`}>
@@ -1140,9 +1141,8 @@ export default function ProfileClient({ initialProfile, activeTab, username }) {
                     variant="full"
                     verified={profile.verified == "1"}
                     badgeClassName="!text-xl ml-1"
-                  >
-                    <MemberTierBadge tier={profile.member_tier} className="text-xl" />
-                  </UserName>
+                    tier={profile.member_tier}
+                  />
                 </h1>
                 <p className="max-w-full truncate text-sm text-gray-500 dark:text-gray-400">
                   <StyledUsername username={profile.username} theme={profile.theme} variant="full" />
@@ -1444,9 +1444,8 @@ export default function ProfileClient({ initialProfile, activeTab, username }) {
                       verified={profile.verified == "1"}
                       nameClassName="dark:text-neutral-300"
                       badgeClassName="!text-xl ml-1"
-                    >
-                      <MemberTierBadge tier={profile.member_tier} className="text-xl" />
-                    </UserName>
+                      tier={profile.member_tier}
+                    />
                   </h1>
                   <p className="truncate text-sm text-gray-500 dark:text-gray-400">
                     <StyledUsername username={profile.username} theme={profile.theme} variant="full" />

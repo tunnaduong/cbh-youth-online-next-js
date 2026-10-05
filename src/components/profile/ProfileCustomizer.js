@@ -11,6 +11,7 @@ import ProfilePreviewCard from "@/components/profile/ProfilePreviewCard";
 import PointsMilestones from "@/components/profile/PointsMilestones";
 import OptionPickerModal from "@/components/profile/OptionPickerModal";
 import NameStyleModal from "@/components/profile/NameStyleModal";
+import StyledUsername from "@/components/profile/StyledUsername";
 import ProfileEffect from "@/components/profile/ProfileEffect";
 import ProfileFrame from "@/components/profile/ProfileFrame";
 import { getProfile, updateAvatar, updateCover, updateProfile } from "@/app/Api";
@@ -37,6 +38,9 @@ const DEFAULT_THEME = {
   // Pro (2000 points)
   name_icon: "none",
   username_style: "default",
+  username_font: "default",
+  username_effect: "none",
+  username_colors: [DEFAULT_PRIMARY, DEFAULT_ACCENT],
 };
 
 const OPTION_FIELDS = [
@@ -47,6 +51,8 @@ const OPTION_FIELDS = [
   "profile_frame",
   "name_icon",
   "username_style",
+  "username_font",
+  "username_effect",
 ];
 const GRADIENT_FIELDS = ["primary_color_2", "accent_color_2", "banner_color_2"];
 
@@ -233,7 +239,14 @@ export default function ProfileCustomizer({ username }) {
   const save = async (theme) => {
     try {
       setSaving(true);
-      await updateProfile(username, { profile_theme: theme });
+      // An API from before the username had its own style rejects the keys.
+      const payload = theme ? { ...theme } : theme;
+      if (payload && !editor?.options?.username_font) {
+        delete payload.username_font;
+        delete payload.username_effect;
+        delete payload.username_colors;
+      }
+      await updateProfile(username, { profile_theme: payload });
       const next = theme || DEFAULT_THEME;
       setSaved(next);
       setDraft(next);
@@ -362,7 +375,9 @@ export default function ProfileCustomizer({ username }) {
   const iconOptions = editor.options.name_icon || [];
   const iconUnlocked = iconOptions.some((o) => o.key !== "none" && o.unlocked);
   const iconPoints = iconOptions.find((o) => o.key !== "none")?.required_points;
-  const usernameOption = optionOf("username_style", "name");
+  // The @username's own style: the first locked font tells the points needed.
+  const usernameFonts = editor.options.username_font || null;
+  const usernameOption = usernameFonts?.find((o) => o.key !== "default") || null;
 
   const profileName = profile.profile?.profile_name || profile.username;
   const avatarUrl = profile.profile?.profile_picture;
@@ -599,27 +614,29 @@ export default function ProfileCustomizer({ username }) {
                 </>
               )}
               {usernameOption && (
-                <div className="flex items-center justify-between pt-3">
+                <div className="flex items-center justify-between gap-3 pt-3">
                   <div className="min-w-0">
                     <p className="text-sm font-medium text-gray-800 dark:text-neutral-200">
-                      Tên người dùng theo kiểu tên
+                      Kiểu tên người dùng
                     </p>
                     <p className="mt-0.5 flex items-center gap-1 text-xs text-gray-500 dark:text-neutral-400">
                       {!usernameOption.unlocked && <Lock className="w-3 h-3 flex-shrink-0" />}
                       <span className="min-w-0 break-words">
-                        @{username} dùng phông và hiệu ứng của tên
+                        Phông, hiệu ứng và màu riêng cho @{username}
                         {!usernameOption.unlocked && usernameOption.required_points
                           ? ` · ${usernameOption.required_points} điểm`
                           : ""}
                       </span>
                     </p>
                   </div>
-                  <Switch
-                    className="ml-4 flex-shrink-0"
-                    aria-label="Tên người dùng theo kiểu tên"
-                    checked={draft.username_style === "name"}
-                    onChange={(checked) => update({ username_style: checked ? "name" : "default" })}
-                  />
+                  <button
+                    type="button"
+                    aria-label="Kiểu tên người dùng"
+                    onClick={() => setPicker("username")}
+                    className="max-w-[55%] flex-shrink-0 truncate rounded-lg bg-gray-100 px-3 py-1.5 text-sm text-gray-600 transition-colors hover:bg-gray-200 dark:bg-neutral-700 dark:text-neutral-300 dark:hover:bg-neutral-600"
+                  >
+                    <StyledUsername username={username} theme={draft} variant="full" />
+                  </button>
                 </div>
               )}
             </Section>
@@ -724,6 +741,19 @@ export default function ProfileCustomizer({ username }) {
         onApply={update}
         onClose={() => setPicker(null)}
       />
+      {usernameFonts && (
+        <NameStyleModal
+          open={picker === "username"}
+          prefix="username"
+          title="Kiểu tên người dùng"
+          theme={draft}
+          options={editor.options}
+          profileName={`@${username}`}
+          // Its own style replaces the older "same as the name" setting.
+          onApply={(style) => update({ ...style, username_style: "default" })}
+          onClose={() => setPicker(null)}
+        />
+      )}
 
       {dirty && (
         <div className="fixed inset-x-0 bottom-4 z-50 flex justify-center px-4 pointer-events-none">

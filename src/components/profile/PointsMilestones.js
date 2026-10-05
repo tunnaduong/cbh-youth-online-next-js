@@ -129,6 +129,9 @@ export default function PointsMilestones({ editor, theme, username, avatarUrl, o
       items.push({ field: "theme_colors", key: "colors", label: "Màu giao diện & màu ảnh bìa" });
     }
     Object.entries(editor.options).forEach(([field, options]) => {
+      // The username's fonts and effects are the name's over again: the
+      // list says "username style" once (the username_style line).
+      if (field === "username_font" || field === "username_effect") return;
       options
         .filter((o) => o.required_points === minPoints && !["none", "default"].includes(o.key))
         .forEach((o) =>
@@ -137,7 +140,10 @@ export default function PointsMilestones({ editor, theme, username, avatarUrl, o
             key: o.key,
             icon: o.icon,
             tier: o.tier,
-            label: `${GROUP_LABELS[field] || field}: ${optionLabel(field, o.key, o.label || o.icon)}`,
+            label:
+              field === "username_style"
+                ? "Kiểu tên người dùng riêng (phông, hiệu ứng, màu)"
+                : `${GROUP_LABELS[field] || field}: ${optionLabel(field, o.key, o.label || o.icon)}`,
           })
         );
     });
@@ -238,7 +244,8 @@ export default function PointsMilestones({ editor, theme, username, avatarUrl, o
               </div>
               <div className="mt-2.5 flex flex-wrap gap-1.5">
                 {items.map((item) => {
-                  const tryable = item.field in GROUP_LABELS;
+                  // The username style is set in its own dialog, not by one tap here.
+                  const tryable = item.field in GROUP_LABELS && item.field !== "username_style";
                   return (
                     <button
                       key={`${item.field}-${item.key}`}
