@@ -63,7 +63,7 @@ const TIER_CONFIG = {
     color: "text-rose-500",
     bg: "bg-rose-50 dark:bg-rose-900/30",
   },
-  promax: {
+  pro: {
     label: "Thành viên Pro",
     icon: (
       // Crown / vương miện
