@@ -16,6 +16,7 @@ import { usePathname } from "next/navigation";
 import UpdateNotification from "@/components/UpdateNotification";
 import AppBanner from "@/components/AppBanner";
 import MaintenanceGuard from "@/components/maintenance/MaintenanceGuard";
+import LoginApprovalPrompt from "@/components/LoginApprovalPrompt";
 import dynamic from "next/dynamic";
 
 const ChatWidget = dynamic(() => import("@/components/chat/ChatWidget"), {
@@ -76,6 +77,8 @@ export default function ClientProviders({ children }) {
                         <ChatWidget />
                         <UpdateNotification />
                         <MaintenanceGuard />
+                        {/* A login elsewhere waiting to be approved here (2FA) */}
+                        <LoginApprovalPrompt />
                       </ProgressProvider>
                     </ForumDataProvider>
                   </PostRefreshProvider>

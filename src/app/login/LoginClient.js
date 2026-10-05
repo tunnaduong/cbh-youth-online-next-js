@@ -5,6 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
 import CustomColorButton from "@/components/ui/CustomColorButton";
+import DeviceApprovalStep from "@/components/auth/DeviceApprovalStep";
 import InputError from "@/components/ui/InputError";
 import { Checkbox, Input, message } from "antd";
 import { KeyOutlined, LockOutlined, SafetyOutlined, UserOutlined } from "@ant-design/icons";
@@ -65,6 +66,9 @@ function LoginClientInner() {
   // when email is the method it offers first.
   const [challengeMethod, setChallengeMethod] = useState(null);
   const [emailSent, setEmailSent] = useState(false);
+  // Method "device" (approve on a logged-in device) has no code; this
+  // switches its step to typing a recovery code instead.
+  const [useRecovery, setUseRecovery] = useState(false);
 
   const openChallenge = (data) => {
     setChallenge(data);
@@ -93,6 +97,7 @@ function LoginClientInner() {
 
   const leaveChallenge = () => {
     setChallenge(null);
+    setUseRecovery(false);
     setCode("");
     setErrors({});
   };
@@ -109,7 +114,7 @@ function LoginClientInner() {
       const response = await verifyTwoFactorLogin({
         challenge_token: challenge.challenge_token,
         code: code.trim(),
-        method: challengeMethod || undefined,
+        method: challengeMethod && challengeMethod !== "device" ? challengeMethod : undefined,
         remember_device: rememberDevice,
         device_token: getTwoFactorDeviceToken() || undefined,
       });
@@ -176,9 +181,21 @@ function LoginClientInner() {
       ? [challenge.method]
       : [];
 
+  // Approved on another device: same ending as a typed code.
+  const finishApprovedLogin = (data) => {
+    if (data.device_token) setTwoFactorDeviceToken(data.device_token);
+    setCurrentUser(data.user);
+    setUserToken(data.token);
+    manualRedirectRef.current = true;
+    router.replace(getRedirectUrl());
+  };
+
+  const deviceStep = challengeMethod === "device" && !useRecovery;
+
   const chooseMethod = (method) => {
     if (method === challengeMethod || processing) return;
     setChallengeMethod(method);
+    setUseRecovery(false);
     setCode("");
     setErrors({});
     setError(null);
@@ -382,18 +399,59 @@ function LoginClientInner() {
                           : "text-gray-600 hover:bg-gray-50 dark:text-neutral-300 dark:hover:bg-neutral-600"
                       }`}
                     >
-                      {item === "email" ? "Mã qua email" : "Ứng dụng xác thực"}
+                      {item === "email"
+                        ? "Mã qua email"
+                        : item === "device"
+                          ? "Thiết bị khác"
+                          : "Ứng dụng xác thực"}
                     </button>
                   ))}
                 </div>
               )}
               <p className="mt-3 mb-4 text-sm text-center text-gray-500 dark:text-neutral-400">
-                {challengeMethod === "email"
+                {deviceStep
+                  ? "Mở CBH Youth Online trên một thiết bị đang đăng nhập và chọn số dưới đây để cho phép đăng nhập."
+                  : challengeMethod === "device"
+                    ? "Nhập một mã khôi phục của bạn."
+                    : challengeMethod === "email"
                   ? emailSent
                     ? `Nhập mã 6 số được gửi tới ${challenge.email || "email của bạn"}.`
                     : `Bấm "Gửi lại mã" để nhận mã 6 số qua ${challenge.email || "email của bạn"}.`
                   : "Nhập mã 6 số từ ứng dụng xác thực của bạn."}
               </p>
+              {deviceStep ? (
+                <div className="space-y-4">
+                  <DeviceApprovalStep
+                    challenge={challenge}
+                    rememberDevice={rememberDevice}
+                    onRememberChange={setRememberDevice}
+                    onApproved={finishApprovedLogin}
+                    onExpired={(text) => {
+                      leaveChallenge();
+                      setError(text);
+                    }}
+                  />
+                  <div className="flex justify-between text-sm">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        leaveChallenge();
+                        setError(null);
+                      }}
+                      className="text-primary-500 hover:underline"
+                    >
+                      Quay lại đăng nhập
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setUseRecovery(true)}
+                      className="text-primary-500 hover:underline"
+                    >
+                      Dùng mã khôi phục
+                    </button>
+                  </div>
+                </div>
+              ) : (
               <form className="space-y-4" onSubmit={submitCode}>
                 <div className="space-y-2">
                   <Input
@@ -453,7 +511,20 @@ function LoginClientInner() {
                   Không lấy được mã? Bạn có thể nhập một mã khôi phục vào ô
                   trên.
                 </p>
+                {challengeMethod === "device" && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setCode("");
+                      setUseRecovery(false);
+                    }}
+                    className="block w-full text-center text-sm text-primary-500 hover:underline"
+                  >
+                    Quay lại xác nhận trên thiết bị
+                  </button>
+                )}
               </form>
+              )}
             </div>
           ) : (
           <div className="p-6 pt-0">
