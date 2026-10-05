@@ -1,0 +1,54 @@
+name: Update dependencies (within the major)
+
+# Raises every dependency to the newest release of the major version it is
+# already on - fixes and additions, nothing declared breaking - and commits
+# package.json + package-lock.json back to the branch it ran on. For machines
+# without Node: push this branch (or run it by hand), then open a pull request
+# so the tests and the preview build check the result.
+#
+# 0.x packages only take patch releases: before 1.0 a minor release may break.
+
+on:
+  workflow_dispatch:
+  push:
+    branches: ["chore/deps-minor"]
+    paths: [".github/workflows/deps-minor.yml"]
+
+permissions:
+  contents: write
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Raise the versions in package.json
+        run: |
+          cat > "$RUNNER_TEMP/ncurc.js" <<'JS'
+          module.exports = {
+            upgrade: true,
+            target: (name, semver) => (semver[0] && semver[0].major === "0" ? "patch" : "minor"),
+          };
+          JS
+          npx --yes npm-check-updates@17 --configFilePath "$RUNNER_TEMP" --configFileName ncurc.js
+
+      - name: Install (rewrites package-lock.json)
+        run: npm install --no-audit --no-fund
+
+      - name: Commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add package.json package-lock.json
+          if git diff --cached --quiet; then
+            echo "Everything is already up to date."
+          else
+            git commit -m "chore(deps): newest releases within each major version"
+            git push
+          fi
