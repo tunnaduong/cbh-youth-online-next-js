@@ -3,16 +3,14 @@ name: Update dependencies (within the major)
 # Raises every dependency to the newest release of the major version it is
 # already on - fixes and additions, nothing declared breaking - and commits
 # package.json + package-lock.json back to the branch it ran on. For machines
-# without Node: push this branch (or run it by hand), then open a pull request
-# so the tests and the preview build check the result.
+# without Node: run it by hand on a new branch (Actions -> this workflow ->
+# Run workflow -> pick the branch), then open a pull request so the tests and
+# the preview build check the result.
 #
 # 0.x packages only take patch releases: before 1.0 a minor release may break.
 
 on:
   workflow_dispatch:
-  push:
-    branches: ["chore/deps-minor"]
-    paths: [".github/workflows/deps-minor.yml"]
 
 permissions:
   contents: write
