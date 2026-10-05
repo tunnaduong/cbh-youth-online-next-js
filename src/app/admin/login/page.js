@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
@@ -10,6 +10,7 @@ import { ADMIN_SESSION_KEY } from "../AdminShell";
 import * as Api from "@/app/Api";
 import { setAuthCookie, getAuthCookie } from "@/utils/cookies";
 import { getTwoFactorDeviceToken } from "@/utils/twoFactorDevice";
+import Turnstile from "@/components/auth/Turnstile";
 
 // The admin page AdminShell sent us here from (?next=), limited to /admin
 // paths so the param can't redirect anywhere else.
@@ -38,15 +39,20 @@ export default function AdminLoginPage() {
     }
   }, [router]);
 
+  const turnstileRef = useRef(null);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
+    // Before the spinner replaces the form (and the Turnstile widget in it).
+    const turnstileToken = await turnstileRef.current?.take();
     setLoading(true);
 
     try {
       const response = await Api.loginRequest({
         username,
         password,
+        turnstile_token: turnstileToken || undefined,
         // Lets a device the admin chose to remember skip the two-factor step
         device_token: getTwoFactorDeviceToken() || undefined,
       });
@@ -152,6 +158,8 @@ export default function AdminLoginPage() {
               {error}
             </p>
           )}
+
+          <Turnstile ref={turnstileRef} />
 
           <Button
             type="primary"
