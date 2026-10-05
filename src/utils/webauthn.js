@@ -99,7 +99,7 @@ export function passkeyErrorMessage(error, mode) {
       }
       return onAndroid()
         ? "Chưa tạo được passkey. Điện thoại cần có khóa màn hình (vân tay, khuôn mặt hoặc mã PIN) và đã đăng nhập tài khoản Google để lưu passkey; hãy dùng Chrome nếu trình duyệt này không lưu được."
-        : "Chưa tạo được passkey. Passkey được lưu ngay trên thiết bị này, nên thiết bị cần có khóa màn hình (vân tay, khuôn mặt, mã PIN hoặc Windows Hello).";
+        : "Chưa tạo được passkey. Hãy thử lại và chọn một cách xác nhận mà thiết bị có: khóa màn hình (vân tay, khuôn mặt, mã PIN, Windows Hello), khóa bảo mật hoặc điện thoại.";
     case "InvalidStateError":
       return "Thiết bị này đã có passkey cho tài khoản của bạn.";
     case "SecurityError":
@@ -168,6 +168,30 @@ export function prepareLoginOptions(fetchOptions) {
   load();
 
   return {
+    /**
+     * Options that are ready right now, or null - without waiting for
+     * anything. For the tap handler: mobile browsers (Safari on iPhone and
+     * iPad above all) only open the system passkey sheet when the request
+     * starts in the same turn as the tap, so the prompt must be started
+     * before any `await`.
+     */
+    takeReady() {
+      const fresh = ready && Date.now() - ready.at < LOGIN_OPTIONS_MAX_AGE_MS ? ready.options : null;
+      if (fresh) {
+        ready = null;
+        load();
+      }
+      return fresh;
+    },
+    /**
+     * Fetch new options when the ones in hand are getting old (a login page
+     * left open, a tab that was in the background), so a tap always finds
+     * some ready.
+     */
+    refresh() {
+      if (loading) return;
+      if (!ready || Date.now() - ready.at > LOGIN_OPTIONS_MAX_AGE_MS / 2) load();
+    },
     async take() {
       // A fetch already on its way is quicker than starting another.
       if (!ready && loading) await loading;
