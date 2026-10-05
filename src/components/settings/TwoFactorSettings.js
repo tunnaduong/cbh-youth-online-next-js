@@ -6,6 +6,7 @@ import {
   getTwoFactorStatus,
   setupTwoFactorTotp,
   setupTwoFactorEmail,
+  setupTwoFactorDevice,
   sendTwoFactorEmailCode,
   confirmTwoFactor,
   disableTwoFactor,
@@ -25,6 +26,11 @@ const METHODS = [
     id: "totp",
     label: "Ứng dụng xác thực",
     hint: "Lấy mã từ Google Authenticator, Microsoft Authenticator...",
+  },
+  {
+    id: "device",
+    label: "Xác nhận trên thiết bị đã đăng nhập",
+    hint: "Khi đăng nhập ở thiết bị mới, bạn chọn đúng số trên một thiết bị đang đăng nhập. Cần ít nhất một thiết bị khác đang đăng nhập; hãy giữ mã khôi phục.",
   },
 ];
 
@@ -95,6 +101,22 @@ export default function TwoFactorSettings() {
 
   const startSetup = (method) =>
     run(async () => {
+      // Approving on a logged-in device has no code to confirm: the password
+      // was the proof, so it is on as soon as the API answers.
+      if (method === "device") {
+        const res = await setupTwoFactorDevice({ password });
+        setStatus(res.data.status);
+        setPassword("");
+        if (res.data.recovery_codes?.length) {
+          setRecoveryCodes(res.data.recovery_codes);
+          setFlow({ type: "recovery" });
+        } else {
+          reset();
+          message.success(res.data.message || "Đã bật phương thức xác thực.");
+        }
+        return;
+      }
+
       const request = method === "totp" ? setupTwoFactorTotp : setupTwoFactorEmail;
       const res = await request({ password });
       setSetup(res.data);
