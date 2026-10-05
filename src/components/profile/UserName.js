@@ -19,6 +19,8 @@ import Badges from "@/components/ui/Badges";
  *   variant       — như `StyledName`; mặc định "compact" cho danh sách
  *   verified      — hiện tích xác minh
  *   className     — class của cả hàng (cỡ chữ, màu, độ đậm)
+ *   tier — mốc của người dùng (id hoặc { id }) khi nó không nằm trong theme;
+ *          biểu tượng mốc hiện sau tên khi người dùng không tự chọn biểu tượng
  *   nameClassName — class thêm cho riêng phần tên
  *   badgeClassName — class thêm cho tích xác minh
  */
@@ -27,6 +29,7 @@ export default function UserName({
   theme = null,
   variant = "compact",
   verified = false,
+  tier = null,
   className = "",
   nameClassName = "",
   badgeClassName = "",
@@ -43,7 +46,7 @@ export default function UserName({
       >
         {name}
       </StyledName>
-      <NameIcon theme={theme} />
+      <NameIcon theme={theme} tier={tier} />
       {verified && (
         <Badges color="text-primary-500" className={`flex-shrink-0 ${badgeClassName}`} />
       )}

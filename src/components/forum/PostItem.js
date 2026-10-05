@@ -11,7 +11,6 @@ import {
   ChatboxOutline,
 } from "react-ionicons";
 import { generatePostSlug } from "@/utils/slugify";
-import MemberTierBadge from "@/components/ui/MemberTierBadge";
 import UserName from "@/components/profile/UserName";
 import UserAvatar from "@/components/profile/UserAvatar";
 import PhotoCollage from "@/components/ui/PhotoCollage";
@@ -1016,9 +1015,8 @@ export default function PostItem({
                       post.author?.profile?.verified === true ||
                       post.author?.profile?.verified === "1"
                     }
-                  >
-                    <MemberTierBadge tier={post.author?.member_tier} />
-                  </UserName>
+                    tier={post.author?.member_tier}
+                  />
                 </Link>
               </>
             )}
