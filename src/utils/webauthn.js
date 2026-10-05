@@ -168,6 +168,30 @@ export function prepareLoginOptions(fetchOptions) {
   load();
 
   return {
+    /**
+     * Options that are ready right now, or null - without waiting for
+     * anything. For the tap handler: mobile browsers (Safari on iPhone and
+     * iPad above all) only open the system passkey sheet when the request
+     * starts in the same turn as the tap, so the prompt must be started
+     * before any `await`.
+     */
+    takeReady() {
+      const fresh = ready && Date.now() - ready.at < LOGIN_OPTIONS_MAX_AGE_MS ? ready.options : null;
+      if (fresh) {
+        ready = null;
+        load();
+      }
+      return fresh;
+    },
+    /**
+     * Fetch new options when the ones in hand are getting old (a login page
+     * left open, a tab that was in the background), so a tap always finds
+     * some ready.
+     */
+    refresh() {
+      if (loading) return;
+      if (!ready || Date.now() - ready.at > LOGIN_OPTIONS_MAX_AGE_MS / 2) load();
+    },
     async take() {
       // A fetch already on its way is quicker than starting another.
       if (!ready && loading) await loading;
