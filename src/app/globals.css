@@ -1274,3 +1274,20 @@ body {
     display: none;
   }
 }
+
+/* iPhone Safari zooms the whole page in when a focused field's text is
+   smaller than 16px - and stays zoomed. Fields are 14px by design (antd), so
+   on touch screens they get 16px: no zoom, and people can still pinch to
+   zoom, which a viewport "maximum-scale=1" would take away. */
+@media (hover: none) and (pointer: coarse) {
+  input,
+  textarea,
+  select,
+  .ant-input,
+  .ant-input-affix-wrapper > input.ant-input,
+  .ant-select-selection-search-input,
+  .ant-input-number-input,
+  .ant-picker-input > input {
+    font-size: 16px !important;
+  }
+}
