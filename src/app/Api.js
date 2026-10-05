@@ -5,8 +5,10 @@ export const loginRequest = (params) => {
   return Api.postRequest("/v1.0/login", params);
 };
 
-export const logoutRequest = () => {
-  return Api.postRequest("/v1.0/logout");
+// `params.push_endpoint`: this browser's web push subscription, so the API
+// stops pushing to it for the account being logged out.
+export const logoutRequest = (params) => {
+  return Api.postRequest("/v1.0/logout", params);
 };
 
 export const signupRequest = (params) => {
