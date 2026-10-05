@@ -51,3 +51,6 @@ task here:
   deploy checks plus a review. Vietnamese commit messages.
 - `?app=true` / `src/utils/appMode.js` mark pages running inside the mobile
   app's WebView - respect it when adding sign-out, splash or "get the app" UI.
+- **UI work must follow INFO.md's "Design system" section** (colour pairs,
+  cards, buttons, antd usage, loading states, dark mode). A large redesign
+  updates that section in the same commit.
