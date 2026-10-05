@@ -2,7 +2,21 @@
 
 import { useEffect, useState } from "react";
 import { Button, Popconfirm, message } from "antd";
-import { Monitor, Smartphone } from "lucide-react";
+import {
+  AppWindow,
+  CalendarClock,
+  ChevronDown,
+  ChevronUp,
+  Clock,
+  Cpu,
+  Fingerprint,
+  KeyRound,
+  LogIn,
+  LogOut,
+  Monitor,
+  Smartphone,
+  UserPlus,
+} from "lucide-react";
 import dayjs from "dayjs";
 import {
   getDeviceSessions,
@@ -16,20 +30,47 @@ const PLATFORM_LABELS = {
   android: "Ứng dụng Android",
 };
 
+// How the login was made (`login_method` from the API; missing on logins
+// from before the API recorded it).
+const LOGIN_METHODS = {
+  password: { label: "Mật khẩu", icon: KeyRound },
+  google: { label: "Google", icon: LogIn },
+  facebook: { label: "Facebook", icon: LogIn },
+  apple: { label: "Apple", icon: LogIn },
+  passkey: { label: "Passkey", icon: Fingerprint },
+  register: { label: "Đăng ký tài khoản", icon: UserPlus },
+  app: { label: "Mở từ ứng dụng di động", icon: Smartphone },
+};
+
 const errorMessage = (error) =>
   error.response?.data?.message || error.message || "Có lỗi xảy ra.";
 
-function describe(session) {
-  const platform = PLATFORM_LABELS[session.platform];
-  const version = session.app_version ? ` ${session.app_version}` : "";
-  return [session.device_model, platform ? `${platform}${version}` : null]
-    .filter(Boolean)
-    .join(" · ");
+const formatTime = (value) =>
+  value ? dayjs(value).format("HH:mm DD/MM/YYYY") : null;
+
+function DetailRow({ icon: Icon, label, value, last }) {
+  return (
+    <div
+      className={`flex items-center gap-3 py-2.5 ${
+        last ? "" : "border-b border-gray-200 dark:border-neutral-600"
+      }`}
+    >
+      <Icon className="h-[18px] w-[18px] flex-shrink-0 text-gray-400 dark:text-neutral-400" />
+      <div className="min-w-0">
+        <p className="text-xs text-gray-500 dark:text-gray-400">{label}</p>
+        <p className="break-words text-sm font-medium text-gray-900 dark:text-white">
+          {value}
+        </p>
+      </div>
+    </div>
+  );
 }
 
 /**
  * "Logged-in devices" section of the account settings: every device the
- * account is signed in on, with a way to sign the others out.
+ * account is signed in on, with a way to sign the others out. One card per
+ * device - the basics first, the rest (model, version, how it logged in,
+ * times, log out) when the card is opened.
  */
 export default function DeviceSessions() {
   const [sessions, setSessions] = useState(null);
@@ -37,6 +78,7 @@ export default function DeviceSessions() {
   const [loadError, setLoadError] = useState(false);
   const [busyId, setBusyId] = useState(null);
   const [loggingOutAll, setLoggingOutAll] = useState(false);
+  const [expandedId, setExpandedId] = useState(null);
 
   const load = async () => {
     try {
@@ -82,6 +124,120 @@ export default function DeviceSessions() {
   const hintClass = "text-sm text-gray-500 dark:text-gray-400";
   const others = (sessions || []).filter((session) => !session.is_current);
 
+  const renderSession = (session) => {
+    const expanded = expandedId === session.id;
+    const DeviceIcon = session.platform === "web" ? Monitor : Smartphone;
+    const platform = PLATFORM_LABELS[session.platform] || null;
+    const method = LOGIN_METHODS[session.login_method] || null;
+    const methodText = method
+      ? `${method.label}${session.login_two_factor ? " · xác thực hai lớp" : ""}`
+      : "Không rõ";
+    const summary = [
+      platform && session.app_version ? `${platform} ${session.app_version}` : platform,
+      formatTime(session.last_used_at || session.created_at),
+    ]
+      .filter(Boolean)
+      .join("  •  ");
+
+    const details = [
+      session.device_model && { icon: Cpu, label: "Mẫu thiết bị", value: session.device_model },
+      platform && {
+        icon: AppWindow,
+        label: "Nền tảng",
+        value: session.app_version ? `${platform} · phiên bản ${session.app_version}` : platform,
+      },
+      { icon: method?.icon || LogIn, label: "Phương thức đăng nhập", value: methodText },
+      {
+        icon: CalendarClock,
+        label: "Đăng nhập lúc",
+        value: formatTime(session.created_at) || "-",
+      },
+      {
+        icon: Clock,
+        label: "Hoạt động lần cuối",
+        value: formatTime(session.last_used_at) || "Chưa hoạt động",
+      },
+    ].filter(Boolean);
+
+    const bodyId = `device-session-${session.id}`;
+
+    return (
+      <li
+        key={session.id}
+        className="overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-neutral-600 dark:bg-neutral-700"
+      >
+        <button
+          type="button"
+          onClick={() => setExpandedId(expanded ? null : session.id)}
+          aria-expanded={expanded}
+          aria-controls={bodyId}
+          className="flex w-full items-center gap-3 p-4 text-left"
+        >
+          <span className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-gray-100 dark:bg-neutral-600">
+            <DeviceIcon className="h-6 w-6 text-primary-500 dark:text-[#6bcf60]" />
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="block truncate text-base font-semibold text-gray-900 dark:text-white">
+              {session.device_name || "Thiết bị không xác định"}
+            </span>
+            {summary && (
+              <span className={`${hintClass} block truncate`}>{summary}</span>
+            )}
+            <span className="mt-2 flex flex-wrap gap-1.5">
+              {session.is_current && (
+                <span className="rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-700 dark:bg-green-900 dark:text-green-300">
+                  Thiết bị này
+                </span>
+              )}
+              {method && (
+                <span className="rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-700 dark:bg-neutral-600 dark:text-neutral-200">
+                  {method.label}
+                </span>
+              )}
+            </span>
+          </span>
+          {expanded ? (
+            <ChevronUp className="h-5 w-5 flex-shrink-0 text-gray-400" />
+          ) : (
+            <ChevronDown className="h-5 w-5 flex-shrink-0 text-gray-400" />
+          )}
+        </button>
+
+        {expanded && (
+          <div id={bodyId} className="px-4 pb-4">
+            <div className="rounded-xl border border-gray-200 bg-gray-50 px-3.5 dark:border-neutral-600 dark:bg-neutral-800">
+              {details.map((row, index) => (
+                <DetailRow key={row.label} {...row} last={index === details.length - 1} />
+              ))}
+            </div>
+
+            {!session.is_current && (
+              <Popconfirm
+                title="Đăng xuất thiết bị này?"
+                okText="Đăng xuất"
+                cancelText="Hủy"
+                onConfirm={() => logoutOne(session.id)}
+              >
+                {/* One at a time: each logout reloads the list. */}
+                <Button
+                  danger
+                  block
+                  shape="round"
+                  className="mt-3"
+                  icon={<LogOut className="h-4 w-4" />}
+                  loading={busyId === session.id}
+                  disabled={loggingOutAll || (busyId !== null && busyId !== session.id)}
+                >
+                  Đăng xuất
+                </Button>
+              </Popconfirm>
+            )}
+          </div>
+        )}
+      </li>
+    );
+  };
+
   return (
     <div>
       <div className="flex flex-wrap items-start justify-between gap-3">
@@ -120,50 +276,12 @@ export default function DeviceSessions() {
       )}
 
       {sessions && (
-        <ul className="mt-4 divide-y divide-gray-200 dark:divide-gray-700">
-          {sessions.map((session) => {
-            const Icon = session.platform === "web" ? Monitor : Smartphone;
-            const details = describe(session);
-            return (
-              <li key={session.id} className="flex items-center gap-3 py-3">
-                <Icon className="h-6 w-6 flex-shrink-0 text-gray-500 dark:text-gray-400" />
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-medium text-gray-900 dark:text-white">
-                    {session.device_name || "Thiết bị không xác định"}
-                    {session.is_current && (
-                      <span className="ml-2 rounded bg-green-100 px-1.5 py-0.5 text-xs font-medium text-green-700 dark:bg-green-900 dark:text-green-300">
-                        Thiết bị này
-                      </span>
-                    )}
-                  </p>
-                  {details && <p className={`${hintClass} truncate`}>{details}</p>}
-                  <p className="text-xs text-gray-500 dark:text-gray-400">
-                    {session.last_used_at
-                      ? `Hoạt động lần cuối: ${dayjs(session.last_used_at).format("HH:mm DD/MM/YYYY")}`
-                      : `Đăng nhập lúc: ${dayjs(session.created_at).format("HH:mm DD/MM/YYYY")}`}
-                  </p>
-                </div>
-                {!session.is_current && (
-                  <Popconfirm
-                    title="Đăng xuất thiết bị này?"
-                    okText="Đăng xuất"
-                    cancelText="Hủy"
-                    onConfirm={() => logoutOne(session.id)}
-                  >
-                    {/* One at a time: each logout reloads the list. */}
-                    <Button
-                      size="small"
-                      loading={busyId === session.id}
-                      disabled={loggingOutAll || (busyId !== null && busyId !== session.id)}
-                    >
-                      Đăng xuất
-                    </Button>
-                  </Popconfirm>
-                )}
-              </li>
-            );
-          })}
-        </ul>
+        <>
+          <p className={`${hintClass} mt-4 font-medium`}>
+            Tổng số lượt đăng nhập: {total || sessions.length}
+          </p>
+          <ul className="mt-3 space-y-3">{sessions.map(renderSession)}</ul>
+        </>
       )}
 
       {sessions && total > sessions.length && (
