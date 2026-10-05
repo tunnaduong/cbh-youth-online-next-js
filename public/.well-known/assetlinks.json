@@ -19,7 +19,8 @@
       "namespace": "android_app",
       "package_name": "com.fatties.youth",
       "sha256_cert_fingerprints": [
-        "FA:C6:17:45:DC:09:03:78:6F:B9:ED:E6:2A:96:2B:39:9F:73:48:F0:BB:6F:89:9B:83:32:66:75:91:03:3B:9C"
+        "FA:C6:17:45:DC:09:03:78:6F:B9:ED:E6:2A:96:2B:39:9F:73:48:F0:BB:6F:89:9B:83:32:66:75:91:03:3B:9C",
+        "D5:C3:56:76:A0:40:3C:6E:21:D7:47:EB:42:AA:6D:52:45:3C:70:75:44:C6:0C:D7:33:F4:AF:DA:35:A4:32:BE"
       ]
     }
   }
