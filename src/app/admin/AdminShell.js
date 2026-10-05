@@ -101,6 +101,7 @@ export const NAV_GROUPS = [
       { key: "/admin/notifications", icon: <NotificationOutlined />, label: "Gửi thông báo" },
       { key: "/admin/deposits", icon: <DownloadOutlined />, label: "Nạp tiền" },
       { key: "/admin/withdrawals", icon: <UploadOutlined />, label: "Rút tiền" },
+      { key: "/admin/audit-logs", icon: <SafetyCertificateOutlined />, label: "Nhật ký thay đổi" },
     ],
   },
   {
