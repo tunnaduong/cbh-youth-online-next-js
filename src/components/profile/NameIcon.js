@@ -1,4 +1,5 @@
-import { getNameIcon } from "@/lib/profileTheme";
+import { getNameIcon, getNameIconTier } from "@/lib/profileTheme";
+import MemberTierBadge from "@/components/ui/MemberTierBadge";
 
 /**
  * Biểu tượng nhỏ ngay sau tên người dùng (mốc Pro, 2000 điểm). Glyph do
@@ -11,10 +12,17 @@ import { getNameIcon } from "@/lib/profileTheme";
  *
  * Props:
  *   theme — `profile_theme` của người dùng từ API, hoặc null
+ *   tier  — mốc của người dùng (id hoặc { id }) khi nó không nằm trong theme
+ *
+ * Không có glyph thì vẽ biểu tượng của một mốc thành viên: mốc người dùng
+ * Pro đã chọn (`name_icon_tier`), mặc định là mốc họ đang đạt.
  */
-export default function NameIcon({ theme, className = "" }) {
+export default function NameIcon({ theme, tier, className = "" }) {
   const glyph = getNameIcon(theme);
-  if (!glyph) return null;
+  if (!glyph) {
+    const tierId = getNameIconTier(theme, tier);
+    return tierId ? <MemberTierBadge tier={{ id: tierId }} className={className} /> : null;
+  }
 
   return (
     <span

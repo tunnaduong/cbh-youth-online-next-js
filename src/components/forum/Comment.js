@@ -21,7 +21,6 @@ import { IoArrowUpSharp, IoArrowDownSharp } from "react-icons/io5";
 import { CommentInput } from "./CommentInput";
 import CommentVotesModal from "./CommentVotesModal";
 import { useRouter } from "@bprogress/next/app";
-import MemberTierBadge from "../ui/MemberTierBadge";
 import UserName from "@/components/profile/UserName";
 import UserAvatar from "@/components/profile/UserAvatar";
 import MarkdownRenderer from "../ui/MarkdownRenderer";
@@ -319,10 +318,9 @@ export default function Comment({
                     name={comment.author.profile_name || comment.author.username}
                     theme={comment.author.profile_theme}
                     verified={!!comment.author.verified}
+                    tier={comment.author?.member_tier}
                     nameClassName="dark:text-white"
-                  >
-                    <MemberTierBadge tier={comment.author?.member_tier} />
-                  </UserName>
+                  />
                 </Link>
               )}
               <span className="text-gray-400 shrink-0">•</span>

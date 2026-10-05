@@ -79,7 +79,8 @@ function Sample({ item, theme, username, avatarUrl }) {
     );
   }
   if (field === "name_icon") {
-    // The glyph comes from the API's option list.
+    // A tier's own icon, or a glyph from the API's option list.
+    if (item.tier) return <MemberTierBadge tier={{ id: item.tier }} className="!ml-0" />;
     return (
       <span aria-hidden="true" className="text-lg leading-none">
         {item.icon}
@@ -135,6 +136,7 @@ export default function PointsMilestones({ editor, theme, username, avatarUrl, o
             field,
             key: o.key,
             icon: o.icon,
+            tier: o.tier,
             label: `${GROUP_LABELS[field] || field}: ${optionLabel(field, o.key, o.label || o.icon)}`,
           })
         );

@@ -6,6 +6,7 @@ import { ImagePlus, Lock, Plus } from "lucide-react";
 import UserAvatar from "@/components/profile/UserAvatar";
 import StyledName from "@/components/profile/StyledName";
 import NameIcon from "@/components/profile/NameIcon";
+import MemberTierBadge from "@/components/ui/MemberTierBadge";
 import ProfilePreviewCard from "@/components/profile/ProfilePreviewCard";
 import PointsMilestones from "@/components/profile/PointsMilestones";
 import OptionPickerModal from "@/components/profile/OptionPickerModal";
@@ -216,6 +217,7 @@ export default function ProfileCustomizer({ username }) {
   const withIconGlyph = (theme) => ({
     ...theme,
     name_icon_emoji: optionOf("name_icon", theme.name_icon)?.icon || null,
+    name_icon_tier: optionOf("name_icon", theme.name_icon)?.tier || null,
   });
   const previewTheme = withIconGlyph(draft);
 
@@ -399,6 +401,10 @@ export default function ProfileCustomizer({ username }) {
       render: (key) =>
         key === "none" ? (
           <span className="flex h-9 items-center text-xs text-gray-600 dark:text-neutral-300">Không</span>
+        ) : optionOf("name_icon", key)?.tier ? (
+          <span className="flex h-9 items-center text-2xl leading-none">
+            <MemberTierBadge tier={{ id: optionOf("name_icon", key).tier }} className="!ml-0" />
+          </span>
         ) : (
           <span aria-hidden="true" className="flex h-9 items-center text-2xl leading-none">
             {optionOf("name_icon", key)?.icon}
@@ -573,7 +579,11 @@ export default function ProfileCustomizer({ username }) {
                     onClick={() => setPicker("name_icon")}
                     className="w-full h-16"
                   >
-                    {draft.name_icon === "none" || !previewTheme.name_icon_emoji ? (
+                    {previewTheme.name_icon_tier ? (
+                      <span className="text-3xl leading-none">
+                        <MemberTierBadge tier={{ id: previewTheme.name_icon_tier }} className="!ml-0" />
+                      </span>
+                    ) : draft.name_icon === "none" || !previewTheme.name_icon_emoji ? (
                       <AddIcon />
                     ) : (
                       <span aria-hidden="true" className="text-3xl leading-none">
