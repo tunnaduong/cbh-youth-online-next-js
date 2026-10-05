@@ -9,7 +9,9 @@ import { Button, message } from "antd";
 import { useState, useEffect } from "react";
 import FollowButton from "@/components/profile/FollowButton";
 import AvatarFrame from "@/components/profile/AvatarFrame";
-import StyledName from "@/components/profile/StyledName";
+import UserName from "@/components/profile/UserName";
+import useOwnProfileTheme from "@/hooks/useOwnProfileTheme";
+import StyledUsername from "@/components/profile/StyledUsername";
 import { getBannerStyle, getSurfaceStyle } from "@/lib/profileTheme";
 import ProfileEffect from "@/components/profile/ProfileEffect";
 import ProfileFrame from "@/components/profile/ProfileFrame";
@@ -42,6 +44,7 @@ const LIKED_SORT_OPTIONS = [
 
 export default function ProfileClient({ initialProfile, activeTab, username }) {
   const { currentUser } = useAuthContext();
+  const ownTheme = useOwnProfileTheme(currentUser);
   const { openChat, createConversation } = useChatContext();
   const router = useRouter();
   const [showReportModal, setShowReportModal] = useState(false);
@@ -449,6 +452,7 @@ export default function ProfileClient({ initialProfile, activeTab, username }) {
             id: Date.now(), // Temporary ID
             follower: {
               username: currentUser.username,
+              profile_theme: ownTheme,
               profile: {
                 profile_name: currentUser.profile_name || currentUser.username,
                 verified: false,
@@ -731,7 +735,7 @@ export default function ProfileClient({ initialProfile, activeTab, username }) {
               <div key={follower.id} className="px-3 py-2">
                 <div className="flex items-center gap-x-3">
                   <Link
-                    className="flex-1 flex items-center gap-x-3"
+                    className="flex-1 min-w-0 flex items-center gap-x-3"
                     href={`/${follower.follower.username}`}
                   >
                     <UserAvatar
@@ -741,36 +745,20 @@ export default function ProfileClient({ initialProfile, activeTab, username }) {
                       className="w-16 h-16"
                       imgClassName="border"
                     />
-                    <div>
-                      <h2 className="font-bold dark:text-neutral-300">
-                        <StyledName theme={follower.follower.profile_theme}>
-                          {follower.follower.profile.profile_name}
-                        </StyledName>
-                        {follower.follower.profile.verified == "1" && (
-                          <span>
-                            <svg
-                              stroke="currentColor"
-                              fill="currentColor"
-                              strokeWidth="0"
-                              viewBox="0 0 20 20"
-                              aria-hidden="true"
-                              className="relative inline shrink-0 text-xl text-primary-500 -mt-1"
-                              height="1em"
-                              width="1em"
-                              xmlns="http://www.w3.org/2000/svg"
-                            >
-                              <path
-                                fillRule="evenodd"
-                                d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-                                clipRule="evenodd"
-                              ></path>
-                            </svg>
-                          </span>
-                        )}
+                    <div className="min-w-0">
+                      <h2 className="flex min-w-0 items-center font-bold dark:text-neutral-300">
+                        <UserName
+                          name={follower.follower.profile?.profile_name || follower.follower.username}
+                          theme={follower.follower.profile_theme}
+                          verified={follower.follower.profile?.verified == "1"}
+                          badgeClassName="!text-xl"
+                        />
                       </h2>
-                      <p className="text-gray-500">
-                        <span>@</span>
-                        {follower.follower.username}
+                      <p className="truncate text-gray-500 dark:text-gray-400">
+                        <StyledUsername
+                          username={follower.follower.username}
+                          theme={follower.follower.profile_theme}
+                        />
                       </p>
                     </div>
                   </Link>
@@ -801,7 +789,7 @@ export default function ProfileClient({ initialProfile, activeTab, username }) {
               <div key={following.id} className="px-3 py-2">
                 <div className="flex items-center gap-x-3">
                   <Link
-                    className="flex-1 flex items-center gap-x-3"
+                    className="flex-1 min-w-0 flex items-center gap-x-3"
                     href={`/${following.followed.username}`}
                   >
                     <UserAvatar
@@ -811,36 +799,20 @@ export default function ProfileClient({ initialProfile, activeTab, username }) {
                       className="w-16 h-16"
                       imgClassName="border"
                     />
-                    <div>
-                      <h2 className="font-bold dark:text-neutral-300">
-                        <StyledName theme={following.followed.profile_theme}>
-                          {following.followed.profile.profile_name}
-                        </StyledName>
-                        {following.followed.profile.verified == "1" && (
-                          <span>
-                            <svg
-                              stroke="currentColor"
-                              fill="currentColor"
-                              strokeWidth="0"
-                              viewBox="0 0 20 20"
-                              aria-hidden="true"
-                              className="relative inline shrink-0 text-xl text-primary-500 -mt-1"
-                              height="1em"
-                              width="1em"
-                              xmlns="http://www.w3.org/2000/svg"
-                            >
-                              <path
-                                fillRule="evenodd"
-                                d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-                                clipRule="evenodd"
-                              ></path>
-                            </svg>
-                          </span>
-                        )}
+                    <div className="min-w-0">
+                      <h2 className="flex min-w-0 items-center font-bold dark:text-neutral-300">
+                        <UserName
+                          name={following.followed.profile?.profile_name || following.followed.username}
+                          theme={following.followed.profile_theme}
+                          verified={following.followed.profile?.verified == "1"}
+                          badgeClassName="!text-xl"
+                        />
                       </h2>
-                      <p className="text-gray-500">
-                        <span>@</span>
-                        {following.followed.username}
+                      <p className="truncate text-gray-500 dark:text-gray-400">
+                        <StyledUsername
+                          username={following.followed.username}
+                          theme={following.followed.profile_theme}
+                        />
                       </p>
                     </div>
                   </Link>
@@ -1160,16 +1132,21 @@ export default function ProfileClient({ initialProfile, activeTab, username }) {
                 )}
               </div>
               <div className="flex flex-col items-center mt-2 w-full max-w-full min-w-0">
-                <h1 className="font-bold text-xl text-center text-gray-900 dark:text-white break-words max-w-full">
-                  <StyledName theme={profile.theme}>{profile.profile_name}</StyledName>
-                  {profile.verified == "1" && (
-                    <svg stroke="currentColor" fill="currentColor" strokeWidth={0} viewBox="0 0 20 20" aria-hidden="true" className="relative inline shrink-0 text-xl leading-5 text-primary-500 ml-1" height="1em" width="1em" xmlns="http://www.w3.org/2000/svg">
-                      <path fillRule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                    </svg>
-                  )}
-                  <MemberTierBadge tier={profile.member_tier} className="text-xl" />
+                {/* One line: the name truncates; icon, tick and tier badge stay beside it. */}
+                <h1 className="flex min-w-0 max-w-full items-center justify-center font-bold text-xl text-gray-900 dark:text-white">
+                  <UserName
+                    name={profile.profile_name}
+                    theme={profile.theme}
+                    variant="full"
+                    verified={profile.verified == "1"}
+                    badgeClassName="!text-xl ml-1"
+                  >
+                    <MemberTierBadge tier={profile.member_tier} className="text-xl" />
+                  </UserName>
                 </h1>
-                <p className="text-sm text-gray-500 dark:text-gray-400 break-words max-w-full">@{profile.username}</p>
+                <p className="max-w-full truncate text-sm text-gray-500 dark:text-gray-400">
+                  <StyledUsername username={profile.username} theme={profile.theme} variant="full" />
+                </p>
               </div>
               <div className="flex flex-wrap justify-center mt-3 w-full">
                 <Link href={`/${profile.username}`} className="flex flex-col items-center px-3 py-1 rounded-lg hover:bg-gray-50 dark:hover:bg-neutral-700 transition-colors">
@@ -1459,41 +1436,20 @@ export default function ProfileClient({ initialProfile, activeTab, username }) {
             <div className="mx-auto max-w-[959px] flex">
               <div className="max-w-[280px] flex-1 !mt-10 pr-6 hidden lg:flex flex-col gap-y-3">
                 <div>
-                  <h1 className="font-bold text-xl">
-                    <span>
-                      <StyledName
-                        theme={profile.theme}
-                        className="mr-1 dark:text-neutral-300"
-                      >
-                        {profile.profile_name}
-                      </StyledName>
-                      {profile.verified == "1" && (
-                        <span>
-                          <svg
-                            stroke="currentColor"
-                            fill="currentColor"
-                            strokeWidth={0}
-                            viewBox="0 0 20 20"
-                            aria-hidden="true"
-                            className="relative inline shrink-0 text-xl leading-5 text-primary-500"
-                            height="1em"
-                            width="1em"
-                            xmlns="http://www.w3.org/2000/svg"
-                          >
-                            <path
-                              fillRule="evenodd"
-                              d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-                              clipRule="evenodd"
-                            />
-                          </svg>
-                        </span>
-                      )}
+                  <h1 className="flex min-w-0 items-center font-bold text-xl">
+                    <UserName
+                      name={profile.profile_name}
+                      theme={profile.theme}
+                      variant="full"
+                      verified={profile.verified == "1"}
+                      nameClassName="dark:text-neutral-300"
+                      badgeClassName="!text-xl ml-1"
+                    >
                       <MemberTierBadge tier={profile.member_tier} className="text-xl" />
-                    </span>
+                    </UserName>
                   </h1>
-                  <p className="text-sm text-gray-500">
-                    <span>@</span>
-                    {profile.username}
+                  <p className="truncate text-sm text-gray-500 dark:text-gray-400">
+                    <StyledUsername username={profile.username} theme={profile.theme} variant="full" />
                   </p>
                 </div>
                 <p className="dark:text-neutral-300">{profile.bio}</p>
@@ -1571,7 +1527,8 @@ export default function ProfileClient({ initialProfile, activeTab, username }) {
                 active: "Được tặng điểm cho tác giả, tăng giới hạn đăng bài, ưu tiên hiển thị bình luận.",
                 distinguished: "Quy đổi điểm ra tiền mặt và đăng bài không cần duyệt.",
                 veteran: "Thành viên kỳ cựu của diễn đàn: khung avatar cầu vồng, hiệu ứng cực quang và avatar GIF động.",
-                premium: "Hạng cao nhất của diễn đàn. Mở khóa hiệu ứng tên Cầu vồng và Viền chữ tự chọn màu.",
+                premium: "Mở khóa hiệu ứng tên Cầu vồng và Viền chữ tự chọn màu, thêm phông chữ cho tên và màu chuyển sắc.",
+                promax: "Hạng cao nhất của diễn đàn. Mở khóa biểu tượng cạnh tên, tên người dùng theo kiểu tên, biểu tượng cảm xúc và ký tự đặc biệt trong tên hiển thị.",
               };
               return (
                 <div

@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { compressMediaForUpload } from "@/utils/mediaCompression";
 import { useAuthContext } from "@/contexts/Support";
 import AvatarFrame from "@/components/profile/AvatarFrame";
-import StyledName from "@/components/profile/StyledName";
+import UserName from "@/components/profile/UserName";
 import {
   getPublicChatMessages,
   sendPublicMessage,
@@ -989,11 +989,15 @@ export default function PublicChat() {
 
                     {/* Message Content */}
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="font-medium text-gray-900 dark:text-gray-100 text-sm">
-                          <StyledName theme={message.sender?.profile_theme}>@{senderName}</StyledName>
+                      <div className="flex min-w-0 items-center gap-2 mb-1">
+                        <span className="flex min-w-0 items-center font-medium text-gray-900 dark:text-gray-100 text-sm">
+                          <UserName
+                            name={`@${senderName}`}
+                            theme={message.sender?.profile_theme}
+                            variant="full"
+                          />
                         </span>
-                        <span className="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1">
+                        <span className="text-xs text-gray-500 dark:text-gray-400 flex flex-shrink-0 items-center gap-1">
                           {formatTime(message.created_at)}
                           {message.is_edited && !message.is_recalled && <span className="italic">(Đã sửa)</span>}
                         </span>

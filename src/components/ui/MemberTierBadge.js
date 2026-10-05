@@ -63,6 +63,17 @@ const TIER_CONFIG = {
     color: "text-rose-500",
     bg: "bg-rose-50 dark:bg-rose-900/30",
   },
+  promax: {
+    label: "Thành viên Pro",
+    icon: (
+      // Crown / vương miện
+      <svg viewBox="0 0 20 20" fill="currentColor" xmlns="http://www.w3.org/2000/svg" className="tier-badge__icon">
+        <path d="M2.2 6.3a.8.8 0 011.3-.6l3.3 2.7 2.5-4.2a.8.8 0 011.4 0l2.5 4.2 3.3-2.7a.8.8 0 011.3.6l-1.3 7.4a1 1 0 01-1 .8H4.5a1 1 0 01-1-.8L2.2 6.3zM5 16h10a.75.75 0 010 1.5H5A.75.75 0 015 16z" />
+      </svg>
+    ),
+    color: "text-fuchsia-500",
+    bg: "bg-fuchsia-50 dark:bg-fuchsia-900/30",
+  },
 };
 
 export default function MemberTierBadge({ tier, className = "" }) {

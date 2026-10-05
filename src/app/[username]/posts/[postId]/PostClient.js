@@ -23,6 +23,7 @@ import { notFound } from "next/navigation";
 import { useRouter } from "@bprogress/next/app";
 import { generatePostSlug } from "@/utils/slugify";
 import { registerView } from "@/app/Api";
+import useOwnProfileTheme from "@/hooks/useOwnProfileTheme";
 
 // Helper function to extract numeric ID from postId (e.g., "399873567-giveaway" -> "399873567")
 const extractNumericId = (postId) => {
@@ -32,6 +33,7 @@ const extractNumericId = (postId) => {
 
 export default function PostClient({ params, initialPost = null }) {
   const { currentUser, loggedIn, refreshUser } = useAuthContext();
+  const ownTheme = useOwnProfileTheme(currentUser);
   const { fetchTopUsers } = useTopUsersContext();
   const [post, setPost] = useState(initialPost);
   const [comments, setComments] = useState(initialPost?.comments || []);
@@ -314,6 +316,8 @@ export default function PostClient({ params, initialPost = null }) {
         : {
           username: currentUser?.username,
           profile_name: currentUser?.profile_name || currentUser?.username,
+          // Own appearance, so the comment looks right before the server answers.
+          profile_theme: ownTheme,
         },
       created_at: "vài giây trước",
       votes: [],
@@ -503,6 +507,8 @@ export default function PostClient({ params, initialPost = null }) {
         : {
           username: currentUser?.username,
           profile_name: currentUser?.profile_name || currentUser?.username,
+          // Own appearance, so the comment looks right before the server answers.
+          profile_theme: ownTheme,
         },
       created_at: "vài giây trước",
       votes: [],
@@ -540,6 +546,7 @@ export default function PostClient({ params, initialPost = null }) {
             ? "Người dùng ẩn danh"
             : currentUser?.profile_name || currentUser?.username,
           verified: currentUser?.verified ?? false, // Add verified status
+          profile_theme: isAnonymous ? null : ownTheme,
         },
         created_at: response.data?.created_at ?? "vài giây trước",
         votes: response.data?.votes ?? [],

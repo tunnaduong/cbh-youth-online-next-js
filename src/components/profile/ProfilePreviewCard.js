@@ -1,5 +1,7 @@
 import UserAvatar from "@/components/profile/UserAvatar";
 import StyledName from "@/components/profile/StyledName";
+import NameIcon from "@/components/profile/NameIcon";
+import StyledUsername from "@/components/profile/StyledUsername";
 import ProfileEffect from "@/components/profile/ProfileEffect";
 import ProfileFrame from "@/components/profile/ProfileFrame";
 import { getBannerStyle, getSurfaceStyle } from "@/lib/profileTheme";
@@ -48,8 +50,11 @@ export default function ProfilePreviewCard({
           <StyledName theme={theme} className="text-gray-900 dark:text-white">
             {profileName}
           </StyledName>
+          <NameIcon theme={theme} />
         </p>
-        <p className="text-sm text-gray-500 dark:text-neutral-400">@{username}</p>
+        <p className="text-sm text-gray-500 dark:text-neutral-400">
+          <StyledUsername username={username} theme={theme} variant="full" />
+        </p>
 
         <dl className="mt-4 space-y-3 text-sm">
           {bio && (
@@ -84,10 +89,11 @@ export default function ProfilePreviewCard({
             imgClassName="bg-white"
           />
           <div className="min-w-0">
-            <p className="text-sm font-semibold truncate">
-              <StyledName theme={theme} className="text-gray-900 dark:text-white">
+            <p className="flex min-w-0 items-center text-sm font-semibold">
+              <StyledName theme={theme} className="min-w-0 truncate text-gray-900 dark:text-white">
                 {profileName}
               </StyledName>
+              <NameIcon theme={theme} />
             </p>
             <p className="text-xs text-gray-500 dark:text-neutral-400">Trong bình luận</p>
           </div>

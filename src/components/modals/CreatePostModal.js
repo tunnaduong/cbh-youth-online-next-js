@@ -6,7 +6,8 @@ import { useRouter } from "@bprogress/next/app";
 import CustomInput from "../ui/input";
 import CustomColorButton from "../ui/CustomColorButton";
 // // import { usePage, useForm } from "@inertiajs/react"; // TODO: Replace with Next.js equivalent // TODO: Replace with Next.js equivalent
-import VerifiedBadge from "../ui/Badges";
+import UserName from "@/components/profile/UserName";
+import useOwnProfileTheme from "@/hooks/useOwnProfileTheme";
 import MarkdownToolbar from "../ui/MarkdownToolbar";
 import MarkdownRenderer from "../ui/MarkdownRenderer";
 import { IoEarth, IoCaretDown } from "react-icons/io5";
@@ -40,6 +41,7 @@ const COMPOSER_HANDOFF_KEY = "composer_modal_handoff";
 const CreatePostModal = ({ open, onClose, isEditMode = false, postData = null, onSuccess = null }) => {
   const router = useRouter();
   const { currentUser, refreshUser } = useAuthContext();
+  const ownTheme = useOwnProfileTheme(currentUser);
   const { fetchTopUsers } = useTopUsersContext();
   const { triggerRefresh } = usePostRefresh();
   const { fetchHomeData } = useForumData();
@@ -1016,19 +1018,17 @@ const CreatePostModal = ({ open, onClose, isEditMode = false, postData = null, o
                 className="border w-11 h-11 rounded-full"
               />
             )}
-            <div className="ml-2">
+            <div className="ml-2 min-w-0">
               <span className="text-base font-semibold mb-0.5 flex items-center min-w-0">
                 {data.anonymous ? (
                   "Người dùng ẩn danh"
                 ) : (
-                  <span className="inline">
-                    <span className="line-clamp-1 inline">
-                      {currentUser?.profile_name}
-                    </span>
-                    {currentUser?.verified && (
-                      <VerifiedBadge className="ml-1 mb-0.5" />
-                    )}
-                  </span>
+                  <UserName
+                    name={currentUser?.profile_name || currentUser?.username}
+                    theme={ownTheme}
+                    variant="full"
+                    verified={!!currentUser?.verified}
+                  />
                 )}
               </span>
               <Dropdown

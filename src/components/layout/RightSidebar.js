@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import UserAvatar from "@/components/profile/UserAvatar";
-import StyledName from "@/components/profile/StyledName";
+import UserName from "@/components/profile/UserName";
 import { usePathname } from "next/navigation";
 import { AddOutline, HelpCircleOutline, Mic } from "react-ionicons";
 import { Skeleton, message } from "antd";
@@ -196,13 +196,15 @@ export default function RightSidebar({ onHandleCreatePost }) {
                   </Link>
                   <Link
                     href={`/${user.username}`}
-                    className="ml-1.5 font-semibold flex-1 truncate text-left dark:text-neutral-300"
+                    className="ml-1.5 flex min-w-0 flex-1 items-center text-left font-semibold dark:text-neutral-300"
                   >
-                    <StyledName theme={user.profile_theme}>
-                      {user.profile_name || user.username}
-                    </StyledName>
+                    <UserName
+                      name={user.profile_name || user.username}
+                      theme={user.profile_theme}
+                      variant="full"
+                    />
                   </Link>
-                  <span className="mr-1.5 text-[#C1C1C1]">
+                  <span className="mr-1.5 flex-shrink-0 text-[#C1C1C1]">
                     {user.total_points} điểm
                   </span>
                   <span className="text-green-500 font-bold">#{index + 1}</span>

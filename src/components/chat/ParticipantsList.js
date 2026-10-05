@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import AvatarFrame from "@/components/profile/AvatarFrame";
+import UserName from "@/components/profile/UserName";
 
 export default function ParticipantsList({ participants }) {
   const getAvatarInitial = (name) => {
@@ -88,9 +89,9 @@ export default function ParticipantsList({ participants }) {
             {!isGuest && participant.username ? (
               <Link
                 href={`/${participant.username}`}
-                className="flex-1 text-sm text-gray-900 dark:text-gray-100 truncate hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
+                className="flex min-w-0 flex-1 items-center text-sm text-gray-900 dark:text-gray-100 hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
               >
-                {displayName}
+                <UserName name={displayName} theme={participant.profile_theme} />
               </Link>
             ) : (
               <span className="flex-1 text-sm text-gray-900 dark:text-gray-100 truncate">

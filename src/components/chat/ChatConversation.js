@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { message as antdMessage, Dropdown } from "antd";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import AvatarFrameWrap from "@/components/profile/AvatarFrameWrap";
-import StyledName from "@/components/profile/StyledName";
+import UserName from "@/components/profile/UserName";
 import { useChatContext } from "@/contexts/Support";
 import moment from "moment";
 import "moment/locale/vi";
@@ -1041,11 +1041,13 @@ export default function ChatConversation({
                   (message.sender?.username && !message.sender?.is_ai ? (
                     <Link
                       href={`/${message.sender.username}`}
-                      className="text-xs font-medium dark:text-white truncate hover:underline"
+                      className="flex min-w-0 items-center text-xs font-medium dark:text-white hover:underline"
                     >
-                      <StyledName theme={message.sender?.profile_theme}>
-                        {message.sender?.profile_name || message.sender?.username}
-                      </StyledName>
+                      <UserName
+                        name={message.sender?.profile_name || message.sender?.username}
+                        theme={message.sender?.profile_theme}
+                        variant="full"
+                      />
                     </Link>
                   ) : (
                     <span className="text-xs font-medium dark:text-white truncate">

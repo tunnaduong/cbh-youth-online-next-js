@@ -2,6 +2,8 @@
 
 import React from "react";
 import AvatarFrameWrap from "@/components/profile/AvatarFrameWrap";
+import StyledName from "@/components/profile/StyledName";
+import NameIcon from "@/components/profile/NameIcon";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuthContext, useNotificationContext } from "@/contexts/Support";
 import { useRouter } from "@bprogress/next/app";
@@ -17,7 +19,36 @@ const isActorAnonymous = (notification) =>
   ANONYMOUS_ACTOR_TYPES.includes(notification?.type) &&
   notification?.data?.is_anonymous === true;
 
-const getNotificationMessage = (notification) => {
+// The message with the actor's name drawn in their name style (plus their
+// name icon) when the sentence starts with it; the plain text otherwise.
+const renderNotificationMessage = (notification) => {
+  const message = getNotificationMessage(notification);
+  const actor = notification?.actor;
+  const theme = actor?.profile_theme;
+  const actorName = actor?.profile_name || actor?.username;
+
+  if (
+    !theme ||
+    !actorName ||
+    isActorAnonymous(notification) ||
+    typeof message !== "string" ||
+    !message.startsWith(actorName)
+  ) {
+    return message;
+  }
+
+  return (
+    <>
+      <StyledName theme={theme} variant="compact" className="font-medium">
+        {actorName}
+      </StyledName>
+      <NameIcon theme={theme} />
+      {message.slice(actorName.length)}
+    </>
+  );
+};
+
+function getNotificationMessage(notification) {
   const { type, actor, data } = notification;
   const isCommentAnonymous = isActorAnonymous(notification);
   const actorName = isCommentAnonymous
@@ -308,7 +339,7 @@ export default function NotificationItem({ notification }) {
       </AvatarFrameWrap>
       <div className="flex-1 min-w-0">
         <p className="text-sm text-gray-900 dark:text-gray-100">
-          {getNotificationMessage(notification)}
+          {renderNotificationMessage(notification)}
         </p>
         {notification.data?.topic_title && (
           <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 truncate">

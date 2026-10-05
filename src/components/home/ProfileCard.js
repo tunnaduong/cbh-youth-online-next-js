@@ -3,7 +3,8 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { getUserProfile } from "@/app/Api";
-import Badges from "@/components/ui/Badges";
+import UserName from "@/components/profile/UserName";
+import StyledUsername from "@/components/profile/StyledUsername";
 import { HomeCard, UserAvatar } from "./HomeCard";
 import { formatCompact, formatThousands } from "./homeUtils";
 
@@ -95,6 +96,9 @@ export default function ProfileCard({ currentUser, authLoading, topUsers }) {
   }
 
   const name = currentUser.profile_name || profile?.profile?.profile_name || username;
+  // Own appearance: the profile fetched above carries it; before that, what
+  // the login payload sent (if anything).
+  const theme = profile ? profile.profile?.theme || null : currentUser.profile_theme || null;
   const points = Number(currentUser.total_points ?? profile?.stats?.activity_points) || 0;
   // Admins are left out of the ranking, so they have no place to show (the
   // API sends none; an older cached value is ignored too).
@@ -113,17 +117,24 @@ export default function ProfileCard({ currentUser, authLoading, topUsers }) {
 
       <div className="mt-4 flex items-center gap-3">
         <Link href={`/${username}`} className="shrink-0">
-          <UserAvatar username={username} name={name} size={56} className="ring-2 ring-primary-100 dark:ring-[#2b3a2a]" />
+          <UserAvatar
+            username={username}
+            name={name}
+            size={56}
+            theme={theme}
+            className={theme?.avatar_frame && theme.avatar_frame !== "none" ? "" : "ring-2 ring-primary-100 dark:ring-[#2b3a2a]"}
+          />
         </Link>
         <div className="min-w-0">
           <Link
             href={`/${username}`}
-            className="flex items-center font-semibold text-gray-900 hover:text-primary-600 dark:text-neutral-100"
+            className="flex min-w-0 items-center font-semibold text-gray-900 hover:text-primary-600 dark:text-neutral-100"
           >
-            <span className="truncate">{name}</span>
-            {profile?.profile?.verified && <Badges />}
+            <UserName name={name} theme={theme} variant="full" verified={!!profile?.profile?.verified} />
           </Link>
-          <p className="truncate text-[13px] text-gray-500 dark:text-neutral-400">@{username}</p>
+          <p className="truncate text-[13px] text-gray-500 dark:text-neutral-400">
+            <StyledUsername username={username} theme={theme} variant="full" />
+          </p>
         </div>
       </div>
 

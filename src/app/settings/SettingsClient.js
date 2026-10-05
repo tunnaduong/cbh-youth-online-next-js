@@ -43,6 +43,9 @@ export default function SettingsClient({ initialUser, hasAuthError }) {
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [uploadingCover, setUploadingCover] = useState(false);
   const [errors, setErrors] = useState({});
+  // { required_points, unlocked }: emoji / decorative letters in the display
+  // name unlock at the Pro tier (from the own profile's theme_editor).
+  const [fancyName, setFancyName] = useState(null);
   const [blockedUsers, setBlockedUsers] = useState([]);
   const [blockedUsersLoading, setBlockedUsersLoading] = useState(false);
   const [unblockingId, setUnblockingId] = useState(null);
@@ -216,6 +219,8 @@ export default function SettingsClient({ initialUser, hasAuthError }) {
           } catch (error) {
             console.error("Error fetching profile data:", error);
           }
+
+          setFancyName(profileData?.profile?.theme_editor?.fancy_name || null);
 
           // Merge user and profile data
           const fullUser = {
@@ -1152,7 +1157,17 @@ export default function SettingsClient({ initialUser, hasAuthError }) {
                 <Input
                   type="text"
                   value={data.full_name}
-                  onChange={(e) => updateData("full_name", e.target.value)}
+                  onChange={(e) => {
+                    updateData("full_name", e.target.value);
+                    // The API reports a refused name under `profile_name`.
+                    if (errors.profile_name) {
+                      setErrors((prev) => {
+                        const next = { ...prev };
+                        delete next.profile_name;
+                        return next;
+                      });
+                    }
+                  }}
                   className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
                   placeholder="Dương Tùng Anh (Tunna Duong)"
                 />
@@ -1160,9 +1175,17 @@ export default function SettingsClient({ initialUser, hasAuthError }) {
                   Đây là tên sẽ được hiển thị công khai trên hồ sơ của bạn, bảng
                   tin và diễn đàn.
                 </p>
-                {errors.full_name && (
+                {fancyName && !fancyName.unlocked && (
+                  <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                    Biểu tượng cảm xúc và ký tự đặc biệt trong tên sẽ mở khóa
+                    khi bạn đạt {fancyName.required_points ?? 2000} điểm.
+                  </p>
+                )}
+                {(errors.full_name || errors.profile_name) && (
                   <p className="mt-1 text-xs text-red-500">
-                    {errors.full_name}
+                    {[errors.full_name, errors.profile_name]
+                      .flat()
+                      .filter(Boolean)[0]}
                   </p>
                 )}
               </div>

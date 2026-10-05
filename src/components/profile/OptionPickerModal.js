@@ -13,6 +13,7 @@ import { Lock } from "lucide-react";
  *   options      — [{ key, required_points, unlocked }] từ theme_editor
  *   value        — key đang dùng trong bản nháp
  *   renderOption — (key) => nội dung minh hoạ của ô
+ *   gridClassName — số cột của lưới (mặc định 3 cột)
  *   onApply(key)
  */
 export default function OptionPickerModal({
@@ -23,6 +24,7 @@ export default function OptionPickerModal({
   renderOption,
   onApply,
   onClose,
+  gridClassName = "grid-cols-3",
 }) {
   const [selected, setSelected] = useState(value);
 
@@ -51,7 +53,7 @@ export default function OptionPickerModal({
         </div>
       }
     >
-      <div className="grid grid-cols-3 gap-2 max-h-[60vh] overflow-y-auto py-2 px-0.5">
+      <div className={`grid ${gridClassName} gap-2 max-h-[60vh] overflow-y-auto py-2 px-0.5`}>
         {options.map((option) => (
           <OptionTile
             key={option.key}

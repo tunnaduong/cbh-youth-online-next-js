@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { message as antdMessage } from "antd";
+import UserName from "@/components/profile/UserName";
 import { ChevronLeft, ChevronRight, X, ZoomIn, ZoomOut, Download, Share2 } from "lucide-react";
 
 // Forces a save-as download even for a cross-origin file URL (a plain
@@ -182,8 +183,12 @@ export default function ChatMediaLightbox({ media, onClose, onForward }) {
             />
           )}
           <div className="min-w-0">
-            <p className="text-white text-xs font-medium truncate">
-              {current.sender?.profile_name || current.sender?.username}
+            <p className="flex min-w-0 items-center text-white text-xs font-medium">
+              <UserName
+                name={current.sender?.profile_name || current.sender?.username}
+                theme={current.sender?.profile_theme}
+                variant="full"
+              />
             </p>
             <p className="text-white/70 text-[10px]">{formatMediaTimestamp(current.createdAt)}</p>
           </div>

@@ -1,9 +1,8 @@
 import Link from "next/link";
 import UserAvatar from "@/components/profile/UserAvatar";
-import StyledName from "@/components/profile/StyledName";
+import UserName from "@/components/profile/UserName";
 import { Button, Dropdown } from "antd";
 import { generatePostSlug } from "@/utils/slugify";
-import VerifiedBadge from "@/components/ui/Badges";
 import { BsThreeDots } from "react-icons/bs";
 
 export default function SavedPostItem({ post, onUnsave }) {
@@ -86,7 +85,7 @@ export default function SavedPostItem({ post, onUnsave }) {
               Người dùng ẩn danh
             </span>
           ) : (
-            <div className="flex items-center gap-2">
+            <div className="flex min-w-0 items-center gap-2">
               <UserAvatar
                 username={author.username}
                 theme={author.profile_theme}
@@ -95,18 +94,17 @@ export default function SavedPostItem({ post, onUnsave }) {
               />
               <Link
                 href={getProfileUrl(author.username)}
-                className="text-[#319527] hover:underline inline-verified truncate"
+                className="flex min-w-0 items-center text-[#319527] hover:underline"
               >
-                <StyledName
+                <UserName
+                  name={author.profile_name || author.profile?.profile_name || author.username}
                   theme={author.profile_theme}
-                  className="inline-verified__text truncate"
-                >
-                  {author.profile_name || author.profile?.profile_name}
-                </StyledName>
-                {(author.verified == "1" ||
-                  author?.profile?.verified == "1") && (
-                  <VerifiedBadge className="inline-verified__badge" />
-                )}
+                  verified={
+                    author.verified == "1" ||
+                    author.verified === true ||
+                    author?.profile?.verified == "1"
+                  }
+                />
               </Link>
             </div>
           )}

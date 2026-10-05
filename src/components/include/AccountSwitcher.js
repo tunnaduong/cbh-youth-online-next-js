@@ -3,6 +3,9 @@
 import { useEffect, useState } from "react";
 import { Plus, User, X } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import AvatarFrameWrap from "@/components/profile/AvatarFrameWrap";
+import UserName from "@/components/profile/UserName";
+import StyledUsername from "@/components/profile/StyledUsername";
 import {
   MAX_SAVED_ACCOUNTS,
   activateSavedAccount,
@@ -41,6 +44,7 @@ export default function AccountSwitcher({ currentUserId, itemClassName }) {
       </p>
       {others.map((account) => {
         const name = account.user.profile_name || account.user.username;
+        const theme = account.user.profile_theme || null;
         return (
           <div key={account.user.id} className="group relative">
             <button
@@ -49,16 +53,21 @@ export default function AccountSwitcher({ currentUserId, itemClassName }) {
               className={`${itemClassName} pr-9`}
               title={`Chuyển sang @${account.user.username}`}
             >
-              <Avatar className="h-7 w-7 border border-gray-200 dark:border-neutral-600">
-                <AvatarImage src={avatarSrc(account.user)} alt="" className="object-cover" />
-                <AvatarFallback>
-                  <User className="h-4 w-4" />
-                </AvatarFallback>
-              </Avatar>
+              {/* The saved login snapshot carries the theme for accounts signed in recently. */}
+              <AvatarFrameWrap theme={theme}>
+                <Avatar className="h-7 w-7 border border-gray-200 dark:border-neutral-600">
+                  <AvatarImage src={avatarSrc(account.user)} alt="" className="object-cover" />
+                  <AvatarFallback>
+                    <User className="h-4 w-4" />
+                  </AvatarFallback>
+                </Avatar>
+              </AvatarFrameWrap>
               <span className="min-w-0">
-                <span className="block truncate font-medium">{name}</span>
+                <span className="flex min-w-0 items-center font-medium">
+                  <UserName name={name} theme={theme} />
+                </span>
                 <span className="block truncate text-xs text-gray-500 dark:text-neutral-400">
-                  @{account.user.username}
+                  <StyledUsername username={account.user.username} theme={theme} />
                 </span>
               </span>
             </button>
