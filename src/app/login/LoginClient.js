@@ -6,6 +6,7 @@ import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
 import CustomColorButton from "@/components/ui/CustomColorButton";
 import DeviceApprovalStep from "@/components/auth/DeviceApprovalStep";
+import Turnstile from "@/components/auth/Turnstile";
 import InputError from "@/components/ui/InputError";
 import { Checkbox, Input, message } from "antd";
 import { KeyOutlined, LockOutlined, SafetyOutlined, UserOutlined } from "@ant-design/icons";
@@ -68,6 +69,8 @@ function LoginClientInner() {
   const [errors, setErrors] = useState({});
   const [processing, setProcessing] = useState(false);
   const [error, setError] = useState(null);
+  // Cloudflare Turnstile (bot check) of the password form.
+  const turnstileRef = useRef(null);
   const [savedAccounts, setSavedAccounts] = useState([]);
 
   // Two-factor: set once the password (or Google/Facebook) step passed and
@@ -338,8 +341,12 @@ function LoginClientInner() {
       // Get continue from current URL parameters
       const returnUrl = searchParams.get("continue");
 
+      // Usually ready by now: the check runs while the form is being filled.
+      const turnstileToken = await turnstileRef.current?.take();
+
       // Make login request
       const response = await loginRequest({
+        turnstile_token: turnstileToken || undefined,
         username: data.email, // Using email as username for API
         password: data.password,
         // Lets a device the user chose to remember skip the two-factor step
@@ -376,6 +383,8 @@ function LoginClientInner() {
       }
     } catch (error) {
       setProcessing(false);
+      // A Turnstile token is good for one request.
+      turnstileRef.current?.reset();
 
       const data = error.response?.data;
       if (data?.banned) {
@@ -630,6 +639,9 @@ function LoginClientInner() {
 
                 <InputError message={errors.password} className="mt-2" />
               </div>
+              {/* Takes no space unless Cloudflare asks for a click. */}
+              <Turnstile ref={turnstileRef} />
+              <InputError message={errors.captcha} />
               <CustomColorButton
                 bgColor={"#319527"}
                 block

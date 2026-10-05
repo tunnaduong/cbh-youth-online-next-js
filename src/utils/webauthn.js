@@ -91,7 +91,14 @@ export function passkeyErrorMessage(error, mode) {
       // Google Play services): the API is there but nothing answers it.
       if (instantFailures.has(error)) {
         return onAndroid()
-          ? "Trình duyệt này không mở được hộp thoại passkey. Hãy thử lại; nếu vẫn không được, hãy mở trang bằng Chrome và kiểm tra điện thoại đã bật khóa màn hình và đã đăng nhập tài khoản Google."
+          ? mode === "create"
+            ? "Trình duyệt này không mở được hộp thoại passkey. Hãy thử lại; nếu vẫn không được, hãy mở trang bằng Chrome và kiểm tra điện thoại đã bật khóa màn hình và đã đăng nhập tài khoản Google."
+            : // What Android answers when it holds no passkey for this site that
+              // the browser may use. Seen on phones with several Google
+              // accounts: the passkey was saved to one account while Chrome is
+              // signed in to another (or to none), and Chrome only offers the
+              // passkeys of its own account.
+              "Điện thoại không tìm thấy passkey nào dùng được cho trang này. Nếu bạn đã tạo passkey trên máy này, hãy kiểm tra Chrome đang đăng nhập đúng tài khoản Google đã lưu passkey (Cài đặt Chrome → Trình quản lý mật khẩu của Google). Bạn có thể đăng nhập bằng mật khẩu rồi tạo lại passkey trong Cài đặt → Tài khoản."
           : "Trình duyệt này không mở được hộp thoại passkey. Hãy thử lại; nếu vẫn không được, hãy mở trang bằng Chrome hoặc Safari.";
       }
       if (mode !== "create") {
