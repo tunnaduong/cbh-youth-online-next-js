@@ -17,31 +17,53 @@ const pickHex = (color) => color.toHexString().slice(0, 7).toLowerCase();
  *   theme    — bản nháp hiện tại (để xem trước)
  *   options  — theme_editor.options (name_font / name_effect)
  *   onApply({ name_font, name_effect, name_colors })
+ *   prefix   — "name" (mặc định) hoặc "username": cùng một modal sửa kiểu
+ *              riêng của @tên người dùng (username_font / username_effect /
+ *              username_colors)
+ *   title    — tiêu đề modal
  */
-export default function NameStyleModal({ open, theme, options, profileName, onApply, onClose }) {
+export default function NameStyleModal({
+  open,
+  theme,
+  options,
+  profileName,
+  onApply,
+  onClose,
+  prefix = "name",
+  title = "Kiểu tên",
+}) {
   const [style, setStyle] = useState(null);
+  const fontField = `${prefix}_font`;
+  const effectField = `${prefix}_effect`;
+  const colorsField = `${prefix}_colors`;
 
   useEffect(() => {
     if (open) {
       setStyle({
-        name_font: theme.name_font,
-        name_effect: theme.name_effect,
-        name_colors: theme.name_colors,
+        [fontField]: theme[fontField],
+        [effectField]: theme[effectField],
+        [colorsField]: theme[colorsField],
       });
     }
-  }, [open, theme]);
+  }, [open, theme, fontField, effectField, colorsField]);
 
   if (!style) return null;
 
-  const preview = { ...theme, ...style };
+  // The samples are drawn by StyledName, which reads the name_* fields.
+  const preview = {
+    ...theme,
+    name_font: style[fontField],
+    name_effect: style[effectField],
+    name_colors: style[colorsField],
+  };
   const set = (patch) => setStyle((current) => ({ ...current, ...patch }));
   const setColor = (index, hex) =>
-    set({ name_colors: style.name_colors.map((c, i) => (i === index ? hex : c)) });
+    set({ [colorsField]: style[colorsField].map((c, i) => (i === index ? hex : c)) });
 
   return (
     <Modal
       open={open}
-      title="Kiểu tên"
+      title={title}
       onCancel={onClose}
       width={620}
       footer={
@@ -68,12 +90,12 @@ export default function NameStyleModal({ open, theme, options, profileName, onAp
 
         <p className="text-sm font-semibold mb-2 dark:text-neutral-200">Phông chữ</p>
         <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
-          {options.name_font.map((option) => (
+          {options[fontField].map((option) => (
             <OptionTile
               key={option.key}
               option={option}
-              selected={style.name_font === option.key}
-              onClick={() => set({ name_font: option.key })}
+              selected={style[fontField] === option.key}
+              onClick={() => set({ [fontField]: option.key })}
             >
               <StyledName
                 theme={{ ...preview, name_font: option.key, name_effect: "none" }}
@@ -87,12 +109,12 @@ export default function NameStyleModal({ open, theme, options, profileName, onAp
 
         <p className="text-sm font-semibold mt-5 mb-2 dark:text-neutral-200">Hiệu ứng</p>
         <div className="grid grid-cols-3 gap-2">
-          {options.name_effect.map((option) => (
+          {options[effectField].map((option) => (
             <OptionTile
               key={option.key}
               option={option}
-              selected={style.name_effect === option.key}
-              onClick={() => set({ name_effect: option.key })}
+              selected={style[effectField] === option.key}
+              onClick={() => set({ [effectField]: option.key })}
             >
               <StyledName
                 theme={{ ...preview, name_effect: option.key }}
@@ -107,16 +129,16 @@ export default function NameStyleModal({ open, theme, options, profileName, onAp
           ))}
         </div>
 
-        {style.name_effect !== "none" && style.name_effect !== "rainbow" && (
+        {style[effectField] !== "none" && style[effectField] !== "rainbow" && (
           <>
             <p className="text-sm font-semibold mt-5 mb-2 dark:text-neutral-200">
-              {style.name_effect === "outline" ? "Màu chữ và màu viền" : "Màu"}
+              {style[effectField] === "outline" ? "Màu chữ và màu viền" : "Màu"}
             </p>
             <div className="flex gap-3">
-              {(["gradient", "outline"].includes(style.name_effect) ? [0, 1] : [0]).map((index) => (
+              {(["gradient", "outline"].includes(style[effectField]) ? [0, 1] : [0]).map((index) => (
                 <ColorPicker
                   key={index}
-                  value={style.name_colors[index]}
+                  value={style[colorsField][index]}
                   disabledAlpha
                   onChange={(color) => setColor(index, pickHex(color))}
                 >
@@ -124,7 +146,7 @@ export default function NameStyleModal({ open, theme, options, profileName, onAp
                     type="button"
                     aria-label={`Chọn màu tên ${index + 1}`}
                     className="w-14 h-10 rounded-lg border border-gray-300 dark:border-neutral-500"
-                    style={{ backgroundColor: style.name_colors[index] }}
+                    style={{ backgroundColor: style[colorsField][index] }}
                   />
                 </ColorPicker>
               ))}

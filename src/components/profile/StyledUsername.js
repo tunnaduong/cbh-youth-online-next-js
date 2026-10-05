@@ -1,7 +1,7 @@
 "use client";
 
 import StyledName from "@/components/profile/StyledName";
-import { usernameFollowsName } from "@/lib/profileTheme";
+import { getUsernameTheme } from "@/lib/profileTheme";
 
 /**
  * `@username` của người dùng. Mặc định là chữ thường; khi theme đặt
@@ -25,12 +25,14 @@ export default function StyledUsername({
 
   const text = `${prefix}${username}`;
 
-  if (!usernameFollowsName(theme)) {
+  // A Pro member can give the username a font, effect and colours of its own.
+  const usernameTheme = getUsernameTheme(theme);
+  if (!usernameTheme) {
     return <span className={className}>{text}</span>;
   }
 
   return (
-    <StyledName theme={theme} variant={variant} className={className}>
+    <StyledName theme={usernameTheme} variant={variant} className={className}>
       {text}
     </StyledName>
   );
