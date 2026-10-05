@@ -957,6 +957,10 @@ export const adminApproveDeposit = (id) => Api.postRequest(`/v1.0/admin/pending-
 export const adminExpireDeposit = (id) => Api.postRequest(`/v1.0/admin/pending-deposits/${id}/expire`);
 export const adminDeleteDeposit = (id) => Api.deleteRequest(`/v1.0/admin/pending-deposits/${id}`);
 
+// Audit log: who changed what (read-only, except an entry's status)
+export const adminGetAuditLogs = (params) => Api.getRequest("/v1.0/admin/audit-logs", params);
+export const adminGetAuditLogActionTypes = () => Api.getRequest("/v1.0/admin/audit-logs/action-types");
+export const adminUpdateAuditLogStatus = (id, params) => Api.patchRequest(`/v1.0/admin/audit-logs/${id}`, params);
 export const adminGetWithdrawals = (params) => Api.getRequest("/v1.0/admin/withdrawal-requests", params);
 export const adminApproveWithdrawal = (id, params) => Api.postRequest(`/v1.0/admin/withdrawal-requests/${id}/approve`, params);
 export const adminRejectWithdrawal = (id, params) => Api.postRequest(`/v1.0/admin/withdrawal-requests/${id}/reject`, params);

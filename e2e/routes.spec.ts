@@ -8,6 +8,7 @@ const STATIC_ROUTES: string[] = [
   "/",
   "/about",
   "/admin",
+  "/admin/audit-logs",
   "/admin/comments",
   "/admin/deposits",
   "/admin/login",
