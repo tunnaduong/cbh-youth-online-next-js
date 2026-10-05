@@ -11,9 +11,8 @@ import {
   ChatboxOutline,
 } from "react-ionicons";
 import { generatePostSlug } from "@/utils/slugify";
-import VerifiedBadge from "@/components/ui/Badges";
 import MemberTierBadge from "@/components/ui/MemberTierBadge";
-import StyledName from "@/components/profile/StyledName";
+import UserName from "@/components/profile/UserName";
 import UserAvatar from "@/components/profile/UserAvatar";
 import PhotoCollage from "@/components/ui/PhotoCollage";
 import { useState, useEffect, useMemo } from "react";
@@ -997,30 +996,33 @@ export default function PostItem({
                     imgClassName="border"
                   />
                 </Link>
-                <span className="text-gray-500 hidden md:block ml-2">
+                <span className="text-gray-500 hidden md:block ml-2 shrink-0">
                   Đăng bởi
                 </span>
+                {/* One line: the name truncates, icon / tick / tier badge and the date never wrap. */}
                 <Link
-                  className="flex flex-row items-center ml-2 md:ml-1 text-[#319527] hover:text-[#319527] font-bold hover:underline inline-verified truncate"
+                  className="flex min-w-0 items-center ml-2 md:ml-1 text-[#319527] hover:text-[#319527] font-bold hover:underline"
                   href={"/" + post.author.username}
                 >
-                  <StyledName
+                  <UserName
+                    name={
+                      post.author?.profile_name ||
+                      post.author.profile?.profile_name ||
+                      post.author.username
+                    }
                     theme={post.author.profile_theme}
-                    className="inline-verified__text truncate"
+                    verified={
+                      !!post.author.verified ||
+                      post.author?.profile?.verified === true ||
+                      post.author?.profile?.verified === "1"
+                    }
                   >
-                    {post.author?.profile_name ||
-                      post.author.profile?.profile_name}
-                  </StyledName>
-                  {(post.author.verified ||
-                    post.author?.profile?.verified === true ||
-                    post.author?.profile?.verified === "1") && (
-                      <VerifiedBadge className="inline-verified__badge" />
-                    )}
-                  <MemberTierBadge tier={post.author?.member_tier} />
+                    <MemberTierBadge tier={post.author?.member_tier} />
+                  </UserName>
                 </Link>
               </>
             )}
-            <span className="mb-2 ml-0.5 text-sm text-gray-500">.</span>
+            <span className="mb-2 ml-0.5 text-sm text-gray-500 shrink-0">.</span>
             <span className="ml-0.5 text-gray-500 shrink-0">
               {post.created_at_human || post.created_at || post.time}
               {post.is_edited && (

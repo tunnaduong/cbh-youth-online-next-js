@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import StyledName from "@/components/profile/StyledName";
+import UserName from "@/components/profile/UserName";
 import { Trophy } from "lucide-react";
 import { HomeCard, SectionHeader, UserAvatar } from "./HomeCard";
 import { formatThousands } from "./homeUtils";
@@ -37,11 +37,11 @@ function RankRow({ rank, username, name, avatar, points, highlight, theme }) {
       <RankNumber rank={rank} />
       <UserAvatar username={username} name={name} src={avatar} size={28} theme={theme} />
       <span
-        className={`min-w-0 flex-1 truncate text-[13px] font-medium ${
+        className={`flex min-w-0 flex-1 items-center text-[13px] font-medium ${
           highlight ? "text-primary-600 dark:text-[#86dc7c]" : "text-gray-800 dark:text-neutral-200"
         }`}
       >
-        <StyledName theme={theme}>{name}</StyledName>
+        <UserName name={name} theme={theme} variant="full" />
       </span>
       <span
         className={`shrink-0 text-[12px] ${

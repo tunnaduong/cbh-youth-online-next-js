@@ -3,7 +3,8 @@
  *
  * API trả `profile.theme` = null (giao diện mặc định) hoặc:
  *   { primary_color, accent_color, banner_color, name_font, name_effect,
- *     name_colors, avatar_frame, profile_effect, profile_frame }
+ *     name_colors, avatar_frame, profile_effect, profile_frame,
+ *     name_icon, name_icon_emoji, username_style }
  * Danh sách key hợp lệ và quyền mở khoá nằm ở App\Services\ProfileThemeService
  * phía API — thêm key mới phải thêm ở cả hai (font: src/lib/nameFonts.js).
  */
@@ -108,7 +109,32 @@ export function normalizeTheme(theme) {
     avatar_frame: theme.avatar_frame || "none",
     profile_effect: theme.profile_effect || "none",
     profile_frame: theme.profile_frame || "none",
+    // Pro (2000 points). Older responses lack these: "none" / "default".
+    name_icon: theme.name_icon || "none",
+    // The glyph of name_icon, sent by the API (no glyph table on this side).
+    name_icon_emoji:
+      typeof theme.name_icon_emoji === "string" && theme.name_icon_emoji
+        ? theme.name_icon_emoji
+        : null,
+    username_style: theme.username_style === "name" ? "name" : "default",
   };
+}
+
+/**
+ * Glyph shown right after the user's name (Pro), or null. It always
+ * comes from the API (`name_icon_emoji`).
+ */
+export function getNameIcon(theme) {
+  const normalized = normalizeTheme(theme);
+  if (!normalized || normalized.name_icon === "none") return null;
+  return normalized.name_icon_emoji;
+}
+
+/**
+ * true when the @username is drawn with the name's font and effect.
+ */
+export function usernameFollowsName(theme) {
+  return normalizeTheme(theme)?.username_style === "name";
 }
 
 /**
@@ -219,6 +245,9 @@ export function getNameEffect(theme) {
           backgroundSize: "200% auto",
           WebkitBackgroundClip: "text",
           backgroundClip: "text",
+          // A name that wraps keeps the whole gradient on every line.
+          WebkitBoxDecorationBreak: "clone",
+          boxDecorationBreak: "clone",
           WebkitTextFillColor: "transparent",
           color: "transparent",
         },
@@ -261,6 +290,9 @@ export function getNameEffect(theme) {
           backgroundSize: "200% auto",
           WebkitBackgroundClip: "text",
           backgroundClip: "text",
+          // A name that wraps keeps the whole gradient on every line.
+          WebkitBoxDecorationBreak: "clone",
+          boxDecorationBreak: "clone",
           WebkitTextFillColor: "transparent",
           color: "transparent",
         },

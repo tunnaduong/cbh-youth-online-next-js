@@ -3,7 +3,8 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import UserAvatar from "@/components/profile/UserAvatar";
-import StyledName from "@/components/profile/StyledName";
+import UserName from "@/components/profile/UserName";
+import StyledUsername from "@/components/profile/StyledUsername";
 import { message } from "antd";
 import { Trophy } from "lucide-react";
 import HomeLayout from "@/layouts/HomeLayout";
@@ -90,14 +91,18 @@ export default function RankingClient() {
                     className="w-10 h-10"
                   />
                   <div className="flex-1 min-w-0">
-                    <p className="font-medium text-gray-900 dark:text-white truncate">
-                      <StyledName theme={u.profile_theme}>{u.profile_name}</StyledName>
+                    <p className="flex min-w-0 items-center font-medium text-gray-900 dark:text-white">
+                      <UserName
+                        name={u.profile_name || u.username}
+                        theme={u.profile_theme}
+                        variant="full"
+                      />
                     </p>
                     <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
-                      @{u.username}
+                      <StyledUsername username={u.username} theme={u.profile_theme} />
                     </p>
                   </div>
-                  <span className="text-sm font-semibold text-[#319527]">
+                  <span className="flex-shrink-0 text-sm font-semibold text-[#319527]">
                     {u.total_points} điểm
                   </span>
                 </Link>

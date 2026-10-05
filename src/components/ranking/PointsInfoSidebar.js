@@ -36,6 +36,7 @@ const TIERS = [
   { name: "Tiêu biểu", min: 500, color: "text-yellow-600", bg: "bg-yellow-50 dark:bg-yellow-900/30" },
   { name: "Kỳ cựu", min: 1000, color: "text-purple-600", bg: "bg-purple-50 dark:bg-purple-900/30" },
   { name: "Cao cấp", min: 1500, color: "text-rose-600", bg: "bg-rose-50 dark:bg-rose-900/30" },
+  { name: "Pro", min: 2000, color: "text-fuchsia-600", bg: "bg-fuchsia-50 dark:bg-fuchsia-900/30" },
 ];
 
 const STREAK_REWARDS = [

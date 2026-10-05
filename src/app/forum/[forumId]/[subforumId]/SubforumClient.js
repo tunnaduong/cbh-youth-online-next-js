@@ -5,6 +5,7 @@ import HomeLayout from "@/layouts/HomeLayout";
 import Link from "next/link";
 import UserAvatar from "@/components/profile/UserAvatar";
 import StyledName from "@/components/profile/StyledName";
+import NameIcon from "@/components/profile/NameIcon";
 import { getSubforumPosts, getForumCategories } from "@/app/Api";
 import { useForumData } from "@/contexts/ForumDataContext";
 import { generatePostSlug } from "@/utils/slugify";
@@ -316,6 +317,7 @@ export default function SubforumClient({
                                   <StyledName theme={topic.author.profile_theme}>
                                     {topic.author.profile_name}
                                   </StyledName>
+                                  <NameIcon theme={topic.author.profile_theme} className="!ml-0" />
                                   {topic.author.role === "admin" && (
                                     <svg
                                       stroke="currentColor"

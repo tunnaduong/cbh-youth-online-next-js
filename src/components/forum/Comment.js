@@ -21,9 +21,8 @@ import { IoArrowUpSharp, IoArrowDownSharp } from "react-icons/io5";
 import { CommentInput } from "./CommentInput";
 import CommentVotesModal from "./CommentVotesModal";
 import { useRouter } from "@bprogress/next/app";
-import Badges from "../ui/Badges";
 import MemberTierBadge from "../ui/MemberTierBadge";
-import StyledName from "@/components/profile/StyledName";
+import UserName from "@/components/profile/UserName";
 import UserAvatar from "@/components/profile/UserAvatar";
 import MarkdownRenderer from "../ui/MarkdownRenderer";
 import { linkifyMentionsInHtml } from "@/utils/mentionRender";
@@ -308,28 +307,25 @@ export default function Comment({
           {/* Comment text or edit form */}
           <div className="flex-1 min-w-0" style={{ paddingTop: "8px" }}>
             {/* Header */}
-            <div className="flex items-center gap-2 mb-2">
+            {/* One line: the name truncates; icon, tick, tier badge and the date never wrap. */}
+            <div className="flex min-w-0 items-center gap-2 mb-2">
               {comment.is_anonymous ? (
-                <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                <span className="min-w-0 truncate text-sm font-medium text-gray-900 dark:text-gray-100">
                   Người dùng ẩn danh
                 </span>
               ) : (
-                <Link href={`/${comment.author.username}`}>
-                  <span className="inline">
-                    <StyledName
-                      theme={comment.author.profile_theme}
-                      className="line-clamp-1 inline dark:text-white"
-                    >
-                      {comment.author.profile_name}
-                    </StyledName>
-                    {comment.author.verified && (
-                      <Badges className="ml-1 mb-[1.9px]" />
-                    )}
+                <Link href={`/${comment.author.username}`} className="flex min-w-0 items-center">
+                  <UserName
+                    name={comment.author.profile_name || comment.author.username}
+                    theme={comment.author.profile_theme}
+                    verified={!!comment.author.verified}
+                    nameClassName="dark:text-white"
+                  >
                     <MemberTierBadge tier={comment.author?.member_tier} />
-                  </span>
+                  </UserName>
                 </Link>
               )}
-              <span className="text-gray-400">•</span>
+              <span className="text-gray-400 shrink-0">•</span>
               <span className="text-gray-500 dark:!text-gray-400 text-sm shrink-0">
                 {comment.created_at}
                 {(comment.is_edited !== undefined

@@ -7,6 +7,8 @@ import Modal from "@/components/ui/Modal";
 import { X, FileText, Link as LinkIcon, PlayCircle, MoreVertical, Share2, Download, ExternalLink, Copy } from "lucide-react";
 import { getConversationMedia, getPublicChatMedia } from "@/app/Api";
 import ChatMediaLightbox from "./ChatMediaLightbox";
+import StyledName from "@/components/profile/StyledName";
+import NameIcon from "@/components/profile/NameIcon";
 import ForwardMessageModal from "./ForwardMessageModal";
 
 // Same cross-origin-safe download used by the lightbox.
@@ -306,7 +308,10 @@ export default function ChatGalleryModal({ conversationId, isPublic = false, sho
                       <div className="min-w-0 flex-1">
                         <p className="text-sm text-[#319527] dark:text-[#6bcf60] truncate">{item.url}</p>
                         <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
-                          {item.user?.profile_name || item.user?.username} · {formatTimestamp(item.created_at)}
+                          <StyledName theme={item.user?.profile_theme} variant="compact">
+                            {item.user?.profile_name || item.user?.username}
+                          </StyledName>
+                          <NameIcon theme={item.user?.profile_theme} /> · {formatTimestamp(item.created_at)}
                         </p>
                       </div>
                     </a>

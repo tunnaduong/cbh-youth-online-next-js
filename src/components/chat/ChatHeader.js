@@ -16,6 +16,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import AvatarFrameWrap from "@/components/profile/AvatarFrameWrap";
+import UserName from "@/components/profile/UserName";
 import ReportModal from "@/components/ReportModal";
 
 export default function ChatHeader({
@@ -120,8 +121,16 @@ export default function ChatHeader({
             })()}
             <div className="min-w-0 flex-1">
               {conversation?.display_name ? (
-                <h2 className="font-semibold text-sm dark:text-white truncate">
-                  {conversation.display_name}
+                <h2 className="flex min-w-0 items-center font-semibold text-sm dark:text-white">
+                  <UserName
+                    name={conversation.display_name}
+                    theme={
+                      conversation?.type === "group"
+                        ? null
+                        : conversation?.participants?.[0]?.profile_theme
+                    }
+                    variant="full"
+                  />
                 </h2>
               ) : conversation?.type === "group" ? (
                 <h2 className="font-semibold text-sm dark:text-white truncate">
@@ -132,10 +141,16 @@ export default function ChatHeader({
                   href={`/${conversation.participants[0].username}`}
                   className="hover:underline"
                 >
-                  <h2 className="font-semibold text-sm dark:text-white truncate">
-                    {conversation?.participants?.[0]?.profile_name ||
-                      conversation?.participants?.[0]?.username ||
-                      "Chat"}
+                  <h2 className="flex min-w-0 items-center font-semibold text-sm dark:text-white">
+                    <UserName
+                      name={
+                        conversation?.participants?.[0]?.profile_name ||
+                        conversation?.participants?.[0]?.username ||
+                        "Chat"
+                      }
+                      theme={conversation?.participants?.[0]?.profile_theme}
+                      variant="full"
+                    />
                   </h2>
                 </Link>
               ) : (

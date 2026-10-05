@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import StyledName from "@/components/profile/StyledName";
+import UserName from "@/components/profile/UserName";
 import { useEffect, useRef, useState } from "react";
 import {
   ChevronDown,
@@ -14,7 +14,6 @@ import {
   RefreshCw,
 } from "lucide-react";
 import Dropdown from "@/components/ui/Dropdown";
-import Badges from "@/components/ui/Badges";
 import {
   getFollowingFeedPosts,
   getLatestFeedPosts,
@@ -92,12 +91,15 @@ function PostRow({ post }) {
           ) : (
             <Link
               href={`/${post.author?.username}`}
-              className="inline-flex max-w-[140px] items-center font-medium text-primary-500 hover:underline dark:text-[#6bcf60] sm:max-w-[180px]"
+              className="inline-flex min-w-0 max-w-[160px] items-center font-medium text-primary-500 hover:underline dark:text-[#6bcf60] sm:max-w-[200px]"
             >
-              <StyledName theme={post.author?.profile_theme} className="truncate">
-                {authorName}
-              </StyledName>
-              {post.author?.verified && <Badges className="text-[13px]" />}
+              <UserName
+                name={authorName}
+                theme={post.author?.profile_theme}
+                variant="full"
+                verified={!!post.author?.verified}
+                badgeClassName="text-[13px]"
+              />
             </Link>
           )}
           <span aria-hidden="true">·</span>

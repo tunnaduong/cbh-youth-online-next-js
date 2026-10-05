@@ -1,10 +1,11 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Button, ColorPicker, Modal, Skeleton, message } from "antd";
+import { Button, ColorPicker, Modal, Skeleton, Switch, message } from "antd";
 import { ImagePlus, Lock, Plus } from "lucide-react";
 import UserAvatar from "@/components/profile/UserAvatar";
 import StyledName from "@/components/profile/StyledName";
+import NameIcon from "@/components/profile/NameIcon";
 import ProfilePreviewCard from "@/components/profile/ProfilePreviewCard";
 import PointsMilestones from "@/components/profile/PointsMilestones";
 import OptionPickerModal from "@/components/profile/OptionPickerModal";
@@ -12,6 +13,7 @@ import NameStyleModal from "@/components/profile/NameStyleModal";
 import ProfileEffect from "@/components/profile/ProfileEffect";
 import ProfileFrame from "@/components/profile/ProfileFrame";
 import { getProfile, updateAvatar, updateCover, updateProfile } from "@/app/Api";
+import { setOwnProfileTheme } from "@/hooks/useOwnProfileTheme";
 import {
   DEFAULT_ACCENT,
   DEFAULT_PRIMARY,
@@ -31,9 +33,20 @@ const DEFAULT_THEME = {
   avatar_frame: "none",
   profile_effect: "none",
   profile_frame: "none",
+  // Pro (2000 points)
+  name_icon: "none",
+  username_style: "default",
 };
 
-const OPTION_FIELDS = ["name_font", "name_effect", "avatar_frame", "profile_effect", "profile_frame"];
+const OPTION_FIELDS = [
+  "name_font",
+  "name_effect",
+  "avatar_frame",
+  "profile_effect",
+  "profile_frame",
+  "name_icon",
+  "username_style",
+];
 const GRADIENT_FIELDS = ["primary_color_2", "accent_color_2", "banner_color_2"];
 
 const sameTheme = (a, b) =>
@@ -46,7 +59,8 @@ const sameTheme = (a, b) =>
 // so the save bar only ever reflects what the user changes now.
 const withoutLockedOptions = (theme, editor) =>
   OPTION_FIELDS.reduce((result, field) => {
-    const option = editor.options[field].find((o) => o.key === theme[field]);
+    // `?.`: an older API has no name_icon / username_style lists.
+    const option = editor.options[field]?.find((o) => o.key === theme[field]);
     if (editor.can_customize && option && !option.unlocked) {
       result[field] = DEFAULT_THEME[field];
     }
@@ -130,8 +144,9 @@ export default function ProfileCustomizer({ username }) {
     load()
       .then((state) => {
         if (cancelled) return;
+        // DEFAULT_THEME first: themes saved before a field existed lack it.
         const current = state?.saved
-          ? withoutLockedOptions(state.saved, state)
+          ? withoutLockedOptions({ ...DEFAULT_THEME, ...state.saved }, state)
           : DEFAULT_THEME;
         setSaved(current);
         setDraft(current);
@@ -194,7 +209,15 @@ export default function ProfileCustomizer({ username }) {
   }
 
   const update = (patch) => setDraft((current) => ({ ...current, ...patch }));
-  const optionOf = (field, key) => editor.options[field].find((o) => o.key === key);
+  const optionOf = (field, key) => editor.options[field]?.find((o) => o.key === key);
+
+  // The glyph of a name icon comes from the API's option list; other people
+  // get it in `name_icon_emoji`, which is derived and must not be saved.
+  const withIconGlyph = (theme) => ({
+    ...theme,
+    name_icon_emoji: optionOf("name_icon", theme.name_icon)?.icon || null,
+  });
+  const previewTheme = withIconGlyph(draft);
 
   // Points still needed to save the draft (0 = can save).
   const lockedPoints = Math.max(
@@ -213,6 +236,8 @@ export default function ProfileCustomizer({ username }) {
       setSaved(next);
       setDraft(next);
       setEditor((current) => ({ ...current, saved: theme }));
+      // The navbar and other "me" spots follow the change without a reload.
+      setOwnProfileTheme(username, theme ? withIconGlyph(theme) : null);
       message.success(theme ? "Đã lưu thay đổi." : "Đã khôi phục mặc định.");
     } catch (error) {
       console.error("Error saving profile theme:", error);
@@ -331,6 +356,12 @@ export default function ProfileCustomizer({ username }) {
     </p>
   );
 
+  // Pro options; absent on an older API, where the section is hidden.
+  const iconOptions = editor.options.name_icon || [];
+  const iconUnlocked = iconOptions.some((o) => o.key !== "none" && o.unlocked);
+  const iconPoints = iconOptions.find((o) => o.key !== "none")?.required_points;
+  const usernameOption = optionOf("username_style", "name");
+
   const profileName = profile.profile?.profile_name || profile.username;
   const avatarUrl = profile.profile?.profile_picture;
   const coverUrl = profile.profile?.cover_photo_url;
@@ -361,6 +392,18 @@ export default function ProfileCustomizer({ username }) {
           <span className="text-xs dark:text-neutral-300">{OPTION_LABELS.profile_effect[key]}</span>
         </>
       ),
+    },
+    name_icon: {
+      title: "Biểu tượng tên",
+      gridClassName: "grid-cols-4 sm:grid-cols-5",
+      render: (key) =>
+        key === "none" ? (
+          <span className="flex h-9 items-center text-xs text-gray-600 dark:text-neutral-300">Không</span>
+        ) : (
+          <span aria-hidden="true" className="flex h-9 items-center text-2xl leading-none">
+            {optionOf("name_icon", key)?.icon}
+          </span>
+        ),
     },
     profile_frame: {
       title: "Khung hồ sơ",
@@ -512,11 +555,65 @@ export default function ProfileCustomizer({ username }) {
 
           <Section title="Kiểu tên">
             <Slot label="Chọn kiểu tên" onClick={() => setPicker("name")} className="w-full h-16">
-              <StyledName theme={draft} className="text-xl font-bold text-gray-900 dark:text-white truncate px-3">
-                {profileName}
-              </StyledName>
+              <span className="flex min-w-0 max-w-full items-center px-3 text-xl font-bold text-gray-900 dark:text-white">
+                <StyledName theme={draft} className="min-w-0 truncate">
+                  {profileName}
+                </StyledName>
+                <NameIcon theme={previewTheme} />
+              </span>
             </Slot>
           </Section>
+
+          {(editor.options.name_icon || usernameOption) && (
+            <Section title="Biểu tượng tên & tên người dùng">
+              {editor.options.name_icon && (
+                <>
+                  <Slot
+                    label="Chọn biểu tượng tên"
+                    onClick={() => setPicker("name_icon")}
+                    className="w-full h-16"
+                  >
+                    {draft.name_icon === "none" || !previewTheme.name_icon_emoji ? (
+                      <AddIcon />
+                    ) : (
+                      <span aria-hidden="true" className="text-3xl leading-none">
+                        {previewTheme.name_icon_emoji}
+                      </span>
+                    )}
+                  </Slot>
+                  <p className="mt-1.5 flex items-center gap-1 text-xs text-gray-500 dark:text-neutral-400">
+                    {!iconUnlocked && <Lock className="w-3 h-3" />}
+                    Hiện ngay sau tên của bạn
+                    {!iconUnlocked && iconPoints ? ` · ${iconPoints} điểm` : ""}
+                  </p>
+                </>
+              )}
+              {usernameOption && (
+                <div className="flex items-center justify-between pt-3">
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium text-gray-800 dark:text-neutral-200">
+                      Tên người dùng theo kiểu tên
+                    </p>
+                    <p className="mt-0.5 flex items-center gap-1 text-xs text-gray-500 dark:text-neutral-400">
+                      {!usernameOption.unlocked && <Lock className="w-3 h-3 flex-shrink-0" />}
+                      <span className="min-w-0 break-words">
+                        @{username} dùng phông và hiệu ứng của tên
+                        {!usernameOption.unlocked && usernameOption.required_points
+                          ? ` · ${usernameOption.required_points} điểm`
+                          : ""}
+                      </span>
+                    </p>
+                  </div>
+                  <Switch
+                    className="ml-4 flex-shrink-0"
+                    aria-label="Tên người dùng theo kiểu tên"
+                    checked={draft.username_style === "name"}
+                    onChange={(checked) => update({ username_style: checked ? "name" : "default" })}
+                  />
+                </div>
+              )}
+            </Section>
+          )}
 
           <Section title="Màu giao diện">
             <div className="flex gap-2">
@@ -572,7 +669,7 @@ export default function ProfileCustomizer({ username }) {
         {/* Center: live profile card */}
         <div className="xl:sticky xl:top-20">
           <ProfilePreviewCard
-            theme={draft}
+            theme={previewTheme}
             username={username}
             profileName={profileName}
             avatarUrl={avatarUrl}
@@ -601,9 +698,10 @@ export default function ProfileCustomizer({ username }) {
           key={field}
           open={picker === field}
           title={config.title}
-          options={editor.options[field]}
+          options={editor.options[field] || []}
           value={draft[field]}
           renderOption={config.render}
+          gridClassName={config.gridClassName}
           onApply={(key) => update({ [field]: key })}
           onClose={() => setPicker(null)}
         />

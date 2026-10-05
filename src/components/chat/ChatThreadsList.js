@@ -2,7 +2,7 @@
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import AvatarFrameWrap from "@/components/profile/AvatarFrameWrap";
-import StyledName from "@/components/profile/StyledName";
+import UserName from "@/components/profile/UserName";
 import { useChatContext } from "@/contexts/Support";
 import Image from "next/image";
 import moment from "moment";
@@ -198,10 +198,12 @@ export default function ChatThreadsList({ onSelectConversation }) {
           <div className="flex-1 min-w-0">
             <div className="flex items-center justify-between gap-2 mb-1">
               <div className="flex items-center gap-2 flex-1 min-w-0">
-                <h3 className="font-medium text-sm dark:text-white truncate">
-                  <StyledName theme={directTheme(conversation)}>
-                    {getThreadDisplayName(conversation)}
-                  </StyledName>
+                <h3 className="flex min-w-0 items-center font-medium text-sm dark:text-white">
+                  <UserName
+                    name={getThreadDisplayName(conversation)}
+                    theme={directTheme(conversation)}
+                    variant="full"
+                  />
                 </h3>
                 {conversation.unread_count > 0 && (
                   <span className="inline-flex items-center justify-center px-2 py-0.5 text-xs font-medium bg-[#319527] text-white rounded-full flex-shrink-0">

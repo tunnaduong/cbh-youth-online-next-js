@@ -10,6 +10,7 @@ import { useRouter } from "@bprogress/next/app";
 import { useAuthContext } from "@/contexts/Support";
 import { getStories } from "@/app/Api";
 import StyledName from "@/components/profile/StyledName";
+import NameIcon from "@/components/profile/NameIcon";
 import AvatarFrame from "@/components/profile/AvatarFrame";
 import { getAvatarFrame } from "@/lib/profileTheme";
 
@@ -391,6 +392,7 @@ function StoriesSection() {
               >
                 <p className="text-white text-xs sm:text-sm font-semibold px-1 line-clamp-2 drop-shadow hover:underline">
                   <StyledName theme={userStories.profile_theme}>{userStories.name}</StyledName>
+                  <NameIcon theme={userStories.profile_theme} />
                 </p>
               </div>
             </div>

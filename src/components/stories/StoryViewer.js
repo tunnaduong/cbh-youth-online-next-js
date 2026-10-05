@@ -15,7 +15,7 @@ import { openDeepLink } from "@/lib/deepLink";
 import ReportModal from "@/components/ReportModal";
 import StoryOverlayLayer from "@/components/stories/StoryOverlayLayer";
 import StoryMusicPlayer from "@/components/stories/StoryMusicPlayer";
-import StyledName from "@/components/profile/StyledName";
+import UserName from "@/components/profile/UserName";
 import AvatarFrame from "@/components/profile/AvatarFrame";
 import { getAvatarFrame } from "@/lib/profileTheme";
 import { getStoryFilterCss, parseStoryMusic, parseStoryOverlays } from "@/lib/storyOverlays";
@@ -154,10 +154,13 @@ const UserHeader = ({
           <AvatarFrame theme={user.profile_theme} />
         </Link>
         <div className="flex flex-col leading-tight min-w-0">
-          <Link href={`/${user.username}`}>
-            <span className="text-white font-medium text-xs sm:text-sm drop-shadow truncate block">
-              <StyledName theme={user.profile_theme}>{user.name}</StyledName>
-            </span>
+          <Link href={`/${user.username}`} className="flex min-w-0 items-center">
+            <UserName
+              name={user.name}
+              theme={user.profile_theme}
+              variant="full"
+              className="text-white font-medium text-xs sm:text-sm drop-shadow"
+            />
           </Link>
           {createdAt && (
             <span className="text-white/80 text-[10px] sm:text-xs drop-shadow truncate block">

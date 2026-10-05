@@ -12,6 +12,8 @@ const GROUP_LABELS = {
   avatar_frame: "Khung avatar",
   profile_effect: "Hiệu ứng hồ sơ",
   profile_frame: "Khung hồ sơ",
+  name_icon: "Biểu tượng tên",
+  username_style: "Tên người dùng",
 };
 
 const EFFECT_SYMBOLS = { sparkles: "✦", hearts: "♥", snow: "❄", aurora: "✺" };
@@ -20,7 +22,7 @@ const EFFECT_SYMBOLS = { sparkles: "✦", hearts: "♥", snow: "❄", aurora: "�
 const optionLabel = (field, key, fallback) =>
   field === "name_font"
     ? NAME_FONTS[key]?.label || fallback || key
-    : OPTION_LABELS[field]?.[key] || key;
+    : OPTION_LABELS[field]?.[key] || fallback || key;
 
 /**
  * Where `points` sits on the milestone track, in %. Milestones are evenly
@@ -76,6 +78,28 @@ function Sample({ item, theme, username, avatarUrl }) {
       </span>
     );
   }
+  if (field === "name_icon") {
+    // The glyph comes from the API's option list.
+    return (
+      <span aria-hidden="true" className="text-lg leading-none">
+        {item.icon}
+      </span>
+    );
+  }
+  if (field === "username_style") {
+    return (
+      <StyledName theme={theme} className="text-base font-bold text-gray-900 dark:text-white">
+        @
+      </StyledName>
+    );
+  }
+  if (field === "fancy_name") {
+    return (
+      <span aria-hidden="true" className="text-sm font-bold leading-none text-gray-700 dark:text-neutral-200">
+        𝓐✨
+      </span>
+    );
+  }
   if (field === "theme_colors") {
     return <span className="block h-full w-full rounded-lg" style={{ backgroundImage: themeGradient(theme) }} />;
   }
@@ -107,9 +131,21 @@ export default function PointsMilestones({ editor, theme, username, avatarUrl, o
       options
         .filter((o) => o.required_points === minPoints && !["none", "default"].includes(o.key))
         .forEach((o) =>
-          items.push({ field, key: o.key, label: `${GROUP_LABELS[field]}: ${optionLabel(field, o.key, o.label)}` })
+          items.push({
+            field,
+            key: o.key,
+            icon: o.icon,
+            label: `${GROUP_LABELS[field] || field}: ${optionLabel(field, o.key, o.label || o.icon)}`,
+          })
         );
     });
+    if (editor.fancy_name?.required_points === minPoints) {
+      items.push({
+        field: "fancy_name",
+        key: "fancy",
+        label: "Biểu tượng cảm xúc và ký tự đặc biệt trong tên hiển thị",
+      });
+    }
     if (editor.animated_avatar.required_points === minPoints) {
       items.push({ field: "animated_avatar", key: "gif", label: "Avatar GIF động" });
     }

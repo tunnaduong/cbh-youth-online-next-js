@@ -7,6 +7,9 @@ import HomeLayout from "@/layouts/HomeLayout";
 import { PersonOutline } from "react-ionicons";
 import Link from "next/link";
 import { generatePostSlug } from "@/utils/slugify";
+import AvatarFrameWrap from "@/components/profile/AvatarFrameWrap";
+import UserName from "@/components/profile/UserName";
+import StyledUsername from "@/components/profile/StyledUsername";
 import Lottie from "lottie-react";
 import refreshAnimation from "@/assets/refresh.json";
 
@@ -283,7 +286,8 @@ export default function SearchClient() {
                           href={`/${user.username}`}
                           className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 dark:hover:bg-neutral-700 transition-colors"
                         >
-                          <div className="flex-shrink-0">
+                          {/* `profile_theme` is optional here: shown as soon as the search API sends it for users. */}
+                          <AvatarFrameWrap theme={user.profile_theme} className="flex-shrink-0">
                             <div className="w-10 h-10 rounded-full bg-gray-200 dark:bg-neutral-600 flex items-center justify-center overflow-hidden relative">
                               <img
                                 src={getUserAvatarUrl(user.username)}
@@ -306,13 +310,17 @@ export default function SearchClient() {
                                 />
                               </div>
                             </div>
-                          </div>
+                          </AvatarFrameWrap>
                           <div className="flex-1 min-w-0">
-                            <div className="font-semibold text-gray-900 dark:text-gray-100 truncate">
-                              {user.profile_name}
+                            <div className="flex min-w-0 items-center font-semibold text-gray-900 dark:text-gray-100">
+                              <UserName
+                                name={user.profile_name || user.username}
+                                theme={user.profile_theme}
+                                verified={user.verified === true}
+                              />
                             </div>
                             <div className="text-sm text-gray-500 dark:text-gray-400 truncate">
-                              @{user.username}
+                              <StyledUsername username={user.username} theme={user.profile_theme} />
                             </div>
                           </div>
                         </Link>
@@ -360,13 +368,17 @@ export default function SearchClient() {
                               <h3 className="font-medium text-gray-900 dark:text-gray-100 mb-1 line-clamp-2">
                                 {post.title}
                               </h3>
-                              <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
-                                <span>
-                                  {post.author?.profile_name ||
-                                    post.author?.username}
-                                </span>
-                                <span>•</span>
-                                <span>{formatTime(post.created_at)}</span>
+                              <div className="flex min-w-0 items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
+                                <UserName
+                                  name={
+                                    post.author?.profile_name ||
+                                    post.author?.username
+                                  }
+                                  theme={post.author?.profile_theme}
+                                  verified={post.author?.verified === true}
+                                />
+                                <span className="flex-shrink-0">•</span>
+                                <span className="flex-shrink-0">{formatTime(post.created_at)}</span>
                               </div>
                             </div>
                           </Link>

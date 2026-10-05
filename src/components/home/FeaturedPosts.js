@@ -1,9 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import StyledName from "@/components/profile/StyledName";
+import UserName from "@/components/profile/UserName";
 import { Eye, FileText, Heart, MessageSquare, Sparkles, Video } from "lucide-react";
-import Badges from "@/components/ui/Badges";
 import { HomeCard, SectionHeader, UserAvatar } from "./HomeCard";
 import {
   formatCommentCount,
@@ -71,16 +70,17 @@ function FeaturedCard({ post }) {
           size={20}
           theme={post.anonymous ? null : post.author?.profile_theme}
         />
-        <span className="truncate">
-          {post.anonymous ? (
-            "Người dùng ẩn danh"
-          ) : (
-            <StyledName theme={post.author?.profile_theme}>
-              {post.author?.profile_name || post.author?.username}
-            </StyledName>
-          )}
-        </span>
-        {post.author?.verified && <Badges className="!ml-0 text-[13px]" />}
+        {post.anonymous ? (
+          <span className="min-w-0 truncate">Người dùng ẩn danh</span>
+        ) : (
+          <UserName
+            name={post.author?.profile_name || post.author?.username}
+            theme={post.author?.profile_theme}
+            variant="full"
+            verified={!!post.author?.verified}
+            badgeClassName="text-[13px]"
+          />
+        )}
       </div>
 
       <div className="mt-2 flex items-center gap-3.5 text-[12px] text-gray-500 dark:text-neutral-400">

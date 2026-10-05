@@ -32,6 +32,10 @@ import useCreatePostGate from "@/hooks/useCreatePostGate";
 import CreatePostModal from "@/components/modals/CreatePostModal";
 import { logoutRequest } from "@/app/Api";
 import AccountSwitcher from "./AccountSwitcher";
+import AvatarFrameWrap from "@/components/profile/AvatarFrameWrap";
+import UserName from "@/components/profile/UserName";
+import StyledUsername from "@/components/profile/StyledUsername";
+import useOwnProfileTheme from "@/hooks/useOwnProfileTheme";
 import { getSavedAccounts, removeSavedAccount, activateSavedAccount } from "@/utils/savedAccounts";
 import { NAV_BADGE_CLASS, NAV_ICON_BUTTON_CLASS } from "./navStyles";
 
@@ -151,6 +155,8 @@ export default function Navbar({ hasSidebar = false }) {
   };
 
   const displayName = currentUser?.profile_name || currentUser?.username;
+  // Own name style / avatar frame / name icon (cached; follows the editor).
+  const ownTheme = useOwnProfileTheme(loggedIn ? currentUser : null);
 
   return (
     <>
@@ -273,26 +279,42 @@ export default function Navbar({ hasSidebar = false }) {
                       aria-label="Tài khoản"
                       className="ml-0.5 flex items-center gap-2 rounded-full p-0.5 transition-colors hover:bg-gray-100 dark:hover:bg-neutral-700 lg:pr-2"
                     >
-                      <Avatar className="h-9 w-9 border border-gray-200 dark:border-neutral-600">
-                        <AvatarImage
-                          src={currentUser?.avatar_url || `${process.env.NEXT_PUBLIC_API_URL}/v1.0/users/${currentUser?.username}/avatar`}
-                          alt=""
-                          className="object-cover"
+                      <AvatarFrameWrap theme={ownTheme}>
+                        <Avatar className="h-9 w-9 border border-gray-200 dark:border-neutral-600">
+                          <AvatarImage
+                            src={currentUser?.avatar_url || `${process.env.NEXT_PUBLIC_API_URL}/v1.0/users/${currentUser?.username}/avatar`}
+                            alt=""
+                            className="object-cover"
+                          />
+                          <AvatarFallback>
+                            <User className="h-5 w-5" />
+                          </AvatarFallback>
+                        </Avatar>
+                      </AvatarFrameWrap>
+                      {/* Fixed line height: a custom name font must not change the bar's height. */}
+                      <span className="hidden min-w-0 max-w-[160px] items-center lg:flex">
+                        <UserName
+                          name={displayName}
+                          theme={ownTheme}
+                          className="text-sm font-medium leading-5 text-gray-800 dark:text-neutral-100"
                         />
-                        <AvatarFallback>
-                          <User className="h-5 w-5" />
-                        </AvatarFallback>
-                      </Avatar>
-                      <span className="hidden max-w-[140px] truncate text-sm font-medium text-gray-800 dark:text-neutral-100 lg:block">
-                        {displayName}
                       </span>
                       <ChevronDown className="hidden h-4 w-4 text-gray-500 dark:text-neutral-400 lg:block" />
                     </button>
                   </Dropdown.Trigger>
                   <Dropdown.Content width="none" contentClasses="w-60 py-1.5 bg-white dark:!bg-neutral-700">
                     <div className="border-b border-gray-100 px-4 pb-2.5 pt-1 dark:border-neutral-600">
-                      <p className="truncate text-sm font-semibold text-gray-900 dark:text-neutral-100">{displayName}</p>
-                      <p className="truncate text-xs text-gray-500 dark:text-neutral-400">@{currentUser?.username}</p>
+                      <p className="flex min-w-0 items-center text-sm font-semibold text-gray-900 dark:text-neutral-100">
+                        <UserName
+                          name={displayName}
+                          theme={ownTheme}
+                          variant="full"
+                          verified={currentUser?.verified === true}
+                        />
+                      </p>
+                      <p className="truncate text-xs text-gray-500 dark:text-neutral-400">
+                        <StyledUsername username={currentUser?.username} theme={ownTheme} variant="full" />
+                      </p>
                     </div>
                     <div className="py-1">
                       <Link className={MENU_ITEM_CLASS} href={`/${currentUser?.username}`}>
