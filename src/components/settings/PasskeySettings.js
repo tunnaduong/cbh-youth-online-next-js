@@ -154,7 +154,7 @@ export default function PasskeySettings() {
             thiết bị - không cần mật khẩu và không cần mã xác thực hai lớp.
           </p>
         </div>
-        {supported && passkeys && !adding && platformReady !== false && (
+        {supported && passkeys && !adding && (
           <Button onClick={startAdd} loading={busy}>
             Thêm passkey
           </Button>
@@ -176,9 +176,9 @@ export default function PasskeySettings() {
 
       {supported && !embedded && platformReady === false && (
         <p className={`${hintClass} mt-3`}>
-          Passkey được lưu ngay trên thiết bị đang dùng. Thiết bị này chưa bật
-          khóa màn hình (vân tay, khuôn mặt, mã PIN hoặc Windows Hello) nên chưa
-          tạo được passkey - hãy bật khóa màn hình rồi tải lại trang.
+          Thiết bị này chưa bật khóa màn hình (vân tay, khuôn mặt, mã PIN hoặc
+          Windows Hello). Bạn vẫn có thể tạo passkey bằng thứ khác mà trình
+          duyệt đưa ra: đầu đọc vân tay, khóa bảo mật hoặc điện thoại.
         </p>
       )}
 
