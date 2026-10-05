@@ -99,7 +99,7 @@ export function passkeyErrorMessage(error, mode) {
       }
       return onAndroid()
         ? "Chưa tạo được passkey. Điện thoại cần có khóa màn hình (vân tay, khuôn mặt hoặc mã PIN) và đã đăng nhập tài khoản Google để lưu passkey; hãy dùng Chrome nếu trình duyệt này không lưu được."
-        : "Chưa tạo được passkey. Thiết bị cần có khóa màn hình (vân tay, khuôn mặt, mã PIN hoặc Windows Hello); nếu không, hãy chọn dùng điện thoại hoặc khóa bảo mật trong hộp thoại của trình duyệt.";
+        : "Chưa tạo được passkey. Passkey được lưu ngay trên thiết bị này, nên thiết bị cần có khóa màn hình (vân tay, khuôn mặt, mã PIN hoặc Windows Hello).";
     case "InvalidStateError":
       return "Thiết bị này đã có passkey cho tài khoản của bạn.";
     case "SecurityError":

@@ -32,6 +32,32 @@ const nextConfig = {
     ignoreDuringBuilds: false,
     dirs: ['src', 'pages', 'components', 'lib', 'app'],
   },
+  // The site lives on www. The bare domain used to be redirected there by a
+  // domain-level redirect in Vercel, which also redirected
+  // /.well-known/apple-app-site-association and /.well-known/assetlinks.json.
+  // iOS and Android read those two from chuyenbienhoa.com itself (the
+  // passkeys' relying party) and do not follow redirects, so the mobile app
+  // could not use passkeys. The redirect is done here instead, for everything
+  // except /.well-known - once the bare domain is set to serve this project
+  // in Vercel (no redirect), these rules take over. Query strings are kept.
+  async redirects() {
+    const bareDomain = [{ type: "host", value: "chuyenbienhoa.com" }];
+    return [
+      {
+        source: "/",
+        has: bareDomain,
+        destination: "https://www.chuyenbienhoa.com/",
+        permanent: true,
+      },
+      {
+        // Any first path segment other than ".well-known".
+        source: "/:first((?!\\.well-known(?:/|$))[^/]+)/:rest*",
+        has: bareDomain,
+        destination: "https://www.chuyenbienhoa.com/:first/:rest*",
+        permanent: true,
+      },
+    ];
+  },
   async rewrites() {
     return [
       {

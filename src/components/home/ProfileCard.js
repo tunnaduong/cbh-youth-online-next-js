@@ -96,7 +96,9 @@ export default function ProfileCard({ currentUser, authLoading, topUsers }) {
 
   const name = currentUser.profile_name || profile?.profile?.profile_name || username;
   const points = Number(currentUser.total_points ?? profile?.stats?.activity_points) || 0;
-  const rank = currentUser.rank;
+  // Admins are left out of the ranking, so they have no place to show (the
+  // API sends none; an older cached value is ignored too).
+  const rank = currentUser.role === "admin" ? null : currentUser.rank;
   const progress = getRankProgress(points, rank, topUsers);
 
   const stats = [
