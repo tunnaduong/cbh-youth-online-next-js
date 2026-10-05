@@ -138,6 +138,121 @@ The first time, run `npx playwright install chromium` before `test:e2e`.
 - **New static routes:** add them to `e2e/routes.spec.ts`.
 - **Client-only checks** (`window`, sessionStorage, app mode) belong in a `useEffect` so hydration matches the server render.
 
+## Design system
+
+**Mandatory for every new or changed page or component.** This is how the site looks today; build from it instead of inventing a look. The class strings below are copied from the code - when in doubt, open the reference file and copy from there.
+
+The site carries two generations of styling. **New work follows the current one**: the navbar (`components/include/navbar.js`, `navStyles.js`), the sidebar (`components/layout/SidebarNav.js`), the home page (`components/home/*`, start with `HomeCard.js`) and the account-security blocks (`components/settings/DeviceSessions.js`, `PasskeySettings.js`, `TwoFactorSettings.js`). Older pages (the post page's `post-container shadow-lg rounded-xl`, `long-shadow`, the `components/ui/PrimaryButton.js` family from the Laravel starter, Bootstrap-like classes in `globals.css` such as `.modal`, `.row`, `.col-md-*`) still work but are **not** a model: don't copy them into new code, and when you rework one of those areas move it to the current look.
+
+### Foundations
+
+- **Stack**: Tailwind 3 (`tailwind.config.js`, `darkMode: "class"`) for layout and almost all styling; **antd 5** for controls and overlays; **lucide-react** for icons; a few Radix/shadcn-style pieces in `components/ui`. Global CSS lives in `src/app/globals.css`.
+- **Font**: Inter everywhere (`* { font-family: "Inter" }`, antd `fontFamily` token). Name styles (`StyledName`) are the only other fonts.
+- **Brand green**: `#319527` = Tailwind `primary-500` (scale `primary-50 #f3fbf2`, `100 #e3f8e0`, `200 #c7f0c2`, `300 #9ae392`, `400 #65cd5b`, `500 #319527`, `600 #287421`, `700 #245c1f`) = antd `colorPrimary`. Write `primary-500`, not `[#319527]` and not `green-600`.
+- **Custom greys**: `gray-600` is `#585858` and `gray-700` is `#3C3C3C` (overridden in the Tailwind config), so `dark:bg-gray-700` equals the dark card colour. Prefer the `neutral-*` names for dark mode in new code.
+
+### Colours (light → dark pairs)
+
+| Role | Classes |
+| --- | --- |
+| Page background | set on `<body>`: `#F8F8F8` light, `#2c2f2e` dark (`.dark` rule in `globals.css`). Don't paint page-sized wrappers. |
+| Card / panel | `bg-white dark:!bg-[var(--main-white)]` (`--main-white` is `#3c3c3c` in dark) - or `dark:bg-neutral-700` for a card inside a settings panel |
+| Inset box inside a card | `bg-gray-50 dark:bg-neutral-800` |
+| Neutral fill (icon holder, chip, thumbnail placeholder, skeleton bar) | `bg-gray-100 dark:bg-neutral-600` (`dark:bg-neutral-700` when it sits on the page rather than on a card); skeleton bars `bg-gray-200 dark:bg-neutral-600` |
+| Border | cards `border-gray-200 dark:border-neutral-600` (home cards use `border-[#EBEFEA]`); dividers `divide-gray-100`/`divide-gray-200` + `dark:divide-neutral-600`; form controls `border-gray-300 dark:border-neutral-500` |
+| Text - primary | `text-gray-900 dark:text-white` (or `dark:text-neutral-100`) |
+| Text - body | `text-gray-700 dark:text-gray-300` |
+| Text - secondary / hint | `text-gray-500 dark:text-gray-400` (or `dark:text-neutral-400`) |
+| Text - icon, muted | `text-gray-400 dark:text-neutral-400` |
+| Green text / link | `text-primary-500 hover:text-primary-600 dark:text-[#6bcf60] dark:hover:text-[#86dc7c]` - `primary-500` is too dark on the dark surfaces, always add the lighter green |
+| Green fill | `bg-primary-500 hover:bg-primary-600` with `text-white` (the code writes `!text-white` on a `<Link>` so global link rules can't override it) |
+| Green tint (hover of an outline button, soft badge) | `bg-primary-50 dark:bg-[#2b3a2a]`, text `text-primary-600 dark:text-[#86dc7c]` |
+| Success badge | `bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300` |
+| Error text | `text-red-500` (`dark:text-red-400` on large blocks); destructive buttons are antd `danger` |
+| Warning text | `text-amber-600 dark:text-amber-400` |
+| Hover on a row / ghost button | `hover:bg-gray-100 dark:hover:bg-neutral-700` |
+
+**Dark mode rule**: every colour class needs its `dark:` partner - a background, border or text colour without one is a bug. The `dark` class is on `<body>` (set by `src/contexts/themeContext.js`; settings are light / dark / auto), so `dark:` utilities can't style `<body>` itself. antd follows the same theme through `AntdProvider` (`resolvedTheme` → `darkAlgorithm`); when JS needs to know, use `useTheme().resolvedTheme` or `useIsDarkMode()` (`src/hooks/useIsDarkMode.js`), never `theme === "dark"` (it can be `"auto"`).
+
+### Layout and responsive rules
+
+- Shell: `HomeLayout` = fixed navbar (`h-[69px]`, `bg-white/90 backdrop-blur-xl`, `dark:bg-[#2c2f2e]/90`, bottom border) + left sidebar (only from `xl`) + content (`mt-[4.3rem]` below the navbar) + right sidebar + footer; `DefaultLayout` = the navbar and the content only. Sticky side content sits at `lg:top-[88px]`.
+- Content widths: home `mx-auto w-full max-w-[1240px]`; feed and post column `md:max-w-[775px] mx-auto w-full`; settings-style pages `max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8`; a form column inside a section `max-w-sm`.
+- Page gutters: `px-3 sm:px-4`; vertical rhythm between cards `space-y-4 sm:space-y-5` / `gap-4 sm:gap-5`.
+- Breakpoints (mobile first): `xs` 475px (custom), `sm` 640, `md` 768, `lg` 1024, `xl` 1280, `2xl` 1536. What changes where: `sm` loosens padding and shows button labels; `md` switches the post layout to a row; `lg` shows the navbar search field and the two-column home grid (`lg:grid-cols-[minmax(0,1fr)_320px]`); `xl` shows the left sidebar and hides the mobile menu / "create" button.
+- Every page must work at 360px wide: stack with `flex-col` first, add `min-w-0` + `truncate` / `break-words` to text beside fixed-size items, wrap action rows with `flex-wrap gap-2`, never give a fixed width without a `max-w-full`. Wide tables scroll inside their own box.
+- Pages opened by the mobile app (`isInApp()`, `src/utils/appMode.js`) hide site chrome that makes no sense there - keep that working when you add header or account UI.
+
+### Shapes, spacing, shadows
+
+- **Radii**: cards and large panels `rounded-2xl`; buttons, inputs, nav items, list rows, thumbnails and inset boxes `rounded-xl`; small controls and menu items `rounded-lg`; chips, badges, avatars and icon buttons `rounded-full`. (antd controls keep their own radius; add `shape="round"` for a pill button.)
+- **Spacing**: card padding `p-4 sm:p-5`; expandable-card header `p-4`; rows `py-2.5`-`py-4` with `gap-3`; icon + text `gap-2`/`gap-3`; chips `px-2.5 py-0.5`; section blocks inside a settings tab are separated by `mt-8 pt-8 border-t border-gray-200 dark:border-gray-700`.
+- **Shadows**: cards are flat - border plus at most `shadow-[0_1px_3px_rgba(16,24,40,0.04)]`. `shadow-sm` for a raised button, `shadow-lg` only for popovers and dropdown menus. No `long-shadow` on new work.
+
+### Typography
+
+| Use | Classes |
+| --- | --- |
+| Page title | `text-3xl font-bold text-gray-900 dark:text-white` (subtitle `mt-2 text-gray-600 dark:text-gray-400`) |
+| Settings tab title | `text-lg font-semibold` |
+| Section / block title | `text-base font-semibold text-gray-900 dark:text-white` |
+| Card header (home) | `text-[15px] font-semibold text-gray-900 dark:text-neutral-100`, with an 18px lucide icon in `text-primary-500` (`SectionHeader` in `HomeCard.js`) |
+| Row / item title | `text-sm font-medium` (`text-[15px] font-semibold leading-snug` for a post title in a list) |
+| Body, hints | `text-sm text-gray-500 dark:text-gray-400` |
+| Meta, timestamps, chips | `text-xs` or `text-[12px]`/`text-[13px]`; chips `text-xs font-medium` |
+| Form label | `block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2` |
+| Long-form content (posts, help) | `prose dark:prose-invert` via `components/ui/MarkdownRenderer.js` |
+
+Weights: `font-medium` (default emphasis), `font-semibold` (titles, buttons), `font-bold` (page titles, counters). Truncate single lines with `truncate`, multi-line with `line-clamp-2`.
+
+### Components
+
+- **Card**: use `HomeCard` (`components/home/HomeCard.js`): `rounded-2xl border border-[#EBEFEA] bg-white shadow-[0_1px_3px_rgba(16,24,40,0.04)] dark:border-neutral-600 dark:!bg-[var(--main-white)]` + `p-4 sm:p-5`. With a header use `SectionHeader` (icon, title, optional "Xem tất cả" link).
+- **List inside a card**: `divide-y divide-gray-100 dark:divide-neutral-600`, rows `flex items-center gap-3 py-3`.
+- **Expandable item card** (`DeviceSessions.js`): `<li className="overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-neutral-600 dark:bg-neutral-700">`, header is a real `<button type="button" aria-expanded aria-controls>` with `flex w-full items-center gap-3 p-4 text-left`; icon holder `h-12 w-12 rounded-full bg-gray-100 dark:bg-neutral-600` with a `h-6 w-6 text-primary-500 dark:text-[#6bcf60]` icon; body `px-4 pb-4` with an inset box `rounded-xl border border-gray-200 bg-gray-50 px-3.5 dark:border-neutral-600 dark:bg-neutral-800`.
+- **Chips / badges**: `rounded-full px-2.5 py-0.5 text-xs font-medium` + neutral `bg-gray-100 text-gray-700 dark:bg-neutral-600 dark:text-neutral-200` or success `bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300`. Counter badge on an icon: `NAV_BADGE_CLASS`.
+- **Buttons - when to use which**:
+  - Inside forms, settings, dialogs and admin: **antd `Button`** - `type="primary"` for the one main action, default for secondary, `danger` for destructive, `type="link"` for an inline text action, `loading={busy}` while it runs, `block` / `shape="round"` as needed. Pair buttons in `flex flex-wrap gap-2`.
+  - Navigation and page chrome (navbar, sidebar, home cards): plain `<Link>` / `<button>` with Tailwind - filled `flex h-10 items-center gap-1.5 rounded-xl bg-primary-500 px-4 text-sm font-semibold !text-white shadow-sm transition-colors hover:bg-primary-600`; outline / "load more" `rounded-xl border border-gray-200 py-2.5 text-sm font-medium text-primary-500 transition hover:bg-primary-50 disabled:opacity-60 dark:border-neutral-600 dark:text-[#6bcf60] dark:hover:bg-[#2b3a2a]`; ghost `h-10 rounded-xl px-3.5 text-sm font-medium text-gray-700 hover:bg-gray-100 dark:text-neutral-200 dark:hover:bg-neutral-700`; round icon button `NAV_ICON_BUTTON_CLASS`.
+  - Not the `components/ui/PrimaryButton.js` / `SecondaryButton.js` / `DangerButton.js` set (grey, uppercase - legacy).
+- **Nav item** (`SidebarNav.js`): `flex items-center gap-3 rounded-xl px-4 py-2.5 text-[15px] font-medium transition-colors`; active `bg-primary-500 !text-white shadow-[0_4px_12px_rgba(49,149,39,0.28)]`; idle `text-gray-700 hover:bg-gray-100 hover:text-gray-900 dark:text-neutral-300 dark:hover:bg-neutral-700 dark:hover:text-white`; set `aria-current="page"`.
+- **Forms**: antd `Input`, `Input.Password`, `Select`, `Switch`, `Checkbox`, `DatePicker` (40px high, transparent background, themed border - configured once in `AntdProvider`, don't restyle per use). Label above (class in the table), help text below as `mt-1 text-xs text-gray-500 dark:text-gray-400`, error below as `mt-1 text-xs text-red-500` (or `components/ui/InputError.js`). Keep a form column to `max-w-sm`. A setting with a switch: `flex items-center justify-between py-3`, text block `min-w-0`, `<Switch className="ml-4 flex-shrink-0" />`.
+- **Search field** (navbar): `h-11 w-full rounded-xl border border-gray-200 bg-white pl-10 pr-16 text-sm placeholder:text-gray-400 focus:border-primary-400 focus:ring-2 focus:ring-primary-100` + dark pair.
+- **Modals / drawers**: antd `Modal` (`className="custom-modal"` for the compact padding and top offset defined in `globals.css`) and `Drawer`; their dark colours come from `AntdProvider`. Don't build overlays by hand.
+- **Avatars**: `UserAvatar` (`HomeCard.js`) - round, `border border-gray-100 bg-gray-200 dark:border-neutral-600`, wrapped in the user's avatar frame when a `theme` is passed. Names of users go through `StyledName` wherever a profile theme is available.
+
+### Feedback
+
+- **Result of an action**: antd `message.success(...)` / `message.error(...)` (`message.warning` / `message.info` when that's what it is). Error text: `error.response?.data?.message || "Có lỗi xảy ra."` - the API answers in Vietnamese, the site's language.
+- **Confirm before destructive actions**: antd `Popconfirm` on the button (`title`, optional `description`, `okText`, `cancelText="Hủy"`), or `Modal.confirm` when there is more to explain. Both get the theme through `AntdProvider`'s `holderRender`.
+- **Inline errors** under the field while the user is still in the form; a `message` for the outcome.
+
+### Loading, empty and error states
+
+- **Lists and cards**: skeletons shaped like the content - `animate-pulse` wrappers with `rounded bg-gray-200 dark:bg-neutral-600` bars (`LatestPosts.js`, `RankingCard.js`, `components/home/skeletonPost.js`), or antd `Skeleton`.
+- **Media** (images, videos, embeds): put the `media-loading` class on the `<img>` / `<video>` or on a wrapper behind it (shimmer defined in `globals.css`; `MediaLoadingWatcher` removes it once loaded). `.iframe-wrapper` shimmers by itself. Give media a fixed box (`aspect-video`, explicit height) so nothing jumps.
+- **A small block that is loading**: a hint line `Đang tải...` in the secondary text style; **a button**: antd `loading`; **a refresh icon**: `animate-spin`. antd `Spin` only for a full panel with no meaningful skeleton.
+- **Empty**: one centred line `py-10 text-center text-sm text-gray-500 dark:text-neutral-400` (antd `Empty` in admin tables).
+- **Error**: the same line saying what failed and what to do ("Hãy tải lại trang."), `text-red-500` only for an error the user caused.
+
+### Icons
+
+**lucide-react** for all new icons: `h-4 w-4` inside buttons and chips, `h-[18px] w-[18px]` in card headers and detail rows, `h-5 w-5` in lists, `h-6 w-6` in a 48px holder, `h-[21px]`-`h-[22px]` in the navbar; colour by text class (`text-gray-400`, `text-primary-500 dark:text-[#6bcf60]`), `flex-shrink-0` beside text. `@ant-design/icons` only inside antd-heavy admin screens. `react-ionicons` and `react-icons` exist in older components - don't add new uses.
+
+### Motion
+
+`transition-colors` (or `transition`) on anything with a hover state; `animate-pulse` for skeletons; `animate-spin` for a running refresh. Nothing else moves by default - no entrance animations on new content. The shimmer respects `prefers-reduced-motion`.
+
+### Language and accessibility
+
+- **All UI text is Vietnamese**, written in the code (there is no i18n layer). Match the existing voice: short, sentence case, "bạn". Dates: `dayjs(...).format("HH:mm DD/MM/YYYY")`.
+- Use real elements: `<button type="button">` for actions, `<Link>` for navigation, headings in order (`h1` page, `h2` card, `h3` block). Icon-only buttons need `aria-label` (Vietnamese) or an `sr-only` label; toggles and expanders need `aria-expanded` / `aria-controls`; images need `alt` (empty for decoration).
+- Client-only values (`window`, storage, theme, app mode) are read in `useEffect` so the server render matches.
+
+### Keeping this section true
+
+Every new or changed page or component must follow this section. If the part you touch is in the older style, bring it in line. When a deliberate, large redesign changes these rules (new card style, new palette, new navigation), **update this section in the same commit** - it must always describe the site as it is, not as it was.
+
 ## Recent work (newest first, as of 2026-10)
 - **Logged-in devices as expandable cards, with the login method (PR #36; not built locally):** `DeviceSessions.js` shows one card per login (icon, device name, "platform version • last active", chips for "Thiết bị này" and the login method) that opens to a boxed list - model, platform + version, login method (`login_method` / `login_two_factor` from `GET /sessions`), logged in, last active - and a "Đăng xuất" button.
 - **App-association files for native mobile passkeys; device-only passkeys; no rank for admins (branch `feat/native-passkey-association`; checked by the CI build, not run in a browser):**
