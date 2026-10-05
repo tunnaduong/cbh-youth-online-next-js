@@ -25,6 +25,17 @@ export default function AdminShopOrdersPage() {
         <div className="max-w-[260px]">
           <div>{o.phone}</div>
           <div className="text-xs text-gray-500 dark:text-gray-400">{o.shipping_address}</div>
+          {/* The pin the customer dropped on the shop's checkout map (the API builds the link). */}
+          {o.maps_url && (
+            <a
+              href={o.maps_url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-xs font-medium text-primary-500 hover:underline dark:text-[#6bcf60]"
+            >
+              Mở Google Maps
+            </a>
+          )}
         </div>
       ),
     },
@@ -34,7 +45,11 @@ export default function AdminShopOrdersPage() {
       key: "status",
       render: (_, o) =>
         o.status === "cancelled" ? (
-          <Tag color="red">Đã hủy</Tag>
+          <>
+            <Tag color="red">Đã hủy</Tag>
+            {/* Cancelled after the transfer was received: the money is still owed back. */}
+            {o.payment_method === "qr" && o.payment_status === "paid" && <Tag color="gold">Cần hoàn tiền</Tag>}
+          </>
         ) : (
           <Select
             size="small"
