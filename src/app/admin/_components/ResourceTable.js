@@ -1,7 +1,7 @@
 "use client";
 
 import { forwardRef, useCallback, useEffect, useImperativeHandle, useState } from "react";
-import { Table, Input, Select, message } from "antd";
+import { Grid, Table, Input, Select, message } from "antd";
 
 export const fmtDate = (v) => (v ? new Date(v).toLocaleString("vi-VN") : "-");
 export const fmtNumber = (v) => (v == null ? "-" : Number(v).toLocaleString("vi-VN"));
@@ -30,6 +30,11 @@ export const UserLink = ({ user, userId }) =>
  * filters: [{ key, type: "search" | "select", placeholder, options, width }]
  * columns: antd columns, or a function (reload) => columns
  * The parent can call ref.current.reload() after mutations.
+ *
+ * A column with `fixed` (the action buttons, pinned to the right) is only
+ * pinned from the `md` breakpoint up: on a phone the pinned buttons were as
+ * wide as the screen and covered the data scrolling underneath, so there
+ * they are an ordinary last column to scroll to.
  */
 const ResourceTable = forwardRef(function ResourceTable(
   { title, fetcher, columns, filters = [], extra, rowKey = "id", expandable, defaultFilters = {} },
@@ -76,6 +81,12 @@ const ResourceTable = forwardRef(function ResourceTable(
   useImperativeHandle(ref, () => ({ reload }), [reload]);
 
   const setFilter = (key, v) => setValues((prev) => ({ ...prev, [key]: v }));
+
+  const screens = Grid.useBreakpoint();
+  const resolvedColumns = typeof columns === "function" ? columns(reload) : columns;
+  const tableColumns = screens.md
+    ? resolvedColumns
+    : resolvedColumns.map(({ fixed, ...column }) => column);
 
   return (
     <div className="max-w-[1280px] mx-auto w-full px-4 sm:px-6 py-6">
@@ -124,7 +135,7 @@ const ResourceTable = forwardRef(function ResourceTable(
         size="middle"
         loading={loading}
         dataSource={rows}
-        columns={typeof columns === "function" ? columns(reload) : columns}
+        columns={tableColumns}
         expandable={expandable}
         scroll={{ x: "max-content" }}
         pagination={{
