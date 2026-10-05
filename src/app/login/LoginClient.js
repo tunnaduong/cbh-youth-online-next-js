@@ -16,7 +16,12 @@ import {
   getPasskeyLoginOptions,
   loginWithPasskey,
 } from "../Api";
-import { getPasskey, isPasskeyCancel, passkeysSupported } from "@/utils/webauthn";
+import {
+  getPasskey,
+  passkeyErrorMessage,
+  passkeysSupported,
+  prepareLoginOptions,
+} from "@/utils/webauthn";
 import { activateSavedAccount, getSavedAccounts } from "@/utils/savedAccounts";
 import {
   getTwoFactorDeviceToken,
@@ -29,6 +34,14 @@ function LoginClientInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const manualRedirectRef = useRef(false);
+  // Passkey login options fetched ahead of the tap (see prepareLoginOptions).
+  const passkeyOptionsRef = useRef(null);
+  useEffect(() => {
+    if (!passkeysSupported()) return;
+    passkeyOptionsRef.current = prepareLoginOptions(() =>
+      getPasskeyLoginOptions().then((res) => res.data)
+    );
+  }, []);
 
   // Replace useForm with React state
   const [data, setData] = useState({
@@ -188,10 +201,12 @@ function LoginClientInner() {
     manualRedirectRef.current = false;
 
     try {
-      const options = await getPasskeyLoginOptions();
-      const credential = await getPasskey(options.data.publicKey);
+      const options = passkeyOptionsRef.current
+        ? await passkeyOptionsRef.current.take()
+        : (await getPasskeyLoginOptions()).data;
+      const credential = await getPasskey(options.publicKey);
       const response = await loginWithPasskey({
-        request_id: options.data.request_id,
+        request_id: options.request_id,
         credential,
       });
 
@@ -206,9 +221,9 @@ function LoginClientInner() {
       router.replace(getRedirectUrl());
     } catch (error) {
       setProcessing(false);
-      // Closing the browser's passkey prompt is not an error worth showing.
-      if (isPasskeyCancel(error)) return;
-      setError(error.response?.data?.message || error.message);
+      // Includes "no passkey on this device", which the browser reports the
+      // same way as a closed prompt - so it gets a hint, not silence.
+      setError(passkeyErrorMessage(error, "login"));
     }
   };
 

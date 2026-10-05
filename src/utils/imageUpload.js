@@ -97,9 +97,10 @@ export function collectImageFiles(dataTransfer) {
 // and could stall out entirely. Nothing on the site shows an attachment
 // wider than this, so downscale + re-encode before upload instead. The API
 // no longer compresses uploads, so this is the only compression photos get:
-// same limits its job used (1470px wide, quality 85).
+// 1470px wide like its job used, at JPEG quality 80 (visibly the same as
+// 85, at roughly three quarters of the size).
 const COMPRESS_MAX_WIDTH = 1470;
-const COMPRESS_QUALITY = 0.85;
+const COMPRESS_QUALITY = 0.8;
 const COMPRESS_MIN_BYTES = 500 * 1024;
 
 /**

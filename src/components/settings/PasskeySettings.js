@@ -10,7 +10,13 @@ import {
   storePasskey,
   deletePasskey,
 } from "@/app/Api";
-import { createPasskey, isPasskeyCancel, passkeysSupported } from "@/utils/webauthn";
+import {
+  createPasskey,
+  inEmbeddedBrowser,
+  passkeyErrorMessage,
+  passkeysSupported,
+  platformPasskeyAvailable,
+} from "@/utils/webauthn";
 
 const errorMessage = (error) =>
   error.response?.data?.message || error.message || "Có lỗi xảy ra.";
@@ -29,6 +35,13 @@ export default function PasskeySettings() {
   const [removingId, setRemovingId] = useState(null);
   const [error, setError] = useState("");
   const [supported, setSupported] = useState(true);
+  // null until checked; false = no screen lock / Windows Hello on this device.
+  const [platformReady, setPlatformReady] = useState(null);
+  // Inside another app's built-in browser, where passkey prompts never open.
+  const [embedded, setEmbedded] = useState(false);
+  // Registration options already fetched, kept so the prompt can be opened
+  // again straight from a tap (Safari refuses it after a network request).
+  const [pendingOptions, setPendingOptions] = useState(null);
 
   const apply = (data) => {
     setPasskeys(data.passkeys || []);
@@ -37,6 +50,8 @@ export default function PasskeySettings() {
 
   useEffect(() => {
     setSupported(passkeysSupported());
+    setEmbedded(inEmbeddedBrowser());
+    platformPasskeyAvailable().then(setPlatformReady);
     let cancelled = false;
     getPasskeys()
       .then((res) => {
@@ -52,24 +67,51 @@ export default function PasskeySettings() {
 
   const closeAdd = () => {
     setAdding(false);
+    setPendingOptions(null);
     setPassword("");
     setError("");
+  };
+
+  // The browser prompt, then saving what it returns.
+  const createAndStore = async (publicKey) => {
+    const credential = await createPasskey(publicKey);
+    const res = await storePasskey({ credential });
+    apply(res.data);
+    closeAdd();
+    message.success(res.data.message || "Đã thêm passkey.");
+  };
+
+  // Opens the prompt again with the options already in hand - nothing
+  // between the tap and the prompt.
+  const retryPrompt = async () => {
+    if (busy || !pendingOptions) return;
+    setBusy(true);
+    setError("");
+    try {
+      await createAndStore(pendingOptions);
+    } catch (err) {
+      // The API takes a challenge once: after it answered, start over.
+      if (err?.response) setPendingOptions(null);
+      setError(passkeyErrorMessage(err, "create") || "");
+    } finally {
+      setBusy(false);
+    }
   };
 
   const add = async () => {
     if (busy || (passwordRequired && !password)) return;
     setBusy(true);
     setError("");
+    setPendingOptions(null);
     try {
       const options = await getPasskeyRegistrationOptions({ password });
-      const credential = await createPasskey(options.data.publicKey);
-      const res = await storePasskey({ credential });
-      apply(res.data);
-      closeAdd();
-      message.success(res.data.message || "Đã thêm passkey.");
+      setPendingOptions(options.data.publicKey);
+      await createAndStore(options.data.publicKey);
     } catch (err) {
-      // Closing the browser's prompt is not an error worth showing.
-      if (!isPasskeyCancel(err)) setError(errorMessage(err));
+      if (err?.response) setPendingOptions(null);
+      // Includes "this device can't make a passkey", which the browser
+      // reports the same way as a closed prompt.
+      setError(passkeyErrorMessage(err, "create") || "");
     } finally {
       setBusy(false);
     }
@@ -125,6 +167,21 @@ export default function PasskeySettings() {
         </p>
       )}
 
+      {supported && embedded && (
+        <p className={`${hintClass} mt-3`}>
+          Bạn đang mở trang trong trình duyệt của một ứng dụng khác, nơi không
+          tạo được passkey. Hãy mở chuyenbienhoa.com bằng Chrome hoặc Safari.
+        </p>
+      )}
+
+      {supported && !embedded && platformReady === false && (
+        <p className={`${hintClass} mt-3`}>
+          Thiết bị này chưa bật khóa màn hình (vân tay, khuôn mặt, mã PIN hoặc
+          Windows Hello) nên không tự lưu được passkey. Bạn vẫn có thể tạo
+          passkey trên điện thoại hoặc khóa bảo mật khi trình duyệt hỏi.
+        </p>
+      )}
+
       {loadError && (
         <p className={`${hintClass} mt-3`}>
           Không tải được danh sách passkey. Hãy tải lại trang.
@@ -157,6 +214,12 @@ export default function PasskeySettings() {
       )}
 
       {error && <p className="mt-3 text-sm text-red-500">{error}</p>}
+
+      {pendingOptions && error && (
+        <Button className="mt-2" onClick={retryPrompt} loading={busy}>
+          Mở lại hộp thoại passkey
+        </Button>
+      )}
 
       {passkeys && passkeys.length === 0 && !adding && (
         <p className={`${hintClass} mt-3`}>Bạn chưa có passkey nào.</p>

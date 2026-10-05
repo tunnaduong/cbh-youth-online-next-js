@@ -19,8 +19,11 @@ const MP4_MUXER_URL = "https://cdn.jsdelivr.net/npm/mp4-muxer@5.1.3/+esm";
 
 // 720p: the shorter side is at most 720 pixels.
 const MAX_SHORT_SIDE = 720;
-// Same ceiling the server job used.
-const MAX_BITRATE = 4_700_000;
+// Enough for a good-looking 720p30 H.264 picture, at about half the size of
+// the 4.7 Mbps used before.
+const MAX_BITRATE = 2_500_000;
+// Frames per second: a 60 fps recording keeps every other frame.
+const MAX_FPS = 30;
 // A keyframe every ~2 seconds keeps seeking responsive.
 const KEYFRAME_INTERVAL_US = 2_000_000;
 // How many frames may wait in the decoder/encoder before feeding more.
@@ -170,10 +173,18 @@ export async function compressVideoForUpload(file, { onProgress } = {}) {
     const sourceBitrate = videoTrack.bitrate || (durationSeconds ? (file.size * 8) / durationSeconds : 0);
     const isH264 = /^avc[13]/.test(videoTrack.codec || "");
     const shortSide = Math.min(sourceWidth, sourceHeight);
+    const sourceFps = Math.round(samples.video.length / (durationSeconds || 1)) || MAX_FPS;
 
-    // Already what we would produce: H.264, 720p or smaller, within the
-    // bitrate ceiling. Re-encoding would only lose quality.
-    if (isH264 && shortSide <= MAX_SHORT_SIDE && sourceBitrate > 0 && sourceBitrate <= MAX_BITRATE) {
+    // Already what we would produce: H.264, 720p or smaller, 30 fps or less,
+    // within the bitrate ceiling. Re-encoding would only lose quality.
+    // (+1: a "30 fps" file is often 30.x when counted from its samples.)
+    if (
+      isH264 &&
+      shortSide <= MAX_SHORT_SIDE &&
+      sourceFps <= MAX_FPS + 1 &&
+      sourceBitrate > 0 &&
+      sourceBitrate <= MAX_BITRATE
+    ) {
       return file;
     }
 
@@ -203,7 +214,11 @@ export async function compressVideoForUpload(file, { onProgress } = {}) {
     const scale = Math.min(1, MAX_SHORT_SIDE / shortSide);
     const width = even(sourceWidth * scale);
     const height = even(sourceHeight * scale);
-    const frameRate = Math.min(60, Math.round(samples.video.length / (durationSeconds || 1)) || 30);
+    const frameRate = Math.min(MAX_FPS, sourceFps);
+    // Above the cap, frames closer together than this are dropped (with a
+    // little slack, so a steady 30 fps source loses nothing to jitter).
+    const dropFrames = sourceFps > MAX_FPS + 1;
+    const minFrameGapUs = (1_000_000 / MAX_FPS) * 0.9;
     // Never above the source's own bitrate (that would only grow the file).
     const bitrate = Math.round(
       Math.min(MAX_BITRATE, sourceBitrate > 0 ? Math.max(sourceBitrate, 800_000) : MAX_BITRATE)
@@ -239,14 +254,12 @@ export async function compressVideoForUpload(file, { onProgress } = {}) {
     });
 
     let failure = null;
-    let encodedFrames = 0;
+    let decodedFrames = 0;
     const totalFrames = samples.video.length;
 
     encoder = new VideoEncoder({
       output: (chunk, meta) => {
         muxer.addVideoChunk(chunk, meta);
-        encodedFrames += 1;
-        onProgress?.(Math.min(0.99, encodedFrames / totalFrames));
       },
       error: (error) => {
         failure = error;
@@ -257,16 +270,28 @@ export async function compressVideoForUpload(file, { onProgress } = {}) {
     const canvas = new OffscreenCanvas(width, height);
     const context = canvas.getContext("2d");
     let lastKeyframeAt = -Infinity;
+    let lastKeptAt = -Infinity;
 
     decoder = new VideoDecoder({
       output: (frame) => {
         try {
+          decodedFrames += 1;
+          onProgress?.(Math.min(0.99, decodedFrames / totalFrames));
+
+          // The 30 fps cap: skip a frame that comes too soon after the last
+          // one kept (frames arrive in display order).
+          if (dropFrames && frame.timestamp - lastKeptAt < minFrameGapUs) return;
+          lastKeptAt = frame.timestamp;
+
           // Drawing through a canvas does the downscale in every browser
           // (not all encoders resize frames themselves).
           context.drawImage(frame, 0, 0, width, height);
           const scaled = new VideoFrame(canvas, {
             timestamp: frame.timestamp,
-            duration: frame.duration || undefined,
+            // A kept frame now also covers the one dropped after it.
+            duration: dropFrames
+              ? Math.round(1_000_000 / frameRate)
+              : frame.duration || undefined,
           });
           const keyFrame = frame.timestamp - lastKeyframeAt >= KEYFRAME_INTERVAL_US;
           if (keyFrame) lastKeyframeAt = frame.timestamp;
