@@ -36,7 +36,7 @@ import AvatarFrameWrap from "@/components/profile/AvatarFrameWrap";
 import UserName from "@/components/profile/UserName";
 import StyledUsername from "@/components/profile/StyledUsername";
 import useOwnProfileTheme from "@/hooks/useOwnProfileTheme";
-import { getSavedAccounts, removeSavedAccount, activateSavedAccount } from "@/utils/savedAccounts";
+import { getSavedAccounts, removeSavedAccount, activateSavedAccount, storedPushEndpoint } from "@/utils/savedAccounts";
 import { NAV_BADGE_CLASS, NAV_ICON_BUTTON_CLASS } from "./navStyles";
 
 const MENU_ITEM_CLASS =
@@ -139,7 +139,10 @@ export default function Navbar({ hasSidebar = false }) {
     ev.preventDefault();
     // Wait for it: the axios interceptor reads the token asynchronously, so
     // swapping accounts first would revoke the next account's token instead.
-    await logoutRequest().catch(() => {});
+    // With this browser's web push subscription, so the account being logged
+    // out stops pushing here.
+    await logoutRequest({ push_endpoint: storedPushEndpoint() || undefined }).catch(() => {});
+    localStorage.removeItem("push_subscription_endpoint");
     // Forget this account on the device; fall back to another signed-in one if any
     if (currentUser?.id) removeSavedAccount(currentUser.id);
     const next = getSavedAccounts()[0];
