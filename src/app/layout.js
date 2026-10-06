@@ -4,6 +4,8 @@ import GlobalConsoleMessage from "../components/GlobalConsoleMessage";
 import MediaLoadingWatcher from "../components/MediaLoadingWatcher";
 import { Analytics } from "@vercel/analytics/next";
 import Script from "next/script";
+import EzoicRouteHandler from "@/components/ads/EzoicRouteHandler";
+import { EZOIC_ENABLED } from "@/lib/ezoic";
 
 export const metadata = {
   title: {
@@ -41,19 +43,24 @@ export default function RootLayout({ children }) {
     <html lang="vi">
       <head>
         <meta name="google-adsense-account" content="ca-pub-3425905751761094"></meta>
+        {EZOIC_ENABLED && (
+          <>
+            <script data-cfasync="false" src="https://cmp.gatekeeperconsent.com/min.js" />
+            <script data-cfasync="false" src="https://the.gatekeeperconsent.com/cmp.min.js" />
+            <script async src="//www.ezojs.com/ezoic/sa.min.js" />
+            <script async src="//ezoicanalytics.com/analytics.js" />
+          </>
+        )}
       </head>
       <body className="bg-[#F8F8F8] dark:bg-neutral-800">
-        {/* Google Adsense */}
+        {EZOIC_ENABLED && <EzoicRouteHandler />}
+        {/* Google Adsense (off when Ezoic is on: other ad tags interfere with it) */}
+        {!EZOIC_ENABLED && (
+          <>
         <Script
           async
           src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3425905751761094"
           crossOrigin="anonymous"
-          strategy="afterInteractive"
-        />
-        {/* Google Analytics (gtag.js) */}
-        <Script
-          async
-          src="https://www.googletagmanager.com/gtag/js?id=G-MYK6XE8MX3"
           strategy="afterInteractive"
         />
         <Script
@@ -61,6 +68,14 @@ export default function RootLayout({ children }) {
           async
           src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9033651898132595"
           crossOrigin="anonymous"
+          strategy="afterInteractive"
+        />
+          </>
+        )}
+        {/* Google Analytics (gtag.js) */}
+        <Script
+          async
+          src="https://www.googletagmanager.com/gtag/js?id=G-MYK6XE8MX3"
           strategy="afterInteractive"
         />
         <Script id="google-analytics" strategy="afterInteractive">
