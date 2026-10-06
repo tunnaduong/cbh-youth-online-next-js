@@ -45,7 +45,10 @@ export default function RootLayout({ children }) {
         <meta name="google-adsense-account" content="ca-pub-3425905751761094"></meta>
         {EZOIC_ENABLED && (
           <>
+            {/* Ezoic's consent scripts must load synchronously and first */}
+            {/* eslint-disable-next-line @next/next/no-sync-scripts */}
             <script data-cfasync="false" src="https://cmp.gatekeeperconsent.com/min.js" />
+            {/* eslint-disable-next-line @next/next/no-sync-scripts */}
             <script data-cfasync="false" src="https://the.gatekeeperconsent.com/cmp.min.js" />
             <script async src="//www.ezojs.com/ezoic/sa.min.js" />
             <script async src="//ezoicanalytics.com/analytics.js" />
