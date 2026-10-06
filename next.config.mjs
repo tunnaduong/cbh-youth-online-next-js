@@ -43,6 +43,18 @@ const nextConfig = {
   async redirects() {
     const bareDomain = [{ type: "host", value: "chuyenbienhoa.com" }];
     return [
+      // Ezoic's Ads.txt Manager serves the seller list (keep the AdSense line
+      // in it from the Ezoic dashboard). Only once Ezoic is on, so until then
+      // public/ads.txt stays in force. Redirects run before public files.
+      ...(process.env.NEXT_PUBLIC_EZOIC_ENABLED === "true"
+        ? [
+            {
+              source: "/ads.txt",
+              destination: "https://srv.adstxtmanager.com/19390/chuyenbienhoa.com",
+              permanent: true,
+            },
+          ]
+        : []),
       {
         source: "/",
         has: bareDomain,
