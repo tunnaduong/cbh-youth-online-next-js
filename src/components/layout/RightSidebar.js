@@ -13,6 +13,7 @@ import CreatePostModal from "../modals/CreatePostModal";
 import { useAuthContext, useTopUsersContext } from "@/contexts/Support";
 import { useRouter } from "@bprogress/next/app";
 import { getCurrentUser } from "@/app/Api";
+import AdSlot from "@/components/ads/AdSlot";
 
 export default function RightSidebar({ onHandleCreatePost }) {
   const iconSize = "20px";
@@ -255,6 +256,7 @@ export default function RightSidebar({ onHandleCreatePost }) {
               </>
             )}
           </div>
+          <AdSlot slot="sidebar" className="mt-4 [@media(max-width:800px)]:mx-2.5" />
           <div className="hidden xl:block">
             <div className="flex flex-row text-sm font-semibold p-3 text-[#BCBCBC] dark:text-neutral-400">
               <div className="flex flex-1 flex-col gap-y-0.5">
