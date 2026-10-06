@@ -760,7 +760,7 @@ export default function PostItem({
             </div>
           </div>
         </div>
-        <div className="flex-1 overflow-hidden break-words">
+        <div className="flex-1 flex flex-col overflow-hidden break-words">
           <div className="flex justify-between items-start gap-2">
             <div className="flex-1 min-w-0">
               {isArchived && (
@@ -967,6 +967,9 @@ export default function PostItem({
               ))}
             </div>
           )}
+          {/* Pinned to the bottom of the card: the reaction bar beside it can be
+              taller than a short post, and the gap belongs above the footer. */}
+          <div className="mt-auto">
           <hr className="!my-5 border-t-2" />
           <div className="flex-row flex text-[13px] items-center">
             {post.anonymous ? (
@@ -1068,6 +1071,7 @@ export default function PostItem({
                 </span>
               )}
             </div>
+          </div>
           </div>
         </div>
       </div>
