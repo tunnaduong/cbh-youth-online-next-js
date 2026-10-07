@@ -121,7 +121,18 @@ const CreateStoryModal = ({ open, onClose, onStoryCreated }) => {
     // Make API call to create story
     createStory(formData)
       .then((response) => {
-        message.success("Tin đã được tạo thành công!");
+        // A story with a photo or video waits for a moderator before others
+        // see it; the API says so in its answer.
+        const moderation = response?.data?.moderation;
+        if (moderation?.status === "pending") {
+          message.info(
+            moderation.message ||
+              "Tin của bạn đang chờ kiểm duyệt và sẽ hiển thị với mọi người sau khi được duyệt.",
+            6
+          );
+        } else {
+          message.success("Tin đã được tạo thành công!");
+        }
 
         // Reset form data
         setData({

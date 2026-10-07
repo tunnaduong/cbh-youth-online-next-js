@@ -26,6 +26,10 @@ const MODERATED_CONTENT_LABELS = {
 const moderatedLabel = (data) => MODERATED_CONTENT_LABELS[data?.content_type] || "nội dung";
 const capitalize = (text) => text.charAt(0).toUpperCase() + text.slice(1);
 
+// What a moderation notice (pending / approved / rejected) is about.
+const reviewedLabel = (data) =>
+  data?.content_type === "story" ? "Tin" : data?.comment_id ? "Bình luận" : "Bài viết";
+
 const isActorAnonymous = (notification) =>
   ANONYMOUS_ACTOR_TYPES.includes(notification?.type) &&
   notification?.data?.is_anonymous === true;
@@ -132,15 +136,15 @@ function getNotificationMessage(notification) {
     case "content_warning":
       return `Cảnh cáo: ${moderatedLabel(data)} gần đây của bạn có nội dung không phù hợp với tiêu chuẩn cộng đồng. Hãy chỉnh sửa hoặc gỡ bỏ để tránh bị khóa tài khoản.`;
     case "content_pending_review":
-      return `${data?.comment_id ? "Bình luận" : "Bài viết"} của bạn đang chờ kiểm duyệt${data?.reason ? `: ${data.reason}` : ""
+      return `${reviewedLabel(data)} của bạn đang chờ kiểm duyệt${data?.reason ? `: ${data.reason}` : ""
         }`;
     case "content_approved":
-      return `${data?.comment_id ? "Bình luận" : "Bài viết"} của bạn đã được duyệt và hiển thị công khai`;
+      return `${reviewedLabel(data)} của bạn đã được duyệt và hiển thị công khai`;
     case "content_rejected":
-      return `${data?.comment_id ? "Bình luận" : "Bài viết"} của bạn không được duyệt${data?.reason ? `: ${data.reason}` : ""
+      return `${reviewedLabel(data)} của bạn không được duyệt${data?.reason ? `: ${data.reason}` : ""
         }`;
     case "moderation_pending":
-      return `${data?.content_type === "comment" ? "Bình luận" : "Bài viết"} của @${data?.author_username || "người dùng"
+      return `${data?.content_type === "story" ? "Tin" : data?.content_type === "comment" ? "Bình luận" : "Bài viết"} của @${data?.author_username || "người dùng"
         } đang chờ kiểm duyệt${data?.reason ? `: ${data.reason}` : ""}`;
     case "system_message":
       return data?.message || "Bạn có thông báo mới";

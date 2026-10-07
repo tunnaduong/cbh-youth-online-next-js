@@ -96,6 +96,7 @@ const UserHeader = ({
   isMuteLocked,
   currentUser,
   reportedUserId,
+  moderationStatus,
 }) => {
   const [isMobile, setIsMobile] = useState(false);
   const [showReportModal, setShowReportModal] = useState(false);
@@ -165,6 +166,18 @@ const UserHeader = ({
           {createdAt && (
             <span className="text-white/80 text-[10px] sm:text-xs drop-shadow truncate block">
               {formatTimeAgo(createdAt)}
+            </span>
+          )}
+          {/* Only the author ever receives a held story. */}
+          {(moderationStatus === "pending" || moderationStatus === "rejected") && (
+            <span
+              className={`mt-0.5 inline-block rounded-full px-2 py-0.5 text-[10px] font-medium text-white sm:text-xs ${
+                moderationStatus === "pending" ? "bg-amber-500/90" : "bg-red-500/90"
+              }`}
+            >
+              {moderationStatus === "pending"
+                ? "Đang chờ kiểm duyệt - chỉ bạn nhìn thấy"
+                : "Không được duyệt - chỉ bạn nhìn thấy"}
             </span>
           )}
         </div>
@@ -743,6 +756,7 @@ const StorySlide = ({
         isMuted={isMuted}
         onToggleMute={handleToggleMute}
         createdAt={currentStory?.created_at}
+        moderationStatus={currentStory?.moderation_status}
         storyId={currentStory?.id}
         isMuteLocked={Boolean(currentStory?.is_muted)}
         isOwner={isOwner}

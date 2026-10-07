@@ -23,7 +23,64 @@ const VERDICT_LABEL = {
   needs_review: "AI cần xem xét",
 };
 
-const TYPE_LABEL = { topic: "Bài viết", comment: "Bình luận" };
+const TYPE_LABEL = { topic: "Bài viết", comment: "Bình luận", story: "Tin" };
+
+// Story media is stored as a path on the API host ("/storage/stories/...").
+const mediaUrl = (path) =>
+  !path ? null : /^https?:\/\//.test(path) ? path : `${process.env.NEXT_PUBLIC_API_URL}${path}`;
+
+/**
+ * A story in the queue: the photo or video itself (that is what a reviewer
+ * has to look at - the AI only read the text) plus whatever was written on
+ * it. `story` comes from the live story; once that is gone (the AI rejected
+ * it, or its author deleted it) only the snapshot is left.
+ */
+function StoryCell({ row, snap }) {
+  const story = row.story;
+  const media = story || snap;
+  const src = mediaUrl(media.media_url);
+  const text = story?.text ?? snap.body;
+
+  return (
+    <div className="max-w-[420px]">
+      {src && story ? (
+        media.media_type === "video" ? (
+          <video
+            src={src}
+            poster={mediaUrl(media.video_first_frame_url) || undefined}
+            controls
+            preload="metadata"
+            className="mb-1.5 max-h-[280px] w-auto max-w-full rounded-lg bg-black"
+          />
+        ) : (
+          <a href={src} target="_blank" rel="noreferrer">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={src}
+              alt="Tin đang chờ duyệt"
+              className="mb-1.5 max-h-[280px] w-auto max-w-full rounded-lg object-contain"
+            />
+          </a>
+        )
+      ) : null}
+      <div className="text-sm text-gray-600 dark:text-gray-300 whitespace-pre-wrap line-clamp-4">
+        {text || <span className="text-gray-400 dark:text-gray-500">(tin không có chữ)</span>}
+      </div>
+      <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+        {story ? (
+          src && (
+            <a href={src} target="_blank" rel="noreferrer" className="text-xs">
+              Mở ảnh / video gốc
+            </a>
+          )
+        ) : (
+          <span className="text-xs text-gray-400 dark:text-gray-500">Tin đã bị xoá</span>
+        )}
+      </div>
+    </div>
+  );
+}
+
 
 /** content_snapshot is JSON captured at submit time; tolerate bad/legacy rows. */
 const parseSnapshot = (raw) => {
@@ -143,6 +200,7 @@ export default function AdminModerationPage() {
       key: "content",
       render: (_, r) => {
         const snap = parseSnapshot(r.content_snapshot);
+        if (r.content_type === "story") return <StoryCell row={r} snap={snap} />;
         // The queue resolves `topic` for us, but the id is on the row either
         // way, so don't make the link depend on that resolution. An explicit
         // null means the backend looked and the post is genuinely gone
@@ -295,6 +353,7 @@ export default function AdminModerationPage() {
             options: [
               { value: "topic", label: "Bài viết" },
               { value: "comment", label: "Bình luận" },
+              { value: "story", label: "Tin" },
             ],
           },
         ]}
