@@ -999,3 +999,14 @@ export const adminDeleteConversation = (id) => Api.deleteRequest(`/v1.0/admin/co
 // purge=1 wipes the row instead of soft-deleting it (used on already-deleted messages).
 export const adminDeleteMessage = (id, purge = false) =>
   Api.deleteRequest(`/v1.0/admin/messages/${id}${purge ? "?purge=1" : ""}`);
+
+// Moderation actions on a piece of content (content_type: topic | comment |
+// message | story). Both notify the author; report_id closes that report.
+export const adminWarnContent = (params) => Api.postRequest("/v1.0/admin/moderation-actions/warn", params);
+export const adminRemoveContent = (params) => Api.postRequest("/v1.0/admin/moderation-actions/remove", params);
+
+// Student / class violation reports (the app's multi-step report form)
+export const adminGetViolationReports = (params) => Api.getRequest("/v1.0/admin/violation-reports", params);
+export const adminReviewViolationReport = (id, params) =>
+  Api.postRequest(`/v1.0/admin/violation-reports/${id}/review`, params);
+export const adminDeleteViolationReport = (id) => Api.deleteRequest(`/v1.0/admin/violation-reports/${id}`);

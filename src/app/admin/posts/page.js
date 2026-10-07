@@ -1,9 +1,10 @@
 "use client";
 
-import { Button, Popconfirm, Space, Tag, Tooltip, message } from "antd";
-import { EyeInvisibleOutlined, EyeOutlined, PushpinOutlined, DeleteOutlined } from "@ant-design/icons";
+import { Button, Space, Tag, Tooltip, message } from "antd";
+import { EyeInvisibleOutlined, EyeOutlined, PushpinOutlined } from "@ant-design/icons";
 import ResourceTable, { fmtDate, errMsg } from "../_components/ResourceTable";
-import { adminGetTopics, adminUpdateTopic, adminDeleteTopic } from "@/app/Api";
+import { WarnButton, RemoveButton } from "../_components/ModerationActions";
+import { adminGetTopics, adminUpdateTopic } from "@/app/Api";
 import { generatePostUrl } from "@/utils/slugify";
 
 export default function AdminPostsPage() {
@@ -76,16 +77,8 @@ export default function AdminPostsPage() {
               onClick={() => act(() => adminUpdateTopic(t.id, { pinned: !t.pinned }), reload)}
             />
           </Tooltip>
-          <Popconfirm
-            title="Xóa bài viết này?"
-            description="Hành động không thể hoàn tác."
-            okText="Xóa"
-            okButtonProps={{ danger: true }}
-            cancelText="Hủy"
-            onConfirm={() => act(() => adminDeleteTopic(t.id), reload)}
-          >
-            <Button size="small" danger icon={<DeleteOutlined />} />
-          </Popconfirm>
+          <WarnButton contentType="topic" contentId={t.id} iconOnly onDone={reload} />
+          <RemoveButton contentType="topic" contentId={t.id} iconOnly label="Xóa bài viết" onDone={reload} />
         </Space>
       ),
     },

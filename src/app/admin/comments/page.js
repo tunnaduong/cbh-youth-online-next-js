@@ -1,9 +1,9 @@
 "use client";
 
-import { Button, Popconfirm, Tag, message } from "antd";
-import { DeleteOutlined } from "@ant-design/icons";
-import ResourceTable, { fmtDate, errMsg } from "../_components/ResourceTable";
-import { adminGetComments, adminDeleteComment } from "@/app/Api";
+import { Space, Tag } from "antd";
+import ResourceTable, { fmtDate } from "../_components/ResourceTable";
+import { WarnButton, RemoveButton } from "../_components/ModerationActions";
+import { adminGetComments } from "@/app/Api";
 import { generatePostUrl } from "@/utils/slugify";
 
 export default function AdminCommentsPage() {
@@ -53,23 +53,10 @@ export default function AdminCommentsPage() {
       key: "actions",
       fixed: "right",
       render: (_, c) => (
-        <Popconfirm
-          title="Xóa bình luận này?"
-          okText="Xóa"
-          okButtonProps={{ danger: true }}
-          cancelText="Hủy"
-          onConfirm={async () => {
-            try {
-              await adminDeleteComment(c.id);
-              message.success("Đã xóa bình luận");
-              reload();
-            } catch (err) {
-              message.error(errMsg(err, "Xóa thất bại"));
-            }
-          }}
-        >
-          <Button size="small" danger icon={<DeleteOutlined />} />
-        </Popconfirm>
+        <Space>
+          <WarnButton contentType="comment" contentId={c.id} iconOnly onDone={reload} />
+          <RemoveButton contentType="comment" contentId={c.id} iconOnly label="Xóa bình luận" onDone={reload} />
+        </Space>
       ),
     },
   ];

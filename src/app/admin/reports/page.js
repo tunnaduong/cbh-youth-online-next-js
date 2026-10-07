@@ -18,10 +18,12 @@ import {
   Statistic,
   Popconfirm,
   Space,
+  Tooltip,
 } from "antd";
 import { DeleteOutlined } from "@ant-design/icons";
 import { getReports, getReportStats, reviewReport, deleteReport } from "@/app/Api";
 import { generatePostUrl } from "@/utils/slugify";
+import { WarnButton, RemoveButton } from "../_components/ModerationActions";
 
 const { RangePicker } = DatePicker;
 const { TextArea } = Input;
@@ -32,6 +34,111 @@ const STATUS_COLORS = {
   resolved: "green",
   dismissed: "default",
 };
+
+const TYPE_OPTIONS = [
+  { value: "topic", label: "Bài viết" },
+  { value: "comment", label: "Bình luận" },
+  { value: "message", label: "Tin nhắn" },
+  { value: "story", label: "Tin" },
+  { value: "user", label: "Người dùng" },
+];
+
+// What a report points at. Newer API responses carry a computed `target`;
+// older rows (or an older API) only have the raw ids, so derive the same
+// shape from those.
+const reportTarget = (r) => {
+  if (r.target?.content_type) return r.target;
+  if (r.message_id) return { content_type: "message", content_id: r.message_id, exists: true };
+  if (r.comment_id) return { content_type: "comment", content_id: r.comment_id, exists: true };
+  if (r.topic_id)
+    return { content_type: "topic", content_id: r.topic_id, exists: true, url: generatePostUrl(r.topic, r.topic_id) };
+  if (r.story_id) return { content_type: "story", content_id: r.story_id, exists: true };
+  return { content_type: "user", content_id: r.reported_user_id, exists: !!r.reported_user };
+};
+
+const GoneTag = () => <Tag className="ml-1">đã bị xóa</Tag>;
+
+function TargetCell({ report }) {
+  const t = reportTarget(report);
+  const gone = t.exists === false;
+  const excerpt = t.excerpt ? (
+    <div className="text-xs text-gray-500 dark:text-gray-400 line-clamp-2 max-w-[260px]">{t.excerpt}</div>
+  ) : null;
+  const url = t.url || (t.content_type === "topic" ? generatePostUrl(report.topic, t.content_id) : null);
+  const link = (label) =>
+    url && !gone ? (
+      <a href={url} target="_blank" rel="noreferrer">
+        {label}
+      </a>
+    ) : (
+      <span>{label}</span>
+    );
+
+  switch (t.content_type) {
+    case "topic":
+      return (
+        <div>
+          {link(`Bài viết #${t.content_id}`)}
+          {gone && <GoneTag />}
+          {excerpt}
+        </div>
+      );
+    case "comment":
+      return (
+        <div>
+          <Tooltip title={t.excerpt}>{link(`Bình luận #${t.content_id}`)}</Tooltip>
+          {gone && <GoneTag />}
+          {excerpt}
+        </div>
+      );
+    case "message": {
+      const conversationId = t.conversation_id;
+      const messageId = t.message_id || t.content_id;
+      return (
+        <div>
+          {conversationId ? (
+            // The messages page opens this conversation at the message (and logs the view).
+            <a
+              href={`/admin/messages?conversation=${conversationId}&message=${messageId}`}
+              target="_blank"
+              rel="noreferrer"
+            >
+              Xem tin nhắn #{messageId}
+            </a>
+          ) : (
+            <span>Tin nhắn #{messageId}</span>
+          )}
+          {gone && <GoneTag />}
+          {excerpt}
+        </div>
+      );
+    }
+    case "story":
+      // Stories have no public page to link to, so they stay plain text.
+      return (
+        <div>
+          <span>Tin #{t.story_id || t.content_id}</span>
+          {gone && <GoneTag />}
+          {excerpt}
+        </div>
+      );
+    default: {
+      const username = report.reported_user?.username;
+      return (
+        <div>
+          {username ? (
+            <a href={t.url || `/${username}`} target="_blank" rel="noreferrer">
+              @{username}
+            </a>
+          ) : (
+            <span>{report.reported_user_id ? `Người dùng #${report.reported_user_id}` : "Người dùng"}</span>
+          )}
+          {gone && <GoneTag />}
+        </div>
+      );
+    }
+  }
+}
 
 const STATUS_LABELS = {
   pending: "Chờ xử lý",
@@ -150,6 +257,7 @@ export default function AdminReportsPage() {
   const [pagination, setPagination] = useState({ current: 1, pageSize: 15, total: 0 });
   const [loading, setLoading] = useState(false);
   const [statusFilter, setStatusFilter] = useState(null);
+  const [typeFilter, setTypeFilter] = useState(null);
   const [dateRange, setDateRange] = useState(null);
   const [stats, setStats] = useState(null);
   const [reviewTarget, setReviewTarget] = useState(null);
@@ -160,6 +268,7 @@ export default function AdminReportsPage() {
       try {
         const params = { page };
         if (statusFilter) params.status = statusFilter;
+        if (typeFilter) params.type = typeFilter;
         if (dateRange?.[0]) params.from_date = dateRange[0].format("YYYY-MM-DD");
         if (dateRange?.[1]) params.to_date = dateRange[1].format("YYYY-MM-DD");
 
@@ -179,7 +288,7 @@ export default function AdminReportsPage() {
         setLoading(false);
       }
     },
-    [statusFilter, dateRange]
+    [statusFilter, typeFilter, dateRange]
   );
 
   const fetchStats = useCallback(async () => {
@@ -196,7 +305,7 @@ export default function AdminReportsPage() {
     fetchReports(1);
     fetchStats();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [statusFilter, dateRange]);
+  }, [statusFilter, typeFilter, dateRange]);
 
 
   const handleDelete = async (id) => {
@@ -226,32 +335,7 @@ export default function AdminReportsPage() {
     {
       title: "Nội dung liên quan",
       key: "content",
-      render: (_, r) => {
-        if (r.topic_id) {
-          // topic_id alone is enough to link: the post page resolves by id.
-          return (
-            <a
-              href={generatePostUrl(r.topic, r.topic_id)}
-              target="_blank"
-              rel="noreferrer"
-            >
-              Bài viết #{r.topic_id}
-            </a>
-          );
-        }
-        // Stories have no public page to link to, so they stay plain text.
-        if (r.story_id) return `Tin #${r.story_id}`;
-        if (!r.reported_user_id) return "Người dùng";
-
-        const username = r.reported_user?.username;
-        return username ? (
-          <a href={`/${username}`} target="_blank" rel="noreferrer">
-            @{username}
-          </a>
-        ) : (
-          `Người dùng #${r.reported_user_id}`
-        );
-      },
+      render: (_, r) => <TargetCell report={r} />,
     },
     {
       title: "Lý do",
@@ -278,23 +362,49 @@ export default function AdminReportsPage() {
     {
       title: "",
       key: "actions",
-      render: (_, r) => (
-        <Space>
-          <Button size="small" onClick={() => setReviewTarget(r)}>
-            Xử lý
-          </Button>
-          <Popconfirm
-            title="Xóa báo cáo này?"
-            description="Chỉ xóa báo cáo; bài viết, tin hoặc tài khoản bị báo cáo không bị ảnh hưởng."
-            okText="Xóa"
-            okButtonProps={{ danger: true }}
-            cancelText="Hủy"
-            onConfirm={() => handleDelete(r.id)}
-          >
-            <Button size="small" danger icon={<DeleteOutlined />} />
-          </Popconfirm>
-        </Space>
-      ),
+      render: (_, r) => {
+        const t = reportTarget(r);
+        const canModerate = t.content_type !== "user" && t.exists !== false && t.content_id;
+        const reload = () => {
+          fetchReports(pagination.current);
+          fetchStats();
+        };
+        return (
+          <Space wrap>
+            <Button size="small" onClick={() => setReviewTarget(r)}>
+              Xử lý
+            </Button>
+            {canModerate && (
+              <>
+                <WarnButton
+                  contentType={t.content_type}
+                  contentId={t.content_id}
+                  reportId={r.id}
+                  onDone={reload}
+                />
+                <RemoveButton
+                  contentType={t.content_type}
+                  contentId={t.content_id}
+                  reportId={r.id}
+                  onDone={reload}
+                />
+              </>
+            )}
+            <Popconfirm
+              title="Xóa báo cáo này?"
+              description="Chỉ xóa báo cáo; bài viết, tin hoặc tài khoản bị báo cáo không bị ảnh hưởng."
+              okText="Xóa"
+              okButtonProps={{ danger: true }}
+              cancelText="Hủy"
+              onConfirm={() => handleDelete(r.id)}
+            >
+              <Tooltip title="Xóa báo cáo">
+                <Button size="small" danger type="text" icon={<DeleteOutlined />} aria-label="Xóa báo cáo" />
+              </Tooltip>
+            </Popconfirm>
+          </Space>
+        );
+      },
     },
   ];
 
@@ -356,6 +466,14 @@ export default function AdminReportsPage() {
               { value: "resolved", label: "Đã giải quyết" },
               { value: "dismissed", label: "Đã bỏ qua" },
             ]}
+          />
+          <Select
+            allowClear
+            placeholder="Loại nội dung"
+            className="w-48"
+            value={typeFilter}
+            onChange={setTypeFilter}
+            options={TYPE_OPTIONS}
           />
           <RangePicker value={dateRange} onChange={setDateRange} />
         </div>

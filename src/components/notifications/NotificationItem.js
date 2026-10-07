@@ -15,6 +15,17 @@ import { generatePostSlug } from "@/utils/slugify";
 // comment/post, so `data.is_anonymous` must not hide them for other types.
 const ANONYMOUS_ACTOR_TYPES = ["comment_replied", "topic_commented"];
 
+// Names of the content a moderator warned about / removed (content_type).
+const MODERATED_CONTENT_LABELS = {
+  topic: "bài viết",
+  comment: "bình luận",
+  message: "tin nhắn",
+  story: "tin",
+};
+
+const moderatedLabel = (data) => MODERATED_CONTENT_LABELS[data?.content_type] || "nội dung";
+const capitalize = (text) => text.charAt(0).toUpperCase() + text.slice(1);
+
 const isActorAnonymous = (notification) =>
   ANONYMOUS_ACTOR_TYPES.includes(notification?.type) &&
   notification?.data?.is_anonymous === true;
@@ -115,7 +126,11 @@ function getNotificationMessage(notification) {
     case "content_hidden":
       return "Nội dung của bạn đã bị ẩn";
     case "content_deleted":
-      return "Nội dung của bạn đã bị xóa";
+      return data?.content_type
+        ? `${capitalize(moderatedLabel(data))} của bạn đã bị xóa vì vi phạm tiêu chuẩn cộng đồng`
+        : "Nội dung của bạn đã bị xóa";
+    case "content_warning":
+      return `Cảnh cáo: ${moderatedLabel(data)} gần đây của bạn có nội dung không phù hợp với tiêu chuẩn cộng đồng. Hãy chỉnh sửa hoặc gỡ bỏ để tránh bị khóa tài khoản.`;
     case "content_pending_review":
       return `${data?.comment_id ? "Bình luận" : "Bài viết"} của bạn đang chờ kiểm duyệt${data?.reason ? `: ${data.reason}` : ""
         }`;
@@ -245,6 +260,26 @@ export default function NotificationItem({ notification }) {
       await markAsRead(notification.id);
     }
 
+    // The content is gone, so there is nothing to open.
+    if (notification.type === "content_deleted") {
+      return;
+    }
+
+    if (notification.type === "content_warning") {
+      const data = notification.data || {};
+      if (data.content_type === "message" && data.conversation_id) {
+        const params = new URLSearchParams({ conversation: data.conversation_id });
+        if (data.message_id) params.set("message", data.message_id);
+        router.push(`/chat?${params.toString()}`);
+        return;
+      }
+      // Stories have no page of their own.
+      if (data.content_type === "story") {
+        return;
+      }
+      // Posts and comments fall through to the post / comment URL below.
+    }
+
     if (notification.type === "message_reacted") {
       const data = notification.data || {};
       const conversationId = data.conversation_id;
@@ -349,6 +384,16 @@ export default function NotificationItem({ notification }) {
         {notification.data?.comment_excerpt && (
           <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 line-clamp-2">
             {notification.data.comment_excerpt}
+          </p>
+        )}
+        {["content_warning", "content_deleted"].includes(notification.type) && notification.data?.note && (
+          <p className="text-xs text-gray-700 dark:text-gray-300 mt-1 line-clamp-3">
+            Ghi chú: {notification.data.note}
+          </p>
+        )}
+        {["content_warning", "content_deleted"].includes(notification.type) && notification.data?.excerpt && (
+          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 line-clamp-2">
+            “{notification.data.excerpt}”
           </p>
         )}
         {notification.type === "message_reacted" && notification.data?.message_content && (
