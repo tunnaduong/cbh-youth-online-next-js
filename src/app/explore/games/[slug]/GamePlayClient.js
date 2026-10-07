@@ -169,10 +169,12 @@ export default function GamePlayClient({ slug }) {
           src={game.iframe_url}
           title={game.name}
           className="w-full h-full border-0"
-          // Third-party games: no `allow-popups` and no `allow-top-navigation`,
-          // so a game (its ads, "More games" buttons) can neither open another
-          // tab nor take the whole page - in the app's WebView, the user - away.
-          sandbox="allow-scripts allow-same-origin allow-pointer-lock allow-orientation-lock allow-forms allow-modals allow-downloads"
+          // Third-party games: no `allow-top-navigation`, so a game (its ads,
+          // "More games" buttons) can't take the whole page away. Pop-ups are
+          // allowed: without them Famobi's games stalled after "Play" (their
+          // opening ad). The mobile app drops those new windows itself, in
+          // its game WebView.
+          sandbox="allow-scripts allow-same-origin allow-pointer-lock allow-orientation-lock allow-forms allow-modals allow-downloads allow-popups allow-popups-to-escape-sandbox"
           allow="fullscreen; autoplay; gamepad; accelerometer; gyroscope"
           allowFullScreen
         />
