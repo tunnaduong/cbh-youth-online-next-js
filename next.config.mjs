@@ -28,6 +28,11 @@ const nextConfig = {
     ],
   },
   reactStrictMode: false,
+  // iOS 15's Safari (and the app's WebView there) stops at the first syntax it
+  // doesn't know. laravel-echo ships a class `static {}` block (Safari 16.4+),
+  // which left the whole chunk - and the site - dead on iOS 15; compiling it
+  // here lowers that syntax.
+  transpilePackages: ["laravel-echo"],
   eslint: {
     ignoreDuringBuilds: false,
     dirs: ['src', 'pages', 'components', 'lib', 'app'],
