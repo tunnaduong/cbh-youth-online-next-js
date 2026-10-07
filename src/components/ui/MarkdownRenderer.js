@@ -47,8 +47,11 @@ const MarkdownRenderer = ({ content, className = "" }) => {
   // Skips fenced/inline code blocks so "#123" or "@user" inside code isn't touched.
   const linkifyHashtagsInMarkdown = (markdown) => {
     const codeSplitRegex = /(```[\s\S]*?```|`[^`\n]*`)/g;
-    const hashtagRegex = /(?<![\w&])#([\p{L}\p{N}_]+)/gu;
-    const mentionRegex = /(?<![[\w])@([\w.-]{2,})/g;
+    // No lookbehind ((?<!...)): Safari only has it from 16.4, and a regex
+    // literal using it is a syntax error that stops the whole chunk on
+    // iOS 15. The character before is captured instead and put back.
+    const hashtagRegex = /(^|[^\w&])#([\p{L}\p{N}_]+)/gu;
+    const mentionRegex = /(^|[^[\w])@([\w.-]{2,})/g;
 
     return markdown
       .split(codeSplitRegex)
@@ -56,8 +59,8 @@ const MarkdownRenderer = ({ content, className = "" }) => {
         // Odd indices are the captured code segments — leave them untouched.
         if (index % 2 === 1) return segment;
         return segment
-          .replace(hashtagRegex, (_match, tag) => `[#${tag}](##hashtag:${tag})`)
-          .replace(mentionRegex, (_match, username) => `[@${username}](##mention:${username})`);
+          .replace(hashtagRegex, (_match, before, tag) => `${before}[#${tag}](##hashtag:${tag})`)
+          .replace(mentionRegex, (_match, before, username) => `${before}[@${username}](##mention:${username})`);
       })
       .join("");
   };
