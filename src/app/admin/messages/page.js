@@ -19,6 +19,7 @@ import {
   adminDeleteConversation,
   adminDeleteMessage,
 } from "@/app/Api";
+import { WarnButton, RemoveButton } from "../_components/ModerationActions";
 
 const convName = (c) =>
   c?.type === "private" || !c?.name
@@ -63,11 +64,11 @@ function DeleteMessageButton({ m, onDelete, children }) {
   );
 }
 
-function MessageBubble({ m, highlight, onDelete }) {
+function MessageBubble({ m, highlight, onDelete, onRemoved }) {
   const removed = m.deleted_at || m.is_recalled;
   const files = m.file_urls?.length ? m.file_urls : m.file_url ? [m.file_url] : [];
   return (
-    <div id={`msg-${m.id}`} className={`flex flex-col gap-1 ${highlight ? "bg-amber-50 -mx-2 px-2 py-1 rounded-lg" : ""}`}>
+    <div id={`msg-${m.id}`} className={`flex flex-col gap-1 ${highlight ? "bg-amber-50 dark:bg-amber-950/40 -mx-2 px-2 py-1 rounded-lg" : ""}`}>
       <div className="flex items-baseline gap-2 text-xs">
         <span className="font-semibold text-gray-800 dark:text-gray-100">{m.user?.username || m.guest_name || "Khách"}</span>
         <span className="text-gray-400 dark:text-gray-500">{fmtDate(m.created_at)}</span>
@@ -76,7 +77,23 @@ function MessageBubble({ m, highlight, onDelete }) {
         {m.is_recalled && <Tag color="orange" className="!text-[10px] !leading-4">Đã thu hồi</Tag>}
         {m.deleted_at && <Tag color="red" className="!text-[10px] !leading-4">Đã xóa</Tag>}
         <span className="flex-1" />
-        <DeleteMessageButton m={m} onDelete={onDelete} />
+        {/* A live message from a member can be warned about / removed with a
+            notification to its sender; guests and already-deleted messages
+            keep the plain delete / purge. */}
+        {(m.user_id || m.user?.id) && !m.deleted_at ? (
+          <>
+            <WarnButton contentType="message" contentId={m.id} iconOnly label="Cảnh cáo người gửi" />
+            <RemoveButton
+              contentType="message"
+              contentId={m.id}
+              iconOnly
+              label="Xóa tin nhắn"
+              onDone={() => onRemoved(m)}
+            />
+          </>
+        ) : (
+          <DeleteMessageButton m={m} onDelete={onDelete} />
+        )}
       </div>
       <div
         className={`self-start max-w-[85%] rounded-2xl rounded-tl-md px-3 py-2 text-sm whitespace-pre-wrap break-words ${
@@ -151,6 +168,12 @@ function ConversationViewer({ conversationId, highlightId, onClose, onChanged })
     }
   };
 
+  // Removed through the moderation action (soft delete + notification).
+  const markRemoved = (m) => {
+    setMessages((prev) => prev.map((x) => (x.id === m.id ? { ...x, deleted_at: new Date().toISOString() } : x)));
+    onChanged?.();
+  };
+
   const removeConversation = async () => {
     try {
       const res = await adminDeleteConversation(conversationId);
@@ -217,7 +240,13 @@ function ConversationViewer({ conversationId, highlightId, onClose, onChanged })
           </div>
         ) : messages.length ? (
           messages.map((m) => (
-            <MessageBubble key={m.id} m={m} highlight={m.id === highlightId} onDelete={removeMessage} />
+            <MessageBubble
+              key={m.id}
+              m={m}
+              highlight={Number(m.id) === Number(highlightId)}
+              onDelete={removeMessage}
+              onRemoved={markRemoved}
+            />
           ))
         ) : (
           <Empty description="Chưa có tin nhắn" />
@@ -240,6 +269,15 @@ export default function AdminMessagesPage() {
   const conversationsRef = useRef();
   const searchRef = useRef();
   const open = useCallback((id, highlightId) => setViewing({ id, highlightId }), []);
+
+  // Opened from a report: /admin/messages?conversation=<id>&message=<id>
+  // shows that conversation at the reported message. Read in an effect (no
+  // useSearchParams) so the static render needs no Suspense boundary.
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const conversationId = Number(params.get("conversation"));
+    if (conversationId) open(conversationId, Number(params.get("message")) || undefined);
+  }, [open]);
 
   // A message or conversation deleted inside the drawer changes both tables.
   const reloadTables = useCallback(() => {
@@ -332,6 +370,9 @@ export default function AdminMessagesPage() {
           <Tooltip title="Mở cuộc trò chuyện tại tin nhắn này">
             <Button size="small" icon={<EyeOutlined />} onClick={() => open(m.conversation_id, m.id)} />
           </Tooltip>
+          {(m.user_id || m.user?.id) && !m.deleted_at && (
+            <WarnButton contentType="message" contentId={m.id} iconOnly label="Cảnh cáo người gửi" />
+          )}
           <DeleteMessageButton
             m={m}
             onDelete={async (row, purge) => {

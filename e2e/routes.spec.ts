@@ -23,6 +23,7 @@ const STATIC_ROUTES: string[] = [
   "/admin/student-verifications",
   "/admin/study-materials",
   "/admin/users",
+  "/admin/violations",
   "/admin/withdrawals",
   "/ads",
   "/auth/complete",
