@@ -35,6 +35,11 @@ export const UserLink = ({ user, userId }) =>
  * pinned from the `md` breakpoint up: on a phone the pinned buttons were as
  * wide as the screen and covered the data scrolling underneath, so there
  * they are an ordinary last column to scroll to.
+ *
+ * Don't use a column's `ellipsis`: it makes antd lay the table out as
+ * `fixed`, which fits every column into the screen width, so nothing is left
+ * to scroll on a phone. Truncate inside `render` instead (`max-w-[...] truncate`).
+ * `tableLayout="auto"` below keeps the table scrollable even if one slips in.
  */
 const ResourceTable = forwardRef(function ResourceTable(
   { title, fetcher, columns, filters = [], extra, rowKey = "id", expandable, defaultFilters = {} },
@@ -137,6 +142,7 @@ const ResourceTable = forwardRef(function ResourceTable(
         dataSource={rows}
         columns={tableColumns}
         expandable={expandable}
+        tableLayout="auto"
         scroll={{ x: "max-content" }}
         pagination={{
           ...pagination,

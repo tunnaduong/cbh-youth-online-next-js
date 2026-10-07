@@ -341,7 +341,13 @@ export default function AdminReportsPage() {
       title: "Lý do",
       dataIndex: "reason",
       key: "reason",
-      ellipsis: true,
+      // Not `ellipsis`: it switches the table to a fixed layout, which squeezes
+      // every column into the screen width instead of letting the table scroll.
+      render: (v) => (
+        <div className="max-w-[260px] line-clamp-2 break-words" title={v}>
+          {v || "-"}
+        </div>
+      ),
     },
     {
       title: "Trạng thái",
@@ -489,7 +495,7 @@ export default function AdminReportsPage() {
             total: pagination.total,
             onChange: (page) => fetchReports(page),
           }}
-          scroll={{ x: true }}
+          scroll={{ x: "max-content" }}
         />
       </div>
 
