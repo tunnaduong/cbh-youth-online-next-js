@@ -36,7 +36,15 @@ export default function AdminShopCategoriesPage() {
     { title: "ID", dataIndex: "id", width: 70 },
     { title: "Tên", dataIndex: "name" },
     { title: "Slug", dataIndex: "slug", render: (v) => <code>{v}</code> },
-    { title: "Mô tả", dataIndex: "description", ellipsis: true },
+    {
+      title: "Mô tả",
+      dataIndex: "description",
+      render: (v) => (
+        <div className="max-w-[320px] truncate" title={v}>
+          {v || "-"}
+        </div>
+      ),
+    },
     { title: "Sản phẩm", dataIndex: "products_count" },
     { title: "Ngày tạo", dataIndex: "created_at", render: fmtDate },
     {
