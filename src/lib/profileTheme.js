@@ -55,6 +55,7 @@ export const OPTION_LABELS = {
     active: "Băng",
     distinguished: "Vàng",
     veteran: "Cầu vồng",
+    custom: "Tự tải lên",
   },
   name_effect: {
     none: "Không",
@@ -78,8 +79,13 @@ export const OPTION_LABELS = {
     glow: "Phát sáng",
     gold: "Viền vàng",
     neon: "Neon xoay",
+    custom: "Tự tải lên",
   },
 };
+
+// Address of an uploaded frame image: only ever one the API sent.
+const imageUrl = (value) =>
+  typeof value === "string" && /^https?:\/\//.test(value) ? value : null;
 
 const color = (value, fallback) =>
   typeof value === "string" && HEX_COLOR.test(value) ? value : fallback;
@@ -109,6 +115,10 @@ export function normalizeTheme(theme) {
     avatar_frame: theme.avatar_frame || "none",
     profile_effect: theme.profile_effect || "none",
     profile_frame: theme.profile_frame || "none",
+    // Pro Plus (2250 points): the member's own image, used when the frame
+    // above is "custom". Sent by the API, never saved with the theme.
+    avatar_frame_url: imageUrl(theme.avatar_frame_url),
+    profile_frame_url: imageUrl(theme.profile_frame_url),
     // Pro (2000 points). Older responses lack these: "none" / "default".
     name_icon: theme.name_icon || "none",
     // The glyph of name_icon, sent by the API (no glyph table on this side).
@@ -359,6 +369,14 @@ export function getNameEffect(theme) {
 export function getAvatarFrame(theme) {
   const normalized = normalizeTheme(theme);
   if (!normalized) return null;
+
+  // The member's own image, drawn like any image frame: centred on the
+  // avatar at 1.25x its size (the API checks its centre is transparent).
+  if (normalized.avatar_frame === "custom") {
+    return normalized.avatar_frame_url
+      ? { type: "image", src: normalized.avatar_frame_url, scale: 1.25 }
+      : null;
+  }
 
   const frame = AVATAR_FRAMES[normalized.avatar_frame];
   if (!frame) return null;

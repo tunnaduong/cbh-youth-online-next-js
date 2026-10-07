@@ -14,7 +14,14 @@ import NameStyleModal from "@/components/profile/NameStyleModal";
 import StyledUsername from "@/components/profile/StyledUsername";
 import ProfileEffect from "@/components/profile/ProfileEffect";
 import ProfileFrame from "@/components/profile/ProfileFrame";
-import { getProfile, updateAvatar, updateCover, updateProfile } from "@/app/Api";
+import {
+  deleteCustomFrame,
+  getProfile,
+  updateAvatar,
+  updateCover,
+  updateProfile,
+  uploadCustomFrame,
+} from "@/app/Api";
 import { setOwnProfileTheme } from "@/hooks/useOwnProfileTheme";
 import {
   DEFAULT_ACCENT,
@@ -134,6 +141,8 @@ export default function ProfileCustomizer({ username }) {
   const [picker, setPicker] = useState(null);
   const avatarInput = useRef(null);
   const coverInput = useRef(null);
+  const avatarFrameInput = useRef(null);
+  const profileFrameInput = useRef(null);
 
   const load = useCallback(async () => {
     const response = await getProfile(username);
@@ -225,7 +234,16 @@ export default function ProfileCustomizer({ username }) {
     name_icon_emoji: optionOf("name_icon", theme.name_icon)?.icon || null,
     name_icon_tier: optionOf("name_icon", theme.name_icon)?.tier || null,
   });
-  const previewTheme = withIconGlyph(draft);
+  // Pro Plus: the member's own frame images (absent on an older API). The
+  // draft only says "custom"; the addresses come from the API and are never
+  // saved with the theme.
+  const customFrames = editor.custom_frames || null;
+  const frameUrls = {
+    avatar_frame_url: customFrames?.avatar_url || null,
+    profile_frame_url: customFrames?.profile_url || null,
+  };
+  const themed = { ...draft, ...frameUrls };
+  const previewTheme = { ...withIconGlyph(draft), ...frameUrls };
 
   // Points still needed to save the draft (0 = can save).
   const lockedPoints = Math.max(
@@ -252,7 +270,7 @@ export default function ProfileCustomizer({ username }) {
       setDraft(next);
       setEditor((current) => ({ ...current, saved: theme }));
       // The navbar and other "me" spots follow the change without a reload.
-      setOwnProfileTheme(username, theme ? withIconGlyph(theme) : null);
+      setOwnProfileTheme(username, theme ? { ...withIconGlyph(theme), ...frameUrls } : null);
       message.success(theme ? "Đã lưu thay đổi." : "Đã khôi phục mặc định.");
     } catch (error) {
       console.error("Error saving profile theme:", error);
@@ -290,6 +308,110 @@ export default function ProfileCustomizer({ username }) {
     } finally {
       setUploading(null);
     }
+  };
+
+  const uploadFrame = async (kind, file) => {
+    if (!file) return;
+    const rules = customFrames?.rules || {};
+    const maxBytes = rules.max_bytes || 5 * 1024 * 1024;
+    if (!["image/png", "image/webp"].includes(file.type)) {
+      message.error("Ảnh khung phải là PNG hoặc WebP có nền trong suốt.");
+      return;
+    }
+    if (file.size > maxBytes) {
+      message.error(`Ảnh khung tối đa ${Math.round(maxBytes / 1024 / 1024)}MB.`);
+      return;
+    }
+    try {
+      setUploading(`${kind}_frame`);
+      const formData = new FormData();
+      formData.append("kind", kind);
+      formData.append("image", file);
+      await uploadCustomFrame(username, formData);
+      await load();
+      // Chosen in the draft; it is shown to others once the theme is saved.
+      update({ [`${kind}_frame`]: "custom" });
+      message.success("Đã tải khung lên.");
+    } catch (error) {
+      console.error(`Error uploading ${kind} frame:`, error);
+      message.error(error.response?.data?.message || "Tải khung lên thất bại.");
+    } finally {
+      setUploading(null);
+    }
+  };
+
+  const removeFrame = (kind) =>
+    Modal.confirm({
+      title: "Xóa ảnh khung này?",
+      okText: "Xóa",
+      cancelText: "Hủy",
+      okButtonProps: { danger: true },
+      onOk: async () => {
+        try {
+          await deleteCustomFrame(username, kind);
+          await load();
+          // The API also took "custom" out of the saved theme.
+          const field = `${kind}_frame`;
+          const clear = (theme) => (theme[field] === "custom" ? { ...theme, [field]: "none" } : theme);
+          setSaved(clear);
+          setDraft(clear);
+          message.success("Đã xóa khung.");
+        } catch (error) {
+          console.error(`Error deleting ${kind} frame:`, error);
+          message.error(error.response?.data?.message || "Không thể xóa khung.");
+        }
+      },
+    });
+
+  // Upload row under a frame slot: the button, the rule the image has to
+  // meet, and the points needed while locked.
+  const customFrameRow = (kind, inputRef) => {
+    if (!customFrames) return null;
+    const rules = customFrames.rules || {};
+    const url = kind === "avatar" ? customFrames.avatar_url : customFrames.profile_url;
+    const limits = `PNG/WebP nền trong suốt, hình vuông từ ${rules.min_size || 256}px, tối đa ${Math.round((rules.max_bytes || 5242880) / 1024 / 1024)}MB.`;
+    const shape =
+      kind === "avatar"
+        ? `Chừa trống vòng tròn ở giữa (${Math.round((rules.avatar?.hole || 0.64) * 100)}% chiều rộng) cho ảnh đại diện.`
+        : `Chỉ ${Math.round((rules.profile?.slice || 0.25) * 100)}% ngoài cùng mỗi cạnh được vẽ làm viền, phần giữa bị bỏ qua.`;
+
+    return (
+      <div className="mt-2.5">
+        <p className="flex items-center gap-1 text-xs font-medium text-gray-700 dark:text-neutral-300">
+          {!customFrames.unlocked && <Lock className="w-3 h-3" />}
+          Khung tự tải lên
+          {!customFrames.unlocked && ` · ${customFrames.required_points} điểm`}
+        </p>
+        <div className="mt-1.5 flex items-center gap-2">
+          <Button
+            size="small"
+            disabled={!customFrames.unlocked}
+            loading={uploading === `${kind}_frame`}
+            onClick={() => inputRef.current?.click()}
+          >
+            {url ? "Đổi ảnh khung" : "Tải ảnh khung"}
+          </Button>
+          {url && (
+            <Button size="small" type="text" danger onClick={() => removeFrame(kind)}>
+              Xóa
+            </Button>
+          )}
+        </div>
+        <p className="mt-1.5 text-xs text-gray-500 dark:text-neutral-400">
+          {limits} {shape}
+        </p>
+        <input
+          ref={inputRef}
+          type="file"
+          accept="image/png,image/webp"
+          hidden
+          onChange={(e) => {
+            uploadFrame(kind, e.target.files?.[0]);
+            e.target.value = "";
+          }}
+        />
+      </div>
+    );
   };
 
   const colorSwatch = (label, key) => (
@@ -391,7 +513,7 @@ export default function ProfileCustomizer({ username }) {
           <UserAvatar
             username={username}
             src={avatarUrl}
-            theme={{ ...draft, avatar_frame: key }}
+            theme={{ ...themed, avatar_frame: key }}
             className="w-14 h-14 my-1"
             imgClassName="bg-white"
           />
@@ -431,7 +553,7 @@ export default function ProfileCustomizer({ username }) {
       render: (key) => (
         <>
           <span className="relative isolate block h-16 w-full rounded-lg bg-gray-200 dark:bg-neutral-700">
-            <ProfileFrame theme={{ ...draft, profile_frame: key }} className="rounded-lg" />
+            <ProfileFrame theme={{ ...themed, profile_frame: key }} className="rounded-lg" />
           </span>
           <span className="text-xs dark:text-neutral-300">{OPTION_LABELS.profile_frame[key]}</span>
         </>
@@ -463,7 +585,7 @@ export default function ProfileCustomizer({ username }) {
                   <UserAvatar
                     username={username}
                     src={avatarUrl}
-                    theme={draft}
+                    theme={themed}
                     className="w-14 h-14"
                     imgClassName="bg-white"
                   />
@@ -474,6 +596,7 @@ export default function ProfileCustomizer({ username }) {
               {!editor.animated_avatar.unlocked && <Lock className="w-3 h-3" />}
               GIF động · {editor.animated_avatar.required_points} điểm
             </p>
+            {customFrameRow("avatar", avatarFrameInput)}
             <input
               ref={avatarInput}
               type="file"
@@ -564,7 +687,7 @@ export default function ProfileCustomizer({ username }) {
                   <AddIcon />
                 ) : (
                   <>
-                    <ProfileFrame theme={draft} className="rounded-xl" />
+                    <ProfileFrame theme={themed} className="rounded-xl" />
                     <span className="text-xs font-medium dark:text-neutral-200">
                       {OPTION_LABELS.profile_frame[draft.profile_frame]}
                     </span>
@@ -572,6 +695,7 @@ export default function ProfileCustomizer({ username }) {
                 )}
               </Slot>
             </div>
+            {customFrameRow("profile", profileFrameInput)}
           </Section>
 
           <Section title="Kiểu tên">
@@ -712,7 +836,7 @@ export default function ProfileCustomizer({ username }) {
         <div className="lg:col-start-2 xl:col-start-auto">
           <PointsMilestones
             editor={editor}
-            theme={draft}
+            theme={themed}
             username={username}
             avatarUrl={avatarUrl}
             onTry={(field, key) => update({ [field]: key })}

@@ -570,6 +570,16 @@ export const updateAvatar = (username, params) => {
   return Api.postFormDataRequest(`/v1.0/users/${username}/avatar`, params);
 };
 
+// Pro Plus: the member's own image as avatar / profile frame.
+// formData: kind ("avatar" | "profile") + image.
+export const uploadCustomFrame = (username, params) => {
+  return Api.postFormDataRequest(`/v1.0/users/${username}/custom-frame`, params);
+};
+
+export const deleteCustomFrame = (username, kind) => {
+  return Api.deleteRequest(`/v1.0/users/${username}/custom-frame/${kind}`);
+};
+
 export const getCover = (username) => {
   return Api.getRequest(`/v1.0/users/${username}/cover`);
 };
@@ -953,6 +963,16 @@ export const adminBanUser = (id, params) => Api.postRequest(`/v1.0/admin/users/$
 export const adminUnbanUser = (id) => Api.postRequest(`/v1.0/admin/users/${id}/unban`);
 export const adminResetUserPassword = (id) => Api.postRequest(`/v1.0/admin/users/${id}/reset-password`);
 export const adminResetUserTwoFactor = (id) => Api.postRequest(`/v1.0/admin/users/${id}/reset-two-factor`);
+// Takes down a member's uploaded frames (avatar and profile). Fails only
+// when the account has neither.
+export const adminRemoveCustomFrames = async (id) => {
+  const results = await Promise.allSettled(
+    ["avatar", "profile"].map((kind) => Api.deleteRequest(`/v1.0/admin/users/${id}/custom-frames/${kind}`))
+  );
+  const removed = results.find((result) => result.status === "fulfilled");
+  if (!removed) throw results[0].reason;
+  return removed.value;
+};
 
 export const adminGetPendingDeposits = (params) => Api.getRequest("/v1.0/admin/pending-deposits", params);
 export const adminApproveDeposit = (id) => Api.postRequest(`/v1.0/admin/pending-deposits/${id}/approve`);

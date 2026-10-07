@@ -1217,6 +1217,17 @@ body {
   animation: profileFrameSpin 5s linear infinite;
 }
 
+/* Khung hồ sơ tự tải lên: ảnh vẽ kiểu nine-slice (ProfileFrame.js). Độ dày
+   viền theo cạnh ngắn của khung chứa; dòng 24px là cho trình duyệt chưa có
+   đơn vị cqmin. */
+.profile-frame-custom {
+  border: 1px solid transparent;
+  border-image-slice: 25%;
+  border-image-repeat: stretch;
+  border-image-width: 24px;
+  border-image-width: clamp(6px, 14cqmin, 40px);
+}
+
 /* Hiệu ứng hồ sơ (src/components/profile/ProfileEffect.js) */
 @keyframes profileSparkle {
   0%, 100% { opacity: 0; transform: scale(0.4) rotate(0deg); }

@@ -12,6 +12,7 @@ import {
   adminDeleteUser,
   adminResetUserPassword,
   adminResetUserTwoFactor,
+  adminRemoveCustomFrames,
 } from "@/app/Api";
 
 const ROLE_OPTIONS = [
@@ -170,6 +171,19 @@ export default function AdminUsersPage() {
               onConfirm={() => submit(() => adminResetUserTwoFactor(u.id), () => {})}
             >
               <Button size="small">Tắt 2FA</Button>
+            </Popconfirm>
+          )}
+          {/* Uploaded frames exist from the Pro Plus tier (2250 points). */}
+          {u.points >= 2250 && (
+            <Popconfirm
+              title={`Gỡ khung tự tải lên của @${u.username}?`}
+              description="Xóa ảnh khung avatar và khung trang cá nhân mà người dùng đã tải lên (khi ảnh vi phạm quy định)."
+              okText="Gỡ khung"
+              okButtonProps={{ danger: true }}
+              cancelText="Hủy"
+              onConfirm={() => submit(() => adminRemoveCustomFrames(u.id), () => {})}
+            >
+              <Button size="small">Gỡ khung</Button>
             </Popconfirm>
           )}
           {/* Admins have to be demoted before they can be deleted, same rule as banning. */}

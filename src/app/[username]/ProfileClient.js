@@ -1527,7 +1527,8 @@ export default function ProfileClient({ initialProfile, activeTab, username }) {
                 distinguished: "Quy đổi điểm ra tiền mặt và đăng bài không cần duyệt.",
                 veteran: "Thành viên kỳ cựu của diễn đàn: khung avatar cầu vồng, hiệu ứng cực quang và avatar GIF động.",
                 premium: "Mở khóa hiệu ứng tên Cầu vồng và Viền chữ tự chọn màu, thêm phông chữ cho tên và màu chuyển sắc.",
-                pro: "Hạng cao nhất của diễn đàn. Mở khóa biểu tượng cạnh tên, tên người dùng theo kiểu tên, biểu tượng cảm xúc và ký tự đặc biệt trong tên hiển thị.",
+                pro_plus: "Hạng cao nhất của diễn đàn. Mở khóa khung ảnh đại diện và khung trang cá nhân bằng ảnh tự tải lên.",
+                pro: "Mở khóa biểu tượng cạnh tên, tên người dùng theo kiểu tên, biểu tượng cảm xúc và ký tự đặc biệt trong tên hiển thị.",
               };
               return (
                 <div
