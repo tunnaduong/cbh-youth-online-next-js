@@ -74,6 +74,18 @@ const TIER_CONFIG = {
     color: "text-fuchsia-500",
     bg: "bg-fuchsia-50 dark:bg-fuchsia-900/30",
   },
+  pro_plus: {
+    label: "Thành viên Pro Plus",
+    icon: (
+      // Vương miện kèm dấu cộng
+      <svg viewBox="0 0 20 20" fill="currentColor" xmlns="http://www.w3.org/2000/svg" className="tier-badge__icon">
+        <path d="M1.2 8.6a.7.7 0 011.14-.53l2.9 2.37 2.2-3.7a.7.7 0 011.2 0l2.2 3.7 2.9-2.37a.7.7 0 011.14.53l-1.14 6.5a.9.9 0 01-.88.7H3.22a.9.9 0 01-.88-.7L1.2 8.6zM3.6 17.1h8.8a.7.7 0 010 1.4H3.6a.7.7 0 010-1.4z" />
+        <path d="M15.6 1.2a.8.8 0 01.8.8v1.6H18a.8.8 0 010 1.6h-1.6v1.6a.8.8 0 01-1.6 0V5.2h-1.6a.8.8 0 010-1.6h1.6V2a.8.8 0 01.8-.8z" />
+      </svg>
+    ),
+    color: "text-amber-500",
+    bg: "bg-amber-50 dark:bg-amber-900/30",
+  },
 };
 
 export default function MemberTierBadge({ tier, className = "" }) {

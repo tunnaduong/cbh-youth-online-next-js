@@ -20,6 +20,25 @@ export default function ProfileFrame({ theme, className = "" }) {
   const frame = normalized?.profile_frame || "none";
   if (frame === "none") return null;
 
+  // The member's own image as a nine-slice border: the outer 25% of each
+  // side is the border art (corners keep their shape, edges stretch) and the
+  // middle is never drawn, so the frame fits a cover of any shape. Its
+  // thickness follows the smaller side of the box (.profile-frame-custom).
+  if (frame === "custom") {
+    if (!normalized.profile_frame_url) return null;
+    return (
+      <span
+        aria-hidden="true"
+        className={`absolute inset-0 pointer-events-none z-10 [container-type:size] ${className}`}
+      >
+        <span
+          className="profile-frame-custom absolute inset-0"
+          style={{ borderImageSource: `url("${normalized.profile_frame_url}")` }}
+        />
+      </span>
+    );
+  }
+
   const [primary, accent] = themeColors(normalized);
   const base = `absolute inset-0 pointer-events-none z-10 ${className}`;
 
