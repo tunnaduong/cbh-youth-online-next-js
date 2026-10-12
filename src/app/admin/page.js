@@ -1,35 +1,53 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { Skeleton, Segmented } from "antd";
 import {
-  FlagOutlined,
-  DownloadOutlined,
-  UploadOutlined,
-  ShoppingCartOutlined,
-  UserOutlined,
-  FileTextOutlined,
-  CommentOutlined,
-  BookOutlined,
-  EyeInvisibleOutlined,
-  StopOutlined,
-  NotificationOutlined,
   ArrowRightOutlined,
+  ReloadOutlined,
+  CheckCircleOutlined,
 } from "@ant-design/icons";
 import { getReportStats, adminGetOverview } from "@/app/Api";
 import TrendChart from "./_components/TrendChart";
-import { useIsDarkMode } from "@/hooks/useIsDarkMode";
+import { NAV_GROUPS } from "./AdminShell";
 
 const fmt = (v) => (v == null ? "—" : Number(v).toLocaleString("vi-VN"));
 
+/**
+ * What the dashboard shows for each sidebar item, keyed by its route.
+ * `pending` = the count that needs an admin (shown as a "Cần xử lý" badge);
+ * `total` = a plain figure with its caption. Both read from /admin/overview.
+ */
+const ITEM_META = {
+  "/admin/posts": { total: "topics", caption: "bài viết", sub: (o) => `${fmt(o.hidden_topics)} đã ẩn` },
+  "/admin/comments": { total: "comments", caption: "bình luận" },
+  "/admin/reports": { pending: "pending_reports", caption: "chờ xử lý" },
+  "/admin/violations": { pending: "pending_violations", caption: "chờ xử lý" },
+  "/admin/moderation": { pending: "pending_moderation", caption: "chờ duyệt" },
+  "/admin/feedback": { pending: "new_feedback", caption: "góp ý mới" },
+  "/admin/study-materials": { total: "study_materials", caption: "tài liệu" },
+  "/admin/users": { total: "users", caption: "người dùng", sub: (o) => `${fmt(o.banned_users)} bị khóa` },
+  "/admin/messages": { total: "messages_today", caption: "tin nhắn hôm nay", sub: (o) => `${fmt(o.conversations)} cuộc trò chuyện` },
+  "/admin/notifications": { total: "broadcasts", caption: "thông báo đã gửi" },
+  "/admin/deposits": { pending: "pending_deposits", caption: "chờ xác nhận" },
+  "/admin/withdrawals": { pending: "pending_withdrawals", caption: "chờ duyệt" },
+  "/admin/audit-logs": { total: "audit_logs_today", caption: "thay đổi hôm nay" },
+  "/admin/shop/orders": { pending: "pending_orders", caption: "đơn mới" },
+  "/admin/shop/products": { total: "shop_products", caption: "sản phẩm" },
+  "/admin/shop/categories": { total: "shop_categories", caption: "danh mục" },
+  "/admin/student-verifications": { pending: "pending_student_verifications", caption: "chờ xác minh" },
+};
+
+const SECTIONS = NAV_GROUPS.filter((g) => g.children);
+
 const Panel = ({ title, extra, children, className = "" }) => (
   <section
-    className={`bg-white dark:bg-neutral-800 rounded-2xl border border-[#eef0ee] dark:border-neutral-700 shadow-[0_1px_2px_rgba(16,24,16,0.04)] ${className}`}
+    className={`rounded-2xl border border-[#eef0ee] bg-white shadow-[0_1px_2px_rgba(16,24,16,0.04)] dark:border-neutral-700 dark:bg-neutral-800 ${className}`}
   >
     {title && (
-      <header className="flex items-center justify-between px-5 pt-4 pb-2">
-        <h2 className="font-semibold text-gray-900 dark:text-gray-100">{title}</h2>
+      <header className="flex flex-wrap items-center justify-between gap-2 px-5 pb-2 pt-4">
+        <h2 className="text-base font-semibold text-gray-900 dark:text-white">{title}</h2>
         {extra}
       </header>
     )}
@@ -37,50 +55,52 @@ const Panel = ({ title, extra, children, className = "" }) => (
   </section>
 );
 
-function ActionCard({ href, icon, label, value, tint }) {
-  const hot = value > 0;
-  // These chips are inline-styled (Tailwind's dark: variant can't reach them),
-  // so the dark pair is picked here: the pastel light backgrounds would
-  // otherwise stay bright against a near-black card.
-  const isDark = useIsDarkMode();
+function ItemCard({ item, overview }) {
+  const meta = ITEM_META[item.key] || {};
+  const o = overview || {};
+  const isPending = Boolean(meta.pending);
+  const value = isPending ? o[meta.pending] : meta.total ? o[meta.total] : null;
+  const hot = isPending && value > 0;
+  const sub = meta.sub ? meta.sub(o) : null;
+
   return (
     <Link
-      href={href}
-      className="group bg-white dark:bg-neutral-800 rounded-2xl border border-[#eef0ee] dark:border-neutral-700 p-4 flex items-center gap-4 hover:border-[#cfe6cb] hover:shadow-md transition-all"
+      href={item.key}
+      className={`group flex items-center gap-3 rounded-xl border p-3.5 transition-colors ${
+        hot
+          ? "border-amber-200 bg-amber-50/60 hover:bg-amber-50 dark:border-amber-500/30 dark:bg-amber-500/10 dark:hover:bg-amber-500/15"
+          : "border-gray-100 bg-gray-50/60 hover:border-primary-200 hover:bg-primary-50 dark:border-neutral-700 dark:bg-neutral-800/60 dark:hover:border-neutral-500 dark:hover:bg-neutral-700"
+      }`}
     >
       <span
-        className="w-11 h-11 rounded-xl flex items-center justify-center text-lg shrink-0"
-        style={{
-          background: isDark ? tint.darkBg : tint.bg,
-          color: isDark ? tint.darkFg : tint.fg,
-        }}
+        className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-lg ${
+          hot
+            ? "bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-300"
+            : "bg-white text-primary-500 shadow-sm dark:bg-neutral-700 dark:text-[#6bcf60]"
+        }`}
       >
-        {icon}
+        {item.icon}
       </span>
       <div className="min-w-0 flex-1">
-        <div className="text-[13px] text-gray-500 dark:text-gray-400">{label}</div>
-        <div className="text-2xl font-bold text-gray-900 dark:text-gray-100 leading-tight">{fmt(value)}</div>
+        <div className="truncate text-sm font-medium text-gray-900 dark:text-white">{item.label}</div>
+        <div className="truncate text-xs text-gray-500 dark:text-gray-400">
+          {value == null ? (
+            "Mở trang"
+          ) : (
+            <>
+              <span className="font-semibold tabular-nums text-gray-700 dark:text-gray-200">{fmt(value)}</span> {meta.caption}
+              {sub ? <span className="text-gray-400 dark:text-neutral-500"> · {sub}</span> : null}
+            </>
+          )}
+        </div>
       </div>
       {hot ? (
-        <span className="text-[11px] font-medium px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-500/15 dark:text-amber-300 dark:border-amber-500/30">
+        <span className="shrink-0 rounded-full border border-amber-200 bg-amber-100 px-2 py-0.5 text-[11px] font-medium text-amber-700 dark:border-amber-500/30 dark:bg-amber-500/15 dark:text-amber-300">
           Cần xử lý
         </span>
       ) : (
-        <ArrowRightOutlined className="text-gray-300 dark:text-gray-600 group-hover:text-[#319527] transition-colors" />
+        <ArrowRightOutlined className="shrink-0 text-gray-300 transition-colors group-hover:text-primary-500 dark:text-neutral-600 dark:group-hover:text-[#6bcf60]" />
       )}
-    </Link>
-  );
-}
-
-function StatRow({ href, icon, label, value }) {
-  return (
-    <Link
-      href={href}
-      className="flex items-center gap-3 py-2.5 px-2 -mx-2 rounded-lg hover:bg-gray-50 dark:hover:bg-neutral-700 transition-colors"
-    >
-      <span className="w-8 h-8 rounded-lg bg-gray-100 dark:bg-neutral-700 text-gray-500 dark:text-gray-400 flex items-center justify-center">{icon}</span>
-      <span className="flex-1 text-sm text-gray-600 dark:text-gray-300">{label}</span>
-      <span className="font-semibold text-gray-900 dark:text-gray-100 tabular-nums">{fmt(value)}</span>
     </Link>
   );
 }
@@ -102,9 +122,12 @@ export default function AdminDashboardPage() {
   const [stats, setStats] = useState(null);
   const [overview, setOverview] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [series, setSeries] = useState("users");
+  // Set on the client so the server render has nothing time-dependent.
+  const [now, setNow] = useState(null);
 
-  useEffect(() => {
+  const load = () =>
     Promise.all([
       getReportStats()
         .then((res) => setStats(res.data))
@@ -112,64 +135,116 @@ export default function AdminDashboardPage() {
       adminGetOverview()
         .then((res) => setOverview(res.data))
         .catch(() => setOverview(null)),
-    ]).finally(() => setLoading(false));
+    ]);
+
+  useEffect(() => {
+    setNow(new Date());
+    load().finally(() => setLoading(false));
   }, []);
 
-  const hour = new Date().getHours();
+  const refresh = () => {
+    setRefreshing(true);
+    load().finally(() => {
+      setRefreshing(false);
+      setNow(new Date());
+    });
+  };
+
+  const hour = now ? now.getHours() : 12;
   const greeting = hour < 11 ? "Chào buổi sáng" : hour < 14 ? "Chào buổi trưa" : hour < 18 ? "Chào buổi chiều" : "Chào buổi tối";
-  const today = new Date().toLocaleDateString("vi-VN", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
+  const today = now ? now.toLocaleDateString("vi-VN", { weekday: "long", day: "numeric", month: "long", year: "numeric" }) : "";
 
   const daily = overview?.daily || [];
   const seriesTotal = daily.reduce((s, d) => s + (d[series] || 0), 0);
   const reportTotal = stats?.total || 0;
 
+  // Every sidebar item with something waiting, for the hero and the queue list.
+  const pendingItems = useMemo(() => {
+    if (!overview) return [];
+    return SECTIONS.flatMap((g) => g.children)
+      .map((item) => ({ ...item, meta: ITEM_META[item.key] }))
+      .filter((it) => it.meta?.pending && overview[it.meta.pending] > 0)
+      .map((it) => ({ ...it, count: overview[it.meta.pending] }));
+  }, [overview]);
+  const pendingTotal = pendingItems.reduce((s, it) => s + it.count, 0);
+
   return (
-    <div className="max-w-[1280px] mx-auto px-4 sm:px-6 py-6 space-y-6">
+    <div className="mx-auto max-w-[1280px] space-y-6 px-4 py-6 sm:px-6">
       {/* Hero */}
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#319527] to-[#1f6b19] text-white p-6 sm:p-8">
-        <div className="absolute -right-10 -top-10 w-48 h-48 rounded-full bg-white/10" />
-        <div className="absolute right-24 -bottom-16 w-40 h-40 rounded-full bg-white/5" />
-        <div className="relative">
-          <div className="text-sm text-white/70 capitalize">{today}</div>
-          <h1 className="text-2xl sm:text-3xl font-bold mt-1">{greeting} 👋</h1>
-          <p className="text-white/80 mt-2 max-w-xl">
-            {overview
-              ? `Có ${fmt(
-                  (overview.pending_reports || 0) +
-                    (overview.pending_deposits || 0) +
-                    (overview.pending_withdrawals || 0) +
-                    (overview.pending_orders || 0)
-                )} mục đang chờ bạn xử lý.`
-              : "Tổng quan hoạt động của Chuyên Biên Hòa Online."}
-          </p>
-          <Link
-            href="/admin/notifications"
-            // Stays white in both themes: it sits on the green hero gradient,
-            // not on a page surface.
-            className="inline-flex items-center gap-2 mt-4 px-4 py-2 rounded-lg bg-white text-[#1f6b19] text-sm font-semibold hover:bg-white/90 transition-colors"
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary-500 to-[#1f6b19] p-6 text-white sm:p-8">
+        <div className="absolute -right-10 -top-10 h-48 w-48 rounded-full bg-white/10" />
+        <div className="absolute -bottom-16 right-24 h-40 w-40 rounded-full bg-white/5" />
+        <div className="relative flex flex-wrap items-start justify-between gap-4">
+          <div className="min-w-0">
+            <div className="text-sm capitalize text-white/70">{today || " "}</div>
+            <h1 className="mt-1 text-2xl font-bold sm:text-3xl">{greeting} 👋</h1>
+            <p className="mt-2 max-w-xl text-white/80">
+              {loading
+                ? "Đang tải tổng quan..."
+                : overview
+                  ? pendingTotal > 0
+                    ? `Có ${fmt(pendingTotal)} mục ở ${pendingItems.length} khu vực đang chờ bạn xử lý.`
+                    : "Không có mục nào đang chờ xử lý. Mọi thứ đều ổn!"
+                  : "Không tải được tổng quan. Hãy tải lại trang."}
+            </p>
+          </div>
+          {/* White on the green hero in both themes, so it's styled by hand. */}
+          <button
+            type="button"
+            onClick={refresh}
+            disabled={loading || refreshing}
+            className="inline-flex h-10 shrink-0 items-center gap-2 rounded-xl bg-white px-4 text-sm font-semibold text-[#1f6b19] transition-colors hover:bg-white/90 disabled:opacity-70"
           >
-            <NotificationOutlined /> Gửi thông báo
-          </Link>
+            <ReloadOutlined className={refreshing ? "animate-spin" : ""} /> Làm mới
+          </button>
         </div>
       </div>
 
       {loading ? (
-        <Skeleton active paragraph={{ rows: 8 }} />
+        <Skeleton active paragraph={{ rows: 10 }} />
       ) : (
         <>
-          {/* Needs attention */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
-            <ActionCard href="/admin/reports" icon={<FlagOutlined />} label="Báo cáo chờ xử lý"
-              value={overview?.pending_reports ?? stats?.pending} tint={{ bg: "#fef2f2", fg: "#dc2626", darkBg: "#45191933", darkFg: "#fca5a5" }} />
-            <ActionCard href="/admin/deposits" icon={<DownloadOutlined />} label="Nạp tiền đang chờ"
-              value={overview?.pending_deposits} tint={{ bg: "#eff6ff", fg: "#2563eb", darkBg: "#1e3a8a33", darkFg: "#93c5fd" }} />
-            <ActionCard href="/admin/withdrawals" icon={<UploadOutlined />} label="Rút tiền chờ duyệt"
-              value={overview?.pending_withdrawals} tint={{ bg: "#fff7ed", fg: "#ea580c", darkBg: "#7c2d1233", darkFg: "#fdba74" }} />
-            <ActionCard href="/admin/shop/orders" icon={<ShoppingCartOutlined />} label="Đơn hàng mới"
-              value={overview?.pending_orders} tint={{ bg: "#f5f3ff", fg: "#7c3aed", darkBg: "#4c1d9533", darkFg: "#c4b5fd" }} />
-          </div>
+          {/* Queue: everything waiting, across all sections */}
+          <Panel
+            title="Cần xử lý"
+            extra={
+              <span className="text-xs text-gray-500 dark:text-gray-400">
+                {pendingItems.length ? `${pendingItems.length} khu vực` : null}
+              </span>
+            }
+          >
+            {pendingItems.length ? (
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                {pendingItems.map((it) => (
+                  <ItemCard key={it.key} item={it} overview={overview} />
+                ))}
+              </div>
+            ) : (
+              <div className="flex items-center gap-3 py-6 text-sm text-gray-500 dark:text-neutral-400">
+                <CheckCircleOutlined className="text-xl text-primary-500 dark:text-[#6bcf60]" />
+                {overview ? "Không có mục nào đang chờ. Bạn đã xử lý hết!" : "Không tải được số liệu. Hãy tải lại trang."}
+              </div>
+            )}
+          </Panel>
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* One section per sidebar group */}
+          {SECTIONS.map((group) => (
+            <Panel
+              key={group.label}
+              title={group.label.charAt(0) + group.label.slice(1).toLowerCase()}
+              extra={
+                <span className="text-xs text-gray-500 dark:text-gray-400">{group.children.length} mục</span>
+              }
+            >
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                {group.children.map((item) => (
+                  <ItemCard key={item.key} item={item} overview={overview} />
+                ))}
+              </div>
+            </Panel>
+          ))}
+
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
             {/* Trend */}
             <Panel
               className="lg:col-span-2"
@@ -189,8 +264,8 @@ export default function AdminDashboardPage() {
             >
               {daily.length ? (
                 <>
-                  <div className="flex items-baseline gap-2 mb-2">
-                    <span className="text-3xl font-bold text-gray-900 dark:text-gray-100 tabular-nums">{fmt(seriesTotal)}</span>
+                  <div className="mb-2 flex items-baseline gap-2">
+                    <span className="text-3xl font-bold tabular-nums text-gray-900 dark:text-white">{fmt(seriesTotal)}</span>
                     <span className="text-sm text-gray-500 dark:text-gray-400">{SERIES[series]}</span>
                   </div>
                   <TrendChart
@@ -199,23 +274,11 @@ export default function AdminDashboardPage() {
                   />
                 </>
               ) : (
-                <div className="text-sm text-gray-400 dark:text-gray-500 py-12 text-center">Chưa có dữ liệu</div>
+                <div className="py-10 text-center text-sm text-gray-500 dark:text-neutral-400">Chưa có dữ liệu</div>
               )}
             </Panel>
 
-            {/* Totals */}
-            <Panel title="Số liệu hệ thống">
-              <StatRow href="/admin/users" icon={<UserOutlined />} label="Người dùng" value={overview?.users} />
-              <StatRow href="/admin/posts" icon={<FileTextOutlined />} label="Bài viết" value={overview?.topics} />
-              <StatRow href="/admin/posts" icon={<EyeInvisibleOutlined />} label="Bài đã ẩn" value={overview?.hidden_topics} />
-              <StatRow href="/admin/comments" icon={<CommentOutlined />} label="Bình luận" value={overview?.comments} />
-              <StatRow href="/admin/study-materials" icon={<BookOutlined />} label="Tài liệu học tập" value={overview?.study_materials} />
-              <StatRow href="/admin/users" icon={<StopOutlined />} label="Tài khoản bị khóa" value={overview?.banned_users} />
-            </Panel>
-          </div>
-
-          {/* Reports breakdown */}
-          {stats && (
+            {/* Reports breakdown */}
             <Panel
               title="Tình trạng báo cáo"
               extra={
@@ -224,27 +287,32 @@ export default function AdminDashboardPage() {
                 </Link>
               }
             >
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-10 gap-y-3">
-                {REPORT_ROWS.map(([key, label]) => {
-                  const v = stats[key] || 0;
-                  const pct = reportTotal ? Math.round((v / reportTotal) * 100) : 0;
-                  return (
-                    <div key={key}>
-                      <div className="flex justify-between text-sm mb-1.5">
-                        <span className="text-gray-600 dark:text-gray-300">{label}</span>
-                        <span className="text-gray-900 dark:text-gray-100 font-medium tabular-nums">
-                          {fmt(v)} <span className="text-gray-400 dark:text-gray-500 font-normal">· {pct}%</span>
-                        </span>
+              {stats ? (
+                <div className="space-y-3">
+                  {REPORT_ROWS.map(([key, label]) => {
+                    const v = stats[key] || 0;
+                    const pct = reportTotal ? Math.round((v / reportTotal) * 100) : 0;
+                    return (
+                      <div key={key}>
+                        <div className="mb-1.5 flex justify-between text-sm">
+                          <span className="text-gray-600 dark:text-gray-300">{label}</span>
+                          <span className="font-medium tabular-nums text-gray-900 dark:text-white">
+                            {fmt(v)} <span className="font-normal text-gray-400 dark:text-neutral-500">· {pct}%</span>
+                          </span>
+                        </div>
+                        <div className="h-2 overflow-hidden rounded-full bg-gray-100 dark:bg-neutral-700">
+                          <div className="h-full rounded-full bg-primary-500" style={{ width: `${pct}%` }} />
+                        </div>
                       </div>
-                      <div className="h-2 rounded-full bg-gray-100 dark:bg-neutral-700 overflow-hidden">
-                        <div className="h-full rounded-full bg-[#319527]" style={{ width: `${pct}%` }} />
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
+                    );
+                  })}
+                  <div className="pt-1 text-xs text-gray-500 dark:text-gray-400">Tổng cộng {fmt(reportTotal)} báo cáo</div>
+                </div>
+              ) : (
+                <div className="py-10 text-center text-sm text-gray-500 dark:text-neutral-400">Không tải được số liệu báo cáo.</div>
+              )}
             </Panel>
-          )}
+          </div>
         </>
       )}
     </div>
