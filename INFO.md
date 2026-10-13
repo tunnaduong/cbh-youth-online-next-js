@@ -263,7 +263,7 @@ Every new or changed page or component must follow this section. If the part you
 
 ## Recent work (newest first, as of 2026-10)
 
-- **`/guide/points` links straight to post 262122456 (branch `claude/funny-cori-mk2cc3`; not linted or built - no `node_modules` here):** the page looked the guide up by title (`getPostUrl`) and showed "Không thể tải hướng dẫn điểm số" when that lookup failed. It is now a server `redirect()` to `/Admin/posts/262122456-<slug>`; the post page fixes the URL itself if the author or title changes. To point it at another post, change `POINTS_GUIDE_POST_ID` in `src/app/guide/points/page.js`.
+- **`/guide/points` and `/policy/forum-rules` link straight to posts 262122456 and 173336279 (branch `claude/funny-cori-mk2cc3`; not linted or built - no `node_modules` here):** the page looked the guide up by title (`getPostUrl`) and showed "Không thể tải hướng dẫn điểm số" when that lookup failed. It is now a server `redirect()` to `/Admin/posts/262122456-<slug>`; the post page fixes the URL itself if the author or title changes. `/policy/forum-rules` had the same lookup and is now the same redirect. To point either at another post, change `POINTS_GUIDE_POST_ID` (`src/app/guide/points/page.js`) or `FORUM_RULES_POST_ID` (`src/app/policy/forum-rules/page.js`).
 
 - **Profile: the points milestones open in a real modal (branch `claude/sharp-mccarthy-9m0tsw`; syntax-checked only, not built or run):** clicking "Điểm" on a profile drew the milestones panel inline at the bottom of the page with no overlay, so it landed on top of the sidebar. `ProfileClient.js` now renders it in an antd `Modal` (centred, close button, dark mode from `AntdProvider`), with design-system colours.
 
