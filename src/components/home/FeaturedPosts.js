@@ -24,7 +24,7 @@ const KIND_STYLES = {
 function FeaturedCard({ post }) {
   const url = getPostUrl(post);
   const kind = getPostKind(post);
-  const cover = post.image_urls?.[0];
+  const cover = post.image_urls?.[0] || post.cover_url;
   const title = post.title || htmlToText(post.content).slice(0, 90) || "(Chưa có tiêu đề)";
   const PlaceholderIcon = post.video_urls?.length ? Video : FileText;
 
