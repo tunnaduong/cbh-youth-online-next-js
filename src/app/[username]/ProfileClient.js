@@ -883,7 +883,13 @@ export default function ProfileClient({ initialProfile, activeTab, username }) {
       />
       <div>
         <div className="flex-1">
-          <div className="relative isolate h-36 lg:h-96 overflow-hidden group/cover">
+          <div
+            className={`relative isolate h-36 lg:h-96 overflow-hidden group/cover${
+              !themedCover && !profile.cover_photo_url
+                ? " bg-gray-300 dark:bg-neutral-600"
+                : ""
+            }`}
+          >
             {themedCover ? (
               <div
                 aria-hidden="true"
@@ -895,7 +901,11 @@ export default function ProfileClient({ initialProfile, activeTab, username }) {
                 src={coverImageUrl}
                 alt=""
                 aria-hidden="true"
-                className="cover-photo-bg media-loading absolute inset-0 w-full h-full object-cover"
+                className={`cover-photo-bg media-loading absolute inset-0 w-full h-full object-cover${
+                  // No uploaded cover: the avatar stands in, blurred and faded
+                  // so it reads as a backdrop rather than a stretched photo.
+                  profile.cover_photo_url ? "" : " blur-[100px] opacity-30"
+                }`}
               />
             )}
             {/* Scrim so the profile name/stats stay legible over any cover photo */}
