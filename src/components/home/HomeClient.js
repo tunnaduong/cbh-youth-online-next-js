@@ -19,6 +19,7 @@ import NewsCard from "./NewsCard";
 import ForumStatsCard from "./ForumStatsCard";
 import CategoryGrid from "./CategoryGrid";
 import CommunityBanner from "./CommunityBanner";
+import FacebookGroupBanner from "./FacebookGroupBanner";
 import { HomeCard, SectionHeader } from "./HomeCard";
 import { pickFeaturedPosts } from "./homeUtils";
 
@@ -45,6 +46,8 @@ export default function HomeClient({
 
   return (
     <div className="mx-auto w-full max-w-[1240px] space-y-4 px-3 pb-8 pt-4 sm:space-y-5 sm:px-4 xl:pl-1 xl:pr-6 xl:pt-6">
+      <FacebookGroupBanner />
+
       <HomeHero
         currentUser={currentUser}
         authLoading={authLoading}
