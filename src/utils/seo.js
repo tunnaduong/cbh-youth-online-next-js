@@ -42,3 +42,15 @@ export function enhanceMetadataWithURLs(metadata, path) {
 
 
 
+
+/**
+ * Absolute URL of a generated share card (see src/app/api/og).
+ * @param {string} path - e.g. "/post/123", "/profile/tunna"
+ * @param {Record<string,string>} [query] - for /page
+ */
+export function getOgImageURL(path, query) {
+  const qs = query ? `?${new URLSearchParams(query).toString()}` : "";
+  return `${siteURL}/api/og${path}${qs}`;
+}
+
+export const OG_IMAGE_SIZE = { width: 1200, height: 630 };

@@ -3,7 +3,11 @@ import {
   getSubforumPostsServer,
 } from "../../serverData";
 import { metadata as layoutMetadata } from "@/app/layout";
-import { enhanceMetadataWithURLs } from "@/utils/seo";
+import {
+  enhanceMetadataWithURLs,
+  getOgImageURL,
+  OG_IMAGE_SIZE,
+} from "@/utils/seo";
 import SubforumClient from "./SubforumClient";
 
 // Generate metadata for SEO and social sharing
@@ -64,6 +68,16 @@ export async function generateMetadata({ params }) {
       category.description ||
       "Diễn đàn học sinh Chuyên Biên Hòa thuộc Trường THPT Chuyên Hà Nam";
 
+    const ogImage = {
+      url: getOgImageURL("/page", {
+        title: subforum.name,
+        description: dynamicDescription,
+        label: "Chuyên mục",
+      }),
+      ...OG_IMAGE_SIZE,
+      alt: dynamicTitle,
+    };
+
     return enhanceMetadataWithURLs(
       {
         title: dynamicTitle,
@@ -72,11 +86,13 @@ export async function generateMetadata({ params }) {
           ...layoutMetadata.openGraph,
           title: dynamicTitle,
           description: dynamicDescription,
+          images: [ogImage],
         },
         twitter: {
           ...layoutMetadata.twitter,
           title: dynamicTitle,
           description: dynamicDescription,
+          images: [ogImage.url],
         },
       },
       `/forum/${forumId}/${subforumId}`
