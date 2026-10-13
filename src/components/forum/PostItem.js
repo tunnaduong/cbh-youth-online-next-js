@@ -54,6 +54,33 @@ import SharePostModal from "@/components/modals/SharePostModal";
 import GiftPointsModal from "@/components/modals/GiftPointsModal";
 import { isStaffRole } from "@/utils/roles";
 
+const NAMED_ENTITIES = { amp: "&", lt: "<", gt: ">", quot: '"', apos: "'", nbsp: "\u00a0" };
+
+function decodeHtmlEntities(text) {
+  return text.replace(/&(#x[0-9a-f]+|#\d+|[a-z]+);/gi, (match, code) => {
+    if (code[0] === "#") {
+      const point =
+        code[1] === "x" || code[1] === "X"
+          ? parseInt(code.slice(2), 16)
+          : parseInt(code.slice(1), 10);
+      try {
+        return String.fromCodePoint(point);
+      } catch {
+        return match;
+      }
+    }
+    return NAMED_ENTITIES[code.toLowerCase()] ?? match;
+  });
+}
+
+function escapeHtmlText(text) {
+  return text
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/\u00a0/g, "&nbsp;");
+}
+
 export default function PostItem({
   post,
   single = false,
@@ -163,13 +190,10 @@ export default function PostItem({
     }
   };
 
+  // Plain string work, no DOM: this also runs in the server render (a profile
+  // page with posts used to answer 500 on "document is not defined").
   const truncateHtml = (html, maxLength) => {
-    // Tạo một temporary div để parse HTML
-    const tempDiv = document.createElement("div");
-    tempDiv.innerHTML = html;
-
-    // Lấy text content (không có HTML tags)
-    const textContent = tempDiv.textContent || tempDiv.innerText || "";
+    const textContent = decodeHtmlEntities(String(html || "").replace(/<[^>]*>/g, ""));
 
     if (textContent.length <= maxLength) {
       return html;
@@ -183,9 +207,7 @@ export default function PostItem({
         ? truncatedText.substring(0, lastSpaceIndex)
         : truncatedText;
 
-    // Trả về HTML đã được truncate (giữ lại formatting cơ bản)
-    tempDiv.textContent = finalText + "...";
-    return tempDiv.innerHTML;
+    return escapeHtmlText(finalText + "...");
   };
 
   // Helper function to wrap iframes in responsive containers
