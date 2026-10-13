@@ -264,6 +264,7 @@ Every new or changed page or component must follow this section. If the part you
 
 ## Recent work (newest first, as of 2026-10)
 
+- **Facebook group banner at the top of the home page (branch `claude/magical-babbage-svj4fp`; lint only):** `src/components/home/FacebookGroupBanner.js`, first item in `HomeClient.js`: Facebook logo + "Cùng tham gia nhóm của CBH Youth Online trên Facebook" with a link to `https://www.facebook.com/groups/cbhonline` (new tab). The X button hides it for good in that browser (localStorage `cbh_fb_group_banner_dismissed`); it renders only after mount, so a dismissed banner never flashes. To change the group, edit `GROUP_URL`.
 
 - **Profile pages answered 500 to logged-out visitors; public chat names show the user's name style (branch `claude/vibrant-fermat-bfiwlx`; lint + `next dev` against the live API, not built):** `PostItem`'s `truncateHtml` used `document.createElement`, which throws in the server render, so every profile with posts (`/[username]`) failed for guests and bots - and the link preview card (`/api/link-preview`) drops non-2xx pages, so links to profiles never got a card in chat (public chat already draws `LinkPreviewCard`). It is now plain string code (strip tags, decode / escape entities), same output on server and client. Public chat messages and the participants list already draw `UserName` / `AvatarFrame` from `profile_theme`; the API now sends it there (same branch in the API). Rule: no `document` / `window` in code that runs during render.
 
