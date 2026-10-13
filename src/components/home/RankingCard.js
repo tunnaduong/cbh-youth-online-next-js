@@ -5,6 +5,7 @@ import UserName from "@/components/profile/UserName";
 import { Trophy } from "lucide-react";
 import { HomeCard, SectionHeader, UserAvatar } from "./HomeCard";
 import { formatThousands } from "./homeUtils";
+import { isStaffRole } from "@/utils/roles";
 
 const MEDALS = [
   "bg-[#FBBF24] text-white",
@@ -90,7 +91,7 @@ export default function RankingCard({ topUsers, loading, currentUser }) {
           </p>
         )}
 
-        {currentUser?.username && currentUser.rank && currentUser.role !== "admin" && !currentInTop && top.length > 0 && (
+        {currentUser?.username && currentUser.rank && !isStaffRole(currentUser.role) && !currentInTop && top.length > 0 && (
           <>
             <div className="mx-2 border-t border-dashed border-gray-200 pt-0.5 dark:border-neutral-600" />
             <RankRow

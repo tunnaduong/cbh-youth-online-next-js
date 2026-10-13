@@ -14,6 +14,7 @@ import {
   adminResetUserTwoFactor,
   adminRemoveCustomFrames,
 } from "@/app/Api";
+import { isStaffRole } from "@/utils/roles";
 
 const ROLE_OPTIONS = [
   { value: "user", label: "Người dùng" },
@@ -91,7 +92,7 @@ export default function AdminUsersPage() {
       ),
     },
     { title: "Email", dataIndex: "email" },
-    { title: "Vai trò", dataIndex: "role", render: (r) => <Tag color={r === "admin" ? "purple" : "default"}>{ROLE_LABEL[r] || r}</Tag> },
+    { title: "Vai trò", dataIndex: "role", render: (r) => <Tag color={isStaffRole(r) ? "purple" : "default"}>{ROLE_LABEL[r] || r}</Tag> },
     { title: "Điểm", dataIndex: "points", render: fmtNumber },
     { title: "Bài viết", dataIndex: "posts_count" },
     {
@@ -138,7 +139,7 @@ export default function AdminUsersPage() {
             <Button
               size="small"
               danger
-              disabled={u.role === "admin"}
+              disabled={isStaffRole(u.role)}
               onClick={() => {
                 setBanning(u);
                 banForm.setFieldsValue({ duration: "24h", reason: "" });
@@ -154,10 +155,10 @@ export default function AdminUsersPage() {
             description="Tạo một mật khẩu tạm và đăng xuất tài khoản này khỏi mọi thiết bị."
             okText="Đặt lại"
             cancelText="Hủy"
-            disabled={u.role === "admin"}
+            disabled={isStaffRole(u.role)}
             onConfirm={() => resetPassword(u)}
           >
-            <Button size="small" disabled={u.role === "admin"}>
+            <Button size="small" disabled={isStaffRole(u.role)}>
               Đặt lại mật khẩu
             </Button>
           </Popconfirm>
@@ -193,11 +194,11 @@ export default function AdminUsersPage() {
             okText="Xóa"
             okButtonProps={{ danger: true }}
             cancelText="Hủy"
-            disabled={u.role === "admin"}
+            disabled={isStaffRole(u.role)}
             onConfirm={() => submit(() => adminDeleteUser(u.id), () => {})}
           >
-            <Tooltip title={u.role === "admin" ? "Hãy hạ quyền trước khi xóa" : "Xóa tài khoản"}>
-              <Button size="small" danger icon={<DeleteOutlined />} disabled={u.role === "admin"} />
+            <Tooltip title={isStaffRole(u.role) ? "Hãy hạ quyền trước khi xóa" : "Xóa tài khoản"}>
+              <Button size="small" danger icon={<DeleteOutlined />} disabled={isStaffRole(u.role)} />
             </Tooltip>
           </Popconfirm>
         </Space>

@@ -52,6 +52,7 @@ import PostVotesModal from "./PostVotesModal";
 import ReportModal from "@/components/ReportModal";
 import SharePostModal from "@/components/modals/SharePostModal";
 import GiftPointsModal from "@/components/modals/GiftPointsModal";
+import { isStaffRole } from "@/utils/roles";
 
 export default function PostItem({
   post,
@@ -488,7 +489,7 @@ export default function PostItem({
     (currentUser.username === post.author.username ||
       (post.anonymous && post.is_owner))
   );
-  const isAdmin = currentUser?.role === "admin";
+  const isAdmin = isStaffRole(currentUser?.role);
 
   const menuItems = [
     {

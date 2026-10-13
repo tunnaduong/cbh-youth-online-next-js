@@ -68,7 +68,7 @@ The web app at **https://chuyenbienhoa.com** (also `www.`): the student communit
 - `src/app/admin/AdminShell.js` checks the sessionStorage flag `cbh_admin_session`. Without it, it redirects to `/admin/login?next=<path>`.
 - `/admin/login` (`src/app/admin/login/page.js`) has two paths:
   - **If an `auth_token` cookie already exists:** it sets the flag and goes to `next`, which must be an `/admin…` path. This doesn't check the role; the API's admin endpoints are what enforce it.
-  - **The login form:** it signs in and requires `role === "admin"`.
+  - **The login form:** it signs in and requires an admin or a teacher (`isStaffRole`, `src/utils/roles.js`) - teachers have the same rights as admins, as in the API.
 
 ## Project structure
 
@@ -136,6 +136,7 @@ The first time, run `npx playwright install chromium` before `test:e2e`.
   - **Request interceptor:** adds `Authorization: Bearer <cookie or localStorage token>`, plus `X-Socket-Id` for Echo `toOthers()`.
   - **On a 401:** removes the dead token from `SAVED_ACCOUNTS`. If that token is still the active one, it clears `TOKEN`, `CURRENT_USER` and the cookie, then redirects to `/login`. So never send a request whose expected failure is a 401 (like redeeming a code) through axios.
   - **When the API is unreachable:** it shows the maintenance screen (`components/maintenance`).
+- **Admin rights:** `admin` and `teacher` are equal - check with `isStaffRole(role)` (`src/utils/roles.js`), never `role === "admin"`.
 - **SSR data:** use `src/utils/serverFetch.js`. It forwards the cookie token.
 - **New static routes:** add them to `e2e/routes.spec.ts`.
 - **Client-only checks** (`window`, sessionStorage, app mode) belong in a `useEffect` so hydration matches the server render.
@@ -262,6 +263,9 @@ Weights: `font-medium` (default emphasis), `font-semibold` (titles, buttons), `f
 Every new or changed page or component must follow this section. If the part you touch is in the older style, bring it in line. When a deliberate, large redesign changes these rules (new card style, new palette, new navigation), **update this section in the same commit** - it must always describe the site as it is, not as it was.
 
 ## Recent work (newest first, as of 2026-10)
+
+
+- **Teachers = admins; home shows members' posts only (branch `claude/inspiring-galileo-eqs38a`; not linted or built - no `node_modules` here):** new `src/utils/roles.js` (`STAFF_ROLES`, `isStaffRole`) replaces the `role === "admin"` checks in the admin login, `/admin/users` (tag colour, protected actions), `PostItem` (edit/delete menu), `GiftPointsModal`, `ProfileCard` / `RankingCard` (no rank for staff) and the subforum author badge. The home feed filtering is done by the API (same branch there: `Topic::fromMembers()` on `/topics/feed` and `/home`), so posts by the youth union account and admins / teachers no longer appear in "Bài viết mới nhất" / "Bài viết nổi bật"; they stay in "Tin tức Đoàn", forums and profiles.
 
 - **`/guide/points` and `/policy/forum-rules` link straight to posts 262122456 and 173336279 (branch `claude/funny-cori-mk2cc3`; not linted or built - no `node_modules` here):** the page looked the guide up by title (`getPostUrl`) and showed "Không thể tải hướng dẫn điểm số" when that lookup failed. It is now a server `redirect()` to `/Admin/posts/262122456-<slug>`; the post page fixes the URL itself if the author or title changes. `/policy/forum-rules` had the same lookup and is now the same redirect. To point either at another post, change `POINTS_GUIDE_POST_ID` (`src/app/guide/points/page.js`) or `FORUM_RULES_POST_ID` (`src/app/policy/forum-rules/page.js`).
 

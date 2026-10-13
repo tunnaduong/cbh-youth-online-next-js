@@ -11,6 +11,7 @@ import * as Api from "@/app/Api";
 import { setAuthCookie, getAuthCookie } from "@/utils/cookies";
 import { getTwoFactorDeviceToken } from "@/utils/twoFactorDevice";
 import Turnstile from "@/components/auth/Turnstile";
+import { isStaffRole } from "@/utils/roles";
 
 // The admin page AdminShell sent us here from (?next=), limited to /admin
 // paths so the param can't redirect anywhere else.
@@ -73,8 +74,8 @@ export default function AdminLoginPage() {
         return;
       }
 
-      // Check if user is admin
-      if (user.role !== "admin") {
+      // Admins and teachers (same rights)
+      if (!isStaffRole(user.role)) {
         setError("Tài khoản của bạn không có quyền truy cập quản trị viên.");
         setLoading(false);
         return;
