@@ -1,68 +1,14 @@
-"use client";
+import { redirect } from "next/navigation";
+import { generatePostSlug } from "@/utils/slugify";
 
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
-import { getPostUrl } from "@/app/Api";
+// The points guide is a forum post. Linked by id instead of looked up by title,
+// so renaming the post can't break this page. If the author or title changes,
+// the post page redirects to its canonical URL itself.
+const POINTS_GUIDE_POST_ID = 262122456;
+const POINTS_GUIDE_TITLE = "Cách Tính Điểm Xếp Hạng Thành Viên Trên CBH Youth Online";
 
-export default function PointsGuideClient() {
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const router = useRouter();
-
-  useEffect(() => {
-    async function fetchPointsGuideUrl() {
-      try {
-        setLoading(true);
-        const response = await getPostUrl({
-          title: "Cách Tính Điểm Xếp Hạng Thành Viên Trên CBH Youth Online",
-          user_id: 45,
-          subforum_id: 10,
-        });
-
-        if (response?.data?.success && response.data.url) {
-          // Convert full URL to relative path
-          const url = response.data.url;
-          const relativeUrl = url.replace(/^https?:\/\/[^\/]+/, "");
-
-          // Redirect to the forum rules post
-          router.push(relativeUrl);
-        } else {
-          throw new Error("Failed to get points guide URL");
-        }
-      } catch (error) {
-        console.error("Error fetching points guide URL:", error);
-        setError("Không thể tải hướng dẫn điểm số. Vui lòng thử lại sau.");
-        setLoading(false);
-      }
-    }
-
-    fetchPointsGuideUrl();
-  }, [router]);
-
-  if (error) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <p className="text-red-600 dark:text-red-400 mb-4">{error}</p>
-          <button
-            onClick={() => router.push("/")}
-            className="px-4 py-2 bg-[#319527] text-white rounded hover:bg-[#2a7a1f]"
-          >
-            Về trang chủ
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="min-h-screen flex items-center justify-center bg-white dark:bg-gray-900">
-      <div className="text-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#319527] mx-auto mb-4"></div>
-        <p className="text-gray-600 dark:text-gray-400">
-          Đang tải hướng dẫn điểm số...
-        </p>
-      </div>
-    </div>
+export default function PointsGuidePage() {
+  redirect(
+    `/Admin/posts/${generatePostSlug(POINTS_GUIDE_POST_ID, POINTS_GUIDE_TITLE)}`
   );
 }
