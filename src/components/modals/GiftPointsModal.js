@@ -5,6 +5,7 @@ import { Modal, Input, InputNumber, message, Button } from "antd";
 import { Gift } from "lucide-react";
 import { giftPoints, getWalletBalance } from "@/app/Api";
 import { useAuthContext } from "@/contexts/Support";
+import { isStaffRole } from "@/utils/roles";
 
 const { TextArea } = Input;
 
@@ -31,7 +32,7 @@ export default function GiftPointsModal({ open, onClose, post, onSuccess }) {
     : post?.author?.profile_name || post?.author?.username || "tác giả";
 
   const canGift =
-    currentUser?.role === "admin" ||
+    isStaffRole(currentUser?.role) ||
     !!currentUser?.member_tier?.privileges?.includes("gift_points_to_others") ||
     (currentUser?.total_points ?? 0) >= REQUIRED_TIER_POINTS;
 

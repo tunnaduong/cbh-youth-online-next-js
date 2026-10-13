@@ -13,6 +13,7 @@ import { notFound } from "next/navigation";
 import SkeletonLoader from "./skeletonLoader";
 import SEOContent from "@/components/marketing/SEOContent";
 import { Breadcrumb } from "antd";
+import { isStaffRole } from "@/utils/roles";
 
 export default function SubforumClient({
   params,
@@ -318,7 +319,7 @@ export default function SubforumClient({
                                     {topic.author.profile_name}
                                   </StyledName>
                                   <NameIcon theme={topic.author.profile_theme} className="!ml-0" />
-                                  {topic.author.role === "admin" && (
+                                  {isStaffRole(topic.author.role) && (
                                     <svg
                                       stroke="currentColor"
                                       fill="currentColor"

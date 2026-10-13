@@ -7,6 +7,7 @@ import UserName from "@/components/profile/UserName";
 import StyledUsername from "@/components/profile/StyledUsername";
 import { HomeCard, UserAvatar } from "./HomeCard";
 import { formatCompact, formatThousands } from "./homeUtils";
+import { isStaffRole } from "@/utils/roles";
 
 // Progress toward the next leaderboard position, using the top list we already have.
 function getRankProgress(points, rank, topUsers) {
@@ -100,9 +101,9 @@ export default function ProfileCard({ currentUser, authLoading, topUsers }) {
   // the login payload sent (if anything).
   const theme = profile ? profile.profile?.theme || null : currentUser.profile_theme || null;
   const points = Number(currentUser.total_points ?? profile?.stats?.activity_points) || 0;
-  // Admins are left out of the ranking, so they have no place to show (the
+  // Admins and teachers are left out of the ranking, so they have no place to show (the
   // API sends none; an older cached value is ignored too).
-  const rank = currentUser.role === "admin" ? null : currentUser.rank;
+  const rank = isStaffRole(currentUser.role) ? null : currentUser.rank;
   const progress = getRankProgress(points, rank, topUsers);
 
   const stats = [
