@@ -5,7 +5,7 @@ import UserAvatar from "@/components/profile/UserAvatar";
 import { useRouter } from "next/navigation";
 import DefaultLayout from "@/layouts/DefaultLayout";
 import PostItem from "@/components/forum/PostItem";
-import { Button, message } from "antd";
+import { Button, Modal, message } from "antd";
 import { useState, useEffect } from "react";
 import FollowButton from "@/components/profile/FollowButton";
 import AvatarFrame from "@/components/profile/AvatarFrame";
@@ -19,7 +19,7 @@ import ProfileFrame from "@/components/profile/ProfileFrame";
 import { BsFillGearFill } from "react-icons/bs";
 import { IoChatbubbleEllipsesOutline } from "react-icons/io5";
 import { IoCalendarOutline, IoLocationOutline } from "react-icons/io5";
-import { Archive, Edit2Icon, Flag, Palette, X, MoreHorizontal, Ban } from "lucide-react";
+import { Archive, Edit2Icon, Flag, Palette, MoreHorizontal, Ban } from "lucide-react";
 import ProfilePhotoGallery from "@/components/profile/ProfilePhotoGallery";
 import MemberTierBadge from "@/components/ui/MemberTierBadge";
 import { useAuthContext, useChatContext } from "@/contexts/Support";
@@ -1505,74 +1505,72 @@ export default function ProfileClient({ initialProfile, activeTab, username }) {
 
 
       {/* Milestones modal */}
-      {showMilestonesModal && (
-        <div
-          className="bg-white dark:bg-neutral-900 rounded-2xl w-full max-w-md shadow-xl overflow-hidden"
-          onClick={(e) => e.stopPropagation()}
-        >
-          {/* Header */}
-          <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-neutral-700">
-            <div>
-              <h2 className="font-bold text-base text-[#319527]">Điểm thành tích</h2>
-              <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-                Tổng điểm: <span className="font-bold text-gray-800 dark:text-white">{profile.stats.points}</span>
-              </p>
-            </div>
-            <button
-              onClick={() => setShowMilestonesModal(false)}
-              className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
-            >
-              <X className="w-5 h-5" />
-            </button>
+      <Modal
+        open={showMilestonesModal}
+        onCancel={() => setShowMilestonesModal(false)}
+        footer={null}
+        centered
+        width={448}
+        title={
+          <div>
+            <h2 className="text-base font-semibold text-gray-900 dark:text-white">
+              Điểm thành tích
+            </h2>
+            <p className="mt-0.5 text-xs font-normal text-gray-500 dark:text-gray-400">
+              Tổng điểm:{" "}
+              <span className="font-bold text-gray-900 dark:text-white">
+                {profile.stats.points}
+              </span>
+            </p>
           </div>
-
-          {/* Milestone list */}
-          <div className="divide-y divide-gray-100 dark:divide-neutral-800 max-h-[70vh] overflow-y-auto">
-            {(profile.points_milestones || []).length === 0 ? (
-              <p className="text-center text-gray-400 py-8 text-sm">Đang tải...</p>
-            ) : (profile.points_milestones || []).map((m) => {
-              const DESCRIPTIONS = {
-                trainee: "Mở khóa tùy chỉnh profile, tên nổi bật, khung avatar riêng và voucher 50% Gift Shop.",
-                active: "Được tặng điểm cho tác giả, tăng giới hạn đăng bài, ưu tiên hiển thị bình luận.",
-                distinguished: "Quy đổi điểm ra tiền mặt và đăng bài không cần duyệt.",
-                veteran: "Thành viên kỳ cựu của diễn đàn: khung avatar cầu vồng, hiệu ứng cực quang và avatar GIF động.",
-                premium: "Mở khóa hiệu ứng tên Cầu vồng và Viền chữ tự chọn màu, thêm phông chữ cho tên và màu chuyển sắc.",
-                pro_plus: "Hạng cao nhất của diễn đàn. Mở khóa khung ảnh đại diện và khung trang cá nhân bằng ảnh tự tải lên.",
-                pro: "Mở khóa biểu tượng cạnh tên, tên người dùng theo kiểu tên, biểu tượng cảm xúc và ký tự đặc biệt trong tên hiển thị.",
-              };
-              return (
-                <div
-                  key={m.id}
-                  className={`flex items-start gap-4 px-5 py-4 transition-opacity ${!m.achieved_at ? "opacity-40" : ""}`}
-                >
-                  {/* Points number */}
-                  <div className="w-12 shrink-0 text-right pt-0.5">
-                    <span className={`text-2xl font-bold leading-none ${m.achieved_at ? "text-[#319527]" : "text-gray-400 dark:text-gray-500"}`}>
-                      {m.min_points}
-                    </span>
-                  </div>
-                  {/* Info */}
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-1.5">
-                      <p className="font-bold text-sm text-gray-900 dark:text-white">{m.name}</p>
-                      <MemberTierBadge tier={m.achieved_at ? { id: m.id } : null} />
-                    </div>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 leading-relaxed">
-                      {DESCRIPTIONS[m.id]}
-                    </p>
-                  </div>
-                  {/* Date */}
-                  <div className="shrink-0 text-right pt-0.5">
-                    <span className="text-xs text-gray-400 dark:text-gray-500 whitespace-nowrap">
-                      {m.achieved_at || "—"}
-                    </span>
-                  </div>
+        }
+      >
+        {/* Milestone list */}
+        <div className="-mx-1 max-h-[70vh] divide-y divide-gray-100 overflow-y-auto dark:divide-neutral-600">
+          {(profile.points_milestones || []).length === 0 ? (
+            <p className="py-10 text-center text-sm text-gray-500 dark:text-neutral-400">Đang tải...</p>
+          ) : (profile.points_milestones || []).map((m) => {
+            const DESCRIPTIONS = {
+              trainee: "Mở khóa tùy chỉnh profile, tên nổi bật, khung avatar riêng và voucher 50% Gift Shop.",
+              active: "Được tặng điểm cho tác giả, tăng giới hạn đăng bài, ưu tiên hiển thị bình luận.",
+              distinguished: "Quy đổi điểm ra tiền mặt và đăng bài không cần duyệt.",
+              veteran: "Thành viên kỳ cựu của diễn đàn: khung avatar cầu vồng, hiệu ứng cực quang và avatar GIF động.",
+              premium: "Mở khóa hiệu ứng tên Cầu vồng và Viền chữ tự chọn màu, thêm phông chữ cho tên và màu chuyển sắc.",
+              pro_plus: "Hạng cao nhất của diễn đàn. Mở khóa khung ảnh đại diện và khung trang cá nhân bằng ảnh tự tải lên.",
+              pro: "Mở khóa biểu tượng cạnh tên, tên người dùng theo kiểu tên, biểu tượng cảm xúc và ký tự đặc biệt trong tên hiển thị.",
+            };
+            return (
+              <div
+                key={m.id}
+                className={`flex items-start gap-3 py-3 ${!m.achieved_at ? "opacity-50" : ""}`}
+              >
+                {/* Points number */}
+                <div className="w-12 flex-shrink-0 pt-0.5 text-right">
+                  <span className={`text-xl font-bold leading-none ${m.achieved_at ? "text-primary-500 dark:text-[#6bcf60]" : "text-gray-400 dark:text-neutral-400"}`}>
+                    {m.min_points}
+                  </span>
                 </div>
-              );
-            })}
-          </div>
+                {/* Info */}
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-1.5">
+                    <p className="text-sm font-semibold text-gray-900 dark:text-white">{m.name}</p>
+                    <MemberTierBadge tier={m.achieved_at ? { id: m.id } : null} />
+                  </div>
+                  <p className="mt-0.5 text-xs leading-relaxed text-gray-500 dark:text-gray-400">
+                    {DESCRIPTIONS[m.id]}
+                  </p>
+                </div>
+                {/* Date */}
+                <div className="flex-shrink-0 pt-0.5 text-right">
+                  <span className="whitespace-nowrap text-xs text-gray-400 dark:text-neutral-400">
+                    {m.achieved_at || "—"}
+                  </span>
+                </div>
+              </div>
+            );
+          })}
         </div>
-      )}
+      </Modal>
     </DefaultLayout>
     </>
   );
