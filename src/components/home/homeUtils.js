@@ -83,7 +83,7 @@ export function pickFeaturedPosts(posts, count = 3) {
         getVoteScore(post) * 3 +
         parseCommentCount(post.comments) * 2 +
         (Number(post.views) || 0) / 20 +
-        (post.image_urls?.length ? 4 : 0),
+        (post.image_urls?.length || post.cover_url ? 4 : 0),
     }))
     .sort((a, b) => b.score - a.score)
     .slice(0, count)

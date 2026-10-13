@@ -40,7 +40,7 @@ function PostRow({ post }) {
   const text = htmlToText(post.content);
   const title = post.title || text.slice(0, 100) || "(Chưa có tiêu đề)";
   const excerpt = post.title ? text : "";
-  const thumbnail = post.image_urls?.[0];
+  const thumbnail = post.image_urls?.[0] || post.cover_url;
   const PlaceholderIcon = post.video_urls?.length
     ? CirclePlay
     : post.document_urls?.length
