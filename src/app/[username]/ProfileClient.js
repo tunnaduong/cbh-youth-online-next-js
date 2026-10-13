@@ -1526,7 +1526,7 @@ export default function ProfileClient({ initialProfile, activeTab, username }) {
         }
       >
         {/* Milestone list */}
-        <div className="-mx-1 max-h-[70vh] divide-y divide-gray-100 overflow-y-auto dark:divide-neutral-600">
+        <div className="-mx-6 max-h-[70vh] px-6 divide-y divide-gray-100 overflow-y-auto dark:divide-neutral-600">
           {(profile.points_milestones || []).length === 0 ? (
             <p className="py-10 text-center text-sm text-gray-500 dark:text-neutral-400">Đang tải...</p>
           ) : (profile.points_milestones || []).map((m) => {
@@ -1545,7 +1545,7 @@ export default function ProfileClient({ initialProfile, activeTab, username }) {
                 className={`flex items-start gap-3 py-3 ${!m.achieved_at ? "opacity-50" : ""}`}
               >
                 {/* Points number */}
-                <div className="w-12 flex-shrink-0 pt-0.5 text-right">
+                <div className="min-w-[3.5rem] flex-shrink-0 whitespace-nowrap pt-0.5 text-right tabular-nums">
                   <span className={`text-xl font-bold leading-none ${m.achieved_at ? "text-primary-500 dark:text-[#6bcf60]" : "text-gray-400 dark:text-neutral-400"}`}>
                     {m.min_points}
                   </span>
