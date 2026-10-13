@@ -11,6 +11,15 @@ const nextConfig = {
     // which web version a browser last used.
     NEXT_PUBLIC_APP_VERSION: version,
   },
+  experimental: {
+    // The share-card routes read the fonts and the logo from disk.
+    outputFileTracingIncludes: {
+      "/api/og/**/*": [
+        "./src/assets/fonts/**/*",
+        "./public/images/logo.png",
+      ],
+    },
+  },
   images: {
     remotePatterns: [
       {

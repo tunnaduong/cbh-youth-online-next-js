@@ -1,6 +1,7 @@
 import React from "react";
 import { getServer } from "@/utils/serverFetch";
 import { notFound } from "next/navigation";
+import { getOgImageURL, OG_IMAGE_SIZE } from "@/utils/seo";
 import ProfileClient from "../ProfileClient";
 
 // Server-side data fetching for user profile
@@ -46,24 +47,26 @@ export async function generateMetadata({ params }) {
       user.profile?.bio ||
       `Hồ sơ của ${profileName} trên diễn đàn học sinh Chuyên Biên Hòa`;
 
+    const ogImage = {
+      url: getOgImageURL(`/profile/${encodeURIComponent(user.username)}`),
+      ...OG_IMAGE_SIZE,
+      alt: profileName,
+    };
+
     return {
       title,
       description,
       openGraph: {
         title,
         description,
-        images: user.profile?.profile_picture
-          ? [user.profile.profile_picture]
-          : ["/images/cyo_thumbnail.png"],
+        images: [ogImage],
         type: "profile",
       },
       twitter: {
-        card: "summary",
+        card: "summary_large_image",
         title,
         description,
-        images: user.profile?.profile_picture
-          ? [user.profile.profile_picture]
-          : ["/images/cyo_thumbnail.png"],
+        images: [ogImage.url],
       },
     };
   } catch (error) {

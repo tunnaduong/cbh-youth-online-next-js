@@ -3,7 +3,11 @@ import { notFound, redirect } from "next/navigation";
 import PostClient from "./PostClient";
 import { generatePostSlug } from "@/utils/slugify";
 import { getServer } from "@/utils/serverFetch";
-import { enhanceMetadataWithURLs } from "@/utils/seo";
+import {
+  enhanceMetadataWithURLs,
+  getOgImageURL,
+  OG_IMAGE_SIZE,
+} from "@/utils/seo";
 
 // Server-side API call with authentication support
 const getPostDetailServer = async (id) => {
@@ -54,6 +58,13 @@ export async function generateMetadata({ params }) {
     const canonicalSlug = generateCanonicalUrl(params.postId, post.title);
     const canonicalPath = `/${username}/posts/${canonicalSlug}`;
 
+    // Generated share card (title, markdown preview, author, counters)
+    const ogImage = {
+      url: getOgImageURL(`/post/${numericId}`),
+      ...OG_IMAGE_SIZE,
+      alt: post.title,
+    };
+
     return enhanceMetadataWithURLs(
       {
         title: `${post.title} - Diễn đàn học sinh Chuyên Biên Hòa`,
@@ -61,14 +72,14 @@ export async function generateMetadata({ params }) {
         openGraph: {
           title: `${post.title} - Diễn đàn học sinh Chuyên Biên Hòa`,
           description: description,
-          images: [post.image_urls[0] || "/images/cyo_thumbnail.png"],
+          images: [ogImage],
           type: "article",
         },
         twitter: {
           card: "summary_large_image",
           title: post.title,
           description: description,
-          images: [post.image_urls[0] || "/images/cyo_thumbnail.png"],
+          images: [ogImage.url],
         },
       },
       canonicalPath

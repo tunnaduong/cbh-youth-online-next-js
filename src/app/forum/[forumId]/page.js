@@ -1,7 +1,11 @@
 import { getForumCategoriesServer } from "../serverData";
 import { notFound } from "next/navigation";
 import ForumCategoryClient from "./ForumCategoryClient";
-import { enhanceMetadataWithURLs } from "@/utils/seo";
+import {
+  enhanceMetadataWithURLs,
+  getOgImageURL,
+  OG_IMAGE_SIZE,
+} from "@/utils/seo";
 
 // Generate metadata for SEO and social sharing
 import { metadata as layoutMetadata } from "@/app/layout";
@@ -42,6 +46,16 @@ export async function generateMetadata({ params }) {
       category.description ||
       "Diễn đàn học sinh Chuyên Biên Hòa thuộc Trường THPT Chuyên Hà Nam";
 
+    const ogImage = {
+      url: getOgImageURL("/page", {
+        title: category.name,
+        description: dynamicDescription,
+        label: "Diễn đàn",
+      }),
+      ...OG_IMAGE_SIZE,
+      alt: dynamicTitle,
+    };
+
     return enhanceMetadataWithURLs(
       {
         title: dynamicTitle,
@@ -50,11 +64,13 @@ export async function generateMetadata({ params }) {
           ...layoutMetadata.openGraph,
           title: dynamicTitle,
           description: dynamicDescription,
+          images: [ogImage],
         },
         twitter: {
           ...layoutMetadata.twitter,
           title: dynamicTitle,
           description: dynamicDescription,
+          images: [ogImage.url],
         },
       },
       `/forum/${forumId}`
