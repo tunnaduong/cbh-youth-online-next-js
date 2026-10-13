@@ -1786,7 +1786,6 @@ export default function SettingsClient({ initialUser, hasAuthError }) {
                   loading={kycSubmitting}
                   onClick={handleKycSubmit}
                   disabled={!selfieFile || !cardFile}
-                  className="!bg-green-600 !border-green-600 hover:!bg-green-700"
                 >
                   Gửi yêu cầu xác minh
                 </Button>
