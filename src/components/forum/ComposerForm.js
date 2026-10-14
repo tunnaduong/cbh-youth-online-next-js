@@ -316,8 +316,10 @@ export default function ComposerForm({
         </div>
       )}
 
-      {/* Toolbar: formatting + attachments in one row, Reddit-style */}
-      <div className="mt-3 rounded-md border dark:!border-neutral-600">
+      {/* Toolbar: formatting + attachments in one row, Reddit-style.
+          Sticky to the bottom of the viewport so the formatting buttons stay
+          in reach while a long post is scrolled; the editor scrolls under it. */}
+      <div className="sticky bottom-0 z-10 mt-3 rounded-md border bg-white dark:!border-neutral-600 dark:!bg-[var(--main-white)]">
         <RichTextToolbar editor={descriptionEditor} />
         <div className="flex items-center gap-1 border-t px-2 py-1.5 dark:!border-neutral-600">
           <input
