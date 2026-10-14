@@ -46,7 +46,7 @@ The web app at **https://chuyenbienhoa.com** (also `www.`): the student communit
 | Area | Routes / notes |
 | --- | --- |
 | Home / feed | `/` (home feed, `components/home`), `/feed` |
-| Forum | `/forum/[forumId]/[subforumId]`; posts at `/[username]/posts/[id]-[slug]` |
+| Forum | `/forum/[forumId]/[subforumId]`; posts at `/[username]/posts/[id]-[slug]` (related posts under the comments: `components/forum/RelatedPosts.js`) |
 | Composer | `/composer`: rich editor (TipTap, mentions, slash commands, image compression) |
 | Profiles | `/[username]`, `/[username]/[tab]`. Discord-style profile theme: frames, effects, name styles, points milestones (`src/lib/profileTheme.js`, `src/lib/nameFonts.js`) |
 | Chat | `/chat` (private and group chat, realtime), `/invite/[token]` (group invite) |
@@ -263,6 +263,8 @@ Weights: `font-medium` (default emphasis), `font-semibold` (titles, buttons), `f
 Every new or changed page or component must follow this section. If the part you touch is in the older style, bring it in line. When a deliberate, large redesign changes these rules (new card style, new palette, new navigation), **update this section in the same commit** - it must always describe the site as it is, not as it was.
 
 ## Recent work (newest first, as of 2026-10)
+
+- **"Bài viết liên quan" under a post's comments (branch `claude/admiring-babbage-atfp53`; lint + `next build` only, not run in a browser):** `src/components/forum/RelatedPosts.js`, rendered in `PostClient.js` as a card below the comments card. It calls `getRelatedPosts(id)` (`GET /v1.0/topics/{id}/related`, `Api.js`) and hides itself when the list is empty. Each row: thumbnail (first photo or `cover_url`), title (2 lines), author with `UserName`, subforum chip, time, comments, views. Ranking is done by the API (same subforum first, then shared title words and hashtags, at most 6 posts). Rule: a new related-list block goes through this component, not a copy.
 
 - **Points milestones modal: numbers on one line, scrollbar at the edge (branch `claude/sharp-mccarthy-9m0tsw`, after PR #64; syntax-checked only):** the points column was `w-12`, so 4-digit milestones (1000, 2250) wrapped - now `min-w-[3.5rem] whitespace-nowrap tabular-nums`. The list cancels the Modal body's 24px side padding (`-mx-6 px-6`) so its scrollbar sits at the modal's right edge.
 
