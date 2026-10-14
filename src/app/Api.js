@@ -961,6 +961,8 @@ export const adminGetComments = (params) => Api.getRequest("/v1.0/admin/comments
 export const adminDeleteComment = (id) => Api.deleteRequest(`/v1.0/admin/comments/${id}`);
 
 export const adminGetUsers = (params) => Api.getRequest("/v1.0/admin/users", params);
+// params: FormData (username, name, optional password, optional avatar file)
+export const adminCreateUser = (formData) => Api.postFormDataRequest("/v1.0/admin/users", formData);
 export const adminUpdateUser = (id, params) => Api.patchRequest(`/v1.0/admin/users/${id}`, params);
 export const adminDeleteUser = (id) => Api.deleteRequest(`/v1.0/admin/users/${id}`);
 export const adminBanUser = (id, params) => Api.postRequest(`/v1.0/admin/users/${id}/ban`, params);

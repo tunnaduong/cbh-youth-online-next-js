@@ -1,11 +1,12 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { Button, Form, Input, InputNumber, Modal, Popconfirm, Select, Space, Tag, Tooltip, Typography, message } from "antd";
-import { DeleteOutlined } from "@ant-design/icons";
+import { Button, Form, Input, InputNumber, Modal, Popconfirm, Select, Space, Tag, Tooltip, Typography, Upload, message } from "antd";
+import { DeleteOutlined, PlusOutlined, UserAddOutlined } from "@ant-design/icons";
 import ResourceTable, { fmtDate, fmtNumber, errMsg } from "../_components/ResourceTable";
 import {
   adminGetUsers,
+  adminCreateUser,
   adminUpdateUser,
   adminBanUser,
   adminUnbanUser,
@@ -27,15 +28,83 @@ const ROLE_LABEL = Object.fromEntries(ROLE_OPTIONS.map((o) => [o.value, o.label]
 
 const isBanned = (u) => u.banned_at && (!u.banned_until || new Date(u.banned_until) > new Date());
 
+// Manual accounts get <username>@tunnaduong.com from the API.
+const MANUAL_EMAIL_DOMAIN = "tunnaduong.com";
+const AVATAR_MAX_MB = 10;
+
 export default function AdminUsersPage() {
   const tableRef = useRef();
   const [editing, setEditing] = useState(null);
   const [banning, setBanning] = useState(null);
+  const [creating, setCreating] = useState(false);
   const [saving, setSaving] = useState(false);
   const [editForm] = Form.useForm();
   const [banForm] = Form.useForm();
+  const [createForm] = Form.useForm();
+  const newUsername = Form.useWatch("username", createForm);
 
   const reload = () => tableRef.current?.reload();
+
+  const closeCreate = () => {
+    setCreating(false);
+    createForm.resetFields();
+  };
+
+  const createUser = async (values) => {
+    setSaving(true);
+    try {
+      const fd = new FormData();
+      fd.append("username", values.username.trim());
+      fd.append("name", values.name.trim());
+      if (values.password) fd.append("password", values.password);
+      const file = values.avatar?.[0]?.originFileObj;
+      if (file) fd.append("avatar", file);
+
+      const res = await adminCreateUser(fd);
+      closeCreate();
+      reload();
+      // A generated password is only returned once, so it gets the same
+      // stay-open dialog as a password reset.
+      if (res.data?.password) {
+        Modal.info({
+          title: `Mật khẩu của @${res.data.user.username}`,
+          content: (
+            <div>
+              <p>{res.data.message} Hãy lưu mật khẩu này - nó sẽ không hiện lại.</p>
+              <Typography.Text code copyable style={{ fontSize: 16 }}>
+                {res.data.password}
+              </Typography.Text>
+            </div>
+          ),
+          okText: "Đã lưu lại",
+        });
+      } else {
+        message.success(res.data?.message || "Đã tạo tài khoản.");
+      }
+    } catch (err) {
+      // Validation errors go next to their field; anything else is a toast.
+      const errors = err?.response?.data?.errors;
+      if (errors) {
+        createForm.setFields(Object.entries(errors).map(([name, errs]) => ({ name, errors: errs })));
+      } else {
+        message.error(errMsg(err, "Tạo người dùng thất bại"));
+      }
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const beforeAvatar = (file) => {
+    if (!file.type.startsWith("image/")) {
+      message.error("Chỉ hỗ trợ tệp ảnh");
+      return Upload.LIST_IGNORE;
+    }
+    if (file.size > AVATAR_MAX_MB * 1024 * 1024) {
+      message.error(`Ảnh tối đa ${AVATAR_MAX_MB}MB`);
+      return Upload.LIST_IGNORE;
+    }
+    return false; // keep it in the form; it is sent with the rest on submit
+  };
 
   const submit = async (fn, close) => {
     setSaving(true);
@@ -213,6 +282,11 @@ export default function AdminUsersPage() {
         title="Quản lý người dùng"
         fetcher={adminGetUsers}
         columns={columns}
+        extra={
+          <Button type="primary" icon={<UserAddOutlined />} onClick={() => setCreating(true)}>
+            Tạo người dùng
+          </Button>
+        }
         filters={[
           { key: "search", type: "search", placeholder: "Username, email, tên, ID" },
           { key: "role", type: "select", placeholder: "Vai trò", options: ROLE_OPTIONS },
@@ -227,6 +301,62 @@ export default function AdminUsersPage() {
           },
         ]}
       />
+
+      <Modal
+        title="Tạo người dùng"
+        open={creating}
+        confirmLoading={saving}
+        okText="Tạo"
+        cancelText="Hủy"
+        onCancel={closeCreate}
+        onOk={() => createForm.submit()}
+        destroyOnClose
+      >
+        <Form form={createForm} layout="vertical" onFinish={createUser}>
+          <Form.Item
+            label="Ảnh đại diện"
+            name="avatar"
+            valuePropName="fileList"
+            getValueFromEvent={(e) => (Array.isArray(e) ? e : e?.fileList)}
+            extra={`Ảnh vuông sẽ được cắt tự động. Tối đa ${AVATAR_MAX_MB}MB.`}
+          >
+            <Upload listType="picture-circle" accept="image/*" maxCount={1} beforeUpload={beforeAvatar}>
+              <div className="flex flex-col items-center gap-1 text-gray-500 dark:text-gray-400">
+                <PlusOutlined />
+                <span className="text-xs">Tải ảnh</span>
+              </div>
+            </Upload>
+          </Form.Item>
+          <Form.Item
+            label="Tên đăng nhập (username)"
+            name="username"
+            extra={
+              newUsername
+                ? `Email: ${newUsername}@${MANUAL_EMAIL_DOMAIN}`
+                : `Email sẽ là <tên đăng nhập>@${MANUAL_EMAIL_DOMAIN}`
+            }
+            rules={[
+              { required: true, message: "Nhập tên đăng nhập" },
+              { min: 3, message: "Tối thiểu 3 ký tự" },
+              { max: 21, message: "Tối đa 21 ký tự" },
+              { pattern: /^[a-zA-Z0-9_.-]+$/, message: "Chỉ gồm chữ không dấu, số, _ . -" },
+            ]}
+          >
+            <Input autoComplete="off" />
+          </Form.Item>
+          <Form.Item label="Tên hiển thị" name="name" rules={[{ required: true, message: "Nhập tên hiển thị" }, { max: 255 }]}>
+            <Input />
+          </Form.Item>
+          <Form.Item
+            label="Mật khẩu"
+            name="password"
+            extra="Để trống để hệ thống tự tạo mật khẩu (sẽ hiện một lần sau khi tạo)."
+            rules={[{ min: 6, message: "Tối thiểu 6 ký tự" }]}
+          >
+            <Input.Password autoComplete="new-password" />
+          </Form.Item>
+        </Form>
+      </Modal>
 
       <Modal
         title={`Sửa người dùng @${editing?.username || ""}`}

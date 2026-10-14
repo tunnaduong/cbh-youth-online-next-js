@@ -62,7 +62,7 @@ The web app at **https://chuyenbienhoa.com** (also `www.`): the student communit
 | Links | `/link/[token]` (outbound-link warning page; the token is the URL in base64url, shared format with the app), `/open/[type]/[value]` (app deep-link opener), `/api/link-preview` (OG preview cards) |
 | Share cards (OG image) | `/api/og/post/[id]`, `/api/og/profile/[username]`, `/api/og/page?title=&description=&label=`: 1200x630 images made with `next/og` (`src/app/api/og`, helpers in `src/lib/og`), set as `openGraph.images` / `twitter.images` in each page's `generateMetadata` through `getOgImageURL()` (`src/utils/seo.js`) |
 | Easter egg | `/egg` (rewritten to `public/egg.html` in `next.config.mjs`) |
-| Admin | `/admin/*`: dashboard, posts, comments, moderation, reports, student/class violation reports (`/admin/violations`), users, student verifications, deposits, withdrawals, feedback, messages, notifications, study materials, shop (categories, products, orders) |
+| Admin | `/admin/*`: dashboard, posts, comments, moderation, reports, student/class violation reports (`/admin/violations`), users (incl. creating an account by hand), student verifications, deposits, withdrawals, feedback, messages, notifications, study materials, shop (categories, products, orders) |
 
 ### How admin sign-in works
 - `src/app/admin/AdminShell.js` checks the sessionStorage flag `cbh_admin_session`. Without it, it redirects to `/admin/login?next=<path>`.
@@ -263,6 +263,8 @@ Weights: `font-medium` (default emphasis), `font-semibold` (titles, buttons), `f
 Every new or changed page or component must follow this section. If the part you touch is in the older style, bring it in line. When a deliberate, large redesign changes these rules (new card style, new palette, new navigation), **update this section in the same commit** - it must always describe the site as it is, not as it was.
 
 ## Recent work (newest first, as of 2026-10)
+
+- **Admin: create a user by hand, with avatar (branch `claude/sharp-cerf-l3nye3`; lint only, not built or run in a browser):** `/admin/users` has a "Tạo người dùng" button (`ResourceTable` `extra`) opening a modal: avatar (picture upload, max 10 MB, cropped by the API), username (same rules as sign-up; the modal shows the resulting `<username>@tunnaduong.com`), display name, and an optional password. Leave the password empty and the API makes one; it is shown once in a dialog, like a password reset. Calls `adminCreateUser` (`Api.js`, multipart `POST /v1.0/admin/users`). Server errors on a field appear under that field. Meant for seeding member accounts that post to the forum.
 
 - **Composer toolbar sticks to the bottom of the screen while scrolling (branch `claude/peaceful-franklin-jut3vv`; lint only):** in `src/components/forum/ComposerForm.js` the toolbar block (H1-H4, B, I, link, code, quote, lists, plus the attach row) is `sticky bottom-0 z-10` with a solid card background, so a long post keeps its formatting buttons in view. Only the `/composer` page uses this; the quick create modal (`CreatePostModal.js`, `MarkdownToolbar.js`) is unchanged.
 
