@@ -969,6 +969,8 @@ export const adminBanUser = (id, params) => Api.postRequest(`/v1.0/admin/users/$
 export const adminUnbanUser = (id) => Api.postRequest(`/v1.0/admin/users/${id}/unban`);
 export const adminResetUserPassword = (id) => Api.postRequest(`/v1.0/admin/users/${id}/reset-password`);
 export const adminResetUserTwoFactor = (id) => Api.postRequest(`/v1.0/admin/users/${id}/reset-two-factor`);
+// Returns { token, user } for the account, shaped like a login response.
+export const adminImpersonateUser = (id) => Api.postRequest(`/v1.0/admin/users/${id}/impersonate`);
 // Takes down a member's uploaded frames (avatar and profile). Fails only
 // when the account has neither.
 export const adminRemoveCustomFrames = async (id) => {

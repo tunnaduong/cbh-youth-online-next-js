@@ -14,8 +14,10 @@ import {
   adminResetUserPassword,
   adminResetUserTwoFactor,
   adminRemoveCustomFrames,
+  adminImpersonateUser,
 } from "@/app/Api";
 import { isStaffRole } from "@/utils/roles";
+import { activateSavedAccount, upsertSavedAccount } from "@/utils/savedAccounts";
 
 const ROLE_OPTIONS = [
   { value: "user", label: "Người dùng" },
@@ -120,6 +122,23 @@ export default function AdminUsersPage() {
     }
   };
 
+  // Sign in as the account on this browser. The admin's own account goes into
+  // the account switcher first, so switching back is one click.
+  const loginAs = async (u) => {
+    setSaving(true);
+    try {
+      const res = await adminImpersonateUser(u.id);
+      const { token, user } = res.data;
+      const adminUser = JSON.parse(localStorage.getItem("CURRENT_USER") || "null");
+      upsertSavedAccount(localStorage.getItem("TOKEN"), adminUser);
+      upsertSavedAccount(token, user);
+      activateSavedAccount({ token, user }, "/");
+    } catch (err) {
+      message.error(errMsg(err, "Không thể đăng nhập bằng tài khoản này"));
+      setSaving(false);
+    }
+  };
+
   // The temporary password is only returned once, so it is shown in a dialog
   // that stays open until the admin closes it (a toast would vanish).
   const resetPassword = async (u) => {
@@ -217,6 +236,21 @@ export default function AdminUsersPage() {
               Khóa
             </Button>
           )}
+          {/* Opens the account on this browser; the admin can switch back from the account menu. */}
+          <Popconfirm
+            title={`Đăng nhập bằng @${u.username}?`}
+            description="Trình duyệt này sẽ chuyển sang tài khoản đó. Bạn có thể quay lại tài khoản admin trong menu chuyển tài khoản."
+            okText="Đăng nhập"
+            cancelText="Hủy"
+            disabled={isStaffRole(u.role) || isBanned(u)}
+            onConfirm={() => loginAs(u)}
+          >
+            <Tooltip title={isBanned(u) ? "Mở khóa trước" : isStaffRole(u.role) ? "Không đăng nhập vào tài khoản quản trị" : ""}>
+              <Button size="small" disabled={isStaffRole(u.role) || isBanned(u)}>
+                Đăng nhập
+              </Button>
+            </Tooltip>
+          </Popconfirm>
           {/* For users locked out of their account. Other admins' passwords
               can't be reset here (the API refuses), same rule as banning. */}
           <Popconfirm
