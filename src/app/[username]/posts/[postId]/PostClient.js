@@ -14,6 +14,7 @@ import {
 import { CommentInput } from "@/components/forum/CommentInput";
 import Comment from "@/components/forum/Comment";
 import EmptyCommentsState from "@/components/forum/EmptyCommentsState";
+import RelatedPosts from "@/components/forum/RelatedPosts";
 import PostItem from "@/components/forum/PostItem";
 import { message } from "antd";
 import Link from "next/link";
@@ -849,6 +850,7 @@ export default function PostClient({ params, initialPost = null }) {
             <div className="absolute bottom-0 left-0 w-full h-6 bg-white dark:bg-[#3c3c3c]"></div>
           </div>
         </div>
+        <RelatedPosts postId={post.post.id} />
       </div>
     </div>
   );
