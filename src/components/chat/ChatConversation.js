@@ -79,7 +79,7 @@ const AI_COMMAND_RE = /^\/(ai|summary|help)\b/i;
 
 // Plain text wraps at word boundaries (break-words) so Vietnamese diacritics
 // never get split mid-character. URLs have no word boundaries to wrap at, so
-// they alone get break-all — otherwise they'd overflow the bubble instead of
+// they alone get break-all - otherwise they'd overflow the bubble instead of
 // wrapping.
 // validMentions: Set of lowercase usernames confirmed by the server.
 function linkifyText(text, linkClassName, isOwn = false, validMentions = null) {
@@ -287,8 +287,8 @@ export default function ChatConversation({
   }, [conversationId]);
 
   // "Seen by" read receipts (group chats only). There's no per-message read
-  // table on the backend — each participant just has a single last_read_at
-  // timestamp for the conversation — so this refetches that on: opening the
+  // table on the backend - each participant just has a single last_read_at
+  // timestamp for the conversation - so this refetches that on: opening the
   // conversation, whenever the message count changes (covers both new
   // messages arriving and the .message.read-triggered refresh that follows
   // someone else opening the chat), and a light poll as a fallback for reads
@@ -318,7 +318,7 @@ export default function ChatConversation({
 
   // The "seen by" list is always empty while the user's own read receipts
   // are off (backend silently skips marking messages read / returns no seen
-  // participants in that case) — track the setting so opening "Lượt xem" can
+  // participants in that case) - track the setting so opening "Lượt xem" can
   // explain why, instead of just showing an empty list every time.
   const [readReceiptsOff, setReadReceiptsOff] = useState(false);
   useEffect(() => {
@@ -899,7 +899,7 @@ export default function ChatConversation({
 
   return (
     <div className="flex flex-col h-full">
-      {/* Messages container — the background image/overlay is a fixed sibling layer
+      {/* Messages container - the background image/overlay is a fixed sibling layer
           behind this so it stays put while only the message list scrolls over it. */}
       <div className="relative flex-1 overflow-hidden">
         {chatBackgroundUrl && (

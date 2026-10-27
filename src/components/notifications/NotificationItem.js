@@ -324,7 +324,7 @@ export default function NotificationItem({ notification }) {
       return `${process.env.NEXT_PUBLIC_API_URL}/v1.0/users/Admin/avatar`;
     }
 
-    // Anonymous comment — hide actor identity
+    // Anonymous comment - hide actor identity
     if (isCommentAnonymous) {
       return null;
     }

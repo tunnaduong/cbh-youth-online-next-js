@@ -14,13 +14,13 @@ const pickHex = (color) => color.toHexString().slice(0, 7).toLowerCase();
  * màu tên, xem trước ngay trên tên của người dùng.
  *
  * Props:
- *   theme    — bản nháp hiện tại (để xem trước)
- *   options  — theme_editor.options (name_font / name_effect)
+ *   theme    - bản nháp hiện tại (để xem trước)
+ *   options  - theme_editor.options (name_font / name_effect)
  *   onApply({ name_font, name_effect, name_colors })
- *   prefix   — "name" (mặc định) hoặc "username": cùng một modal sửa kiểu
+ *   prefix   - "name" (mặc định) hoặc "username": cùng một modal sửa kiểu
  *              riêng của @tên người dùng (username_font / username_effect /
  *              username_colors)
- *   title    — tiêu đề modal
+ *   title    - tiêu đề modal
  */
 export default function NameStyleModal({
   open,

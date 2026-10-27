@@ -11,8 +11,8 @@ import MemberTierBadge from "@/components/ui/MemberTierBadge";
  * `StyledName`: hiệu ứng gradient làm chữ bên trong trong suốt.
  *
  * Props:
- *   theme — `profile_theme` của người dùng từ API, hoặc null
- *   tier  — mốc của người dùng (id hoặc { id }) khi nó không nằm trong theme
+ *   theme - `profile_theme` của người dùng từ API, hoặc null
+ *   tier  - mốc của người dùng (id hoặc { id }) khi nó không nằm trong theme
  *
  * Không có glyph thì vẽ biểu tượng của một mốc thành viên: mốc người dùng
  * Pro đã chọn (`name_icon_tier`), mặc định là mốc họ đang đạt.

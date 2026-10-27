@@ -206,7 +206,7 @@ export default function ProfileClient({ initialProfile, activeTab, username }) {
         const avgBrightness = total / (data.length / 4);
         if (!cancelled) setCoverIsLight(avgBrightness > 150);
       } catch (e) {
-        // Cross-origin image without permissive CORS headers — can't sample
+        // Cross-origin image without permissive CORS headers - can't sample
         // pixel data, keep the default (assume dark photo, white text).
       }
     };
@@ -1111,7 +1111,7 @@ export default function ProfileClient({ initialProfile, activeTab, username }) {
             </div>
           </div>
 
-          {/* Mobile profile info card — sits BELOW the cover photo */}
+          {/* Mobile profile info card - sits BELOW the cover photo */}
           <div
             className="lg:hidden bg-white dark:bg-neutral-800 border-b border-gray-200 dark:border-neutral-700 px-4 pb-4 w-full max-w-full box-border"
             style={surfaceStyle || undefined}
@@ -1563,7 +1563,7 @@ export default function ProfileClient({ initialProfile, activeTab, username }) {
                 {/* Date */}
                 <div className="flex-shrink-0 pt-0.5 text-right">
                   <span className="whitespace-nowrap text-xs text-gray-400 dark:text-neutral-400">
-                    {m.achieved_at || "—"}
+                    {m.achieved_at || "-"}
                   </span>
                 </div>
               </div>

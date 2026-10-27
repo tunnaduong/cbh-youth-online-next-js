@@ -126,7 +126,12 @@ function PostRow({ post }) {
           href={url}
           className="h-[68px] w-[68px] shrink-0 overflow-hidden rounded-xl bg-gray-100 dark:bg-neutral-700 sm:h-[72px] sm:w-[96px]"
         >
-          <img src={thumbnail} alt="" loading="lazy" className="h-full w-full object-cover" />
+          <img
+            src={thumbnail}
+            alt={`Ảnh minh họa: ${title}`}
+            loading="lazy"
+            className="h-full w-full object-cover"
+          />
         </Link>
       ) : (
         // Same footprint as a thumbnail so the stats column lines up across rows.

@@ -222,7 +222,7 @@ export default function AdminShopProductsPage() {
               <InputNumber min={0} className="!w-full" />
             </Form.Item>
           </div>
-          <Form.Item label="Phân loại hàng" extra="VD: Size (S, M, L), Màu (Đen, Trắng) — mỗi tổ hợp có giá và kho riêng">
+          <Form.Item label="Phân loại hàng" extra="VD: Size (S, M, L), Màu (Đen, Trắng) - mỗi tổ hợp có giá và kho riêng">
             <VariantEditor value={variantData} onChange={setVariantData} basePrice={form.getFieldValue("price") || 0} />
           </Form.Item>
           <Form.Item name="image_url" label="Ảnh sản phẩm">

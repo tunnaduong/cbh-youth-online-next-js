@@ -40,7 +40,7 @@ export default function FeedClient() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   // Id of the last ranked post, once the personalized feed ran out and we
-  // continued with the chronological one — used to draw a divider.
+  // continued with the chronological one - used to draw a divider.
   const [overflowAfterId, setOverflowAfterId] = useState(null);
   const sentinelRef = useRef(null);
 
@@ -64,7 +64,7 @@ export default function FeedClient() {
         setFeedTab(saved);
       }
     } catch {
-      // localStorage unavailable (private mode) — keep the default tab.
+      // localStorage unavailable (private mode) - keep the default tab.
     }
   }, []);
 
@@ -83,7 +83,7 @@ export default function FeedClient() {
         if (!keepSeed || !seedRef.current) seedRef.current = makeSeed();
         pageRef.current = 1;
         // Guests have no personalized ranking, and "following" needs an
-        // account to have anyone to follow — both fall back to "latest".
+        // account to have anyone to follow - both fall back to "latest".
         sourceRef.current =
           loggedIn && (feedTab === "for-you" || feedTab === "following")
             ? feedTab
@@ -108,7 +108,7 @@ export default function FeedClient() {
           ? await getFollowingFeedPosts(requestedPage)
           : await getPersonalizedFeedPosts(requestedPage, seedRef.current);
 
-        // A newer reset started while this request was in flight — drop it.
+        // A newer reset started while this request was in flight - drop it.
         if (runId !== runIdRef.current) return;
 
         // Laravel pagination format: { data: [...], current_page: 1, last_page: 5, total: 50, ... }
@@ -173,7 +173,7 @@ export default function FeedClient() {
     [feedTab, loggedIn, overflowAfterId]
   );
 
-  // Reload the current feed as-is (same seed, same order) — used to undo an
+  // Reload the current feed as-is (same seed, same order) - used to undo an
   // optimistic update that the server rejected.
   const loadInitialPosts = useCallback(
     () => fetchPosts(true, true),
@@ -183,7 +183,7 @@ export default function FeedClient() {
   // (Re)load from scratch on mount and whenever the selected tab changes.
   // Waits for the stored session to be restored, so a logged-in user doesn't
   // first get served the guest (chronological) feed. The stored token alone is
-  // enough to start — no need to also wait for the /user refresh to come back.
+  // enough to start - no need to also wait for the /user refresh to come back.
   useEffect(() => {
     if (authLoading && !loggedIn) return;
     fetchPosts(true);
@@ -201,7 +201,7 @@ export default function FeedClient() {
       try {
         window.localStorage.setItem(FEED_TAB_STORAGE_KEY, tabKey);
       } catch {
-        // Ignore storage failures — the tab still applies for this visit.
+        // Ignore storage failures - the tab still applies for this visit.
       }
       setPosts([]);
       setFeedTab(tabKey);
@@ -405,7 +405,7 @@ export default function FeedClient() {
             <div key={post.id}>
               <PostWithViewTracking />
               {(index + 1) % 5 === 0 && <AdSlot slot="feed-inline" className="my-3" />}
-              {/* Ranked posts ran out — everything below is chronological */}
+              {/* Ranked posts ran out - everything below is chronological */}
               {overflowAfterId != null && post.id === overflowAfterId && (
                 <div className="flex items-center gap-3 py-4 px-1 text-xs font-medium text-gray-400 dark:text-gray-500 uppercase tracking-wide">
                   <span className="h-px flex-1 bg-gray-200 dark:bg-neutral-700" />

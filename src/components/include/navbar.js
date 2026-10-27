@@ -45,7 +45,11 @@ const MENU_ITEM_CLASS =
 function Logo({ compact = false }) {
   return (
     <Link href="/" className="flex min-w-max items-center gap-2" aria-label="Trang chủ">
-      <img src="/images/logo.png" alt="" className="h-10 w-10" />
+      <img
+        src="/images/logo.png"
+        alt="Diễn đàn học sinh Chuyên Biên Hoà logo"
+        className="h-10 w-10"
+      />
       <span
         className={`text-[14px] leading-[18px] text-[#319527] ${
           compact ? "hidden sm:block" : "block"

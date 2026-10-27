@@ -459,14 +459,14 @@ const StoryFooter = ({
     <>
       <style>{FLOAT_ROTATE_CSS}</style>
 
-      {/* Flying emojis layer — fixed so they escape the story container */}
+      {/* Flying emojis layer - fixed so they escape the story container */}
       {flyingEmojis.map(({ id, emoji, x, y }) => (
         <div key={id} className="emoji-float-rotate" style={{ left: x, top: y }}>
           {emoji}
         </div>
       ))}
 
-      {/* Footer: stacked vertically — hidden entirely for the story owner */}
+      {/* Footer: stacked vertically - hidden entirely for the story owner */}
       {!isOwner && (
       <div
         className="absolute bottom-0 left-0 right-0 z-50 px-4 pb-5 pt-10 bg-gradient-to-t from-black/70 to-transparent flex flex-col items-center gap-3"
@@ -800,7 +800,7 @@ const StorySlide = ({
         muted={isMuted}
       />
 
-      {/* Touch areas for navigation — exclude bottom footer */}
+      {/* Touch areas for navigation - exclude bottom footer */}
       <div className="absolute inset-x-0 top-0 bottom-16 flex">
         <div className="flex-1 cursor-pointer" onClick={handlePrevStory} />
         <div className="flex-1 cursor-pointer" onClick={handleNextStory} />

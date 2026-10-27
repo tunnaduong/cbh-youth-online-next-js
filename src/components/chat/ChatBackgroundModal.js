@@ -11,7 +11,7 @@ import {
   resetConversationBackground,
 } from "@/app/Api";
 
-// Background picker for a chat conversation (private or group — never the
+// Background picker for a chat conversation (private or group - never the
 // public chat, which the caller is responsible for not opening this for).
 // Any participant may change it; it applies to everyone in the conversation.
 export default function ChatBackgroundModal({ conversationId, show, onClose, onBackgroundChanged }) {

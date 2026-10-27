@@ -260,7 +260,7 @@ export default function EggPage() {
       />
       <div className="egg-page">
         <div className="egg-header">
-          <span>🐣 CBH Youth Online — Easter Egg</span>
+          <span>🐣 CBH Youth Online - Easter Egg</span>
         </div>
 
         <div className="egg-banner">
