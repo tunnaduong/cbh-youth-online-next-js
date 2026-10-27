@@ -14,15 +14,15 @@ import Badges from "@/components/ui/Badges";
  * phải cho phép co: đặt `min-w-0` lên nó (và lên `className` ở đây đã có sẵn).
  *
  * Props:
- *   name          — tên hiển thị
- *   theme         — `profile_theme` của người dùng từ API, hoặc null
- *   variant       — như `StyledName`; mặc định "compact" cho danh sách
- *   verified      — hiện tích xác minh
- *   className     — class của cả hàng (cỡ chữ, màu, độ đậm)
- *   tier — mốc của người dùng (id hoặc { id }) khi nó không nằm trong theme;
+ *   name          - tên hiển thị
+ *   theme         - `profile_theme` của người dùng từ API, hoặc null
+ *   variant       - như `StyledName`; mặc định "compact" cho danh sách
+ *   verified      - hiện tích xác minh
+ *   className     - class của cả hàng (cỡ chữ, màu, độ đậm)
+ *   tier - mốc của người dùng (id hoặc { id }) khi nó không nằm trong theme;
  *          biểu tượng mốc hiện sau tên khi người dùng không tự chọn biểu tượng
- *   nameClassName — class thêm cho riêng phần tên
- *   badgeClassName — class thêm cho tích xác minh
+ *   nameClassName - class thêm cho riêng phần tên
+ *   badgeClassName - class thêm cho tích xác minh
  */
 export default function UserName({
   name,

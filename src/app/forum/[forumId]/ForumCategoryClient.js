@@ -10,6 +10,7 @@ import Badges from "@/components/ui/Badges";
 import { notFound } from "next/navigation";
 import SkeletonLoader from "./skeletonLoader";
 import SEOContent from "@/components/marketing/SEOContent";
+import { getOnPageSeo } from "@/data/onPageSeo";
 import { generatePostSlug } from "@/utils/slugify";
 import { Breadcrumb } from "antd";
 
@@ -87,6 +88,8 @@ export default function ForumCategoryClient({ params, initialCategory }) {
     notFound();
   }
 
+  const pageSeo = getOnPageSeo(`/forum/${forumId}`);
+
   return (
     <HomeLayout>
       <div className="px-2.5 py-6 flex justify-center">
@@ -129,12 +132,11 @@ export default function ForumCategoryClient({ params, initialCategory }) {
               ></div>
               <div className="fade-to-left" />
             </div>
-            <Link
-              href={`/forum/${category.slug}`}
-              className="text-lg font-semibold uppercase dark:text-white"
-            >
-              {category.name}
-            </Link>
+            <h1 className="text-lg font-semibold uppercase dark:text-white">
+              <Link href={`/forum/${category.slug}`} className="hover:text-primary-600 dark:hover:text-[#86dc7c]">
+                {pageSeo?.h1 ?? category.name}
+              </Link>
+            </h1>
             <p className="!mt-3 text-base dark:text-neutral-300">
               {category.description}
             </p>
@@ -234,7 +236,10 @@ export default function ForumCategoryClient({ params, initialCategory }) {
           </div>
         </div>
       </div>
-      <SEOContent seoDescription={category.seo_description} />
+      <SEOContent
+        contentHtml={pageSeo?.contentHtml}
+        seoDescription={pageSeo ? undefined : category.seo_description}
+      />
     </HomeLayout>
   );
 }

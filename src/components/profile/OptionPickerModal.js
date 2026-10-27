@@ -7,13 +7,13 @@ import { Lock } from "lucide-react";
 /**
  * Lưới chọn một tuỳ chọn (khung avatar, hiệu ứng, khung hồ sơ...) trong
  * modal, giống các hộp "Change Decoration / Change Effect" của Discord.
- * Tuỳ chọn chưa mở khoá vẫn chọn được để xem thử — chỉ không lưu được.
+ * Tuỳ chọn chưa mở khoá vẫn chọn được để xem thử - chỉ không lưu được.
  *
  * Props:
- *   options      — [{ key, required_points, unlocked }] từ theme_editor
- *   value        — key đang dùng trong bản nháp
- *   renderOption — (key) => nội dung minh hoạ của ô
- *   gridClassName — số cột của lưới (mặc định 3 cột)
+ *   options      - [{ key, required_points, unlocked }] từ theme_editor
+ *   value        - key đang dùng trong bản nháp
+ *   renderOption - (key) => nội dung minh hoạ của ô
+ *   gridClassName - số cột của lưới (mặc định 3 cột)
  *   onApply(key)
  */
 export default function OptionPickerModal({

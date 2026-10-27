@@ -12,7 +12,7 @@ import { getReportStats, adminGetOverview } from "@/app/Api";
 import TrendChart from "./_components/TrendChart";
 import { NAV_GROUPS } from "./AdminShell";
 
-const fmt = (v) => (v == null ? "—" : Number(v).toLocaleString("vi-VN"));
+const fmt = (v) => (v == null ? "-" : Number(v).toLocaleString("vi-VN"));
 
 /**
  * What the dashboard shows for each sidebar item, keyed by its route.

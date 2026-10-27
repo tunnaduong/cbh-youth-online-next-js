@@ -6,7 +6,7 @@
  *     name_colors, avatar_frame, profile_effect, profile_frame,
  *     name_icon, name_icon_emoji, username_style }
  * Danh sách key hợp lệ và quyền mở khoá nằm ở App\Services\ProfileThemeService
- * phía API — thêm key mới phải thêm ở cả hai (font: src/lib/nameFonts.js).
+ * phía API - thêm key mới phải thêm ở cả hai (font: src/lib/nameFonts.js).
  */
 
 export const DEFAULT_PRIMARY = "#319527";
@@ -16,10 +16,10 @@ const HEX_COLOR = /^#[0-9a-f]{6}$/i;
 
 /**
  * Cách vẽ từng khung avatar:
- *   { type: "ring", gradient?, animated? } — viền vẽ bằng CSS. `gradient` là
+ *   { type: "ring", gradient?, animated? } - viền vẽ bằng CSS. `gradient` là
  *       CSS background của viền (không có thì lấy màu theme của người dùng),
  *       `animated` làm viền xoay chậm.
- *   { type: "image", src, scale? }         — ảnh PNG/WebP nền trong suốt phủ
+ *   { type: "image", src, scale? }         - ảnh PNG/WebP nền trong suốt phủ
  *       lên avatar. `scale` = kích thước ảnh so với avatar; mặc định 1.25 ứng
  *       với ảnh vuông có lỗ tròn ở giữa chiếm 80% chiều rộng.
  */
@@ -267,17 +267,17 @@ export function getSurfaceStyle(theme) {
 
 /**
  * Hiệu ứng tên hiển thị (kiểu Display Name Styles của Discord).
- * Trả { style, className } — className là animation định nghĩa trong
- * globals.css (tự tắt khi bật prefers-reduced-motion) — hoặc null nếu
+ * Trả { style, className } - className là animation định nghĩa trong
+ * globals.css (tự tắt khi bật prefers-reduced-motion) - hoặc null nếu
  * không có hiệu ứng.
  *
- *   solid    — một màu
- *   gradient — chuyển giữa 2 màu, gradient trôi chậm
- *   neon     — chữ sáng, phát quang theo màu, nhấp nháy nhẹ
- *   toon     — viền đậm và bóng đổ thẳng xuống như chữ hoạt hình
- *   pop      — bóng khối lệch chéo tạo cảm giác nổi 3D
- *   rainbow  — bảy sắc cầu vồng chạy ngang chữ (không dùng màu người dùng chọn)
- *   outline  — màu chữ (màu 1) có viền quanh chữ (màu 2), cả hai tự chọn
+ *   solid    - một màu
+ *   gradient - chuyển giữa 2 màu, gradient trôi chậm
+ *   neon     - chữ sáng, phát quang theo màu, nhấp nháy nhẹ
+ *   toon     - viền đậm và bóng đổ thẳng xuống như chữ hoạt hình
+ *   pop      - bóng khối lệch chéo tạo cảm giác nổi 3D
+ *   rainbow  - bảy sắc cầu vồng chạy ngang chữ (không dùng màu người dùng chọn)
+ *   outline  - màu chữ (màu 1) có viền quanh chữ (màu 2), cả hai tự chọn
  */
 export function getNameEffect(theme) {
   const normalized = normalizeTheme(theme);

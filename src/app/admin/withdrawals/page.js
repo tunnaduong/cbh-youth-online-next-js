@@ -83,7 +83,7 @@ export default function AdminWithdrawalsPage() {
         w.admin_note ? (
           <span className="text-xs">
             {w.admin_note}
-            {w.admin?.username ? ` — ${w.admin.username}` : ""}
+            {w.admin?.username ? ` - ${w.admin.username}` : ""}
           </span>
         ) : (
           "-"

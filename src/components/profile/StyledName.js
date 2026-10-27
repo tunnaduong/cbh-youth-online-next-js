@@ -39,8 +39,8 @@ function withPlainEmoji(children) {
  * mọi nơi - bài viết, bình luận, thẻ, danh sách - chứ không chờ rê chuột.
  *
  * Props:
- *   theme   — `theme` của người dùng từ API, hoặc null
- *   variant — "full" | "compact": giữ lại cho các nơi đang truyền; cả hai
+ *   theme   - `theme` của người dùng từ API, hoặc null
+ *   variant - "full" | "compact": giữ lại cho các nơi đang truyền; cả hai
  *             hiện giống nhau (trước đây "compact" chỉ hiện hiệu ứng khi rê
  *             chuột, nên tên trong bài viết/bình luận trông như không có
  *             hiệu ứng).

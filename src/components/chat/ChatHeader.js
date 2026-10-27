@@ -76,7 +76,7 @@ export default function ChatHeader({
                 <ChevronLeft className="w-4 h-4 text-gray-600 dark:text-gray-300" />
               </button>
             )}
-            {/* Avatar for conversation view — a group's own avatar_url, never a
+            {/* Avatar for conversation view - a group's own avatar_url, never a
                 participant's personal photo; display_avatar_url/participant
                 avatar only apply to 1-on-1 chats. */}
             {(() => {
