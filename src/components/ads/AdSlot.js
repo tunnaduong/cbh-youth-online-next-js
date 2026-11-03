@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { getActiveAds } from "@/data/ads";
 import { isInApp } from "@/utils/appMode";
+import Ad300x250 from "./Ad300x250";
 
 // Renders one creative for `slot`. Picks it in useEffect so the server render
 // matches; hidden inside the mobile app, which owns its own ad policy.
@@ -14,6 +15,13 @@ export default function AdSlot({ slot, className = "" }) {
     const ads = getActiveAds(slot);
     if (ads.length) setAd(ads[Math.floor(Math.random() * ads.length)]);
   }, [slot]);
+
+  if (isInApp()) return null;
+
+  // Banner 300x250 tại sidebar (bên cạnh bảng xếp hạng)
+  if (slot === "sidebar") {
+    return <Ad300x250 className={className} />;
+  }
 
   if (!ad) return null;
   const external = /^https?:/.test(ad.href);

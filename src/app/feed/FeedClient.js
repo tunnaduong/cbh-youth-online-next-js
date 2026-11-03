@@ -3,6 +3,7 @@
 import HomeLayout from "@/layouts/HomeLayout";
 import PostItem from "@/components/forum/PostItem";
 import AdSlot from "@/components/ads/AdSlot";
+import NativeBanner from "@/components/ads/NativeBanner";
 import { useState, useEffect, useCallback, useRef } from "react";
 import Lottie from "lottie-react";
 import refresh from "@/assets/refresh.json";
@@ -404,7 +405,13 @@ export default function FeedClient() {
           return (
             <div key={post.id}>
               <PostWithViewTracking />
-              {(index + 1) % 5 === 0 && <AdSlot slot="feed-inline" className="my-3" />}
+              {(index + 1) % 5 === 0 && (
+                Math.floor((index + 1) / 5) % 2 === 0 ? (
+                  <NativeBanner className="my-3" />
+                ) : (
+                  <AdSlot slot="feed-inline" className="my-3" />
+                )
+              )}
               {/* Ranked posts ran out - everything below is chronological */}
               {overflowAfterId != null && post.id === overflowAfterId && (
                 <div className="flex items-center gap-3 py-4 px-1 text-xs font-medium text-gray-400 dark:text-gray-500 uppercase tracking-wide">

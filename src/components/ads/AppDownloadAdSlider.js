@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import Image from "next/image";
 
-// Slide 1: banner tải app mobile
+// Slide 1: Banner tải app mobile
 function AppDownloadSlide({ onClose }) {
   return (
     <div className="relative w-full">
@@ -20,7 +20,7 @@ function AppDownloadSlide({ onClose }) {
       <button
         onClick={onClose}
         aria-label="Đóng"
-        className="absolute top-2 right-2 flex items-center justify-center bg-black/50 text-white rounded-full"
+        className="absolute top-2 right-2 flex items-center justify-center bg-black/50 text-white rounded-full hover:bg-black/70 transition-colors"
         style={{
           width: "32px",
           height: "32px",
@@ -36,66 +36,68 @@ function AppDownloadSlide({ onClose }) {
   );
 }
 
-// Slide 2: quảng cáo 468x60 + NativeBanner
+// Slide 2: Banner 468x60
 function AdBannerSlide() {
-  const banner468Ref = useRef(null);
-  const nativeBannerRef = useRef(null);
-  const banner468Loaded = useRef(false);
-  const nativeBannerLoaded = useRef(false);
+  const containerRef = useRef(null);
 
   useEffect(() => {
-    // Load 468x60 banner ad
-    if (!banner468Loaded.current && banner468Ref.current) {
-      banner468Loaded.current = true;
-      try {
-        window.atOptions = {
-          key: "48cd595d5561928deaed61ec924bfad7",
-          format: "iframe",
-          height: 60,
-          width: 468,
-          params: {},
-        };
-        const script = document.createElement("script");
-        script.src = "https://bicea.org/22/48cd595d5561928deaed61ec924bfad7";
-        script.async = true;
-        banner468Ref.current.appendChild(script);
-      } catch (e) {
-        // ignore ad errors
-      }
-    }
+    if (!containerRef.current) return;
+    const container = containerRef.current;
+    container.innerHTML = "";
 
-    // Load NativeBanner ad
-    if (!nativeBannerLoaded.current && nativeBannerRef.current) {
-      nativeBannerLoaded.current = true;
-      try {
-        const script = document.createElement("script");
-        script.src =
-          "https://pl32171519.profitableratecpmnetwork.com/d75e1be3578406d08612b5cc3623fa29/invoke.js";
-        script.async = true;
-        script.setAttribute("data-cfasync", "false");
-        nativeBannerRef.current.appendChild(script);
+    const iframe = document.createElement("iframe");
+    iframe.width = "468";
+    iframe.height = "60";
+    iframe.style.border = "none";
+    iframe.style.overflow = "hidden";
+    iframe.style.maxWidth = "100%";
+    iframe.scrolling = "no";
 
-        const container = document.createElement("div");
-        container.id = "container-d75e1be3578406d08612b5cc3623fa29";
-        nativeBannerRef.current.appendChild(container);
-      } catch (e) {
-        // ignore ad errors
+    const html = `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <style>body { margin: 0; padding: 0; display: flex; justify-content: center; align-items: center; background: transparent; }</style>
+</head>
+<body>
+  <script type="text/javascript">
+    atOptions = {
+      'key' : '48cd595d5561928deaed61ec924bfad7',
+      'format' : 'iframe',
+      'height' : 60,
+      'width' : 468,
+      'params' : {}
+    };
+  </script>
+  <script type="text/javascript" src="https://bicea.org/22/48cd595d5561928deaed61ec924bfad7"></script>
+</body>
+</html>`;
+
+    container.appendChild(iframe);
+    try {
+      const doc = iframe.contentWindow || iframe.contentDocument;
+      if (doc.document) {
+        doc.document.open();
+        doc.document.write(html);
+        doc.document.close();
+      } else {
+        doc.open();
+        doc.write(html);
+        doc.close();
       }
+    } catch {
+      iframe.srcdoc = html;
     }
   }, []);
 
   return (
-    <div className="w-full flex flex-col items-center justify-center gap-3 py-3 px-2 bg-gray-50 dark:bg-neutral-800 min-h-[120px]">
-      {/* 468x60 Banner */}
-      <div
-        className="flex items-center justify-center overflow-hidden"
-        style={{ maxWidth: "468px", width: "100%", minHeight: "60px" }}
-      >
-        <div ref={banner468Ref} style={{ maxWidth: "100%", overflow: "hidden" }} />
+    <div className="w-full flex flex-col items-center justify-center py-2 px-2 bg-gray-50 dark:bg-neutral-800 min-h-[90px] border border-gray-100 dark:border-neutral-700 rounded-lg">
+      <div className="w-full flex justify-center items-center overflow-x-auto">
+        <div ref={containerRef} className="flex justify-center items-center max-w-full overflow-hidden" style={{ minWidth: "300px", minHeight: "60px" }} />
       </div>
-      {/* NativeBanner */}
-      <div className="w-full" ref={nativeBannerRef} />
-      <p className="text-[10px] text-gray-400 dark:text-neutral-500">Quảng cáo</p>
+      <span className="text-[10px] text-gray-400 dark:text-neutral-500 mt-1 uppercase tracking-wider">
+        Quảng cáo
+      </span>
     </div>
   );
 }
@@ -161,7 +163,9 @@ export default function AppDownloadAdSlider({ onClose }) {
     setDragOffset(0);
   };
 
-  const translateX = -(activeIndex * 100) + (dragging ? (dragOffset / (containerRef.current?.offsetWidth || 1)) * 100 : 0);
+  const translateX =
+    -(activeIndex * 100) +
+    (dragging ? (dragOffset / (containerRef.current?.offsetWidth || 1)) * 100 : 0);
 
   return (
     <div className="w-full">
@@ -189,7 +193,7 @@ export default function AppDownloadAdSlider({ onClose }) {
           <div className="min-w-full">
             <AppDownloadSlide onClose={onClose} />
           </div>
-          {/* Slide 2 */}
+          {/* Slide 2: Chỉ banner 468x60 */}
           <div className="min-w-full">
             <AdBannerSlide />
           </div>

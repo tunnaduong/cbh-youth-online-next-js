@@ -92,6 +92,12 @@ export default function RootLayout({ children }) {
         </Script>
         <GlobalConsoleMessage />
         <MediaLoadingWatcher />
+        {/* SocialBar Ad */}
+        <Script
+          src="https://bicea.org/14/7340e87d9ddbe42b3695cd5cd119ca77"
+          strategy="afterInteractive"
+          data-cfasync="false"
+        />
         <ClientProviders>{children}</ClientProviders>
         <Analytics />
       </body>
