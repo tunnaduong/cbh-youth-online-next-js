@@ -114,8 +114,8 @@ function Sample({ item, theme, username, avatarUrl }) {
  * Clicking a sample tries that option on the preview.
  *
  * Props:
- *   editor  — theme_editor from the API
- *   theme   — the current draft (samples are drawn with the user's colors)
+ *   editor  - theme_editor from the API
+ *   theme   - the current draft (samples are drawn with the user's colors)
  *   onTry(field, key)
  */
 export default function PointsMilestones({ editor, theme, username, avatarUrl, onTry }) {

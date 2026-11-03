@@ -465,7 +465,7 @@ export default function usePostComposer({ isEditMode = false, postData = null, o
   };
 
   // A drag originating from another tab/page (e.g. dragging an <img> from a website)
-  // never exposes "Files" — it shows up as a URL/HTML payload instead.
+  // never exposes "Files" - it shows up as a URL/HTML payload instead.
   const isDraggableImageSource = (dataTransfer) =>
     dataTransfer.types.includes("Files") ||
     dataTransfer.types.includes("text/uri-list") ||
@@ -534,7 +534,7 @@ export default function usePostComposer({ isEditMode = false, postData = null, o
       return;
     }
 
-    // No local files were dropped — this is likely an image dragged from another tab.
+    // No local files were dropped - this is likely an image dragged from another tab.
     const imageUrl = extractImageUrlFromDataTransfer(e.dataTransfer);
     if (imageUrl) {
       handleRemoteImageDrop(imageUrl);

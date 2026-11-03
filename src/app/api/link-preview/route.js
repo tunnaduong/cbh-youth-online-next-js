@@ -177,7 +177,7 @@ const NAMED_ENTITIES = {
   apos: "'",
   nbsp: " ",
   ndash: "–",
-  mdash: "—",
+  mdash: "-",
   hellip: "…",
   laquo: "«",
   raquo: "»",

@@ -1,4 +1,4 @@
-# INFO — CBH Youth Online — Web (Next.js)
+# INFO - CBH Youth Online - Web (Next.js)
 
 > **For AI agents.** Project map for agents working in this repo: how it connects to the sibling repos, features, structure, setup, conventions and recent work. Humans: see `README.md`. Keep this file current - add to **Recent work** and update other sections whenever you change the repo.
 
@@ -87,7 +87,7 @@ src/
 ├── lib/                  # echo.js (realtime), deepLink.js, profileTheme, nameFonts, storyOverlays, mentionMarkdown
 ├── services/api/         # AxiosCustom.js (instance + interceptors), ApiByAxios.js (get/post/put/patch/delete)
 ├── utils/                # cookies.js (auth cookie), appMode.js, serverFetch.js, savedAccounts.js (account switcher), clientInfo.js (device headers), twoFactorDevice.js (remembered-device cookie), externalLink, linkPreview, seo, pushNotifications…
-└── data/                 # Static content: help articles, explore features
+└── data/                 # Static content: help articles, explore features, onPageSeo.js (PDF meta/HTML overrides for key routes)
 public/                   # sw.js (push), egg.html, images, robots.txt, ads.txt
 e2e/                      # Playwright: smoke.spec.ts, routes.spec.ts (every static route must render)
 .well-known/              # apple-app-site-association (iOS universal links; served as JSON via vercel.json/netlify.toml)
@@ -263,6 +263,8 @@ Weights: `font-medium` (default emphasis), `font-semibold` (titles, buttons), `f
 Every new or changed page or component must follow this section. If the part you touch is in the older style, bring it in line. When a deliberate, large redesign changes these rules (new card style, new palette, new navigation), **update this section in the same commit** - it must always describe the site as it is, not as it was.
 
 ## Recent work (newest first, as of 2026-10)
+
+- **On-page SEO (Mobrilz PDF, pages only):** `src/data/onPageSeo.js` holds verbatim meta title/description, H1, FAQ and internal-link HTML for `/` and seven forum URLs from the SEO audit. Wired through `generateMetadata` on home/forum pages, `SEOContent`, and forum header H1s. Logo/post thumbnail alt text on home chrome. No API or sitemap changes; PageSpeed out of scope.
 
 - **Admin: create a user by hand, with avatar (branch `claude/sharp-cerf-l3nye3`; lint only, not built or run in a browser):** `/admin/users` has a "Tạo người dùng" button (`ResourceTable` `extra`) opening a modal: avatar (picture upload, max 10 MB, cropped by the API), username (same rules as sign-up; the modal shows the resulting `<username>@tunnaduong.com`), display name, and an optional password. Leave the password empty and the API makes one; it is shown once in a dialog, like a password reset. Calls `adminCreateUser` (`Api.js`, multipart `POST /v1.0/admin/users`). Server errors on a field appear under that field. Meant for seeding member accounts that post to the forum.
 

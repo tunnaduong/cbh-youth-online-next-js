@@ -2,10 +2,12 @@ import { getForumCategoriesServer } from "../serverData";
 import { notFound } from "next/navigation";
 import ForumCategoryClient from "./ForumCategoryClient";
 import {
+  applyOnPageSeoMetadata,
   enhanceMetadataWithURLs,
   getOgImageURL,
   OG_IMAGE_SIZE,
 } from "@/utils/seo";
+import { getOnPageSeo } from "@/data/onPageSeo";
 
 // Generate metadata for SEO and social sharing
 import { metadata as layoutMetadata } from "@/app/layout";
@@ -41,10 +43,15 @@ export async function generateMetadata({ params }) {
     // Also, make sure you do NOT spread ...layoutMetadata at the top level,
     // as it will override your dynamic title/description with the defaults.
 
-    const dynamicTitle = `${category.name} - Diễn đàn học sinh Chuyên Biên Hòa`;
+    const path = `/forum/${forumId}`;
+    const pageSeo = getOnPageSeo(path);
+    const dynamicTitle =
+      pageSeo?.metaTitle ??
+      `${category.name} - Diễn đàn học sinh Chuyên Biên Hòa`;
     const dynamicDescription =
-      category.description ||
-      "Diễn đàn học sinh Chuyên Biên Hòa thuộc Trường THPT Chuyên Hà Nam";
+      pageSeo?.metaDescription ??
+      (category.description ||
+        "Diễn đàn học sinh Chuyên Biên Hòa thuộc Trường THPT Chuyên Hà Nam");
 
     const ogImage = {
       url: getOgImageURL("/page", {
@@ -56,25 +63,24 @@ export async function generateMetadata({ params }) {
       alt: dynamicTitle,
     };
 
-    return enhanceMetadataWithURLs(
-      {
+    const baseMetadata = {
+      title: dynamicTitle,
+      description: dynamicDescription,
+      openGraph: {
+        ...layoutMetadata.openGraph,
         title: dynamicTitle,
         description: dynamicDescription,
-        openGraph: {
-          ...layoutMetadata.openGraph,
-          title: dynamicTitle,
-          description: dynamicDescription,
-          images: [ogImage],
-        },
-        twitter: {
-          ...layoutMetadata.twitter,
-          title: dynamicTitle,
-          description: dynamicDescription,
-          images: [ogImage.url],
-        },
+        images: [ogImage],
       },
-      `/forum/${forumId}`
-    );
+      twitter: {
+        ...layoutMetadata.twitter,
+        title: dynamicTitle,
+        description: dynamicDescription,
+        images: [ogImage.url],
+      },
+    };
+
+    return applyOnPageSeoMetadata(path, pageSeo, baseMetadata);
   } catch (error) {
     console.error("Error generating metadata:", error);
     // Fallback to layout metadata, but flatten title/description for Next.js

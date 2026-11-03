@@ -238,7 +238,7 @@ export default function PostItem({
   };
 
   // Detect plain YouTube URLs (youtube.com/watch, youtu.be, /shorts/) already present
-  // in the post body and auto-embed them below the content — even when the author
+  // in the post body and auto-embed them below the content - even when the author
   // didn't paste a proper <iframe>. Skips any video already embedded via an iframe.
   const YOUTUBE_URL_RE =
     /(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/(?:watch\?(?:[^"'\s]*&)?v=|shorts\/|embed\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/gi;
@@ -266,7 +266,7 @@ export default function PostItem({
   };
 
   // Detect plain SoundCloud track/set URLs already present in the post body
-  // and auto-embed them below the content — even when the author didn't
+  // and auto-embed them below the content - even when the author didn't
   // paste a proper <iframe>. Skips any track already embedded via an iframe.
   const SOUNDCLOUD_URL_RE =
     /(?:https?:\/\/)?(?:www\.)?soundcloud\.com\/[\w-]+\/(?:sets\/)?[\w-]+/gi;

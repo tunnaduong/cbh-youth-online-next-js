@@ -37,7 +37,7 @@ function FeaturedCard({ post }) {
         {cover ? (
           <img
             src={cover}
-            alt=""
+            alt={`Ảnh minh họa: ${title}`}
             loading="lazy"
             className="h-full w-full object-cover transition duration-300 group-hover:scale-105"
           />

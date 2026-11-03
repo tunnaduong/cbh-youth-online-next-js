@@ -9,26 +9,26 @@ import { EZOIC_ENABLED } from "@/lib/ezoic";
 
 export const metadata = {
   title: {
-    default: "Diễn đàn học sinh Chuyên Biên Hòa",
+    default: "Trường THPT Chuyên Biên Hòa – Thông Tin & Cộng Đồng Học Sinh",
     // template: "%s - Diễn đàn học sinh Chuyên Biên Hòa",
   },
   description:
-    "Diễn đàn học sinh Chuyên Biên Hòa thuộc Trường THPT Chuyên Hà Nam",
+    "Tìm hiểu thông tin về trường THPT Chuyên Biên Hòa, chia sẻ tài liệu học tập, kinh nghiệm ôn thi, hoạt động giáo dục và kết nối học sinh, cựu học sinh.",
   keywords:
     "thpt chuyen ha nam, thanh nien chuyen bien hoa, thanh nien chuyen bien hoa online, thpt chuyen bien hoa, chuyen bien hoa, chuyen ha nam, cyo, cbh youth online, chuyen bien hoa online, chuyên biên hòa online",
   authors: [{ name: "Đội ngũ CBH Youth Online" }],
   openGraph: {
-    title: "Diễn đàn học sinh Chuyên Biên Hòa",
+    title: "Trường THPT Chuyên Biên Hòa – Thông Tin & Cộng Đồng Học Sinh",
     description:
-      "Diễn đàn học sinh Chuyên Biên Hòa thuộc Trường THPT Chuyên Hà Nam",
+      "Tìm hiểu thông tin về trường THPT Chuyên Biên Hòa, chia sẻ tài liệu học tập, kinh nghiệm ôn thi, hoạt động giáo dục và kết nối học sinh, cựu học sinh.",
     images: ["/images/cyo_thumbnail.png"],
     type: "website",
   },
   twitter: {
     card: "summary_large_image",
-    title: "Diễn đàn học sinh Chuyên Biên Hòa",
+    title: "Trường THPT Chuyên Biên Hòa – Thông Tin & Cộng Đồng Học Sinh",
     description:
-      "Diễn đàn học sinh Chuyên Biên Hòa thuộc Trường THPT Chuyên Hà Nam",
+      "Tìm hiểu thông tin về trường THPT Chuyên Biên Hòa, chia sẻ tài liệu học tập, kinh nghiệm ôn thi, hoạt động giáo dục và kết nối học sinh, cựu học sinh.",
     images: ["/images/cyo_thumbnail.png"],
   },
   icons: {

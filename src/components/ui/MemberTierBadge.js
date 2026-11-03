@@ -1,10 +1,10 @@
 /**
  * Inline SVG badge cho từng mốc thành viên.
- * Dùng giống VerifiedBadge — chèn ngay sau tên người dùng.
+ * Dùng giống VerifiedBadge - chèn ngay sau tên người dùng.
  *
  * Props:
- *   tier  — object { id, name } từ API member_tier, hoặc null
- *   className — tuỳ chỉnh thêm
+ *   tier  - object { id, name } từ API member_tier, hoặc null
+ *   className - tuỳ chỉnh thêm
  */
 
 const TIER_CONFIG = {

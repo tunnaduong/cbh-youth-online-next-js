@@ -7,7 +7,7 @@ import ProfileFrame from "@/components/profile/ProfileFrame";
 import { getBannerStyle, getSurfaceStyle } from "@/lib/profileTheme";
 
 /**
- * Thẻ trang cá nhân cỡ lớn ở giữa trình chỉnh sửa — giống thẻ profile mà
+ * Thẻ trang cá nhân cỡ lớn ở giữa trình chỉnh sửa - giống thẻ profile mà
  * Discord dùng làm bản xem trước: mọi thay đổi hiện ngay trên đó.
  */
 export default function ProfilePreviewCard({

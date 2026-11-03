@@ -14,7 +14,7 @@ const PAGE_SIZE = 12;
 // author's own profile.
 //
 // `defaultOpen` controls the accordion's initial state. The profile page
-// renders one instance in the desktop sidebar (expanded by default — plenty of
+// renders one instance in the desktop sidebar (expanded by default - plenty of
 // vertical room) and another in the mobile card (collapsed by default so the
 // feed stays reachable). Each instance keeps its own state.
 export default function ProfilePhotoGallery({

@@ -42,7 +42,11 @@ export default function Footer() {
         </div>
         <div className="flex flex-wrap -mx-4">
           <div className="w-full md:w-1/4 px-4 mb-4 md:mb-0">
-            <img src="/images/logo.png" alt="Logo" className="w-[100px] mb-3" />
+            <img
+              src="/images/logo.png"
+              alt="Diễn đàn học sinh Chuyên Biên Hoà logo"
+              className="w-[100px] mb-3"
+            />
             <h2 className="font-bold">Diễn đàn học sinh Chuyên Biên Hòa</h2>
             <div className="flex items-center gap-2 mt-3 text-[20px]">
               <a

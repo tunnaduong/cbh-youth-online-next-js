@@ -52,7 +52,7 @@ export default function NewsCard() {
                   {cover ? (
                     <img
                       src={cover}
-                      alt=""
+                      alt={`Ảnh minh họa: ${item.title || "Tin tức"}`}
                       loading="lazy"
                       className="h-11 w-11 shrink-0 rounded-lg object-cover"
                     />

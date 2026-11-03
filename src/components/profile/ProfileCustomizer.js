@@ -891,7 +891,7 @@ export default function ProfileCustomizer({ username }) {
           >
             <span className="text-sm font-medium">
               {lockedPoints
-                ? `Đang xem thử — cần ${lockedPoints} điểm để lưu`
+                ? `Đang xem thử - cần ${lockedPoints} điểm để lưu`
                 : "Đừng quên lưu thay đổi!"}
             </span>
             <div className="flex items-center gap-2">

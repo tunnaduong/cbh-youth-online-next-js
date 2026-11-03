@@ -12,7 +12,7 @@ const borderMask = (width) => ({
 
 /**
  * Khung trang trí quanh thẻ/ảnh bìa trang cá nhân (kiểu Profile Frame của
- * Discord). Đặt trong phần tử `relative` — khung phủ sát mép và kế thừa bo
+ * Discord). Đặt trong phần tử `relative` - khung phủ sát mép và kế thừa bo
  * góc qua `className` (vd. "rounded-2xl").
  */
 export default function ProfileFrame({ theme, className = "" }) {

@@ -94,7 +94,7 @@ const TARGETS = { profile: "Hồ sơ", topic: "Bài viết", account: "Tài kho�
 const actionLabel = (type) => ACTIONS[type] || type;
 
 function show(value) {
-  if (value === null || value === undefined || value === "") return "—";
+  if (value === null || value === undefined || value === "") return "-";
   if (typeof value === "object") return JSON.stringify(value, null, 2);
   return String(value);
 }
@@ -172,7 +172,7 @@ export default function AdminAuditLogsPage() {
         return fields.length ? (
           <span className="text-xs">{fields.join(", ")}</span>
         ) : (
-          <span className="text-gray-400">—</span>
+          <span className="text-gray-400">-</span>
         );
       },
     },

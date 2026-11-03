@@ -66,7 +66,7 @@ const STATIC_ROUTES: string[] = [
 /**
  * Routes with a dynamic segment, exercised with a placeholder value that is
  * expected NOT to exist. These should resolve to a graceful "not found" /
- * error state rather than crashing — we don't assert on the exact copy since
+ * error state rather than crashing - we don't assert on the exact copy since
  * that's content, not routing behavior.
  */
 const DYNAMIC_ROUTES: string[] = [

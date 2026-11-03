@@ -115,7 +115,7 @@ export default function AdminShopOrdersPage() {
             {(o.items || []).map((it) => (
               <div key={it.id}>
                 {it.product?.name || `Sản phẩm #${it.product_id}`}
-                {it.variant_label ? ` (${it.variant_label})` : ""} × {it.quantity} — {fmtVndPoints(it.price)}
+                {it.variant_label ? ` (${it.variant_label})` : ""} × {it.quantity} - {fmtVndPoints(it.price)}
               </div>
             ))}
             {o.note && <div className="mt-2 text-gray-500 dark:text-gray-400">Ghi chú: {o.note}</div>}

@@ -6,11 +6,11 @@ const RING_MASK =
 
 /**
  * Khung trang trí phủ lên avatar. Đặt bên trong một phần tử `relative` có
- * kích thước đúng bằng avatar — khung tự co giãn theo phần tử đó và tràn ra
+ * kích thước đúng bằng avatar - khung tự co giãn theo phần tử đó và tràn ra
  * ngoài một chút, nên phần tử cha không được `overflow-hidden`.
  *
  * Props:
- *   theme — `profile.theme` từ API, hoặc null
+ *   theme - `profile.theme` từ API, hoặc null
  */
 export default function AvatarFrame({ theme }) {
   const frame = getAvatarFrame(theme);

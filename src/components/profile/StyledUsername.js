@@ -9,10 +9,10 @@ import { getUsernameTheme } from "@/lib/profileTheme";
  * tên qua `StyledName`.
  *
  * Props:
- *   username — không kèm "@"
- *   theme    — `profile_theme` của người dùng từ API, hoặc null
- *   variant  — như `StyledName` ("compact": rê chuột mới hiện hiệu ứng)
- *   prefix   — mặc định "@"
+ *   username - không kèm "@"
+ *   theme    - `profile_theme` của người dùng từ API, hoặc null
+ *   variant  - như `StyledName` ("compact": rê chuột mới hiện hiệu ứng)
+ *   prefix   - mặc định "@"
  */
 export default function StyledUsername({
   username,

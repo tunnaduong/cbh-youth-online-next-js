@@ -7,7 +7,7 @@ import AvatarFrame from "@/components/profile/AvatarFrame";
  * của wrapper thay vì lên avatar, để khung ôm đúng kích thước avatar.
  *
  * Props:
- *   theme — `profile_theme` của người dùng từ API, hoặc null
+ *   theme - `profile_theme` của người dùng từ API, hoặc null
  */
 export default function AvatarFrameWrap({ theme, className = "", children }) {
   return (

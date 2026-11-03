@@ -4,11 +4,11 @@ import AvatarFrame from "@/components/profile/AvatarFrame";
  * Avatar tròn kèm khung trang trí theo theme của người dùng.
  *
  * Props:
- *   username     — dùng để lấy ảnh khi không truyền `src`
- *   src          — URL ảnh (tuỳ chọn)
- *   theme        — `theme` của người dùng từ API, hoặc null
- *   className    — kích thước của avatar, vd. "w-10 h-10"
- *   imgClassName — class thêm cho thẻ <img>
+ *   username     - dùng để lấy ảnh khi không truyền `src`
+ *   src          - URL ảnh (tuỳ chọn)
+ *   theme        - `theme` của người dùng từ API, hoặc null
+ *   className    - kích thước của avatar, vd. "w-10 h-10"
+ *   imgClassName - class thêm cho thẻ <img>
  */
 export default function UserAvatar({
   username,

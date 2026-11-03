@@ -56,7 +56,7 @@ const MarkdownRenderer = ({ content, className = "" }) => {
     return markdown
       .split(codeSplitRegex)
       .map((segment, index) => {
-        // Odd indices are the captured code segments — leave them untouched.
+        // Odd indices are the captured code segments - leave them untouched.
         if (index % 2 === 1) return segment;
         return segment
           .replace(hashtagRegex, (_match, before, tag) => `${before}[#${tag}](##hashtag:${tag})`)

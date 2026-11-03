@@ -149,7 +149,7 @@ export default function AppBanner() {
         </button>
         <img
           src="/images/logo.png"
-          alt=""
+          alt="Diễn đàn học sinh Chuyên Biên Hoà logo"
           className="h-11 w-11 shrink-0 rounded-xl border border-gray-200 bg-white object-contain p-1 shadow-sm dark:border-neutral-600"
           onError={(e) => {
             e.target.src = "/favicon.ico";

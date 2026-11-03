@@ -1,18 +1,20 @@
 export default function SEOContent({
   seoDescription,
+  contentHtml,
   className = "max-w-[775px] rounded-lg long-shadow",
 }) {
+  const html = contentHtml ?? seoDescription;
   return (
-    <div className={seoDescription ? "mx-2.5" : ""}>
+    <div className={html ? "mx-2.5" : ""}>
       <div
         className={`bg-gray-50 dark:bg-[#3c3c3c] p-6 mx-auto ${className} ${
-          seoDescription ? "mb-5" : ""
+          html ? "mb-5" : ""
         }`}
       >
         <div className="max-w-4xl mx-auto">
-          {seoDescription ? (
+          {html ? (
             <div
-              dangerouslySetInnerHTML={{ __html: seoDescription }}
+              dangerouslySetInnerHTML={{ __html: html }}
               className="prose prose-gray dark:prose-invert max-w-none"
             />
           ) : (

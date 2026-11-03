@@ -15,7 +15,7 @@ import {
 /**
  * Phông chữ cho tên hiển thị (kiểu Display Name Styles của Discord).
  *
- * Chỉ dùng Google Fonts có bộ ký tự tiếng Việt — font thiếu dấu sẽ làm vỡ
+ * Chỉ dùng Google Fonts có bộ ký tự tiếng Việt - font thiếu dấu sẽ làm vỡ
  * tên. `preload: false` nên file font chỉ được tải khi trang thực sự hiển
  * thị một tên dùng font đó.
  *

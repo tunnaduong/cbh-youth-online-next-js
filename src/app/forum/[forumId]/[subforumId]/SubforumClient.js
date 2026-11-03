@@ -12,6 +12,7 @@ import { generatePostSlug } from "@/utils/slugify";
 import { notFound } from "next/navigation";
 import SkeletonLoader from "./skeletonLoader";
 import SEOContent from "@/components/marketing/SEOContent";
+import { getOnPageSeo } from "@/data/onPageSeo";
 import { Breadcrumb } from "antd";
 import { isStaffRole } from "@/utils/roles";
 
@@ -172,6 +173,8 @@ export default function SubforumClient({
     notFound();
   }
 
+  const pageSeo = getOnPageSeo(`/forum/${forumId}/${subforumId}`);
+
   return (
     <HomeLayout activeNav="home">
       <div className="px-2.5 py-6 flex justify-center">
@@ -226,15 +229,17 @@ export default function SubforumClient({
                 ></div>
                 <div className="fade-to-left" />
               </div>
-              <Link
-                href={route("forum.subforum", {
-                  category: category.slug,
-                  subforum: subforum.slug,
-                })}
-                className="text-lg font-semibold uppercase dark:text-white"
-              >
-                {subforum.name}
-              </Link>
+              <h1 className="text-lg font-semibold uppercase dark:text-white">
+                <Link
+                  href={route("forum.subforum", {
+                    category: category.slug,
+                    subforum: subforum.slug,
+                  })}
+                  className="hover:text-primary-600 dark:hover:text-[#86dc7c]"
+                >
+                  {pageSeo?.h1 ?? subforum.name}
+                </Link>
+              </h1>
               <p className="!mt-3 text-base dark:text-neutral-300">
                 {subforum.description}
               </p>
@@ -402,7 +407,10 @@ export default function SubforumClient({
           </div>
         </div>
       </div>
-      <SEOContent seoDescription={subforum.seo_description} />
+      <SEOContent
+        contentHtml={pageSeo?.contentHtml}
+        seoDescription={pageSeo ? undefined : subforum.seo_description}
+      />
     </HomeLayout>
   );
 }

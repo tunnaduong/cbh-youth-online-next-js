@@ -539,7 +539,7 @@ export default function UniversitiesClient() {
               )}
             </>
           )}
-          {/* Quy chế tuyển sinh section — shown below the school list */}
+          {/* Quy chế tuyển sinh section - shown below the school list */}
           {generalInfo.length > 0 && (
             <div className="mt-10">
               <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 text-center mb-4">

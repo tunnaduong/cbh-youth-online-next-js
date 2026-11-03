@@ -85,7 +85,7 @@ function formatFileSize(bytes) {
 
 // Plain text wraps at word boundaries (break-words) so Vietnamese diacritics
 // never get split mid-character. URLs have no word boundaries to wrap at, so
-// they alone get break-all — otherwise they'd overflow the bubble instead of
+// they alone get break-all - otherwise they'd overflow the bubble instead of
 // wrapping.
 function linkifyText(text, validMentions = null) {
   if (!text) return text;
@@ -361,7 +361,7 @@ export default function PublicChat() {
         });
         // Don't auto-scroll when polling - let user scroll naturally
       } else if (prependOlder) {
-        // Loading an older page to scroll up to a not-yet-loaded reply target —
+        // Loading an older page to scroll up to a not-yet-loaded reply target -
         // prepend without disturbing already-loaded messages.
         setMessages((prev) => {
           const prevArray = Array.isArray(prev) ? prev : [];
@@ -1001,7 +1001,7 @@ export default function PublicChat() {
                           {formatTime(message.created_at)}
                           {message.is_edited && !message.is_recalled && <span className="italic">(Đã sửa)</span>}
                         </span>
-                        {/* Action buttons — visible on hover (desktop only), registered users only */}
+                        {/* Action buttons - visible on hover (desktop only), registered users only */}
                         {loggedIn && !message.is_recalled && (
                           <span className="hidden md:contents">
                             <button

@@ -54,3 +54,35 @@ export function getOgImageURL(path, query) {
 }
 
 export const OG_IMAGE_SIZE = { width: 1200, height: 630 };
+
+/**
+ * Apply PDF on-page SEO overrides when defined for this path.
+ * @param {string} path
+ * @param {{ metaTitle: string, metaDescription: string } | null} override
+ * @param {object} metadata - base metadata before canonical/OG url
+ */
+export function applyOnPageSeoMetadata(path, override, metadata) {
+  if (!override) {
+    return enhanceMetadataWithURLs(metadata, path);
+  }
+  const title = override.metaTitle;
+  const description = override.metaDescription;
+  return enhanceMetadataWithURLs(
+    {
+      ...metadata,
+      title,
+      description,
+      openGraph: {
+        ...metadata.openGraph,
+        title,
+        description,
+      },
+      twitter: {
+        ...metadata.twitter,
+        title,
+        description,
+      },
+    },
+    path
+  );
+}

@@ -3,6 +3,7 @@
 import { useCallback, useMemo, useState } from "react";
 import { Clapperboard } from "lucide-react";
 import SEOContent from "@/components/marketing/SEOContent";
+import { getOnPageSeo } from "@/data/onPageSeo";
 import StoriesSection from "@/components/stories/StoriesSection";
 import PublicChat from "@/components/chat/PublicChat";
 import { useAuthContext, useTopUsersContext } from "@/contexts/Support";
@@ -38,6 +39,7 @@ export default function HomeClient({
     contextCategories.length > 0 ? contextCategories : initialMainCategories;
   const stats = contextStats || initialStats;
   const featuredPosts = useMemo(() => pickFeaturedPosts(featuredPool), [featuredPool]);
+  const homeSeoContent = getOnPageSeo("/")?.contentHtml;
 
   const [composerOpen, setComposerOpen] = useState(false);
   const handleCreatePost = useCreatePostGate(
@@ -93,7 +95,10 @@ export default function HomeClient({
 
       <CommunityBanner />
 
-      <SEOContent className="rounded-2xl border border-[#EBEFEA] dark:border-neutral-600 sm:p-8" />
+      <SEOContent
+        contentHtml={homeSeoContent}
+        className="rounded-2xl border border-[#EBEFEA] dark:border-neutral-600 sm:p-8"
+      />
 
       <CreatePostModal open={composerOpen} onClose={() => setComposerOpen(false)} />
     </div>
