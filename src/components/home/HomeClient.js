@@ -16,6 +16,7 @@ import FeaturedPosts from "./FeaturedPosts";
 import LatestPosts from "./LatestPosts";
 import ProfileCard from "./ProfileCard";
 import RankingCard from "./RankingCard";
+import Ad300x250 from "@/components/ads/Ad300x250";
 import NewsCard from "./NewsCard";
 import ForumStatsCard from "./ForumStatsCard";
 import CategoryGrid from "./CategoryGrid";
@@ -78,6 +79,7 @@ export default function HomeClient({
             authLoading={authLoading}
             topUsers={topUsers}
           />
+          <Ad300x250 />
           <RankingCard
             topUsers={topUsers}
             loading={topUsersLoading}

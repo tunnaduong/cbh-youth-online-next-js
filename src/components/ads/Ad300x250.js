@@ -2,12 +2,13 @@
 
 import { useEffect, useRef } from "react";
 import Link from "next/link";
+import { isInApp } from "@/utils/appMode";
 
 export default function Ad300x250({ className = "" }) {
   const containerRef = useRef(null);
 
   useEffect(() => {
-    if (!containerRef.current) return;
+    if (isInApp() || !containerRef.current) return;
     const container = containerRef.current;
     container.innerHTML = "";
 
@@ -18,12 +19,23 @@ export default function Ad300x250({ className = "" }) {
     iframe.style.overflow = "hidden";
     iframe.style.maxWidth = "100%";
     iframe.scrolling = "no";
+    iframe.loading = "lazy";
 
     const html = `<!DOCTYPE html>
 <html>
 <head>
   <meta charset="utf-8">
-  <style>body { margin: 0; padding: 0; display: flex; justify-content: center; align-items: center; background: transparent; }</style>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background: transparent;
+      overflow: hidden;
+    }
+  </style>
 </head>
 <body>
   <script type="text/javascript">
@@ -56,27 +68,34 @@ export default function Ad300x250({ className = "" }) {
     }
   }, []);
 
+  if (isInApp()) return null;
+
   return (
-    <div className={`rounded-xl bg-white p-3 text-sm long-shadow dark:!bg-[var(--main-white)] flex flex-col items-center ${className}`}>
+    <div
+      className={`rounded-2xl border border-[#EBEFEA] bg-white p-3.5 shadow-[0_1px_3px_rgba(16,24,40,0.04)] dark:border-neutral-600 dark:!bg-[var(--main-white)] flex flex-col items-center ${className}`}
+    >
       <div className="w-full flex items-center justify-between mb-2">
         <span className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-neutral-400">
           Quảng cáo
         </span>
         <Link
           href="/ads"
-          className="text-xs text-primary-600 hover:underline dark:text-primary-400"
+          className="text-xs text-primary-600 hover:underline dark:text-primary-400 font-medium"
         >
           Liên hệ đặt chỗ
         </Link>
       </div>
 
       {/* 300x250 Banner Container */}
-      <div className="flex justify-center items-center overflow-hidden my-1" style={{ minWidth: "300px", minHeight: "250px" }}>
-        <div ref={containerRef} className="w-[300px] h-[250px] flex justify-center items-center" />
+      <div
+        className="flex justify-center items-center overflow-hidden my-1 w-full"
+        style={{ minHeight: "250px" }}
+      >
+        <div ref={containerRef} className="w-[300px] h-[250px] flex justify-center items-center max-w-full" />
       </div>
 
       {/* Info footer */}
-      <div className="w-full mt-2 pt-2 border-t border-gray-100 dark:border-neutral-700 text-center">
+      <div className="w-full mt-2 pt-2 border-t border-gray-100 dark:border-neutral-600 text-center">
         <p className="text-xs text-gray-500 dark:text-neutral-400">
           Vị trí nổi bật bên cạnh bảng xếp hạng.{" "}
           <a
