@@ -8,10 +8,16 @@ const fmt = (v) => new Intl.NumberFormat("vi-VN", { style: "currency", currency:
 
 export default function ShopCard({ product, studentDiscount = 0 }) {
   const discountedPrice = studentDiscount > 0 ? Math.round(product.price * (1 - studentDiscount / 100)) : null;
+  const productHref = `https://giftshop.chuyenbienhoa.com/product/${product.slug || product.id}`;
 
   return (
     <div className="bg-white dark:bg-neutral-900 rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 group overflow-hidden border border-neutral-100 dark:border-neutral-800">
-      <div className="relative aspect-square overflow-hidden bg-neutral-100 dark:bg-neutral-800">
+      <Link
+        href={productHref}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="block relative aspect-square overflow-hidden bg-neutral-100 dark:bg-neutral-800"
+      >
         <Image
           src={product.image_url || "/images/placeholder-product.png"}
           alt={product.name}
@@ -31,14 +37,16 @@ export default function ShopCard({ product, studentDiscount = 0 }) {
             -{studentDiscount}%
           </div>
         )}
-      </div>
+      </Link>
 
       <div className="p-4">
         <div className="text-xs text-primary-500 font-medium mb-1 uppercase tracking-wide">
           {product.category?.name}
         </div>
         <h3 className="font-bold text-lg text-neutral-800 dark:text-neutral-100 mb-2 line-clamp-1 group-hover:text-primary-500 transition-colors">
-          {product.name}
+          <Link href={productHref} target="_blank" rel="noopener noreferrer">
+            {product.name}
+          </Link>
         </h3>
         <p className="text-neutral-500 dark:text-neutral-400 text-sm line-clamp-2 mb-4 h-10">
           {product.description?.replace(/<[^>]*>?/gm, "") || "Sản phẩm chính hãng CBH Youth Online."}
@@ -59,13 +67,25 @@ export default function ShopCard({ product, studentDiscount = 0 }) {
               </span>
             )}
           </div>
-          <button
-            disabled={product.stock <= 0}
-            className="flex items-center gap-2 bg-primary-500 hover:bg-primary-600 disabled:bg-neutral-300 disabled:cursor-not-allowed text-white px-4 py-2 rounded-xl font-bold transition-all shadow-lg shadow-primary-500/30 active:scale-95"
-          >
-            <ShoppingCart size={18} />
-            <span className="hidden sm:inline">Mua ngay</span>
-          </button>
+          {product.stock <= 0 ? (
+            <button
+              disabled
+              className="flex items-center gap-2 bg-neutral-300 dark:bg-neutral-800 cursor-not-allowed text-white px-4 py-2 rounded-xl font-bold"
+            >
+              <ShoppingCart size={18} />
+              <span className="hidden sm:inline">Hết hàng</span>
+            </button>
+          ) : (
+            <a
+              href={productHref}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-2 bg-primary-500 hover:bg-primary-600 text-white px-4 py-2 rounded-xl font-bold transition-all shadow-lg shadow-primary-500/30 active:scale-95"
+            >
+              <ShoppingCart size={18} />
+              <span className="hidden sm:inline">Mua ngay</span>
+            </a>
+          )}
         </div>
       </div>
     </div>

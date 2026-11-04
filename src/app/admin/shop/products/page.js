@@ -112,10 +112,30 @@ export default function AdminShopProductsPage() {
               )}
             </div>
             <div>
-              <div className="font-medium">{p.name}</div>
+              <div className="font-medium">
+                {p.slug || p.id ? (
+                  <a
+                    href={`https://giftshop.chuyenbienhoa.com/product/${p.slug || p.id}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="hover:underline text-gray-900 dark:text-gray-100"
+                  >
+                    {p.name}
+                  </a>
+                ) : (
+                  p.name
+                )}
+              </div>
               <div className="text-xs text-gray-500 dark:text-gray-400">
                 {p.sku ? `${p.sku} · ` : ""}
-                {p.slug}
+                <a
+                  href={`https://giftshop.chuyenbienhoa.com/product/${p.slug || p.id}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="hover:underline text-gray-500 dark:text-gray-400"
+                >
+                  {p.slug || p.id}
+                </a>
               </div>
             </div>
           </div>
