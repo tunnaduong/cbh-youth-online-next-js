@@ -12,6 +12,7 @@ import {
 } from "@/app/Api";
 import VariantEditor from "./VariantEditor";
 import ImageUploadInput from "../../_components/ImageUploadInput";
+import MultiImageUploadInput from "../../_components/MultiImageUploadInput";
 
 export default function AdminShopProductsPage() {
   const tableRef = useRef();
@@ -33,6 +34,12 @@ export default function AdminShopProductsPage() {
       options: row?.options || [],
       variants: (row?.variants || []).map((v) => ({ ...v, sku: v.sku || "", image_url: v.image_url || "" })),
     });
+    const initialImages = Array.isArray(row?.image_urls) && row.image_urls.length > 0
+      ? row.image_urls
+      : row?.image_url
+      ? [row.image_url]
+      : [];
+
     form.setFieldsValue({
       name: row?.name || "",
       slug: row?.slug || "",
@@ -40,7 +47,7 @@ export default function AdminShopProductsPage() {
       description: row?.description || "",
       price: row?.price ?? 0,
       stock: row?.stock ?? 0,
-      image_url: row?.image_url || "",
+      image_urls: initialImages,
       category_id: row?.category_id,
       is_active: row ? !!row.is_active : true,
     });
@@ -57,8 +64,17 @@ export default function AdminShopProductsPage() {
         message.error("Tên nhóm phân loại bị trùng");
         return;
       }
+      const rawUrls = values.image_urls;
+      const imageUrls = Array.isArray(rawUrls)
+        ? rawUrls.filter((u) => typeof u === "string" && u.trim().length > 0)
+        : typeof rawUrls === "string" && rawUrls.trim().length > 0
+        ? [rawUrls.trim()]
+        : [];
+
       await adminSaveShopProduct(editing.id, {
         ...values,
+        image_urls: imageUrls,
+        image_url: imageUrls[0] || "",
         options: options.map((o) => ({ ...o, name: o.name.trim() })),
         variants: options.length ? variantData.variants : [],
       });
@@ -77,23 +93,34 @@ export default function AdminShopProductsPage() {
     {
       title: "Sản phẩm",
       key: "name",
-      render: (_, p) => (
-        <div className="flex items-center gap-3">
-          {p.image_url ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={p.image_url} alt="" className="w-10 h-10 rounded object-cover bg-gray-100 dark:bg-neutral-700" />
-          ) : (
-            <div className="w-10 h-10 rounded bg-gray-100 dark:bg-neutral-700" />
-          )}
-          <div>
-            <div className="font-medium">{p.name}</div>
-            <div className="text-xs text-gray-500 dark:text-gray-400">
-              {p.sku ? `${p.sku} · ` : ""}
-              {p.slug}
+      render: (_, p) => {
+        const thumb = p.image_url || p.image_urls?.[0];
+        const count = Array.isArray(p.image_urls) ? p.image_urls.length : (thumb ? 1 : 0);
+        return (
+          <div className="flex items-center gap-3">
+            <div className="relative shrink-0">
+              {thumb ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={thumb} alt="" className="w-10 h-10 rounded object-cover bg-gray-100 dark:bg-neutral-700" />
+              ) : (
+                <div className="w-10 h-10 rounded bg-gray-100 dark:bg-neutral-700" />
+              )}
+              {count > 1 && (
+                <span className="absolute -bottom-1 -right-1 bg-black/75 text-white text-[9px] px-1 rounded font-medium leading-tight">
+                  +{count - 1}
+                </span>
+              )}
+            </div>
+            <div>
+              <div className="font-medium">{p.name}</div>
+              <div className="text-xs text-gray-500 dark:text-gray-400">
+                {p.sku ? `${p.sku} · ` : ""}
+                {p.slug}
+              </div>
             </div>
           </div>
-        </div>
-      ),
+        );
+      },
     },
     { title: "Danh mục", key: "category", render: (_, p) => p.category?.name || "-" },
     {
@@ -225,8 +252,8 @@ export default function AdminShopProductsPage() {
           <Form.Item label="Phân loại hàng" extra="VD: Size (S, M, L), Màu (Đen, Trắng) - mỗi tổ hợp có giá và kho riêng">
             <VariantEditor value={variantData} onChange={setVariantData} basePrice={form.getFieldValue("price") || 0} />
           </Form.Item>
-          <Form.Item name="image_url" label="Ảnh sản phẩm">
-            <ImageUploadInput />
+          <Form.Item name="image_urls" label="Ảnh sản phẩm">
+            <MultiImageUploadInput />
           </Form.Item>
           <Form.Item name="description" label="Mô tả">
             <Input.TextArea rows={3} />
