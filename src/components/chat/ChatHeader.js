@@ -13,6 +13,7 @@ import {
   LayoutGrid,
   Phone,
   Video,
+  MoreVertical,
 } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
@@ -21,9 +22,17 @@ import AvatarFrameWrap from "@/components/profile/AvatarFrameWrap";
 import UserName from "@/components/profile/UserName";
 import ReportModal from "@/components/ReportModal";
 import { useCallContext } from "@/contexts/Support";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
 
 export default function ChatHeader({
   conversation,
+  conversationId,
   onNewChat,
   onNewGroup,
   onSettings,
@@ -41,6 +50,7 @@ export default function ChatHeader({
   const [showReportModal, setShowReportModal] = useState(false);
   const otherParticipant =
     conversation?.type !== "group" ? conversation?.participants?.[0] : null;
+  const cid = conversationId || conversation?.id;
 
   return (
     <div className="flex items-center justify-between rounded-lg px-4 py-3 bg-white dark:bg-neutral-700">
@@ -177,7 +187,7 @@ export default function ChatHeader({
 
       {/* Right side - Action buttons */}
       <div className="flex items-center gap-1 flex-shrink-0">
-        {isThreadsView && (
+        {isThreadsView ? (
           <>
             <button
               onClick={onNewGroup}
@@ -193,80 +203,128 @@ export default function ChatHeader({
             >
               <Plus className="w-4 h-4 text-gray-600 dark:text-gray-300" />
             </button>
+            {onMinimize && (
+              <button
+                onClick={onMinimize}
+                className="p-1.5 hover:bg-gray-100 dark:hover:bg-neutral-600 rounded transition-colors"
+                title={isMinimized ? "Mở rộng" : "Thu gọn"}
+              >
+                {isMinimized ? (
+                  <ChevronUp className="w-4 h-4 text-gray-600 dark:text-gray-300" />
+                ) : (
+                  <ChevronDown className="w-4 h-4 text-gray-600 dark:text-gray-300" />
+                )}
+              </button>
+            )}
+            {onClose && (
+              <button
+                onClick={onClose}
+                className="p-1.5 hover:bg-gray-100 dark:hover:bg-neutral-600 rounded transition-colors"
+                title="Đóng"
+              >
+                <X className="w-4 h-4 text-gray-600 dark:text-gray-300" />
+              </button>
+            )}
           </>
-        )}
-        {conversation?.type === "group" && (
-          <button
-            onClick={onSettings}
-            className="p-1.5 hover:bg-gray-100 dark:hover:bg-neutral-600 rounded transition-colors"
-            title="Thông tin nhóm"
-          >
-            <Settings className="w-4 h-4 text-gray-600 dark:text-gray-300" />
-          </button>
-        )}
-        {conversation?.id && conversation?.type !== "group" && (
+        ) : (
           <>
-            <button
-              onClick={() => startCall(conversation.id, "audio")}
-              className="p-1.5 hover:bg-gray-100 dark:hover:bg-neutral-600 rounded transition-colors text-primary-600 dark:text-primary-400"
-              title="Gọi thoại"
-            >
-              <Phone className="w-4 h-4" />
-            </button>
-            <button
-              onClick={() => startCall(conversation.id, "video")}
-              className="p-1.5 hover:bg-gray-100 dark:hover:bg-neutral-600 rounded transition-colors text-primary-600 dark:text-primary-400"
-              title="Gọi video"
-            >
-              <Video className="w-4 h-4" />
-            </button>
+            {cid && conversation?.type !== "group" && (
+              <>
+                <button
+                  onClick={() => startCall(cid, "audio", conversation)}
+                  className="p-1.5 hover:bg-gray-100 dark:hover:bg-neutral-600 rounded transition-colors text-primary-600 dark:text-primary-400"
+                  title="Gọi thoại"
+                >
+                  <Phone className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={() => startCall(cid, "video", conversation)}
+                  className="p-1.5 hover:bg-gray-100 dark:hover:bg-neutral-600 rounded transition-colors text-primary-600 dark:text-primary-400"
+                  title="Gọi video"
+                >
+                  <Video className="w-4 h-4" />
+                </button>
+              </>
+            )}
+
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button
+                  className="p-1.5 hover:bg-gray-100 dark:hover:bg-neutral-600 rounded transition-colors text-gray-600 dark:text-gray-300"
+                  title="Tùy chọn khác"
+                >
+                  <MoreVertical className="w-4 h-4" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent
+                align="end"
+                className="w-48 bg-white dark:bg-neutral-800 border border-gray-100 dark:border-neutral-700 shadow-xl rounded-xl p-1 z-[9999]"
+              >
+                {conversation?.type === "group" && onSettings && (
+                  <DropdownMenuItem
+                    onClick={onSettings}
+                    className="flex items-center gap-2 px-3 py-2 text-xs rounded-lg cursor-pointer hover:bg-gray-100 dark:hover:bg-neutral-700 text-gray-700 dark:text-gray-200"
+                  >
+                    <Settings className="w-4 h-4 text-gray-500" />
+                    <span>Thông tin nhóm</span>
+                  </DropdownMenuItem>
+                )}
+                {conversation?.type !== "group" && onBackground && (
+                  <DropdownMenuItem
+                    onClick={onBackground}
+                    className="flex items-center gap-2 px-3 py-2 text-xs rounded-lg cursor-pointer hover:bg-gray-100 dark:hover:bg-neutral-700 text-gray-700 dark:text-gray-200"
+                  >
+                    <ImageIcon className="w-4 h-4 text-gray-500" />
+                    <span>Đổi hình nền</span>
+                  </DropdownMenuItem>
+                )}
+                {onGallery && (
+                  <DropdownMenuItem
+                    onClick={onGallery}
+                    className="flex items-center gap-2 px-3 py-2 text-xs rounded-lg cursor-pointer hover:bg-gray-100 dark:hover:bg-neutral-700 text-gray-700 dark:text-gray-200"
+                  >
+                    <LayoutGrid className="w-4 h-4 text-gray-500" />
+                    <span>Bộ sưu tập file</span>
+                  </DropdownMenuItem>
+                )}
+                {conversation?.type !== "group" && otherParticipant?.id && (
+                  <DropdownMenuItem
+                    onClick={() => setShowReportModal(true)}
+                    className="flex items-center gap-2 px-3 py-2 text-xs rounded-lg cursor-pointer text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30"
+                  >
+                    <Flag className="w-4 h-4" />
+                    <span>Báo cáo người dùng</span>
+                  </DropdownMenuItem>
+                )}
+                {(onMinimize || onClose) && (
+                  <DropdownMenuSeparator className="my-1 border-t border-gray-100 dark:border-neutral-700" />
+                )}
+                {onMinimize && (
+                  <DropdownMenuItem
+                    onClick={onMinimize}
+                    className="flex items-center gap-2 px-3 py-2 text-xs rounded-lg cursor-pointer hover:bg-gray-100 dark:hover:bg-neutral-700 text-gray-700 dark:text-gray-200"
+                  >
+                    {isMinimized ? (
+                      <ChevronUp className="w-4 h-4 text-gray-500" />
+                    ) : (
+                      <ChevronDown className="w-4 h-4 text-gray-500" />
+                    )}
+                    <span>{isMinimized ? "Mở rộng" : "Thu gọn"}</span>
+                  </DropdownMenuItem>
+                )}
+                {onClose && (
+                  <DropdownMenuItem
+                    onClick={onClose}
+                    className="flex items-center gap-2 px-3 py-2 text-xs rounded-lg cursor-pointer hover:bg-gray-100 dark:hover:bg-neutral-700 text-gray-700 dark:text-gray-200"
+                  >
+                    <X className="w-4 h-4 text-gray-500" />
+                    <span>Đóng</span>
+                  </DropdownMenuItem>
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
           </>
         )}
-        {conversation?.id && conversation?.type !== "group" && (
-          <button
-            onClick={onBackground}
-            className="p-1.5 hover:bg-gray-100 dark:hover:bg-neutral-600 rounded transition-colors"
-            title="Đổi hình nền đoạn chat"
-          >
-            <ImageIcon className="w-4 h-4 text-gray-600 dark:text-gray-300" />
-          </button>
-        )}
-        {conversation?.id && (
-          <button
-            onClick={onGallery}
-            className="p-1.5 hover:bg-gray-100 dark:hover:bg-neutral-600 rounded transition-colors"
-            title="Bộ sưu tập"
-          >
-            <LayoutGrid className="w-4 h-4 text-gray-600 dark:text-gray-300" />
-          </button>
-        )}
-        {conversation?.id && conversation?.type !== "group" && otherParticipant?.id && (
-          <button
-            onClick={() => setShowReportModal(true)}
-            className="p-1.5 hover:bg-gray-100 dark:hover:bg-neutral-600 rounded transition-colors"
-            title="Báo cáo người dùng"
-          >
-            <Flag className="w-4 h-4 text-gray-600 dark:text-gray-300" />
-          </button>
-        )}
-        <button
-          onClick={onMinimize}
-          className="p-1.5 hover:bg-gray-100 dark:hover:bg-neutral-600 rounded transition-colors"
-          title={isMinimized ? "Mở rộng" : "Thu gọn"}
-        >
-          {isMinimized ? (
-            <ChevronUp className="w-4 h-4 text-gray-600 dark:text-gray-300" />
-          ) : (
-            <ChevronDown className="w-4 h-4 text-gray-600 dark:text-gray-300" />
-          )}
-        </button>
-        <button
-          onClick={onClose}
-          className="p-1.5 hover:bg-gray-100 dark:hover:bg-neutral-600 rounded transition-colors"
-          title="Đóng"
-        >
-          <X className="w-4 h-4 text-gray-600 dark:text-gray-300" />
-        </button>
       </div>
       <ReportModal
         open={showReportModal}
