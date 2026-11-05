@@ -191,6 +191,16 @@ export const CallProvider = ({ children }) => {
    */
   const acquireMedia = useCallback(async (type) => {
     try {
+      if (
+        typeof navigator === "undefined" ||
+        !navigator.mediaDevices ||
+        !navigator.mediaDevices.getUserMedia
+      ) {
+        throw new Error(
+          "Trình duyệt hiện tại không hỗ trợ truy cập Microphone/Camera (yêu cầu kết nối HTTPS hoặc localhost)."
+        );
+      }
+
       const constraints = {
         audio: {
           echoCancellation: true,
@@ -213,7 +223,8 @@ export const CallProvider = ({ children }) => {
       return stream;
     } catch (err) {
       console.error("[WebRTC] Error acquiring media:", err);
-      let errorText = "Không thể truy cập Microphone hoặc Camera của bạn.";
+      let errorText =
+        err?.message || "Không thể truy cập Microphone hoặc Camera của bạn.";
       if (err.name === "NotAllowedError" || err.name === "PermissionDeniedError") {
         errorText = "Bạn cần cấp quyền truy cập Microphone và Camera trong trình duyệt.";
       } else if (err.name === "NotFoundError" || err.name === "DevicesNotFoundError") {
@@ -228,7 +239,12 @@ export const CallProvider = ({ children }) => {
    * Start an outgoing call (called from ChatHeader).
    */
   const startCall = useCallback(
-    async (conversationId, type = "audio") => {
+    async (conversationId, type = "audio", initialConversation = null) => {
+      if (!conversationId) {
+        antdMessage.error("Không tìm thấy thông tin cuộc trò chuyện.");
+        return;
+      }
+
       // If running inside React Native WebView, trigger native mobile call flow
       if (typeof window !== "undefined" && window.ReactNativeWebView) {
         window.ReactNativeWebView.postMessage(
@@ -246,9 +262,47 @@ export const CallProvider = ({ children }) => {
         return;
       }
 
+      // Immediate visual feedback so the modal opens right away with receiver name & avatar
+      const receiver = initialConversation?.participants?.find(
+        (p) => String(p.id) !== String(currentUser?.id)
+      ) || initialConversation?.participants?.[0];
+
+      setActiveCall({
+        conversation_id: conversationId,
+        type,
+        status: "calling",
+        receiver: receiver
+          ? {
+              id: receiver.id,
+              username: receiver.username,
+              profile_name: receiver.profile_name || receiver.username,
+              avatar_url: receiver.avatar_url,
+              profile_theme: receiver.profile_theme,
+            }
+          : null,
+      });
+      setCallType(type);
+      setCallStatus("calling");
+
       try {
-        // Request user media first
-        const stream = await acquireMedia(type);
+        // Request user media first (with video -> audio fallback if no webcam found)
+        let stream;
+        try {
+          stream = await acquireMedia(type);
+        } catch (mediaErr) {
+          if (type === "video") {
+            try {
+              stream = await acquireMedia("audio");
+              type = "audio";
+              setCallType("audio");
+              antdMessage.info("Không tìm thấy camera, tự động chuyển sang cuộc gọi thoại.");
+            } catch (audioErr) {
+              throw mediaErr;
+            }
+          } else {
+            throw mediaErr;
+          }
+        }
 
         // Call backend API to initiate call session
         const res = await initiateCallApi(conversationId, type);
@@ -259,17 +313,20 @@ export const CallProvider = ({ children }) => {
         }
 
         setActiveCall(callData);
-        setCallType(type);
-        setCallStatus("calling");
 
         // Play outgoing ringing tone
         playOutgoingRing();
       } catch (err) {
         console.error("[startCall] error:", err);
+        const errMsg =
+          err?.response?.data?.message ||
+          err?.message ||
+          "Không thể thực hiện cuộc gọi. Vui lòng thử lại.";
+        antdMessage.error(errMsg);
         cleanupCall();
       }
     },
-    [acquireMedia, cleanupCall]
+    [currentUser, acquireMedia, cleanupCall]
   );
 
   /**

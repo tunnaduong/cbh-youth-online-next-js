@@ -124,6 +124,7 @@ export default function ChatWidget() {
     >
       {/* Header */}
       <ChatHeader
+        conversationId={selectedConversationId}
         conversation={
           previewParticipant
             ? {
