@@ -123,6 +123,8 @@ export default function ChatMessageInput({
   const divRef = useRef(null);
   const fileInputRef = useRef(null);
   const isComposingRef = useRef(false);
+  const isSubmittingRef = useRef(false);
+  const lastSubmitTimeRef = useRef(0);
 
   // Proxy ref that useMentionInput uses for focus/setSelectionRange
   const inputRef = useRef(makeProxyRef(() => divRef.current, setMessage, allowAllMention, true));

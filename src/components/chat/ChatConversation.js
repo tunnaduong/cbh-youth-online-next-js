@@ -684,29 +684,40 @@ export default function ChatConversation({
     scrollToAndHighlightElement(el);
   };
 
+  const isSendingMessageRef = useRef(false);
+
   const handleSendMessage = async (content) => {
-    if (!content.trim()) return;
-    const replyId = replyingTo?.id || null;
+    const trimmed = content?.trim();
+    if (!trimmed || isSendingMessageRef.current) return;
+    isSendingMessageRef.current = true;
 
-    // If this is a preview conversation, create it first
-    if (previewParticipant && !conversationId) {
-      try {
-        const conversation = await createConversation(previewParticipant.id);
-        if (conversation?.id) {
-          await loadConversations();
-          await selectConversation(conversation.id);
-          if (onConversationCreated) onConversationCreated(conversation.id);
-          await sendMessage(conversation.id, content, "text", replyId);
+    try {
+      const replyId = replyingTo?.id || null;
+
+      // If this is a preview conversation, create it first
+      if (previewParticipant && !conversationId) {
+        try {
+          const conversation = await createConversation(previewParticipant.id);
+          if (conversation?.id) {
+            await loadConversations();
+            await selectConversation(conversation.id);
+            if (onConversationCreated) onConversationCreated(conversation.id);
+            await sendMessage(conversation.id, trimmed, "text", replyId);
+          }
+        } catch (error) {
+          console.error("[ChatConversation] Error creating conversation:", error);
         }
-      } catch (error) {
-        console.error("[ChatConversation] Error creating conversation:", error);
+        return;
       }
-      return;
-    }
 
-    if (conversationId) {
-      await sendMessage(conversationId, content, "text", replyId);
-      setReplyingTo(null);
+      if (conversationId) {
+        await sendMessage(conversationId, trimmed, "text", replyId);
+        setReplyingTo(null);
+      }
+    } catch (err) {
+      console.error("[ChatConversation] Error sending message:", err);
+    } finally {
+      isSendingMessageRef.current = false;
     }
   };
 
