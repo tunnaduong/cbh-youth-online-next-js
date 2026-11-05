@@ -264,6 +264,13 @@ Every new or changed page or component must follow this section. If the part you
 
 ## Recent work (newest first, as of 2026-10)
 
+- **Chat Lite Fullscreen for Low-end Devices WebView Mode** (`src/components/chat/ChatLiteFullscreen.js`, `src/app/chat/ChatRedirect.js`, `src/utils/appMode.js`, `src/contexts/provider/CallProvider.js`):
+  - Added dedicated full-screen chat mode triggered via `?chat_lite=true`: takes full viewport (`100vw x 100vh`), no website navbar/sidebar/footer, and suppresses splash screens by automatically enabling `isInApp()`.
+  - Reuses the exact same robust `ChatConversation` codebase to preserve 100% feature parity (Echo realtime messages, reactions, replies, attachments, lightboxes, backgrounds, and message recall).
+  - Bidirectional React Native WebView bridge:
+    - Automatically emits `CONVERSATION_UPDATE` postMessage with active thread info so the mobile native top bar stays synchronized in real time.
+    - Global link interceptor: posts `OPEN_PROFILE` for user profiles, `OPEN_URL` for links, and `START_CALL` for voice/video calls, safely keeping the webview restricted to chat while letting the native app handle profile transitions, in-app browser links, and native calling.
+
 - **WebRTC Voice & Video Call on Web** (`src/utils/callSounds.js`, `src/contexts/CallContext.js`, `src/contexts/provider/CallProvider.js`, `src/components/call/*`, `src/components/chat/ChatHeader.js`, `src/components/chat/ChatConversation.js`, `src/app/ClientProviders.js`, `src/app/Api.js`):
   - **Realtime Web Audio Synthesizer (`callSounds.js`)**: Plays outgoing dual-tone ringing, pleasant melodic incoming call chimes, connected tone, and call-end tone directly via browser `AudioContext` without relying on external `.mp3` assets.
   - **Global WebRTC Call Provider (`CallProvider.js`)**: Manages RTCPeerConnection lifecycle, local/remote MediaStream handling, camera/mic toggle, screen sharing, STUN/TURN ICE negotiation, and duration timers. Listens for `.call.initiated` on the user's private channel `App.Models.User.{id}` and `.call.answered`/`.rejected`/`.ended`/`.signaled` on `chat.{conversationId}`.

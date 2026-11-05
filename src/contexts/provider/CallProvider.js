@@ -229,6 +229,18 @@ export const CallProvider = ({ children }) => {
    */
   const startCall = useCallback(
     async (conversationId, type = "audio") => {
+      // If running inside React Native WebView, trigger native mobile call flow
+      if (typeof window !== "undefined" && window.ReactNativeWebView) {
+        window.ReactNativeWebView.postMessage(
+          JSON.stringify({
+            type: "START_CALL",
+            callType: type,
+            conversationId,
+          })
+        );
+        return;
+      }
+
       if (callStatusRef.current !== "idle") {
         antdMessage.warning("Bạn đang có một cuộc gọi khác.");
         return;
@@ -562,6 +574,18 @@ export const CallProvider = ({ children }) => {
       if (String(callData?.caller?.id) === String(currentUser?.id)) return;
 
       // If user is already busy in another call, automatically reject as busy
+      // If running inside React Native WebView, trigger native mobile call flow
+      if (typeof window !== "undefined" && window.ReactNativeWebView) {
+        window.ReactNativeWebView.postMessage(
+          JSON.stringify({
+            type: "START_CALL",
+            callType: type,
+            conversationId,
+          })
+        );
+        return;
+      }
+
       if (callStatusRef.current !== "idle") {
         rejectCallApi(callData.id, "busy").catch(() => {});
         return;
