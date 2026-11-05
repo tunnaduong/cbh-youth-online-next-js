@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { useCallContext } from "@/contexts/Support";
+import { useCallContext, useAuthContext } from "@/contexts/Support";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import AvatarFrameWrap from "@/components/profile/AvatarFrameWrap";
 import UserName from "@/components/profile/UserName";
@@ -46,6 +46,21 @@ export default function ActiveCallModal() {
 
   const localVideoRef = useRef(null);
   const remoteVideoRef = useRef(null);
+  const remoteAudioRef = useRef(null);
+  const { currentUser } = useAuthContext();
+
+  // Attach remote media stream to dedicated audio element so sound always plays
+  useEffect(() => {
+    if (remoteAudioRef.current && remoteStream) {
+      remoteAudioRef.current.srcObject = remoteStream;
+      const playPromise = remoteAudioRef.current.play();
+      if (playPromise !== undefined) {
+        playPromise.catch((err) => {
+          console.warn("[WebRTC] remoteAudio play error:", err);
+        });
+      }
+    }
+  }, [remoteStream, callStatus]);
 
   // Attach local media stream
   useEffect(() => {
@@ -68,7 +83,10 @@ export default function ActiveCallModal() {
 
   const isConnected = callStatus === "connected";
   const isVideo = callType === "video";
-  const otherUser = activeCall?.receiver || activeCall?.caller;
+  const isCaller = String(activeCall?.caller?.id) === String(currentUser?.id);
+  const otherUser = isCaller
+    ? (activeCall?.receiver || activeCall?.caller)
+    : (activeCall?.caller || activeCall?.receiver);
   const otherName = otherUser?.profile_name || otherUser?.username || "Người dùng";
   const avatarUrl = otherUser?.avatar_url;
 
