@@ -1038,3 +1038,17 @@ export const adminGetViolationReports = (params) => Api.getRequest("/v1.0/admin/
 export const adminReviewViolationReport = (id, params) =>
   Api.postRequest(`/v1.0/admin/violation-reports/${id}/review`, params);
 export const adminDeleteViolationReport = (id) => Api.deleteRequest(`/v1.0/admin/violation-reports/${id}`);
+
+// WebRTC Voice & Video Call Endpoints
+export const getIceServers = () => Api.getRequest("/v1.0/chat/ice-servers");
+export const initiateCall = (conversationId, type = "audio") =>
+  Api.postRequest(`/v1.0/chat/conversations/${conversationId}/call/initiate`, { type });
+export const answerCall = (callId) =>
+  Api.postRequest(`/v1.0/chat/calls/${callId}/answer`);
+export const rejectCall = (callId, reason = "rejected") =>
+  Api.postRequest(`/v1.0/chat/calls/${callId}/reject`, { reason });
+export const endCall = (callId) =>
+  Api.postRequest(`/v1.0/chat/calls/${callId}/end`);
+export const sendCallSignal = (callId, type, payload) =>
+  Api.postRequest(`/v1.0/chat/calls/${callId}/signal`, { type, payload });
+
