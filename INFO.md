@@ -264,6 +264,20 @@ Every new or changed page or component must follow this section. If the part you
 
 ## Recent work (newest first, as of 2026-10)
 
+- **Chat Lite Fullscreen for Low-end Devices WebView Mode** (`src/components/chat/ChatLiteFullscreen.js`, `src/app/chat/ChatRedirect.js`, `src/utils/appMode.js`, `src/contexts/provider/CallProvider.js`):
+  - Added dedicated full-screen chat mode triggered via `?chat_lite=true`: takes full viewport (`100vw x 100vh`), no website navbar/sidebar/footer, and suppresses splash screens by automatically enabling `isInApp()`.
+  - Reuses the exact same robust `ChatConversation` codebase to preserve 100% feature parity (Echo realtime messages, reactions, replies, attachments, lightboxes, backgrounds, and message recall).
+  - Bidirectional React Native WebView bridge:
+    - Automatically emits `CONVERSATION_UPDATE` postMessage with active thread info so the mobile native top bar stays synchronized in real time.
+    - Global link interceptor: posts `OPEN_PROFILE` for user profiles, `OPEN_URL` for links, and `START_CALL` for voice/video calls, safely keeping the webview restricted to chat while letting the native app handle profile transitions, in-app browser links, and native calling.
+
+- **WebRTC Voice & Video Call on Web** (`src/utils/callSounds.js`, `src/contexts/CallContext.js`, `src/contexts/provider/CallProvider.js`, `src/components/call/*`, `src/components/chat/ChatHeader.js`, `src/components/chat/ChatConversation.js`, `src/app/ClientProviders.js`, `src/app/Api.js`):
+  - **Realtime Web Audio Synthesizer (`callSounds.js`)**: Plays outgoing dual-tone ringing, pleasant melodic incoming call chimes, connected tone, and call-end tone directly via browser `AudioContext` without relying on external `.mp3` assets.
+  - **Global WebRTC Call Provider (`CallProvider.js`)**: Manages RTCPeerConnection lifecycle, local/remote MediaStream handling, camera/mic toggle, screen sharing, STUN/TURN ICE negotiation, and duration timers. Listens for `.call.initiated` on the user's private channel `App.Models.User.{id}` and `.call.answered`/`.rejected`/`.ended`/`.signaled` on `chat.{conversationId}`.
+  - **Incoming Call Modal (`IncomingCallModal.js`)**: Floating incoming call dialog with caller avatar, pulsing wave effect, verified badges, call type indicator (voice vs video), Answer and Decline buttons.
+  - **Active Call Modal (`ActiveCallModal.js`)**: Full-featured call interface with remote video / audio avatar view, PiP local camera preview, and controls bar (mute mic, toggle camera, screen share, fullscreen, minimize to PiP capsule, and end call).
+  - **Chat Integration**: Voice Call (`Phone`) and Video Call (`Video`) action buttons in `ChatHeader.js` (1-1 threads), plus interactive call summary message cards in `ChatConversation.js` (`CallMessageCard.js`) with call duration, status, and callback buttons.
+
 - **On-page SEO (Mobrilz PDF, pages only):** `src/data/onPageSeo.js` holds verbatim meta title/description, H1, FAQ and internal-link HTML for `/` and seven forum URLs from the SEO audit. Wired through `generateMetadata` on home/forum pages, `SEOContent`, and forum header H1s. Logo/post thumbnail alt text on home chrome. No API or sitemap changes; PageSpeed out of scope.
 
 - **Admin: create a user by hand, with avatar (branch `claude/sharp-cerf-l3nye3`; lint only, not built or run in a browser):** `/admin/users` has a "Tạo người dùng" button (`ResourceTable` `extra`) opening a modal: avatar (picture upload, max 10 MB, cropped by the API), username (same rules as sign-up; the modal shows the resulting `<username>@tunnaduong.com`), display name, and an optional password. Leave the password empty and the API makes one; it is shown once in a dialog, like a password reset. Calls `adminCreateUser` (`Api.js`, multipart `POST /v1.0/admin/users`). Server errors on a field appear under that field. Meant for seeding member accounts that post to the forum.

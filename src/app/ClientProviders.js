@@ -1,6 +1,6 @@
 "use client";
 
-import { AuthProvider, ChatProvider, NotificationProvider } from "../contexts";
+import { AuthProvider, ChatProvider, NotificationProvider, CallProvider } from "../contexts";
 import { HomePostProvider } from "@/contexts/HomePostContext";
 import { ThemeProvider } from "@/contexts/themeContext";
 import { TopUsersProvider } from "@/contexts";
@@ -19,6 +19,12 @@ import MaintenanceGuard from "@/components/maintenance/MaintenanceGuard";
 import LoginApprovalPrompt from "@/components/LoginApprovalPrompt";
 import dynamic from "next/dynamic";
 
+const IncomingCallModal = dynamic(() => import("@/components/call/IncomingCallModal"), {
+  ssr: false,
+});
+const ActiveCallModal = dynamic(() => import("@/components/call/ActiveCallModal"), {
+  ssr: false,
+});
 const ChatWidget = dynamic(() => import("@/components/chat/ChatWidget"), {
   ssr: false,
 });
@@ -61,6 +67,7 @@ export default function ClientProviders({ children }) {
           <AntdProvider>
             <AuthProvider>
               <ChatProvider>
+                <CallProvider>
               <NotificationProvider>
               <TopUsersProvider>
                 <HomePostProvider>
@@ -75,6 +82,8 @@ export default function ClientProviders({ children }) {
                         {children}
                         <AppBanner />
                         <ChatWidget />
+                        <IncomingCallModal />
+                        <ActiveCallModal />
                         <UpdateNotification />
                         <MaintenanceGuard />
                         {/* A login elsewhere waiting to be approved here (2FA) */}
@@ -85,6 +94,7 @@ export default function ClientProviders({ children }) {
                 </HomePostProvider>
               </TopUsersProvider>
               </NotificationProvider>
+                </CallProvider>
               </ChatProvider>
             </AuthProvider>
           </AntdProvider>

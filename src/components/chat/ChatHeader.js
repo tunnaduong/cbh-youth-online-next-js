@@ -11,6 +11,8 @@ import {
   X,
   Flag,
   LayoutGrid,
+  Phone,
+  Video,
 } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
@@ -18,6 +20,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import AvatarFrameWrap from "@/components/profile/AvatarFrameWrap";
 import UserName from "@/components/profile/UserName";
 import ReportModal from "@/components/ReportModal";
+import { useCallContext } from "@/contexts/Support";
 
 export default function ChatHeader({
   conversation,
@@ -34,6 +37,7 @@ export default function ChatHeader({
   showNewGroupDialog,
 }) {
   const isThreadsView = !conversation;
+  const { startCall } = useCallContext();
   const [showReportModal, setShowReportModal] = useState(false);
   const otherParticipant =
     conversation?.type !== "group" ? conversation?.participants?.[0] : null;
@@ -199,6 +203,24 @@ export default function ChatHeader({
           >
             <Settings className="w-4 h-4 text-gray-600 dark:text-gray-300" />
           </button>
+        )}
+        {conversation?.id && conversation?.type !== "group" && (
+          <>
+            <button
+              onClick={() => startCall(conversation.id, "audio")}
+              className="p-1.5 hover:bg-gray-100 dark:hover:bg-neutral-600 rounded transition-colors text-primary-600 dark:text-primary-400"
+              title="Gọi thoại"
+            >
+              <Phone className="w-4 h-4" />
+            </button>
+            <button
+              onClick={() => startCall(conversation.id, "video")}
+              className="p-1.5 hover:bg-gray-100 dark:hover:bg-neutral-600 rounded transition-colors text-primary-600 dark:text-primary-400"
+              title="Gọi video"
+            >
+              <Video className="w-4 h-4" />
+            </button>
+          </>
         )}
         {conversation?.id && conversation?.type !== "group" && (
           <button

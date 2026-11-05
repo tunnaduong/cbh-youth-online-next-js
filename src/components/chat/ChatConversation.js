@@ -16,6 +16,7 @@ import ReplyPreviewBubble from "./ReplyPreviewBubble";
 import ChatMediaLightbox from "./ChatMediaLightbox";
 import ForwardMessageModal from "./ForwardMessageModal";
 import SharedPostCard from "./SharedPostCard";
+import CallMessageCard from "@/components/call/CallMessageCard";
 import Modal from "@/components/ui/Modal";
 import { CornerUpLeft, FileText, Download, PlayCircle, Forward, Loader2, AlertCircle, RotateCw, X } from "lucide-react";
 import NextLink from "next/link";
@@ -925,6 +926,18 @@ export default function ChatConversation({
         )}
 
         {conversationMessages.map((message, index) => {
+          if (message.type === "call") {
+            return (
+              <div key={message.id} className="flex justify-center my-2 w-full">
+                <CallMessageCard
+                  message={message}
+                  conversationId={conversation?.id}
+                  isMyself={message.is_myself}
+                />
+              </div>
+            );
+          }
+
           if (message.type === "system") {
             return (
               <div key={message.id} className="flex justify-center my-2">

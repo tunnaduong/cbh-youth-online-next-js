@@ -3,14 +3,19 @@
 import { useEffect } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useChatContext } from "@/contexts/Support";
+import ChatLiteFullscreen from "@/components/chat/ChatLiteFullscreen";
 
 export default function ChatRedirect() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const { openChat, selectConversation, setHighlightMessageId } = useChatContext();
 
+  const isChatLite = searchParams.get("chat_lite") === "true";
+
   useEffect(() => {
-    const conversationId = searchParams.get("conversation");
+    if (isChatLite) return; // Do not redirect if in Chat Lite mode
+
+    const conversationId = searchParams.get("conversationId") || searchParams.get("conversation");
     const messageId = searchParams.get("message");
 
     const open = async () => {
@@ -31,7 +36,11 @@ export default function ChatRedirect() {
     };
 
     open();
-  }, []);
+  }, [isChatLite]);
+
+  if (isChatLite) {
+    return <ChatLiteFullscreen />;
+  }
 
   return null;
 }
