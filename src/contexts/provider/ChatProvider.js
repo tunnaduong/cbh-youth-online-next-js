@@ -297,10 +297,22 @@ const ChatProvider = ({ children }) => {
   // realtime "something changed, refresh" handler below does) wholesale
   // replaced the whole message list, throwing away any older pages the user
   // had already scrolled up to load.
+  const MAX_HISTORY_DAYS = 30; // Only load messages up to 1 month ago
+  const isWithinOneMonth = (created_at) => {
+    if (!created_at) return true;
+    const msgDate = new Date(created_at);
+    if (isNaN(msgDate.getTime())) return true;
+    const cutoff = Date.now() - MAX_HISTORY_DAYS * 24 * 60 * 60 * 1000;
+    return msgDate.getTime() >= cutoff;
+  };
+
   const mergeLatestPage = (existing = [], freshPage1 = []) => {
-    const freshIds = new Set(freshPage1.map((m) => m.id));
-    const preservedOlder = existing.filter((m) => !freshIds.has(m.id));
-    return [...preservedOlder, ...freshPage1];
+    const validFresh = freshPage1.filter((m) => isWithinOneMonth(m.created_at));
+    const freshIds = new Set(validFresh.map((m) => m.id));
+    const preservedOlder = existing.filter(
+      (m) => !freshIds.has(m.id) && isWithinOneMonth(m.created_at)
+    );
+    return [...preservedOlder, ...validFresh];
   };
 
   // Load messages for a conversation - called on selection and whenever a realtime chat event arrives
@@ -326,10 +338,27 @@ const ChatProvider = ({ children }) => {
           };
         }
 
+        // Limit chat history to max 1 month ago
+        let reachedCutoff = false;
+        const validMessages = [];
+        for (const msg of messagesData) {
+          if (isWithinOneMonth(msg.created_at)) {
+            validMessages.push(msg);
+          } else {
+            reachedCutoff = true;
+          }
+        }
+
+        if (reachedCutoff) {
+          paginationInfo.has_more_pages = false;
+        }
+
+        messagesData = validMessages;
+
         setMessages((prev) => ({
           ...prev,
           [conversationId]: append
-            ? [...messagesData, ...(prev[conversationId] || [])]
+            ? [...messagesData, ...(prev[conversationId] || []).filter((m) => isWithinOneMonth(m.created_at))]
             : messagesData,
         }));
 
@@ -341,7 +370,6 @@ const ChatProvider = ({ children }) => {
     },
     [loggedIn]
   );
-
   // Send message
   const sendMessage = useCallback(
     async (conversationId, content, type = "text", replyToMessageId = null) => {

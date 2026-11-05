@@ -264,6 +264,12 @@ Every new or changed page or component must follow this section. If the part you
 
 ## Recent work (newest first, as of 2026-10)
 
+- **Web Chat: Max 1 Month Message History & Mobile WebView Input Flicker Fix** (`src/contexts/provider/ChatProvider.js`, `src/utils/richInput.js`, `src/app/globals.css`, `src/components/chat/ChatMessageInput.js`):
+  - **1 Month History Limit**: `ChatProvider.js` enforces a 30-day cutoff (`MAX_HISTORY_DAYS = 30`) on `loadMessages` and `mergeLatestPage`. Older messages are filtered out, and reaching the cutoff marks `paginationInfo.has_more_pages = false` so the client does not query older history.
+  - **Mobile WebView Input Flicker Elimination**:
+    - `applyHighlights` in `richInput.js` now skips highlights processing entirely when text has neither `@` nor `/` commands, preventing continuous paint invalidations caused by `CSS.highlights.delete()` on every single normal keystroke in Chromium/WebKit WebViews.
+    - `globals.css`: `.ce-input:empty::before` placeholder is positioned `absolute` (`left: 12px; top: 5px;`) instead of inline flow, preventing `:empty` pseudo-element toggling from shifting line heights or jumping the input box height during composition.
+    - GPU layer acceleration applied (`transform: translateZ(0); backface-visibility: hidden;`) to isolate the input box and its wrapper from layout repaints.
 - **Chat Lite Fullscreen for Low-end Devices WebView Mode** (`src/components/chat/ChatLiteFullscreen.js`, `src/app/chat/ChatRedirect.js`, `src/utils/appMode.js`, `src/contexts/provider/CallProvider.js`):
   - Added dedicated full-screen chat mode triggered via `?chat_lite=true`: takes full viewport (`100vw x 100vh`), no website navbar/sidebar/footer, and suppresses splash screens by automatically enabling `isInApp()`.
   - Reuses the exact same robust `ChatConversation` codebase to preserve 100% feature parity (Echo realtime messages, reactions, replies, attachments, lightboxes, backgrounds, and message recall).

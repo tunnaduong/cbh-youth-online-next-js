@@ -193,6 +193,17 @@ function locate(el, charIndex) {
 export function applyHighlights(el, text, allowAllMention = true, enableAiCommands = false) {
   if (!HIGHLIGHT_SUPPORTED || !el) return;
 
+  const hasMention = text && text.includes("@");
+  const hasCommand = enableAiCommands && text && text.startsWith("/");
+
+  // If text has neither mentions nor commands, only clear highlights if they were previously active.
+  // Avoids continuous paint invalidations and flickering while typing normal text on mobile WebViews.
+  if (!hasMention && !hasCommand) {
+    if (CSS.highlights.has("ce-mention")) CSS.highlights.delete("ce-mention");
+    if (CSS.highlights.has("ce-ai-command")) CSS.highlights.delete("ce-ai-command");
+    return;
+  }
+
   const { mentionRanges, commandRanges } = computeHighlightRanges(text, allowAllMention, enableAiCommands);
 
   const toRanges = (pairs) =>
@@ -213,13 +224,13 @@ export function applyHighlights(el, text, allowAllMention = true, enableAiComman
 
   if (mentionRs.length) {
     CSS.highlights.set("ce-mention", new Highlight(...mentionRs));
-  } else {
+  } else if (CSS.highlights.has("ce-mention")) {
     CSS.highlights.delete("ce-mention");
   }
 
   if (commandRs.length) {
     CSS.highlights.set("ce-ai-command", new Highlight(...commandRs));
-  } else {
+  } else if (CSS.highlights.has("ce-ai-command")) {
     CSS.highlights.delete("ce-ai-command");
   }
 }

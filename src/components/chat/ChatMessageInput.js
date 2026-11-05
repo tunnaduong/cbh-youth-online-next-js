@@ -336,7 +336,7 @@ export default function ChatMessageInput({
           <Paperclip className="w-4 h-4 text-gray-600 dark:text-gray-300" />
         </button>
 
-        <div className="flex-1 min-w-0 relative">
+        <div className="flex-1 min-w-0 relative" style={{ transform: "translateZ(0)", WebkitTransform: "translateZ(0)" }}>
           <div
             ref={divRef}
             contentEditable={!sending}
@@ -347,6 +347,12 @@ export default function ChatMessageInput({
             onCompositionEnd={handleCompositionEnd}
             onPaste={handlePaste}
             data-placeholder="Gửi tin nhắn..."
+            style={{
+              transform: "translateZ(0)",
+              WebkitTransform: "translateZ(0)",
+              backfaceVisibility: "hidden",
+              WebkitBackfaceVisibility: "hidden",
+            }}
             className="
               ce-input
               w-full min-h-[32px] max-h-[120px]
