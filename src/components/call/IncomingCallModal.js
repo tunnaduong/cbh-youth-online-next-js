@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallContext } from "@/contexts/Support";
+import { useCallContext, useAuthContext } from "@/contexts/Support";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import AvatarFrameWrap from "@/components/profile/AvatarFrameWrap";
 import UserName from "@/components/profile/UserName";
@@ -8,8 +8,13 @@ import { Phone, PhoneOff, Video } from "lucide-react";
 
 export default function IncomingCallModal() {
   const { callStatus, callType, activeCall, answerCall, rejectCall } = useCallContext();
+  const { currentUser } = useAuthContext();
 
-  if (callStatus !== "ringing" || !activeCall) {
+  if (
+    callStatus !== "ringing" ||
+    !activeCall ||
+    (currentUser?.id && activeCall.caller?.id === currentUser?.id)
+  ) {
     return null;
   }
 
