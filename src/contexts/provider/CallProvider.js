@@ -6,6 +6,7 @@ import { useAuthContext } from "../Support";
 import { getEcho } from "@/lib/echo";
 import {
   getIceServers,
+  getActiveCall,
   initiateCall as initiateCallApi,
   answerCall as answerCallApi,
   rejectCall as rejectCallApi,
@@ -44,6 +45,14 @@ export const CallProvider = ({ children }) => {
   const callTypeRef = useRef("audio");
   const timerIntervalRef = useRef(null);
   const ringingTimeoutRef = useRef(null);
+  const connectingTimeoutRef = useRef(null);
+
+  const clearConnectingTimeout = useCallback(() => {
+    if (connectingTimeoutRef.current) {
+      clearTimeout(connectingTimeoutRef.current);
+      connectingTimeoutRef.current = null;
+    }
+  }, []);
   const iceCandidatesQueueRef = useRef([]);
 
   const clearRingingTimeout = useCallback(() => {
@@ -87,6 +96,7 @@ export const CallProvider = ({ children }) => {
    */
   const cleanupCall = useCallback(() => {
     stopAllSounds();
+    clearConnectingTimeout();
     clearRingingTimeout();
 
     if (timerIntervalRef.current) {
@@ -323,15 +333,13 @@ export const CallProvider = ({ children }) => {
 
         setActiveCall(callData);
 
-        // Play outgoing ringing tone
-        playOutgoingRing();
-
-        // Auto-disconnect caller after 60s if receiver does not answer
+        // 10s connection timeout: Try connecting for 10s
+        clearConnectingTimeout();
         clearRingingTimeout();
-        ringingTimeoutRef.current = setTimeout(async () => {
+        connectingTimeoutRef.current = setTimeout(async () => {
           if (callStatusRef.current === "calling") {
-            console.log("[WebRTC] Outgoing call timed out after 60s without answer.");
-            antdMessage.info("Người nhận không trả lời.");
+            console.log("[WebRTC] Callee unreachable after 10s.");
+            antdMessage.warning("Không thể kết nối đến người kia.");
             const cur = activeCallRef.current;
             if (cur?.id) {
               try {
@@ -340,7 +348,7 @@ export const CallProvider = ({ children }) => {
             }
             cleanupCall();
           }
-        }, 60000);
+        }, 10000);
       } catch (err) {
         console.error("[startCall] error:", err);
         const errMsg =
@@ -603,7 +611,30 @@ export const CallProvider = ({ children }) => {
       const { type, payload } = data;
 
       try {
-        if (type === "offer") {
+        if (type === "ringing") {
+          console.log("[WebRTC] Callee received call and started ringing.");
+          clearConnectingTimeout();
+          if (callStatusRef.current === "calling") {
+            setCallStatus("ringing");
+            playOutgoingRing();
+
+            clearRingingTimeout();
+            ringingTimeoutRef.current = setTimeout(async () => {
+              if (callStatusRef.current === "calling" || callStatusRef.current === "ringing") {
+                console.log("[WebRTC] Outgoing call timed out after 60s without answer.");
+                antdMessage.info("Người nhận không trả lời.");
+                const cur = activeCallRef.current;
+                if (cur?.id) {
+                  try {
+                    await endCallApi(cur.id);
+                  } catch {}
+                }
+                cleanupCall();
+              }
+            }, 60000);
+          }
+          return;
+        } else if (type === "offer") {
           console.log("[WebRTC] Received remote offer. Creating answer...");
           if (!pc) return;
 
@@ -680,7 +711,10 @@ export const CallProvider = ({ children }) => {
       setCallType(callData.type || "audio");
       setCallStatus("ringing");
 
-      // Start melodic incoming ringtone
+      // Acknowledge to caller that callee received call and started ringing
+      sendCallSignalApi(callData.id, "ringing", {}).catch(() => {});
+
+      // Start incoming ringtone
       playIncomingRing();
 
       // Auto-disconnect callee after 60s if not answered
@@ -697,6 +731,53 @@ export const CallProvider = ({ children }) => {
     },
     [currentUser?.id]
   );
+
+  const checkActiveCalls = useCallback(async () => {
+    if (!loggedIn || callStatusRef.current !== "idle") return;
+    try {
+      const res = await getActiveCall();
+      const call = res?.data?.call;
+      if (
+        call &&
+        call.status === "ringing" &&
+        String(call.caller?.id) !== String(currentUser?.id)
+      ) {
+        handleIncomingCall({ call });
+      }
+    } catch {}
+  }, [loggedIn, currentUser?.id, handleIncomingCall]);
+
+  // Hook Echo reconnection and window online/visibility to recover incoming calls
+  useEffect(() => {
+    if (!loggedIn) return;
+
+    checkActiveCalls();
+
+    const echo = getEcho();
+    const handleConnected = () => {
+      checkActiveCalls();
+    };
+
+    if (echo?.connector?.pusher?.connection) {
+      echo.connector.pusher.connection.bind("connected", handleConnected);
+    }
+
+    const handleOnline = () => checkActiveCalls();
+    const handleVisibility = () => {
+      if (document.visibilityState === "visible") checkActiveCalls();
+    };
+
+    window.addEventListener("online", handleOnline);
+    document.addEventListener("visibilitychange", handleVisibility);
+
+    return () => {
+      if (echo?.connector?.pusher?.connection) {
+        echo.connector.pusher.connection.unbind("connected", handleConnected);
+      }
+      window.removeEventListener("online", handleOnline);
+      document.removeEventListener("visibilitychange", handleVisibility);
+    };
+  }, [loggedIn, checkActiveCalls]);
 
   // Subscribe to user's personal private channel for incoming calls
   useEffect(() => {
