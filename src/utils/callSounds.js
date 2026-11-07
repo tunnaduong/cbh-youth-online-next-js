@@ -133,10 +133,11 @@ export function playConnectedTone() {
 }
 
 /**
- * Play short call ended / drop tone.
+ * Play call ended tone (cadence of 400Hz tone pulses).
  */
 export function playEndTone() {
   stopAllSounds();
-  playTone(493.88, "sine", 0.15, 0.1, 0);
-  playTone(369.99, "sine", 0.25, 0.09, 0.16);
+  playTone(425, "sine", 0.18, 0.09, 0);
+  playTone(425, "sine", 0.18, 0.09, 0.28);
+  playTone(425, "sine", 0.3, 0.09, 0.56);
 }
