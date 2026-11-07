@@ -291,7 +291,7 @@ export default function MessageInput({
       )}
 
       <div className="flex items-end gap-2">
-        <div className="flex-1 relative">
+        <div className="flex-1 relative" style={{ transform: "translateZ(0)", WebkitTransform: "translateZ(0)" }}>
           <div
             ref={divRef}
             contentEditable={!sending}
@@ -302,6 +302,13 @@ export default function MessageInput({
             onCompositionEnd={handleCompositionEnd}
             onPaste={handlePaste}
             data-placeholder="Viết một tin nhắn..."
+            style={{
+              maxHeight: "144px",
+              transform: "translateZ(0)",
+              WebkitTransform: "translateZ(0)",
+              backfaceVisibility: "hidden",
+              WebkitBackfaceVisibility: "hidden",
+            }}
             className="
               ce-input
               w-full min-h-[38px]
@@ -314,7 +321,6 @@ export default function MessageInput({
               focus:outline-none focus:border-[#319527] focus:shadow-[0_0_0_2px_rgba(49,149,39,0.1)]
               whitespace-pre-wrap break-words overflow-y-auto
             "
-            style={{ maxHeight: "144px" }}
           />
           {showSuggestions && (
             <MentionSuggestionsDropdown

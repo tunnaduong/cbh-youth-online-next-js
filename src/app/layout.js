@@ -4,7 +4,7 @@ import GlobalConsoleMessage from "../components/GlobalConsoleMessage";
 import MediaLoadingWatcher from "../components/MediaLoadingWatcher";
 import { Analytics } from "@vercel/analytics/next";
 import Script from "next/script";
-import EzoicRouteHandler from "@/components/ads/EzoicRouteHandler";
+import GlobalAds from "@/components/ads/GlobalAds";
 import { EZOIC_ENABLED } from "@/lib/ezoic";
 
 export const metadata = {
@@ -38,10 +38,33 @@ export const metadata = {
   },
 };
 
+const THEME_INIT_SCRIPT = `
+(function () {
+  try {
+    var theme = localStorage.getItem("theme") || "auto";
+    var isDark =
+      theme === "dark" ||
+      (theme === "auto" &&
+        window.matchMedia("(prefers-color-scheme: dark)").matches);
+    if (isDark) {
+      document.documentElement.classList.add("dark");
+      if (document.body) document.body.classList.add("dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+      if (document.body) document.body.classList.remove("dark");
+    }
+  } catch (e) {}
+})();
+`;
+
 export default function RootLayout({ children }) {
   return (
-    <html lang="vi">
+    <html lang="vi" suppressHydrationWarning>
       <head>
+        <script
+          id="theme-init"
+          dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }}
+        />
         <meta name="google-adsense-account" content="ca-pub-3425905751761094"></meta>
         {EZOIC_ENABLED && (
           <>
@@ -56,25 +79,7 @@ export default function RootLayout({ children }) {
         )}
       </head>
       <body className="bg-[#F8F8F8] dark:bg-neutral-800">
-        {EZOIC_ENABLED && <EzoicRouteHandler />}
-        {/* Google Adsense (off when Ezoic is on: other ad tags interfere with it) */}
-        {!EZOIC_ENABLED && (
-          <>
-        <Script
-          async
-          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3425905751761094"
-          crossOrigin="anonymous"
-          strategy="afterInteractive"
-        />
-        <Script
-          id="adsense"
-          async
-          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9033651898132595"
-          crossOrigin="anonymous"
-          strategy="afterInteractive"
-        />
-          </>
-        )}
+        <GlobalAds />
         {/* Google Analytics (gtag.js) */}
         <Script
           async
@@ -92,12 +97,6 @@ export default function RootLayout({ children }) {
         </Script>
         <GlobalConsoleMessage />
         <MediaLoadingWatcher />
-        {/* SocialBar Ad */}
-        <Script
-          src="https://bicea.org/14/7340e87d9ddbe42b3695cd5cd119ca77"
-          strategy="afterInteractive"
-          data-cfasync="false"
-        />
         <ClientProviders>{children}</ClientProviders>
         <Analytics />
       </body>

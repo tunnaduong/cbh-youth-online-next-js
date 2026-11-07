@@ -232,7 +232,7 @@ export function CommentInput({
                 <MarkdownRenderer content={comment} />
               </div>
             ) : (
-              <div className="relative mt-1">
+              <div className="relative mt-1" style={{ transform: "translateZ(0)", WebkitTransform: "translateZ(0)" }}>
                 <div
                   ref={divRef}
                   contentEditable
@@ -278,7 +278,13 @@ export function CommentInput({
                     focus:outline-none focus:ring-0
                     whitespace-pre-wrap break-words overflow-y-auto
                   "
-                  style={{ maxHeight: "120px" }}
+                  style={{
+                    maxHeight: "120px",
+                    transform: "translateZ(0)",
+                    WebkitTransform: "translateZ(0)",
+                    backfaceVisibility: "hidden",
+                    WebkitBackfaceVisibility: "hidden",
+                  }}
                 />
                 {showSuggestions && (
                   <MentionSuggestionsDropdown

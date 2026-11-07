@@ -20,18 +20,35 @@ export default function AppBanner() {
     const root = document.documentElement;
     if (!visible || !bannerRef.current) return;
     const el = bannerRef.current;
+    let lastOffset = -1;
+    let ticking = false;
+
     const update = () => {
       const h = el.offsetHeight;
       root.style.setProperty("--app-banner-h", `${h}px`);
-      root.style.setProperty("--app-banner-offset", `${Math.max(0, h - window.scrollY)}px`);
+      const newOffset = Math.max(0, h - window.scrollY);
+      if (newOffset !== lastOffset) {
+        root.style.setProperty("--app-banner-offset", `${newOffset}px`);
+        lastOffset = newOffset;
+      }
+      ticking = false;
     };
+
     update();
     const ro = new ResizeObserver(update);
     ro.observe(el);
-    window.addEventListener("scroll", update, { passive: true });
+
+    const onScroll = () => {
+      if (!ticking) {
+        requestAnimationFrame(update);
+        ticking = true;
+      }
+    };
+
+    window.addEventListener("scroll", onScroll, { passive: true });
     return () => {
       ro.disconnect();
-      window.removeEventListener("scroll", update);
+      window.removeEventListener("scroll", onScroll);
       root.style.removeProperty("--app-banner-h");
       root.style.removeProperty("--app-banner-offset");
     };

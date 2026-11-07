@@ -262,7 +262,22 @@ Weights: `font-medium` (default emphasis), `font-semibold` (titles, buttons), `f
 
 Every new or changed page or component must follow this section. If the part you touch is in the older style, bring it in line. When a deliberate, large redesign changes these rules (new card style, new palette, new navigation), **update this section in the same commit** - it must always describe the site as it is, not as it was.
 
-## Recent work (newest first, as of 2026-10)
+## Recent work (newest first, as of 2026-11)
+
+- **Gỡ quảng cáo trong trang quản trị / cửa hàng và khắc phục hiện tượng nhấp nháy (flicker) trên WebView** (`src/components/ads/GlobalAds.js`, `src/app/layout.js`, `src/utils/appMode.js`, `src/components/ads/*`, `src/app/globals.css`, `src/components/AppBanner.js`, `src/components/LoadingWrapper.js`, `src/contexts/themeContext.js`, `src/components/chat/MessageInput.js`, `src/components/forum/CommentInput.js`):
+  - **Gỡ quảng cáo trên Admin & Shop & WebView**:
+    - Tạo `GlobalAds.js` quản lý tải mã quảng cáo tập trung. Chặn tuyệt đối AdSense, SocialBar (`bicea.org`), và Ezoic khi ở trang `/admin`, `/shop`, hoặc khi đang chạy trong WebView di động (`isInApp()`). Đồng thời tự động dọn dẹp các overlay/phần tử chèn động nếu người dùng chuyển trang.
+    - Cập nhật `AdSlot.js`, `Ad300x250.js`, `NativeBanner.js` sử dụng trạng thái client-mounted trước khi hiển thị, loại bỏ việc render tạm thời khung quảng cáo trên SSR gây giật/nhảy layout khi mở trong WebView.
+  - **Khắc phục nhấp nháy (flickering) khi gõ phím và lướt web trên WebView**:
+    - Thêm `THEME_INIT_SCRIPT` chạy trực tiếp trong `<head>` trước khi vẽ trang (pre-paint) đọc theme từ `localStorage` và `prefers-color-scheme`, đồng bộ class `dark` lên `<html>` và `<body>`, chấm dứt hoàn toàn hiện tượng chớp nháy giao diện sáng/tối khi tải trang hoặc điều hướng.
+    - `LoadingWrapper.js`: khởi tạo `isInitialLoading = false` đồng bộ ngay từ client khi phát hiện `isInApp()`, tránh chớp màn hình trắng/overlay splash 1 frame trong ứng dụng di động.
+    - `AppBanner.js`: dùng `requestAnimationFrame` và chỉ cập nhật biến CSS `--app-banner-offset` khi giá trị thực sự thay đổi, ngăn chặn style recalculation liên tục trên toàn bộ cây DOM trong quá trình cuộn lướt (surfing).
+    - `globals.css`:
+      - Cách ly phần cứng GPU cho thanh điều hướng cố định (`nav.fixed`) và trình soạn thảo TipTap (`.ProseMirror`) bằng `transform: translateZ(0); backface-visibility: hidden;`.
+      - Bỏ `-webkit-overflow-scrolling: touch;` trên `.ce-input` tránh xung đột engine cuộn gây nhảy con trỏ khi gõ trên iOS/WebKit.
+      - Thêm font-size 16px và `-webkit-tap-highlight-color: transparent` cho `.ce-input`, `.ProseMirror`, `[contenteditable="true"]` trên màn hình cảm ứng để ngăn WebView tự động phóng to (auto-zoom) và giật nhấp nháy khung nhìn khi focus gõ phím.
+      - Bổ sung GPU layer isolation cho `CommentInput.js` và `MessageInput.js`.
+      - `overscroll-behavior-y: none;` chặn hiện tượng nảy giật mép trang (bounce jitter) trong WebView.
 
 - **Fix: Web Chat Older Messages Pagination & Mobile WebView Input Flicker** (`src/contexts/provider/ChatProvider.js`, `src/components/chat/ChatConversation.js`, `src/utils/richInput.js`, `src/app/globals.css`, `src/components/chat/ChatMessageInput.js`):
   - **Fix Chat History Pagination**: Fixed bug where scrolling up failed to load older messages past page 1/2. `ChatProvider.js` and `ChatConversation.js` now correctly derive `has_more_pages` from `current_page < last_page` or `next_page_url` (and API now returns `has_more_pages`), and properly preserve scroll height on all prepended pages, allowing full historical chat messages to be loaded seamlessly without stopping.

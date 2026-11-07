@@ -38,9 +38,11 @@ export function ThemeProvider({ children }) {
       const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
       const updateTheme = (e) => {
         if (e.matches) {
-          document.body.classList.add("dark");
+          document.documentElement.classList.add("dark");
+          document.body?.classList.add("dark");
         } else {
-          document.body.classList.remove("dark");
+          document.documentElement.classList.remove("dark");
+          document.body?.classList.remove("dark");
         }
         setResolvedTheme(e.matches ? "dark" : "light");
       };
@@ -51,11 +53,13 @@ export function ThemeProvider({ children }) {
 
       return () => mediaQuery.removeEventListener("change", updateTheme);
     } else if (theme === "dark") {
-      document.body.classList.add("dark");
+      document.documentElement.classList.add("dark");
+      document.body?.classList.add("dark");
       setResolvedTheme("dark");
     } else {
       // light theme
-      document.body.classList.remove("dark");
+      document.documentElement.classList.remove("dark");
+      document.body?.classList.remove("dark");
       setResolvedTheme("light");
     }
   }, [theme, mounted]);
