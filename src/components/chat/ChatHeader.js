@@ -51,6 +51,9 @@ export default function ChatHeader({
   const otherParticipant =
     conversation?.type !== "group" ? conversation?.participants?.[0] : null;
   const cid = conversationId || conversation?.id;
+  const isGroup = conversation?.type === "group" || Boolean(conversation?.is_group);
+  const isAi = Boolean(otherParticipant?.is_ai) || otherParticipant?.role === "ai" || Boolean(otherParticipant?.username?.startsWith("ai_"));
+  const canCall = Boolean(cid) && !isGroup && !isAi;
 
   return (
     <div className="flex items-center justify-between rounded-lg px-4 py-3 bg-white dark:bg-neutral-700">
@@ -228,7 +231,7 @@ export default function ChatHeader({
           </>
         ) : (
           <>
-            {cid && conversation?.type !== "group" && (
+            {canCall && (
               <>
                 <button
                   onClick={() => startCall(cid, "audio", conversation)}
