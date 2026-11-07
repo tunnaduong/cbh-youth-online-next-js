@@ -328,6 +328,7 @@ const ChatProvider = ({ children }) => {
             has_more_pages: hasMore,
             last_page: responseData.last_page,
           };
+        }
 
         setMessages((prev) => ({
           ...prev,
