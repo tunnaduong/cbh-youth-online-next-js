@@ -43,7 +43,15 @@ export const CallProvider = ({ children }) => {
   const callStatusRef = useRef("idle");
   const callTypeRef = useRef("audio");
   const timerIntervalRef = useRef(null);
+  const ringingTimeoutRef = useRef(null);
   const iceCandidatesQueueRef = useRef([]);
+
+  const clearRingingTimeout = useCallback(() => {
+    if (ringingTimeoutRef.current) {
+      clearTimeout(ringingTimeoutRef.current);
+      ringingTimeoutRef.current = null;
+    }
+  }, []);
   const iceServersRef = useRef([{ urls: "stun:stun.l.google.com:19302" }]);
   const originalVideoTrackRef = useRef(null);
 
@@ -79,6 +87,7 @@ export const CallProvider = ({ children }) => {
    */
   const cleanupCall = useCallback(() => {
     stopAllSounds();
+    clearRingingTimeout();
 
     if (timerIntervalRef.current) {
       clearInterval(timerIntervalRef.current);
@@ -316,6 +325,22 @@ export const CallProvider = ({ children }) => {
 
         // Play outgoing ringing tone
         playOutgoingRing();
+
+        // Auto-disconnect caller after 60s if receiver does not answer
+        clearRingingTimeout();
+        ringingTimeoutRef.current = setTimeout(async () => {
+          if (callStatusRef.current === "calling") {
+            console.log("[WebRTC] Outgoing call timed out after 60s without answer.");
+            antdMessage.info("Người nhận không trả lời.");
+            const cur = activeCallRef.current;
+            if (cur?.id) {
+              try {
+                await endCallApi(cur.id);
+              } catch {}
+            }
+            cleanupCall();
+          }
+        }, 60000);
       } catch (err) {
         console.error("[startCall] error:", err);
         const errMsg =
@@ -337,6 +362,7 @@ export const CallProvider = ({ children }) => {
     if (!current || callStatusRef.current !== "ringing") return;
 
     try {
+      clearRingingTimeout();
       stopAllSounds();
       const type = current.type || "audio";
 
@@ -493,6 +519,7 @@ export const CallProvider = ({ children }) => {
       if (!current || String(current.id) !== String(callData.id)) return;
 
       console.log("[WebRTC] Callee answered the call. Creating offer...");
+      clearRingingTimeout();
       stopAllSounds();
 
       try {
@@ -655,6 +682,18 @@ export const CallProvider = ({ children }) => {
 
       // Start melodic incoming ringtone
       playIncomingRing();
+
+      // Auto-disconnect callee after 60s if not answered
+      clearRingingTimeout();
+      ringingTimeoutRef.current = setTimeout(async () => {
+        if (activeCallRef.current && callStatusRef.current === "ringing") {
+          console.log("[WebRTC] Incoming call ringing timed out after 60s.");
+          try {
+            await rejectCallApi(callData.id, "missed");
+          } catch {}
+          cleanupCall();
+        }
+      }, 60000);
     },
     [currentUser?.id]
   );
