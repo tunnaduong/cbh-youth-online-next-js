@@ -1,8 +1,7 @@
 /**
  * Audio cue manager for WebRTC call sound effects.
  *
- * Plays authentic OPPO ringtone for incoming calls with automatic
- * Web Audio API synthesizer fallback if audio element playback is restricted.
+ * Plays authentic OPPO ringtone for incoming calls.
  */
 
 let audioCtx = null;
@@ -101,23 +100,6 @@ export function playOutgoingRing() {
   activeLoopInterval = setInterval(triggerRing, 3700);
 }
 
-function fallbackIncomingMelody() {
-  const ctx = getAudioContext();
-  if (!ctx) return;
-
-  const triggerMelody = () => {
-    playTone(659.25, "sine", 0.18, 0.12, 0);
-    playTone(783.99, "sine", 0.18, 0.12, 0.2);
-    playTone(880.00, "sine", 0.22, 0.14, 0.4);
-    playTone(987.77, "sine", 0.45, 0.15, 0.65);
-    playTone(880.00, "sine", 0.15, 0.1, 1.3);
-    playTone(987.77, "sine", 0.35, 0.12, 1.48);
-  };
-
-  triggerMelody();
-  activeLoopInterval = setInterval(triggerMelody, 2800);
-}
-
 /**
  * Play authentic OPPO incoming call ringtone loop.
  */
@@ -131,13 +113,13 @@ export function playIncomingRing() {
     audio.volume = 0.85;
     const promise = audio.play();
     if (promise !== undefined) {
-      promise.catch(() => {
-        fallbackIncomingMelody();
+      promise.catch((err) => {
+        console.warn("[callSounds] Audio playback prevented:", err?.message);
       });
     }
     activeAudioElement = audio;
-  } catch {
-    fallbackIncomingMelody();
+  } catch (err) {
+    console.warn("[callSounds] Error creating Audio:", err?.message);
   }
 }
 
