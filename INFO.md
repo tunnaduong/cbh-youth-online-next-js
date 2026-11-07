@@ -264,7 +264,13 @@ Every new or changed page or component must follow this section. If the part you
 
 ## Recent work (newest first, as of 2026-11)
 
-- **Gỡ quảng cáo trong trang quản trị / cửa hàng và khắc phục hiện tượng nhấp nháy (flicker) trên WebView** (`src/components/ads/GlobalAds.js`, `src/app/layout.js`, `src/utils/appMode.js`, `src/components/ads/*`, `src/app/globals.css`, `src/components/AppBanner.js`, `src/components/LoadingWrapper.js`, `src/contexts/themeContext.js`, `src/components/chat/MessageInput.js`, `src/components/forum/CommentInput.js`):
+- **Gỡ quảng cáo trong trang quản trị / cửa hàng, khắc phục nhấp nháy (flicker) trên WebView và sửa lỗi cuộn ngang bảng admin trên thiết bị nhỏ** (`src/app/admin/AdminShell.js`, `src/app/admin/_components/ResourceTable.js`, `src/app/admin/reports/page.js`, `src/app/admin/shop/products/VariantEditor.js`, `src/app/globals.css`, `src/components/ads/GlobalAds.js`, `src/app/layout.js`, `src/utils/appMode.js`, `src/components/ads/*`, `src/components/AppBanner.js`, `src/components/LoadingWrapper.js`, `src/contexts/themeContext.js`, `src/components/chat/MessageInput.js`, `src/components/forum/CommentInput.js`):
+  - **Sửa lỗi không thể cuộn ngang (scroll left/right) bảng trong Admin trên màn hình nhỏ / điện thoại**:
+    - `AdminShell.js`: Thêm `minWidth: 0, maxWidth: "100%", width: "100%"` vào cả `Layout` và `Content`. Mặc định flex item có `min-width: auto`, khiến `Content` bị bảng nhiều cột kéo giãn vượt quá chiều rộng màn hình thiết bị, triệt tiêu vùng tràn (overflow) của bảng.
+    - `ResourceTable.js`, `reports/page.js`, `VariantEditor.js`: Thêm `min-w-0 max-w-full w-full overflow-hidden` cho các container bao ngoài bảng, đảm bảo khung bảng luôn giới hạn chuẩn trong viewport màn hình điện thoại.
+    - `globals.css`:
+      - Thiết lập `.ant-table-content` có `overflow-x: auto !important`, `-webkit-overflow-scrolling: touch !important`, `touch-action: pan-x pan-y !important` và `overscroll-behavior-x: contain !important` cho phép thao tác vuốt cuộn ngang mượt mà bằng ngón tay.
+      - Trên màn hình nhỏ (`@media (max-width: 768px)`), tự động gỡ `position: sticky` (`position: static !important`) khỏi các cột cố định (`.ant-table-cell-fix-left`, `.ant-table-cell-fix-right` - như cột thao tác chứa hàng loạt nút bấm), tránh việc cột cố định chiếm hết chiều ngang màn hình và chặn thao tác vuốt cuộn của người dùng.
   - **Gỡ quảng cáo trên Admin & Shop & WebView**:
     - Tạo `GlobalAds.js` quản lý tải mã quảng cáo tập trung. Chặn tuyệt đối AdSense, SocialBar (`bicea.org`), và Ezoic khi ở trang `/admin`, `/shop`, hoặc khi đang chạy trong WebView di động (`isInApp()`). Đồng thời tự động dọn dẹp các overlay/phần tử chèn động nếu người dùng chuyển trang.
     - Cập nhật `AdSlot.js`, `Ad300x250.js`, `NativeBanner.js` sử dụng trạng thái client-mounted trước khi hiển thị, loại bỏ việc render tạm thời khung quảng cáo trên SSR gây giật/nhảy layout khi mở trong WebView.

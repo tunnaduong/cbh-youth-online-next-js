@@ -94,7 +94,7 @@ const ResourceTable = forwardRef(function ResourceTable(
     : resolvedColumns.map(({ fixed, ...column }) => column);
 
   return (
-    <div className="max-w-[1280px] mx-auto w-full px-4 sm:px-6 py-6">
+    <div className="max-w-[1280px] mx-auto w-full min-w-0 max-w-full px-4 sm:px-6 py-6">
       <div className="flex items-end justify-between mb-5 gap-3 flex-wrap">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 tracking-tight">{title}</h1>
@@ -103,7 +103,7 @@ const ResourceTable = forwardRef(function ResourceTable(
         {extra}
       </div>
 
-      <div className="bg-white dark:bg-neutral-800 rounded-2xl border border-[#eef0ee] dark:border-neutral-700 shadow-[0_1px_2px_rgba(16,24,16,0.04)] overflow-hidden">
+      <div className="bg-white dark:bg-neutral-800 rounded-2xl border border-[#eef0ee] dark:border-neutral-700 shadow-[0_1px_2px_rgba(16,24,16,0.04)] overflow-hidden min-w-0 max-w-full w-full">
       {filters.length > 0 && (
         <div className="flex gap-3 p-4 flex-wrap border-b border-[#eef0ee] dark:border-neutral-700">
           {filters.map((f) =>

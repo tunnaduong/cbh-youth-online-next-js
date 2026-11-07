@@ -1338,3 +1338,38 @@ body {
     -webkit-tap-highlight-color: transparent;
   }
 }
+
+/* Ant Design Table smooth horizontal touch scrolling on mobile / small devices */
+.ant-table-wrapper {
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+}
+
+.ant-table-container {
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+}
+
+.ant-table-content {
+  width: 100% !important;
+  max-width: 100% !important;
+  overflow-x: auto !important;
+  -webkit-overflow-scrolling: touch !important;
+  touch-action: pan-x pan-y !important;
+  overscroll-behavior-x: contain !important;
+}
+
+/* On small screens, unstick fixed columns so they don't cover the screen or block touch scrolling */
+@media (max-width: 768px) {
+  .ant-table-cell-fix-left,
+  .ant-table-cell-fix-left-last,
+  .ant-table-cell-fix-right,
+  .ant-table-cell-fix-right-first {
+    position: static !important;
+    right: auto !important;
+    left: auto !important;
+    box-shadow: none !important;
+  }
+}

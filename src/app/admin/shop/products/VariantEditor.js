@@ -137,14 +137,16 @@ export default function VariantEditor({ value, onChange, basePrice = 0 }) {
         </Button>
       )}
       {variants.length > 0 && (
-        <Table
-          size="small"
-          rowKey={(v) => comboKey(validOptions, v.options)}
-          columns={columns}
-          dataSource={variants}
-          pagination={false}
-          scroll={{ x: "max-content" }}
-        />
+        <div className="w-full min-w-0 max-w-full overflow-hidden rounded-xl border border-gray-200 dark:border-neutral-700">
+          <Table
+            size="small"
+            rowKey={(v) => comboKey(validOptions, v.options)}
+            columns={columns}
+            dataSource={variants}
+            pagination={false}
+            scroll={{ x: "max-content" }}
+          />
+        </div>
       )}
     </div>
   );
