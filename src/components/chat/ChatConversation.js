@@ -436,22 +436,23 @@ export default function ChatConversation({
         const result = await loadMessages(conversationId, nextPage, true);
 
         // Check if there are more pages
-        if (result && result.pagination && result.pagination.has_more_pages) {
-          setCurrentPage(nextPage);
-          setHasMorePages(result.pagination.has_more_pages);
+        const hasMore =
+          typeof result?.pagination?.has_more_pages === "boolean"
+            ? result.pagination.has_more_pages
+            : (result?.pagination?.current_page < result?.pagination?.last_page || !!result?.pagination?.next_page_url);
 
-          // Preserve scroll position when prepending older messages
-          if (result.messages && result.messages.length > 0) {
-            const currentScrollHeight = container.scrollHeight;
-            setTimeout(() => {
-              if (container) {
-                container.scrollTop =
-                  container.scrollHeight - currentScrollHeight;
-              }
-            }, 0);
-          }
-        } else {
-          setHasMorePages(false);
+        setCurrentPage(nextPage);
+        setHasMorePages(Boolean(hasMore));
+
+        // Preserve scroll position when prepending older messages
+        if (result?.messages && result.messages.length > 0) {
+          const currentScrollHeight = container.scrollHeight;
+          setTimeout(() => {
+            if (container) {
+              container.scrollTop =
+                container.scrollHeight - currentScrollHeight;
+            }
+          }, 0);
         }
       } catch (error) {
         console.error("[ChatConversation] Error loading more messages:", error);
@@ -660,7 +661,7 @@ export default function ChatConversation({
 
         const result = await loadMessages(conversationId, nextPage, true);
         page = nextPage;
-        more = !!result?.pagination?.has_more_pages;
+        more = typeof result?.pagination?.has_more_pages === "boolean" ? result.pagination.has_more_pages : Boolean(result?.pagination?.current_page < result?.pagination?.last_page || result?.pagination?.next_page_url);
         setCurrentPage(page);
         setHasMorePages(more);
 

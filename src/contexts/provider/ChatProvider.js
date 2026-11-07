@@ -319,9 +319,13 @@ const ChatProvider = ({ children }) => {
           messagesData = responseData;
         } else if (responseData?.data && Array.isArray(responseData.data)) {
           messagesData = responseData.data;
+          const hasMore =
+            typeof responseData.has_more_pages === "boolean"
+              ? responseData.has_more_pages
+              : (responseData.current_page < responseData.last_page || !!responseData.next_page_url);
           paginationInfo = {
             current_page: responseData.current_page,
-            has_more_pages: responseData.has_more_pages || false,
+            has_more_pages: hasMore,
             last_page: responseData.last_page,
           };
         }

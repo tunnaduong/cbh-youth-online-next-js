@@ -264,7 +264,12 @@ Every new or changed page or component must follow this section. If the part you
 
 ## Recent work (newest first, as of 2026-10)
 
-- **Chat Lite Fullscreen for Low-end Devices WebView Mode** (`src/components/chat/ChatLiteFullscreen.js`, `src/app/chat/ChatRedirect.js`, `src/utils/appMode.js`, `src/contexts/provider/CallProvider.js`):
+- **Fix: Web Chat Older Messages Pagination & Mobile WebView Input Flicker** (`src/contexts/provider/ChatProvider.js`, `src/components/chat/ChatConversation.js`, `src/utils/richInput.js`, `src/app/globals.css`, `src/components/chat/ChatMessageInput.js`):
+  - **Fix Chat History Pagination**: Fixed bug where scrolling up failed to load older messages past page 1/2. `ChatProvider.js` and `ChatConversation.js` now correctly derive `has_more_pages` from `current_page < last_page` or `next_page_url` (and API now returns `has_more_pages`), and properly preserve scroll height on all prepended pages, allowing full historical chat messages to be loaded seamlessly without stopping.
+  - **Mobile WebView Input Flicker Elimination**:
+    - `applyHighlights` in `richInput.js` now skips highlights processing entirely when text has neither `@` nor `/` commands, preventing continuous paint invalidations caused by `CSS.highlights.delete()` on every single normal keystroke in Chromium/WebKit WebViews.
+    - `globals.css`: `.ce-input:empty::before` placeholder is positioned `absolute` (`left: 12px; top: 5px;`) instead of inline flow, preventing `:empty` pseudo-element toggling from shifting line heights or jumping the input box height during composition.
+    - GPU layer acceleration applied (`transform: translateZ(0); backface-visibility: hidden;`) to isolate the input box and its wrapper from layout repaints.
   - Added dedicated full-screen chat mode triggered via `?chat_lite=true`: takes full viewport (`100vw x 100vh`), no website navbar/sidebar/footer, and suppresses splash screens by automatically enabling `isInApp()`.
   - Reuses the exact same robust `ChatConversation` codebase to preserve 100% feature parity (Echo realtime messages, reactions, replies, attachments, lightboxes, backgrounds, and message recall).
   - Bidirectional React Native WebView bridge:
