@@ -10,6 +10,7 @@ import { SunOutlined, MoonOutlined } from "@ant-design/icons";
 import { useTheme } from "@/contexts/themeContext";
 import { useIsDarkMode } from "@/hooks/useIsDarkMode";
 import { isInApp } from "@/utils/appMode";
+import { getAuthCookie } from "@/utils/cookies";
 import {
   DashboardOutlined,
   FlagOutlined,
@@ -31,6 +32,7 @@ import {
   SafetyCertificateOutlined,
   BugOutlined,
   AlertOutlined,
+  CloudSyncOutlined,
 } from "@ant-design/icons";
 
 const { Sider, Content, Header } = Layout;
@@ -119,6 +121,7 @@ export const NAV_GROUPS = [
     label: "HỆ THỐNG & APP",
     children: [
       { key: "/admin/app-icon", icon: <AppstoreOutlined />, label: "Biểu tượng App" },
+      { key: "/admin/app-ota", icon: <CloudSyncOutlined />, label: "Cập nhật OTA" },
     ],
   },
 ];
@@ -195,12 +198,16 @@ export default function AdminShell({ children }) {
   useEffect(() => {
     if (isLoginPage) return;
     const session = sessionStorage.getItem(ADMIN_SESSION_KEY);
-    if (!session) {
+    const authToken = getAuthCookie();
+    if (!session && !authToken) {
       // Remember where we were headed: someone arriving already signed in
       // (e.g. from the mobile app's in-app browser) is bounced straight back
       // here by the login page instead of landing on the dashboard.
       router.replace(`/admin/login?next=${encodeURIComponent(pathname)}`);
     } else {
+      if (!session && authToken) {
+        sessionStorage.setItem(ADMIN_SESSION_KEY, "1");
+      }
       setAuthed(true);
       try {
         setMe(JSON.parse(localStorage.getItem("CURRENT_USER") || "null"));

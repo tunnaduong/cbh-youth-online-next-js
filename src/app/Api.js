@@ -844,9 +844,10 @@ export const adminGetFeedbackStats = () => Api.getRequest("/v1.0/admin/feedback/
 export const adminUpdateFeedback = (id, params) => Api.patchRequest(`/v1.0/admin/feedback/${id}`, params);
 export const adminDeleteFeedback = (id) => Api.deleteRequest(`/v1.0/admin/feedback/${id}`);
 
-// App Configuration & Launcher Icon
+// App Configuration & Launcher Icon / OTA
 export const getAppConfig = () => Api.getRequest("/v1.0/app/config");
 export const adminUpdateAppIcon = (params) => Api.postRequest("/v1.0/admin/app-icon", params);
+export const adminUpdateAppOta = (params) => Api.postRequest("/v1.0/admin/app-ota", params);
 
 // Reports
 export const reportContent = (params) => {

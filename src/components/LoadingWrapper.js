@@ -8,31 +8,27 @@ import { isInApp } from "@/utils/appMode";
 export default function LoadingWrapper({ children }) {
   const pathname = usePathname();
 
-  // Check if loading should be hidden via environment variable or on /egg
-  const hideLoading = process.env.NEXT_PUBLIC_HIDE_LOADING === "true" || pathname === "/egg";
+  // Check if loading should be hidden via environment variable or on /egg, /admin, or /explore/games
+  const hideLoading =
+    process.env.NEXT_PUBLIC_HIDE_LOADING === "true" ||
+    pathname === "/egg" ||
+    pathname?.startsWith("/admin") ||
+    pathname?.startsWith("/explore/games");
 
-  // Initialize state based on environment variable to prevent flash;
-  // in app mode we bypass the loading screen synchronously to avoid any flicker.
-  const [isInitialLoading, setIsInitialLoading] = useState(() => {
-    if (hideLoading) return false;
-    if (typeof window !== "undefined" && isInApp()) return false;
-    return true;
-  });
+  // Keep identical initial state on both SSR and client to prevent hydration mismatch
+  const [isInitialLoading, setIsInitialLoading] = useState(!hideLoading);
 
   useEffect(() => {
-    // Embedded in the mobile app's WebView (?app=true) - the app already
-    // shows its own native splash, so a second web one is just a flash of a
-    // duplicate loading screen. Checked client-side only (window isn't
-    // available during SSR) so it can't cause a hydration mismatch.
+    // Embedded in the mobile app's WebView (?app=true) or explicitly hidden routes
     if (hideLoading || isInApp()) {
       setIsInitialLoading(false);
       return;
     }
 
-    // Simulate initial loading time
+    // Simulate initial loading time for main web visitors
     const timer = setTimeout(() => {
       setIsInitialLoading(false);
-    }, 2500); // 2.5 seconds loading time
+    }, 2500);
 
     return () => clearTimeout(timer);
   }, [hideLoading]);
