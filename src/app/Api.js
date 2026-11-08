@@ -844,6 +844,10 @@ export const adminGetFeedbackStats = () => Api.getRequest("/v1.0/admin/feedback/
 export const adminUpdateFeedback = (id, params) => Api.patchRequest(`/v1.0/admin/feedback/${id}`, params);
 export const adminDeleteFeedback = (id) => Api.deleteRequest(`/v1.0/admin/feedback/${id}`);
 
+// App Configuration & Launcher Icon
+export const getAppConfig = () => Api.getRequest("/v1.0/app/config");
+export const adminUpdateAppIcon = (params) => Api.postRequest("/v1.0/admin/app-icon", params);
+
 // Reports
 export const reportContent = (params) => {
   return Api.postRequest("/v1.0/reports", params);

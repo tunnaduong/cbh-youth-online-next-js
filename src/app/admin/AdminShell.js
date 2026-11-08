@@ -115,6 +115,12 @@ export const NAV_GROUPS = [
       { key: "/admin/student-verifications", icon: <SafetyCertificateOutlined />, label: "Xác minh HS" },
     ],
   },
+  {
+    label: "HỆ THỐNG & APP",
+    children: [
+      { key: "/admin/app-icon", icon: <AppstoreOutlined />, label: "Biểu tượng App" },
+    ],
+  },
 ];
 
 const ALL_ITEMS = NAV_GROUPS.flatMap((g) => g.children || [g]);

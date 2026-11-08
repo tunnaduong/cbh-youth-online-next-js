@@ -328,6 +328,11 @@ Every new or changed page or component must follow this section. If the part you
 
 - **Cover picture for posts without a photo (branch `claude/eloquent-turing-56wgc0`; not linted or built):** `FeaturedPosts.js`, `LatestPosts.js` and `pickFeaturedPosts` use the API's new `cover_url` (first video frame, or the post's markdown drawn as a page) when `image_urls` is empty. The post itself and its kind label ("Thảo luận" / "Video") are unchanged. Needs the API's migration and `php artisan topics:generate-covers` for old posts.
 
+- **Admin UI for Mobile App Icon Management (`/admin/app-icon`)**:
+  - Added new admin page `src/app/admin/app-icon/page.js` linked in `AdminShell.js` sidebar under "HỆ THỐNG & APP".
+  - Allows administrators to inspect current active/seasonal icon status, select any available preset (TeachersDay, Christmas, NewYear2026, Dark, Clear, Tinted, Classic, SchoolCrest), toggle `Force Override` (for all users vs default only), supply an optional reason, or reset back to automated seasonal calendar.
+  - Added API endpoints `getAppConfig` and `adminUpdateAppIcon` in `src/app/Api.js`.
+
 - **Student verification submit button uses the theme colours (branch `claude/gracious-dirac-cranie`; not linted or built):** in `SettingsClient.js` the "Gửi yêu cầu xác minh" button had `!bg-green-600 ...` overrides, which forced a bright green fill under antd's dark disabled text. The overrides are gone: it is a plain antd `type="primary"` button (`colorPrimary` green when enabled, antd's grey when disabled). Don't force `!bg-*` on antd buttons - it breaks the disabled state.
 
 - **Profile cover without an uploaded photo is blurred (branch `claude/loving-faraday-c5ji6k`; not linted or built - no `node_modules` here):** when a profile has no `cover_photo_url` and no theme banner, `ProfileClient.js` still uses the avatar as the cover, now with `blur-[100px] opacity-30` over a `bg-gray-300 dark:bg-neutral-600` box. An uploaded cover is shown as is, with no blur.
