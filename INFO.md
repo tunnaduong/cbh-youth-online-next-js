@@ -348,6 +348,9 @@ Every new or changed page or component must follow this section. If the part you
 
 - **Cover picture for posts without a photo (branch `claude/eloquent-turing-56wgc0`; not linted or built):** `FeaturedPosts.js`, `LatestPosts.js` and `pickFeaturedPosts` use the API's new `cover_url` (first video frame, or the post's markdown drawn as a page) when `image_urls` is empty. The post itself and its kind label ("Thảo luận" / "Video") are unchanged. Needs the API's migration and `php artisan topics:generate-covers` for old posts.
 
+- **Fix ESLint Unescaped Entities in Search Dropdown (branch `fix/unescaped-entities-and-build`)**:
+  - `src/components/include/navbar.js` & `src/app/search/SearchClient.js`: Escaped raw double-quote characters in search autocomplete prompt labels using `&ldquo;...&rdquo;`, resolving Next.js build and Playwright test failure `react/no-unescaped-entities`.
+
 - **Search Suggestions Popover & Admin Access Fix (branch `fix/search-suggestions-autocomplete`)**:
   - `src/app/admin/AdminShell.js`: Fixed crash where `import Api from "@/app/Api"` imported `undefined`, causing `Api.getCurrentUser()` to fail synchronously and block admin entry indefinitely on the spinner. Fixed authentication check to support `getTokenFromAnywhere()` with `migrateTokenToCookies()`, and allowed immediate optimistic access for known staff while verifying role asynchronously.
   - `src/utils/roles.js`: Made `isStaffRole()` case-insensitive and resilient to whitespace.
