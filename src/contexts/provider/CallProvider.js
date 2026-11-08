@@ -332,12 +332,14 @@ export const CallProvider = ({ children }) => {
         }
 
         setActiveCall(callData);
+        setCallStatus("ringing");
+        playOutgoingRing();
 
         // 10s connection timeout: Try connecting for 10s
         clearConnectingTimeout();
         clearRingingTimeout();
         connectingTimeoutRef.current = setTimeout(async () => {
-          if (callStatusRef.current === "calling") {
+          if (callStatusRef.current === "calling" || callStatusRef.current === "ringing") {
             console.log("[WebRTC] Callee unreachable after 10s.");
             antdMessage.warning("Không thể kết nối đến người kia.");
             const cur = activeCallRef.current;
