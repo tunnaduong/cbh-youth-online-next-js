@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { search, getSearchSuggestions } from "../Api";
 import HomeLayout from "@/layouts/HomeLayout";
@@ -12,6 +12,13 @@ import UserName from "@/components/profile/UserName";
 import StyledUsername from "@/components/profile/StyledUsername";
 import Lottie from "lottie-react";
 import refreshAnimation from "@/assets/refresh.json";
+import { Clock, Search as SearchIcon, TrendingUp, X } from "lucide-react";
+import {
+  getRecentSearches,
+  saveRecentSearch,
+  removeRecentSearch,
+  clearRecentSearches,
+} from "@/utils/recentSearches";
 
 export default function SearchClient() {
   const router = useRouter();
@@ -36,7 +43,46 @@ export default function SearchClient() {
   const [suggestedTopics, setSuggestedTopics] = useState([]);
   const [hasSearched, setHasSearched] = useState(Boolean(queryParam));
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [recentSearches, setRecentSearches] = useState([]);
   const searchContainerRef = useRef(null);
+
+  const refreshRecentSearches = useCallback(() => {
+    setRecentSearches(getRecentSearches());
+  }, []);
+
+  useEffect(() => {
+    refreshRecentSearches();
+  }, [refreshRecentSearches]);
+
+  const handleRemoveRecent = (term) => {
+    const updated = removeRecentSearch(term);
+    setRecentSearches(updated);
+  };
+
+  const handleClearAllRecent = () => {
+    clearRecentSearches();
+    setRecentSearches([]);
+  };
+
+  const handleRecentTermClick = (term) => {
+    setDropdownOpen(false);
+    const trimmed = (term || "").trim();
+    if (!trimmed) return;
+    saveRecentSearch(trimmed);
+    refreshRecentSearches();
+    if (trimmed.startsWith("#") && trimmed.length > 1) {
+      const tag = trimmed.slice(1);
+      setSearchQuery(`#${tag}`);
+      setHasSearched(true);
+      router.push(`/search?type=hashtag&q=${encodeURIComponent(tag)}`);
+      performSearch(tag, "hashtag");
+    } else {
+      setSearchQuery(trimmed);
+      setHasSearched(true);
+      router.push(`/search?q=${encodeURIComponent(trimmed)}`);
+      performSearch(trimmed, activeTab === "hashtag" ? "all" : activeTab);
+    }
+  };
 
   useEffect(() => {
     getSearchSuggestions()
@@ -89,6 +135,10 @@ export default function SearchClient() {
     setLoading(true);
     setHasSearched(true);
     try {
+      const termToSave = type === "hashtag" ? `#${query.trim().replace(/^#/, "")}` : query.trim();
+      saveRecentSearch(termToSave);
+      refreshRecentSearches();
+
       const response = await search({
         query: type === "hashtag" ? query.trim().replace(/^#/, "") : query.trim(),
         type: type === "all" ? "all" : type,
@@ -134,8 +184,11 @@ export default function SearchClient() {
   const handleSelectTopic = (rawTag) => {
     setDropdownOpen(false);
     const tag = rawTag.replace(/^#/, "");
-    setSearchQuery(`#${tag}`);
+    const formatted = `#${tag}`;
+    setSearchQuery(formatted);
     setHasSearched(true);
+    saveRecentSearch(formatted);
+    refreshRecentSearches();
     router.push(`/search?type=hashtag&q=${encodeURIComponent(tag)}`);
     performSearch(tag, "hashtag");
   };
@@ -146,6 +199,8 @@ export default function SearchClient() {
     const trimmed = searchQuery.trim();
     if (!trimmed) return;
     setHasSearched(true);
+    saveRecentSearch(trimmed);
+    refreshRecentSearches();
 
     if (trimmed.startsWith("#") && trimmed.length > 1) {
       const tag = trimmed.slice(1);
@@ -208,26 +263,26 @@ export default function SearchClient() {
       showRightSidebar={false}
       showLeftSidebar={false}
     >
-      <div className="min-h-screen bg-[#F8F8F8] dark:bg-neutral-800">
+      <div className="min-h-screen bg-[#F8F8F8] dark:bg-[#1a1c1b]">
         <div className="max-w-3xl mx-auto px-4 py-4">
           {/* Search Header */}
           <div className="mb-6">
             <div className="flex items-center gap-3 mb-4">
               <button
                 onClick={handleBack}
-                className="flex items-center justify-center w-9 h-9 rounded-full hover:bg-gray-100 dark:hover:bg-neutral-800 transition-colors"
+                className="flex items-center justify-center w-9 h-9 rounded-full hover:bg-gray-200/60 dark:hover:bg-neutral-800 text-gray-700 dark:text-neutral-200 transition-colors shrink-0"
+                aria-label="Quay lại"
               >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
-                  width="24"
-                  height="24"
+                  width="22"
+                  height="22"
                   viewBox="0 0 24 24"
                   fill="none"
                   stroke="currentColor"
                   strokeWidth="2"
                   strokeLinecap="round"
                   strokeLinejoin="round"
-                  className="text-gray-700 dark:text-gray-300"
                 >
                   <path d="m12 19-7-7 7-7" />
                   <path d="M19 12H5" />
@@ -236,79 +291,108 @@ export default function SearchClient() {
               <form onSubmit={handleSearch} className="flex-1">
                 <div ref={searchContainerRef} className="relative">
                   <input
-                    type="text"
+                    type="search"
                     value={searchQuery}
                     onChange={(e) => {
                       setSearchQuery(e.target.value);
                       if (!dropdownOpen) setDropdownOpen(true);
                     }}
-                    onFocus={() => setDropdownOpen(true)}
+                    onFocus={() => {
+                      refreshRecentSearches();
+                      setDropdownOpen(true);
+                    }}
                     onKeyDown={(e) => {
                       if (e.key === "Escape") setDropdownOpen(false);
                     }}
-                    placeholder="Tìm kiếm"
-                    className="w-full bg-gray-100 dark:bg-neutral-700 rounded-lg px-4 pr-10 py-2.5 text-sm text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 border-0 focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-600 outline-none"
+                    placeholder="Tìm kiếm bài viết, người dùng, chủ đề..."
+                    className="w-full bg-white dark:bg-neutral-800 border border-gray-200 dark:border-neutral-700 rounded-xl pl-4 pr-10 py-2.5 text-sm text-gray-900 dark:text-neutral-100 placeholder-gray-400 dark:placeholder-neutral-500 focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 dark:focus:border-primary-500 outline-none transition-all [&::-webkit-search-cancel-button]:hidden [&::-webkit-search-decoration]:hidden"
                   />
                   {searchQuery && (
                     <button
                       type="button"
                       onClick={handleClear}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 flex items-center justify-center w-7 h-7 rounded-full text-gray-400 hover:text-gray-600 hover:bg-gray-100 dark:text-neutral-400 dark:hover:text-neutral-200 dark:hover:bg-neutral-700 transition-colors"
+                      aria-label="Xóa nội dung tìm kiếm"
                     >
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        width="20"
-                        height="20"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      >
-                        <circle cx="12" cy="12" r="10" />
-                        <path d="m15 9-6 6" />
-                        <path d="m9 9 6 6" />
-                      </svg>
+                      <X className="w-4 h-4" />
                     </button>
                   )}
 
                   {/* Autocomplete Suggestions Dropdown */}
                   {dropdownOpen && (
-                    <div className="absolute top-[calc(100%+6px)] left-0 right-0 z-50 rounded-2xl bg-white dark:bg-neutral-800 shadow-xl border border-gray-200 dark:border-neutral-700 overflow-hidden">
-                      {searchQuery.trim() && (
+                    <div className="absolute top-[calc(100%+6px)] left-0 right-0 z-50 rounded-2xl bg-white dark:bg-neutral-800 shadow-xl border border-gray-200 dark:border-neutral-700 overflow-hidden divide-y divide-gray-100 dark:divide-neutral-700">
+                      {searchQuery.trim() ? (
                         <button
                           type="button"
                           onMouseDown={(e) => {
                             e.preventDefault();
                             handleSearch(e);
                           }}
-                          className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-gray-50 dark:hover:bg-neutral-700/60 transition-colors border-b border-gray-100 dark:border-neutral-700"
+                          className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-gray-50 dark:hover:bg-neutral-700/60 transition-colors"
                         >
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            width="16"
-                            height="16"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="2"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            className="text-primary-600 dark:text-primary-400 shrink-0"
-                          >
-                            <circle cx="11" cy="11" r="8" />
-                            <path d="m21 21-4.3-4.3" />
-                          </svg>
+                          <SearchIcon className="w-4 h-4 text-primary-600 dark:text-primary-400 shrink-0" />
                           <div className="text-sm text-gray-800 dark:text-neutral-100 truncate">
                             Tìm kiếm <span className="font-semibold text-primary-600 dark:text-primary-400">&ldquo;{searchQuery.trim()}&rdquo;</span>
                           </div>
                         </button>
+                      ) : (
+                        recentSearches.length > 0 && (
+                          <div className="p-3">
+                            <div className="flex items-center justify-between text-xs font-semibold text-gray-500 dark:text-neutral-400 uppercase tracking-wider mb-2 px-1">
+                              <span className="flex items-center gap-1.5">
+                                <Clock className="w-3.5 h-3.5 text-primary-500" />
+                                Tìm kiếm gần đây
+                              </span>
+                              <button
+                                type="button"
+                                onMouseDown={(e) => {
+                                  e.preventDefault();
+                                  handleClearAllRecent();
+                                }}
+                                className="text-[11px] font-normal lowercase text-gray-400 hover:text-gray-600 dark:text-neutral-400 dark:hover:text-neutral-200 transition-colors"
+                              >
+                                xóa tất cả
+                              </button>
+                            </div>
+                            <div className="flex flex-wrap gap-1.5">
+                              {recentSearches.map((term, idx) => (
+                                <div
+                                  key={`dropdown-recent-${idx}`}
+                                  className="inline-flex items-center gap-1 pl-2.5 pr-1 py-1 rounded-full text-xs font-medium bg-gray-100 dark:bg-neutral-700 text-gray-700 dark:text-neutral-200 border border-gray-200 dark:border-neutral-600 hover:border-gray-300 dark:hover:border-neutral-500 transition-colors"
+                                >
+                                  <button
+                                    type="button"
+                                    onMouseDown={(e) => {
+                                      e.preventDefault();
+                                      handleRecentTermClick(term);
+                                    }}
+                                    className="flex items-center gap-1 hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
+                                  >
+                                    <SearchIcon className="w-3 h-3 text-gray-400 dark:text-neutral-400" />
+                                    <span className="truncate max-w-[140px]">{term}</span>
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onMouseDown={(e) => {
+                                      e.preventDefault();
+                                      e.stopPropagation();
+                                      handleRemoveRecent(term);
+                                    }}
+                                    className="w-4 h-4 rounded-full flex items-center justify-center text-gray-400 hover:text-gray-600 hover:bg-gray-200/60 dark:text-neutral-400 dark:hover:text-neutral-200 dark:hover:bg-neutral-600/60 transition-colors"
+                                    aria-label={`Xóa ${term}`}
+                                  >
+                                    <X className="w-3 h-3" />
+                                  </button>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )
                       )}
 
                       {suggestedTopics.length > 0 && (
                         <div className="p-3">
-                          <div className="text-xs font-semibold text-gray-500 dark:text-neutral-400 uppercase tracking-wider mb-2">
+                          <div className="text-xs font-semibold text-gray-500 dark:text-neutral-400 uppercase tracking-wider mb-2 px-1">
                             {searchQuery.trim() ? "Chủ đề liên quan" : "Chủ đề gợi ý & thịnh hành"}
                           </div>
                           <div className="flex flex-wrap gap-1.5">
@@ -338,59 +422,35 @@ export default function SearchClient() {
               </form>
             </div>
 
-            {/* Tabs */}
+            {/* Tabs / Search Options */}
             <div className="flex gap-2">
-              <button
-                onClick={() => handleTabChange("all")}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                  activeTab === "all"
-                    ? "bg-primary-500 text-white"
-                    : "bg-gray-100 dark:bg-neutral-700 text-gray-700 dark:text-gray-300"
-                }`}
-              >
-                Tất cả
-              </button>
-              <button
-                onClick={() => handleTabChange("users")}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                  activeTab === "users"
-                    ? "bg-primary-500 text-white"
-                    : "bg-gray-100 dark:bg-neutral-700 text-gray-700 dark:text-gray-300"
-                }`}
-              >
-                Người dùng
-              </button>
-              <button
-                onClick={() => handleTabChange("posts")}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                  activeTab === "posts"
-                    ? "bg-primary-500 text-white"
-                    : "bg-gray-100 dark:bg-neutral-700 text-gray-700 dark:text-gray-300"
-                }`}
-              >
-                Bài viết
-              </button>
+              {[
+                { id: "all", label: "Tất cả" },
+                { id: "users", label: "Người dùng" },
+                { id: "posts", label: "Bài viết" },
+              ].map((tab) => {
+                const isActive = activeTab === tab.id;
+                return (
+                  <button
+                    key={tab.id}
+                    onClick={() => handleTabChange(tab.id)}
+                    className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${
+                      isActive
+                        ? "bg-primary-600 text-white shadow-xs font-semibold"
+                        : "bg-white dark:bg-neutral-800 text-gray-700 dark:text-neutral-200 border border-gray-200 dark:border-neutral-700 hover:bg-gray-50 dark:hover:bg-neutral-700/60"
+                    }`}
+                  >
+                    {tab.label}
+                  </button>
+                );
+              })}
             </div>
 
             {/* Quick Suggested Topics Row */}
             {suggestedTopics.length > 0 && (
               <div className="mt-3 flex items-center gap-2 overflow-x-auto pb-1 pt-0.5 no-scrollbar">
                 <span className="flex items-center gap-1 text-xs font-semibold text-gray-500 dark:text-neutral-400 whitespace-nowrap shrink-0">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="14"
-                    height="14"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    className="text-primary-500"
-                  >
-                    <polyline points="23 6 13.5 15.5 8.5 10.5 1 18" />
-                    <polyline points="17 6 23 6 23 12" />
-                  </svg>
+                  <TrendingUp className="w-3.5 h-3.5 text-primary-500" />
                   Gợi ý:
                 </span>
                 {suggestedTopics.map((item, idx) => {
@@ -404,8 +464,8 @@ export default function SearchClient() {
                       onClick={() => handleSelectTopic(rawTag)}
                       className={`px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap transition-colors shrink-0 ${
                         isSelected
-                          ? "bg-primary-600 text-white shadow-sm font-semibold"
-                          : "bg-primary-50 hover:bg-primary-100 dark:bg-primary-950/40 dark:hover:bg-primary-900/40 text-primary-700 dark:text-primary-300 border border-primary-200/80 dark:border-primary-800/40"
+                          ? "bg-primary-600 text-white shadow-xs font-semibold"
+                          : "bg-white dark:bg-neutral-800 hover:bg-primary-50 dark:hover:bg-neutral-700 text-primary-700 dark:text-primary-300 border border-gray-200 dark:border-neutral-700"
                       }`}
                     >
                       {tagLabel}
@@ -554,24 +614,59 @@ export default function SearchClient() {
             </div>
           ) : (
             <div className="py-8 px-4 text-center">
+              {/* Recent Searches */}
+              {recentSearches.length > 0 && (
+                <div className="mb-6 max-w-md mx-auto text-left">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-2">
+                      <Clock className="w-4 h-4 text-primary-600 dark:text-primary-400" />
+                      <h3 className="text-sm font-semibold text-gray-800 dark:text-neutral-200">
+                        Tìm kiếm gần đây
+                      </h3>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleClearAllRecent}
+                      className="text-xs text-gray-400 hover:text-gray-600 dark:text-neutral-400 dark:hover:text-neutral-200 transition-colors"
+                    >
+                      Xóa lịch sử
+                    </button>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {recentSearches.map((term, idx) => (
+                      <div
+                        key={`recent-page-${idx}`}
+                        className="inline-flex items-center gap-1.5 pl-3 pr-1.5 py-1.5 rounded-full text-xs font-medium bg-white dark:bg-neutral-800 text-gray-700 dark:text-neutral-200 border border-gray-200 dark:border-neutral-700 shadow-2xs hover:border-primary-300 dark:hover:border-primary-700 transition-colors"
+                      >
+                        <button
+                          type="button"
+                          onClick={() => handleRecentTermClick(term)}
+                          className="flex items-center gap-1.5 hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
+                        >
+                          <SearchIcon className="w-3 h-3 text-gray-400 dark:text-neutral-400" />
+                          <span className="truncate max-w-[180px]">{term}</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleRemoveRecent(term);
+                          }}
+                          className="flex items-center justify-center w-4 h-4 rounded-full text-gray-400 hover:text-gray-600 hover:bg-gray-100 dark:text-neutral-400 dark:hover:text-neutral-200 dark:hover:bg-neutral-700 transition-colors"
+                          aria-label={`Xóa ${term}`}
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               {suggestedTopics.length > 0 && (
                 <div className="mb-8 max-w-md mx-auto text-left">
                   <div className="flex items-center gap-2 mb-3">
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      width="18"
-                      height="18"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      className="text-primary-600 dark:text-primary-400"
-                    >
-                      <polyline points="23 6 13.5 15.5 8.5 10.5 1 18" />
-                      <polyline points="17 6 23 6 23 12" />
-                    </svg>
+                    <TrendingUp className="w-4 h-4 text-primary-600 dark:text-primary-400" />
                     <h3 className="text-sm font-semibold text-gray-800 dark:text-neutral-200">
                       Chủ đề gợi ý & Thịnh hành
                     </h3>
@@ -585,7 +680,7 @@ export default function SearchClient() {
                           key={`${item.label}-${idx}`}
                           type="button"
                           onClick={() => handleSelectTopic(rawTag)}
-                          className="px-3 py-1.5 rounded-full text-xs font-medium bg-primary-50 dark:bg-primary-950/40 text-primary-700 dark:text-primary-300 border border-primary-200 dark:border-primary-800/40 hover:bg-primary-100 dark:hover:bg-primary-900/40 transition-colors"
+                          className="px-3 py-1.5 rounded-full text-xs font-medium bg-white dark:bg-neutral-800 text-primary-700 dark:text-primary-300 border border-primary-200 dark:border-neutral-700 hover:bg-primary-50 dark:hover:bg-neutral-700 transition-colors"
                         >
                           {tagLabel}
                         </button>
