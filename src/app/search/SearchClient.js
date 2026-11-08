@@ -301,7 +301,7 @@ export default function SearchClient() {
                             <path d="m21 21-4.3-4.3" />
                           </svg>
                           <div className="text-sm text-gray-800 dark:text-neutral-100 truncate">
-                            Tìm kiếm <span className="font-semibold text-primary-600 dark:text-primary-400">"{searchQuery.trim()}"</span>
+                            Tìm kiếm <span className="font-semibold text-primary-600 dark:text-primary-400">&ldquo;{searchQuery.trim()}&rdquo;</span>
                           </div>
                         </button>
                       )}

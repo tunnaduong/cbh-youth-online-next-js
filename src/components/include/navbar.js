@@ -298,7 +298,7 @@ export default function Navbar({ hasSidebar = false }) {
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="text-sm text-gray-800 dark:text-neutral-100 truncate">
-                            Tìm kiếm <span className="font-semibold text-primary-600 dark:text-primary-400">"{searchQuery.trim()}"</span>
+                            Tìm kiếm <span className="font-semibold text-primary-600 dark:text-primary-400">&ldquo;{searchQuery.trim()}&rdquo;</span>
                           </div>
                           <div className="text-xs text-gray-400 dark:text-neutral-400">
                             Nhấn Enter để xem kết quả
