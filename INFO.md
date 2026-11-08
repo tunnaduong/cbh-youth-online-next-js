@@ -264,6 +264,11 @@ Every new or changed page or component must follow this section. If the part you
 
 ## Recent work (newest first, as of 2026-11)
 
+- **Hỗ trợ biểu tượng NewYear2027 (Đinh Mùi) & phạm vi phiên bản cập nhật OTA bắt buộc**:
+  - `src/app/admin/app-icon/page.js`: Bổ sung preset `NewYear2027` (Năm mới 2027 - Đinh Mùi) vào danh sách lựa chọn biểu tượng ứng dụng và cập nhật hướng dẫn lịch Tết Âm lịch.
+  - `src/app/admin/app-ota/page.js`: Thêm trường cấu hình `min_version` (phiên bản cũ nhất bị ảnh hưởng), `max_version` (phiên bản cao nhất bị ép cập nhật) và lựa chọn kênh `all` (áp dụng cho tất cả các nhánh cập nhật bản mới nhất).
+
+
 - **Gỡ quảng cáo trong trang quản trị / cửa hàng, khắc phục nhấp nháy (flicker) trên WebView và sửa lỗi cuộn ngang bảng admin trên thiết bị nhỏ** (`src/app/admin/AdminShell.js`, `src/app/admin/_components/ResourceTable.js`, `src/app/admin/reports/page.js`, `src/app/admin/shop/products/VariantEditor.js`, `src/app/globals.css`, `src/components/ads/GlobalAds.js`, `src/app/layout.js`, `src/utils/appMode.js`, `src/components/ads/*`, `src/components/AppBanner.js`, `src/components/LoadingWrapper.js`, `src/contexts/themeContext.js`, `src/components/chat/MessageInput.js`, `src/components/forum/CommentInput.js`):
   - **Sửa lỗi không thể cuộn ngang (scroll left/right) bảng trong Admin trên màn hình nhỏ / điện thoại**:
     - `AdminShell.js`: Thêm `minWidth: 0, maxWidth: "100%", width: "100%"` vào cả `Layout` và `Content`. Mặc định flex item có `min-width: auto`, khiến `Content` bị bảng nhiều cột kéo giãn vượt quá chiều rộng màn hình thiết bị, triệt tiêu vùng tràn (overflow) của bảng.

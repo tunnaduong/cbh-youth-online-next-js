@@ -30,7 +30,8 @@ const ICON_PRESETS = [
   { value: "default", label: "CBH Youth Mặc định (Ếch xanh CYO)", tag: "Mặc định" },
   { value: "TeachersDay", label: "20/11 Nhà giáo Việt Nam (Sách & Bút vàng)", tag: "Sự kiện 20/11" },
   { value: "Christmas", label: "Giáng sinh (Cây thông & Mũ noel)", tag: "Lễ hội" },
-  { value: "NewYear2026", label: "Năm mới 2026 (Đỏ may mắn)", tag: "Tết & Năm mới" },
+  { value: "NewYear2026", label: "Năm mới 2026 (Bính Ngọ - Đỏ may mắn)", tag: "Tết & Năm mới" },
+  { value: "NewYear2027", label: "Năm mới 2027 (Đinh Mùi - Đỏ may mắn)", tag: "Tết & Năm mới" },
   { value: "Dark", label: "Dark (Giao diện tối)", tag: "Tối giản" },
   { value: "ClearDark", label: "Clear Dark (Trong suốt tối)", tag: "Trong suốt" },
   { value: "ClearLight", label: "Clear Light (Trong suốt sáng)", tag: "Trong suốt" },
@@ -229,7 +230,7 @@ export default function AdminAppIconPage() {
                   <strong>Lịch tự động</strong>:
                   Tuần 20/11 (14/11 - 21/11) sang icon <strong>TeachersDay</strong>;
                   Trước Giáng Sinh (18/12 - 27/12) sang icon <strong>Christmas</strong>;
-                  Năm mới & Tết Âm Lịch (28/12 đến hết Tết Âm lịch / Rằm tháng Giêng) sang <strong>NewYear2026</strong>.
+                  Năm mới & Tết Âm Lịch (28/12 đến hết Tết Âm lịch / Rằm tháng Giêng) sang <strong>NewYear2026 / NewYear2027</strong>.
                 </li>
               </ul>
             }
