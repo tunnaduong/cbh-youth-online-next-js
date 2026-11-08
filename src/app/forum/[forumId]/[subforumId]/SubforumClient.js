@@ -246,7 +246,7 @@ export default function SubforumClient({
             </div>
           </div>
           {/* Forum Topics Table */}
-          <div className="bg-white dark:!bg-[var(--main-white)] rounded-lg long-shadow overflow-hidden">
+          <div className="bg-white dark:!bg-[var(--main-white)] rounded-lg long-shadow overflow-x-auto max-w-full w-full">
             <table className="min-w-full">
               <thead className="bg-gray-100 dark:!bg-neutral-600 dark:text-neutral-300">
                 <tr>

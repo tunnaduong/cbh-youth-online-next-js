@@ -142,7 +142,7 @@ const MarkdownRenderer = ({ content, className = "" }) => {
             </blockquote>
           ),
           table: ({ children }) => (
-            <div className="overflow-x-auto">
+            <div className="overflow-x-auto max-w-full w-full">
               <table className="min-w-full border-collapse border border-gray-300 dark:border-gray-600">
                 {children}
               </table>

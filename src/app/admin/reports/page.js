@@ -490,6 +490,7 @@ export default function AdminReportsPage() {
             columns={columns}
             dataSource={reports}
             loading={loading}
+            tableLayout="auto"
             pagination={{
               current: pagination.current,
               pageSize: pagination.pageSize,

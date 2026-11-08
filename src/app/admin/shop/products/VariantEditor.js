@@ -144,6 +144,7 @@ export default function VariantEditor({ value, onChange, basePrice = 0 }) {
             columns={columns}
             dataSource={variants}
             pagination={false}
+            tableLayout="auto"
             scroll={{ x: "max-content" }}
           />
         </div>

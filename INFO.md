@@ -264,6 +264,26 @@ Every new or changed page or component must follow this section. If the part you
 
 ## Recent work (newest first, as of 2026-11)
 
+- **Sửa triệt để lỗi không thể cuộn ngang bảng dữ liệu trên điện thoại và WebView** (`src/app/lookup/grades/GradesClient.js`, `src/app/globals.css`, `src/layouts/HomeLayout.js`, `src/layouts/DefaultLayout.js`, `src/app/admin/reports/page.js`, `src/app/admin/shop/products/VariantEditor.js`, `src/app/forum/[forumId]/[subforumId]/SubforumClient.js`, `src/app/forum/[forumId]/[subforumId]/skeletonLoader.js`, `src/components/ui/MarkdownRenderer.js`):
+  - **Khắc phục lỗi phình khung nhìn (Flexbox overflow blowout)**:
+    - `HomeLayout.js` và `DefaultLayout.js`: Thêm `min-w-0 max-w-full w-full` vào các phần tử flex cha và `flex-1` con chứa nội dung trang. Trước đây `flex-1` có `min-width: auto`, khi bảng dữ liệu (như bảng tra cứu điểm) hiển thị với độ rộng lớn (650px+), flex item bị kéo phình ngang vượt ngoài viewport màn hình, khiến vùng cuộn bảng hiểu nhầm là đã đủ chỗ và không kích hoạt cuộn ngang, làm bảng bị cắt đứt cạnh phải và chặn cuộn trên WebView.
+  - **Sửa bảng tra cứu điểm thi & thông tin học sinh (`GradesClient.js`)**:
+    - Chuyển `scroll={{ x: 600 }}` (bảng điểm) và `scroll={{ x: true }}` (bảng thông tin) sang `scroll={{ x: "max-content" }}` và `tableLayout="auto"`.
+    - Gỡ bỏ `fixed: "left"` và `fixed: "right"` trên màn hình nhỏ/di động (`!screens.md`), tránh các cột ghim cố định chiếm hết 90% diện tích màn hình điện thoại và chặn cử chỉ vuốt ngang.
+    - Bổ sung độ rộng cụ thể và class `whitespace-nowrap` cho các cột và ô dữ liệu, giữ cho bảng hiển thị rõ ràng không bị bóp nát chữ thành các cột dọc hẹp.
+    - Bao bọc bảng bằng container `w-full min-w-0 max-w-full overflow-hidden` bên trong Card.
+  - **Tối ưu CSS cuộn chạm WebView (`globals.css`)**:
+    - Mở rộng phạm vi hỗ trợ sang cả `.ant-spin-nested-loading`, `.ant-spin-container`, `.ant-table`, `.ant-table-body`.
+    - Thêm thuộc tính `touch-action: pan-x pan-y !important;` trực tiếp vào `table`, `tr`, `th`, `td` (do `touch-action` không tự kế thừa theo chuẩn CSS), bảo đảm WebView (WebKit/Chromium) luôn nhận diện thao tác quẹt ngang của người dùng là cử chỉ cuộn bảng thay vì chặn cử chỉ hoặc kích hoạt vuốt trang.
+    - Bổ sung quy tắc cuộn mượt chạm cho `.overflow-x-auto` và bảng HTML / Markdown.
+  - **Đồng bộ bảng chuyên mục diễn đàn (`SubforumClient.js`)**:
+    - Thay thế `overflow-hidden` bằng `overflow-x-auto max-w-full w-full` cho bảng danh sách bài viết trong chuyên mục diễn đàn.
+
+- **Hỗ trợ biểu tượng NewYear2027 (Đinh Mùi) & phạm vi phiên bản cập nhật OTA bắt buộc**:
+  - `src/app/admin/app-icon/page.js`: Bổ sung preset `NewYear2027` (Năm mới 2027 - Đinh Mùi) vào danh sách lựa chọn biểu tượng ứng dụng và cập nhật hướng dẫn lịch Tết Âm lịch.
+  - `src/app/admin/app-ota/page.js`: Thêm trường cấu hình `min_version` (phiên bản cũ nhất bị ảnh hưởng), `max_version` (phiên bản cao nhất bị ép cập nhật) và lựa chọn kênh `all` (áp dụng cho tất cả các nhánh cập nhật bản mới nhất).
+
+
 - **Gỡ quảng cáo trong trang quản trị / cửa hàng, khắc phục nhấp nháy (flicker) trên WebView và sửa lỗi cuộn ngang bảng admin trên thiết bị nhỏ** (`src/app/admin/AdminShell.js`, `src/app/admin/_components/ResourceTable.js`, `src/app/admin/reports/page.js`, `src/app/admin/shop/products/VariantEditor.js`, `src/app/globals.css`, `src/components/ads/GlobalAds.js`, `src/app/layout.js`, `src/utils/appMode.js`, `src/components/ads/*`, `src/components/AppBanner.js`, `src/components/LoadingWrapper.js`, `src/contexts/themeContext.js`, `src/components/chat/MessageInput.js`, `src/components/forum/CommentInput.js`):
   - **Sửa lỗi không thể cuộn ngang (scroll left/right) bảng trong Admin trên màn hình nhỏ / điện thoại**:
     - `AdminShell.js`: Thêm `minWidth: 0, maxWidth: "100%", width: "100%"` vào cả `Layout` và `Content`. Mặc định flex item có `min-width: auto`, khiến `Content` bị bảng nhiều cột kéo giãn vượt quá chiều rộng màn hình thiết bị, triệt tiêu vùng tràn (overflow) của bảng.
@@ -336,11 +356,11 @@ Every new or changed page or component must follow this section. If the part you
 - **Admin UI for Forced OTA Upgrade Management (`/admin/app-ota`)**:
   - Added new admin page `src/app/admin/app-ota/page.js` linked in `AdminShell.js` sidebar under "HỆ THỐNG & APP".
   - Allows administrators to remotely enforce OTA auto-updates across mobile clients regardless of client in-app settings.
-  - Supports setting minimum build requirements (`min_build`), target channel (`production` / `preview`), and custom notice/reason messages.
+  - Supports setting minimum version/build (`min_version` - oldest version affected) and maximum version/build (`max_version` - highest version forced to upgrade), target channel including "All branches" (`all`), and custom notice/reason messages.
   - Added API method `adminUpdateAppOta` in `src/app/Api.js` and audit log label `ADMIN_FORCE_OTA_UPDATE` in `src/app/admin/audit-logs/page.js`.
 - **Admin UI for Mobile App Icon Management (`/admin/app-icon`)**:
   - Added new admin page `src/app/admin/app-icon/page.js` linked in `AdminShell.js` sidebar under "HỆ THỐNG & APP".
-  - Allows administrators to inspect current active/seasonal icon status, select any available preset (TeachersDay, Christmas, NewYear2026, Dark, Clear, Tinted, Classic, SchoolCrest), toggle `Force Override` (for all users vs default only), supply an optional reason, or reset back to automated seasonal calendar.
+  - Allows administrators to inspect current active/seasonal icon status, select any available preset (TeachersDay, Christmas, NewYear2026, Dark, Clear, Tinted, Classic, SchoolCrest), toggle `Force Override` (for all users vs default only), supply an optional reason, or reset back to automated seasonal calendar (with New Year season spanning from Tết Dương Lịch to hết Tết Âm Lịch).
   - Added API endpoints `getAppConfig` and `adminUpdateAppIcon` in `src/app/Api.js`.
 
 - **Student verification submit button uses the theme colours (branch `claude/gracious-dirac-cranie`; not linted or built):** in `SettingsClient.js` the "Gửi yêu cầu xác minh" button had `!bg-green-600 ...` overrides, which forced a bright green fill under antd's dark disabled text. The overrides are gone: it is a plain antd `type="primary"` button (`colorPrimary` green when enabled, antd's grey when disabled). Don't force `!bg-*` on antd buttons - it breaks the disabled state.
