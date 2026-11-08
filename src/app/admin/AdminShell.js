@@ -31,6 +31,7 @@ import {
   SafetyCertificateOutlined,
   BugOutlined,
   AlertOutlined,
+  CloudSyncOutlined,
 } from "@ant-design/icons";
 
 const { Sider, Content, Header } = Layout;
@@ -119,6 +120,7 @@ export const NAV_GROUPS = [
     label: "HỆ THỐNG & APP",
     children: [
       { key: "/admin/app-icon", icon: <AppstoreOutlined />, label: "Biểu tượng App" },
+      { key: "/admin/app-ota", icon: <CloudSyncOutlined />, label: "Cập nhật OTA" },
     ],
   },
 ];

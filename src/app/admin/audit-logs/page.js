@@ -87,6 +87,8 @@ const ACTIONS = {
   RATE_STUDY_MATERIAL: "Đánh giá tài liệu",
   SUBMIT_STUDENT_VERIFICATION: "Gửi xác minh học sinh",
   UPDATE_NOTIFICATION_SETTINGS: "Đổi cài đặt thông báo",
+  ADMIN_CHANGE_APP_ICON: "Thay đổi biểu tượng ứng dụng (App Icon)",
+  ADMIN_FORCE_OTA_UPDATE: "Bắt buộc nâng cấp ứng dụng (Force OTA)",
 };
 
 const TARGETS = { profile: "Hồ sơ", topic: "Bài viết", account: "Tài khoản" };

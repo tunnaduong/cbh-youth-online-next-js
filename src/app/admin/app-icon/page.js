@@ -10,7 +10,6 @@ import {
   Input,
   Button,
   Tag,
-  Statistic,
   Divider,
   Alert,
   Space,
@@ -23,6 +22,7 @@ import {
   ExclamationCircleOutlined,
   ReloadOutlined,
   SaveOutlined,
+  ClockCircleOutlined,
 } from "@ant-design/icons";
 import { getAppConfig, adminUpdateAppIcon } from "@/app/Api";
 
@@ -46,7 +46,7 @@ export default function AdminAppIconPage() {
   const [config, setConfig] = useState(null);
 
   // Form state
-  const [selectedIcon, setSelectedIcon] = useState(null);
+  const [selectedIcon, setSelectedIcon] = useState("default");
   const [isForced, setIsForced] = useState(false);
   const [reason, setReason] = useState("");
 
@@ -54,13 +54,18 @@ export default function AdminAppIconPage() {
     setLoading(true);
     try {
       const res = await getAppConfig();
-      if (res?.app_icon) {
-        setConfig(res.app_icon);
-        setSelectedIcon(res.app_icon.target_icon || "default");
-        setIsForced(Boolean(res.app_icon.force));
-        setReason(res.app_icon.reason || "");
+      // Unpack response correctly (whether axios wrapped or raw object)
+      const data = res?.data || res;
+      const appIcon = data?.app_icon;
+
+      if (appIcon) {
+        setConfig(appIcon);
+        setSelectedIcon(appIcon.admin_override || appIcon.target_icon || "default");
+        setIsForced(Boolean(appIcon.force));
+        setReason(appIcon.override_reason || appIcon.reason || "");
       }
     } catch (err) {
+      console.error("[AppIcon] Fetch config error:", err);
       message.error("Không thể tải cấu hình biểu tượng ứng dụng");
     } finally {
       setLoading(false);
@@ -79,10 +84,11 @@ export default function AdminAppIconPage() {
         force: isForced,
         reason: reason.trim() || undefined,
       });
-      message.success("Cập nhật chỉ thị biểu tượng ứng dụng thành công!");
+      message.success("Cập nhật chỉ thị biểu tượng ứng dụng và ghi nhật ký thành công!");
       fetchConfig();
     } catch (err) {
-      message.error(err?.response?.data?.message || "Lỗi khi lưu cấu hình biểu tượng");
+      const msg = err?.response?.data?.message || err?.message || "Lỗi khi lưu cấu hình biểu tượng";
+      message.error(msg);
     } finally {
       setSaving(false);
     }
@@ -96,7 +102,7 @@ export default function AdminAppIconPage() {
         force: false,
         reason: undefined,
       });
-      message.success("Đã xóa ghi đè, ứng dụng sẽ tự động chạy theo lịch sự kiện!");
+      message.success("Đã hủy ghi đè, ứng dụng sẽ tự động chạy theo lịch sự kiện!");
       fetchConfig();
     } catch (err) {
       message.error("Lỗi khi đặt lại lịch tự động");
@@ -108,6 +114,11 @@ export default function AdminAppIconPage() {
   const activeIconItem = ICON_PRESETS.find((p) => p.value === config?.target_icon) || {
     label: config?.target_icon || "Mặc định",
     tag: "Hiện tại",
+  };
+
+  const seasonalIconItem = ICON_PRESETS.find((p) => p.value === config?.seasonal_icon) || {
+    label: config?.seasonal_icon || "Mặc định",
+    tag: "Tự động",
   };
 
   return (
@@ -127,45 +138,71 @@ export default function AdminAppIconPage() {
         </Button>
       </div>
 
-      {/* Overview Cards */}
+      {/* Overview Cards (Custom styled to guarantee correct visual presentation) */}
       <Row gutter={[16, 16]}>
         <Col xs={24} sm={8}>
-          <Card className="shadow-sm border-gray-100 dark:border-neutral-700">
-            <Statistic
-              title="Biểu tượng hiệu lực hiện tại"
-              value={config?.target_icon || "default"}
-              prefix={<CheckCircleOutlined className="text-emerald-500" />}
-            />
-            <div className="mt-2 text-xs text-gray-400">
+          <Card className="shadow-sm border-gray-100 dark:border-neutral-700 h-full">
+            <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
+              Biểu tượng hiệu lực hiện tại
+            </div>
+            <div className="flex items-center gap-2">
+              <CheckCircleOutlined className="text-xl text-emerald-500" />
+              <span className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+                {config?.target_icon || "default"}
+              </span>
+            </div>
+            <div className="mt-2 text-xs font-medium text-emerald-600 dark:text-emerald-400">
               {activeIconItem.label}
             </div>
-          </Card>
-        </Col>
-
-        <Col xs={24} sm={8}>
-          <Card className="shadow-sm border-gray-100 dark:border-neutral-700">
-            <Statistic
-              title="Biểu tượng mùa lễ tự động"
-              value={config?.seasonal_icon || "default"}
-              prefix={<CalendarOutlined className="text-blue-500" />}
-            />
-            <div className="mt-2 text-xs text-gray-400">
-              Tính theo múi giờ Việt Nam (Asia/Ho_Chi_Minh)
+            <div className="mt-1 text-xs text-gray-400">
+              {config?.admin_override
+                ? `(Đang ghi đè bởi Quản trị viên: ${config.admin_override})`
+                : "(Đang chạy theo Lịch sự kiện tự động)"}
             </div>
           </Card>
         </Col>
 
         <Col xs={24} sm={8}>
-          <Card className="shadow-sm border-gray-100 dark:border-neutral-700">
-            <Statistic
-              title="Chế độ Bắt buộc (Force)"
-              value={config?.force ? "BẬT (Tất cả user)" : "TẮT (Chỉ user mặc định)"}
-              valueStyle={{ color: config?.force ? "#cf1322" : "#3f8600" }}
-              prefix={<ExclamationCircleOutlined />}
-            />
-            <div className="mt-2 text-xs text-gray-400">
-              {config?.force ? "Bỏ qua lựa chọn riêng của user" : "Tôn trọng icon user đã tự chọn"}
+          <Card className="shadow-sm border-gray-100 dark:border-neutral-700 h-full">
+            <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
+              Lịch mùa lễ tự động (Calendar)
             </div>
+            <div className="flex items-center gap-2">
+              <CalendarOutlined className="text-xl text-blue-500" />
+              <span className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+                {config?.seasonal_icon || "default"}
+              </span>
+            </div>
+            <div className="mt-2 text-xs font-medium text-blue-600 dark:text-blue-400">
+              {seasonalIconItem.label}
+            </div>
+            <div className="mt-1 text-xs text-gray-400">
+              {config?.seasonal_reason || "Mặc định (Không trong tuần lễ hội)"}
+            </div>
+          </Card>
+        </Col>
+
+        <Col xs={24} sm={8}>
+          <Card className="shadow-sm border-gray-100 dark:border-neutral-700 h-full">
+            <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
+              Chế độ Bắt buộc (Force Mode)
+            </div>
+            <div className="flex items-center gap-2">
+              <ExclamationCircleOutlined className={`text-xl ${config?.force ? "text-red-500" : "text-green-500"}`} />
+              <span className={`text-2xl font-bold ${config?.force ? "text-red-600" : "text-emerald-600"}`}>
+                {config?.force ? "BẬT (Tất cả user)" : "TẮT (Chỉ user mặc định)"}
+              </span>
+            </div>
+            <div className="mt-2 text-xs text-gray-500 dark:text-gray-400">
+              {config?.force
+                ? "Ép đổi icon cho mọi người dùng khi mở app"
+                : "Giữ nguyên nếu người dùng đã tự chọn icon riêng"}
+            </div>
+            {config?.updated_at && (
+              <div className="mt-1 text-xs text-gray-400 flex items-center gap-1">
+                <ClockCircleOutlined /> Cập nhật: {new Date(config.updated_at).toLocaleString("vi-VN")}
+              </div>
+            )}
           </Card>
         </Col>
       </Row>
@@ -186,7 +223,7 @@ export default function AdminAppIconPage() {
                   <strong>Bình thường (Force: TẮT)</strong>: Chỉ thị chỉ áp dụng cho người dùng đang để icon mặc định. Những ai đã tự tay chọn icon khác trong Cài đặt sẽ được giữ nguyên.
                 </li>
                 <li>
-                  <strong>Bắt buộc (Force: BẬT)</strong>: Áp dụng chuyển icon cho 100% người dùng khi mở ứng dụng (dùng cho các dịp trọng đại của trường như 20/11, Lễ khai giảng).
+                  <strong>Bắt buộc (Force: BẬT)</strong>: Áp dụng chuyển icon cho 100% người dùng khi mở ứng dụng (dùng cho các dịp trọng đại của trường như 20/11, Lễ khai giảng). Kèm thông báo toast & notification hệ thống trên máy người dùng.
                 </li>
                 <li>
                   <strong>Lịch tự động</strong>:
@@ -259,7 +296,7 @@ export default function AdminAppIconPage() {
 
             <Space>
               <Button onClick={fetchConfig} disabled={saving}>
-                Hủy bỏ
+                Làm mới lại
               </Button>
               <Button
                 type="primary"
