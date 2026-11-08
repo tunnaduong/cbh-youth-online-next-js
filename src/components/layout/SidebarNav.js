@@ -16,11 +16,13 @@ import {
   Moon,
   Newspaper,
   Rss,
+  ShieldAlert,
 } from "lucide-react";
 import { IoLogoFacebook, IoLogoGithub } from "react-icons/io5";
 import { FaDiscord } from "react-icons/fa";
 import { useAuthContext } from "@/contexts/Support";
 import { useTheme } from "@/contexts/themeContext";
+import { isStaffRole } from "@/utils/roles";
 
 // Main site navigation, shared by the desktop left sidebar and the mobile menu drawer.
 export const MAIN_NAV_ITEMS = [
@@ -67,13 +69,14 @@ export function getActiveNavKey(pathname, items = MAIN_NAV_ITEMS) {
 
 export default function SidebarNav({ items = MAIN_NAV_ITEMS, activeKey, onNavigate }) {
   const router = useRouter();
-  const { loggedIn } = useAuthContext();
+  const { loggedIn, currentUser } = useAuthContext();
   const { theme, toggleTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => setMounted(true), []);
 
   const isDark = mounted && theme === "dark";
+  const isAdmin = loggedIn && isStaffRole(currentUser?.role);
 
   const handleSavedClick = (e) => {
     if (!loggedIn) {
@@ -138,10 +141,23 @@ export default function SidebarNav({ items = MAIN_NAV_ITEMS, activeKey, onNaviga
     );
   };
 
+  const navItems = isAdmin
+    ? [
+        ...items,
+        {
+          key: "admin",
+          href: "/admin",
+          label: "Quản trị viên",
+          Icon: ShieldAlert,
+          badge: "Admin",
+        },
+      ]
+    : items;
+
   return (
     <>
       <nav className="flex flex-col gap-1" aria-label="Menu chính">
-        {items.map(renderItem)}
+        {navItems.map(renderItem)}
       </nav>
 
       <div className="mt-auto pt-6">
