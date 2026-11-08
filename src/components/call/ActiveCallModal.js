@@ -76,8 +76,8 @@ export default function ActiveCallModal() {
     }
   }, [remoteStream, isMinimized, callStatus]);
 
-  // Only render when we are calling (outgoing) or connected
-  if (callStatus !== "calling" && callStatus !== "connected") {
+  // Only render when we are calling (outgoing), ringing or connected
+  if (callStatus !== "calling" && callStatus !== "ringing" && callStatus !== "connected") {
     return null;
   }
 
@@ -122,7 +122,7 @@ export default function ActiveCallModal() {
             {otherName}
           </span>
           <span className="text-xs text-green-400 font-mono">
-            {isConnected ? formatSeconds(callDuration) : "Đang kết nối..."}
+            {isConnected ? formatSeconds(callDuration) : callStatus === "ringing" ? "Đang đổ chuông..." : "Đang kết nối..."}
           </span>
         </div>
 
@@ -290,8 +290,12 @@ export default function ActiveCallModal() {
                     <span className="text-primary-400 font-mono text-base">
                       {formatSeconds(callDuration)}
                     </span>
+                  ) : callStatus === "ringing" ? (
+                    <span className="text-primary-400 font-medium animate-pulse">
+                      Đang đổ chuông...
+                    </span>
                   ) : (
-                    "Đang kết nối cuộc gọi thoại..."
+                    "Đang kết nối..."
                   )}
                 </p>
               </div>

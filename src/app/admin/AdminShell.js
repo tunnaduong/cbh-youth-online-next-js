@@ -4,13 +4,15 @@ import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
-import { Layout, Menu, Button, ConfigProvider, Drawer, Avatar, Dropdown, Grid, theme as antdTheme, Tooltip } from "antd";
+import { Layout, Menu, Button, ConfigProvider, Drawer, Avatar, Dropdown, Grid, theme as antdTheme, Tooltip, Result } from "antd";
 import viVN from "antd/locale/vi_VN";
 import { SunOutlined, MoonOutlined } from "@ant-design/icons";
 import { useTheme } from "@/contexts/themeContext";
 import { useIsDarkMode } from "@/hooks/useIsDarkMode";
 import { isInApp } from "@/utils/appMode";
 import { getAuthCookie } from "@/utils/cookies";
+import { isStaffRole } from "@/utils/roles";
+import Api from "@/app/Api";
 import {
   DashboardOutlined,
   FlagOutlined,
@@ -195,8 +197,14 @@ export default function AdminShell({ children }) {
   const [inApp, setInApp] = useState(false);
   useEffect(() => setInApp(isInApp()), []);
 
+  const [checkingRole, setCheckingRole] = useState(true);
+  const [isForbidden, setIsForbidden] = useState(false);
+
   useEffect(() => {
-    if (isLoginPage) return;
+    if (isLoginPage) {
+      setCheckingRole(false);
+      return;
+    }
     const session = sessionStorage.getItem(ADMIN_SESSION_KEY);
     const authToken = getAuthCookie();
     if (!session && !authToken) {
@@ -204,17 +212,59 @@ export default function AdminShell({ children }) {
       // (e.g. from the mobile app's in-app browser) is bounced straight back
       // here by the login page instead of landing on the dashboard.
       router.replace(`/admin/login?next=${encodeURIComponent(pathname)}`);
-    } else {
-      if (!session && authToken) {
-        sessionStorage.setItem(ADMIN_SESSION_KEY, "1");
-      }
-      setAuthed(true);
-      try {
-        setMe(JSON.parse(localStorage.getItem("CURRENT_USER") || "null"));
-      } catch {
-        setMe(null);
-      }
+      return;
     }
+
+    if (!session && authToken) {
+      sessionStorage.setItem(ADMIN_SESSION_KEY, "1");
+    }
+
+    let localUser = null;
+    try {
+      localUser = JSON.parse(localStorage.getItem("CURRENT_USER") || "null");
+      setMe(localUser);
+    } catch {
+      setMe(null);
+    }
+
+    if (localUser && localUser.role) {
+      if (!isStaffRole(localUser.role)) {
+        setIsForbidden(true);
+        setAuthed(false);
+        setCheckingRole(false);
+        return;
+      }
+      setIsForbidden(false);
+      setAuthed(true);
+    }
+
+    // Verify fresh role from backend to prevent client-side role tampering
+    Api.getCurrentUser()
+      .then((res) => {
+        const freshUser = res?.data || res;
+        if (freshUser?.role) {
+          setMe(freshUser);
+          localStorage.setItem("CURRENT_USER", JSON.stringify(freshUser));
+          if (!isStaffRole(freshUser.role)) {
+            setIsForbidden(true);
+            setAuthed(false);
+          } else {
+            setIsForbidden(false);
+            setAuthed(true);
+          }
+        }
+      })
+      .catch((err) => {
+        if (err?.response?.status === 401) {
+          router.replace(`/admin/login?next=${encodeURIComponent(pathname)}`);
+        } else if (err?.response?.status === 403) {
+          setIsForbidden(true);
+          setAuthed(false);
+        }
+      })
+      .finally(() => {
+        setCheckingRole(false);
+      });
   }, [router, isLoginPage, pathname]);
 
   if (isLoginPage)
@@ -223,7 +273,39 @@ export default function AdminShell({ children }) {
         {children}
       </ConfigProvider>
     );
-  if (!authed) return null;
+
+  if (isForbidden) {
+    return (
+      <ConfigProvider theme={adminTheme(isDark)} locale={viVN}>
+        <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", padding: 24, background: isDark ? "#171917" : "#f4f6f5" }}>
+          <Result
+            status="403"
+            title="403"
+            subTitle="Truy cập bị từ chối. Bạn không có quyền truy cập trang quản trị này (Forbidden). Chỉ quản trị viên mới có quyền xem."
+            extra={
+              !inApp ? (
+                <Link href="/">
+                  <Button type="primary">Về trang chủ</Button>
+                </Link>
+              ) : null
+            }
+          />
+        </div>
+      </ConfigProvider>
+    );
+  }
+
+  if (checkingRole || !authed) {
+    return (
+      <ConfigProvider theme={adminTheme(isDark)} locale={viVN}>
+        <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: isDark ? "#171917" : "#f4f6f5" }}>
+          <div className="flex flex-col items-center gap-4">
+            <div className="h-10 w-10 animate-spin rounded-full border-4 border-gray-200 border-t-[#319527]" />
+          </div>
+        </div>
+      </ConfigProvider>
+    );
+  }
 
   // Longest nav key that prefixes the current path.
   const current =
