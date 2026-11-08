@@ -11,8 +11,13 @@ export default function LoadingWrapper({ children }) {
   // Check if loading should be hidden via environment variable or on /egg
   const hideLoading = process.env.NEXT_PUBLIC_HIDE_LOADING === "true" || pathname === "/egg";
 
-  // Initialize state based on environment variable to prevent flash
-  const [isInitialLoading, setIsInitialLoading] = useState(!hideLoading);
+  // Initialize state based on environment variable to prevent flash;
+  // in app mode we bypass the loading screen synchronously to avoid any flicker.
+  const [isInitialLoading, setIsInitialLoading] = useState(() => {
+    if (hideLoading) return false;
+    if (typeof window !== "undefined" && isInApp()) return false;
+    return true;
+  });
 
   useEffect(() => {
     // Embedded in the mobile app's WebView (?app=true) - the app already

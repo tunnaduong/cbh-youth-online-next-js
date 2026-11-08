@@ -115,6 +115,12 @@ export const NAV_GROUPS = [
       { key: "/admin/student-verifications", icon: <SafetyCertificateOutlined />, label: "Xác minh HS" },
     ],
   },
+  {
+    label: "HỆ THỐNG & APP",
+    children: [
+      { key: "/admin/app-icon", icon: <AppstoreOutlined />, label: "Biểu tượng App" },
+    ],
+  },
 ];
 
 const ALL_ITEMS = NAV_GROUPS.flatMap((g) => g.children || [g]);
@@ -258,7 +264,7 @@ export default function AdminShell({ children }) {
         {/* minWidth 0: a flex child otherwise grows to its widest content, so a
             wide table widened the whole page into a sideways scroll on phones
             instead of scrolling inside its own box. */}
-        <Layout style={{ minWidth: 0 }}>
+        <Layout style={{ minWidth: 0, maxWidth: "100%", width: "100%" }}>
           <Header
             style={{
               position: "sticky",
@@ -325,7 +331,7 @@ export default function AdminShell({ children }) {
               </button>
             </Dropdown>
           </Header>
-          <Content>{children}</Content>
+          <Content style={{ minWidth: 0, maxWidth: "100%", width: "100%", overflowX: "hidden" }}>{children}</Content>
         </Layout>
       </Layout>
     </ConfigProvider>

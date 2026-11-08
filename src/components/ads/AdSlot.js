@@ -9,14 +9,16 @@ import Ad300x250 from "./Ad300x250";
 // matches; hidden inside the mobile app, which owns its own ad policy.
 export default function AdSlot({ slot, className = "" }) {
   const [ad, setAd] = useState(null);
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    setMounted(true);
     if (isInApp()) return;
     const ads = getActiveAds(slot);
     if (ads.length) setAd(ads[Math.floor(Math.random() * ads.length)]);
   }, [slot]);
 
-  if (isInApp()) return null;
+  if (!mounted || isInApp()) return null;
 
   // Banner 300x250 tại sidebar (bên cạnh bảng xếp hạng)
   if (slot === "sidebar") {

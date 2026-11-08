@@ -1,12 +1,14 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { isInApp } from "@/utils/appMode";
 
 export default function NativeBanner({ className = "" }) {
   const containerRef = useRef(null);
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    setMounted(true);
     if (isInApp() || !containerRef.current) return;
     const container = containerRef.current;
     container.innerHTML = "";
@@ -69,7 +71,7 @@ export default function NativeBanner({ className = "" }) {
     }
   }, []);
 
-  if (isInApp()) return null;
+  if (!mounted || isInApp()) return null;
 
   return (
     <div

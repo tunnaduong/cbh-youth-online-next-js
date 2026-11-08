@@ -1,13 +1,15 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { isInApp } from "@/utils/appMode";
 
 export default function Ad300x250({ className = "" }) {
   const containerRef = useRef(null);
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    setMounted(true);
     if (isInApp() || !containerRef.current) return;
     const container = containerRef.current;
     container.innerHTML = "";
@@ -68,7 +70,7 @@ export default function Ad300x250({ className = "" }) {
     }
   }, []);
 
-  if (isInApp()) return null;
+  if (!mounted || isInApp()) return null;
 
   return (
     <div

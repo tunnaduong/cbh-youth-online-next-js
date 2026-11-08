@@ -1088,7 +1088,6 @@ body.has-email-verification-alert [class*="mt-\\[4\\.3rem\\]"] {
 /* contenteditable chat input */
 .ce-input {
   scrollbar-width: none;
-  -webkit-overflow-scrolling: touch;
   transform: translateZ(0);
   -webkit-transform: translateZ(0);
   backface-visibility: hidden;
@@ -1298,10 +1297,31 @@ body {
   }
 }
 
-/* iPhone Safari zooms the whole page in when a focused field's text is
-   smaller than 16px - and stays zoomed. Fields are 14px by design (antd), so
-   on touch screens they get 16px: no zoom, and people can still pinch to
-   zoom, which a viewport "maximum-scale=1" would take away. */
+/* GPU layer isolation for ProseMirror post editor */
+.ProseMirror {
+  transform: translateZ(0);
+  -webkit-transform: translateZ(0);
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+/* GPU layer isolation for fixed navigation bar */
+nav.fixed {
+  transform: translateZ(0);
+  -webkit-transform: translateZ(0);
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+/* Prevent viewport height jump and overscroll jitter in mobile WebViews */
+html,
+body {
+  overscroll-behavior-y: none;
+}
+
+/* iPhone Safari and mobile WebViews zoom the whole page in when a focused field's
+   text is smaller than 16px - and stays zoomed. Fields are 14px by design (antd), so
+   on touch screens they get 16px: no zoom, and people can still pinch to zoom. */
 @media (hover: none) and (pointer: coarse) {
   input,
   textarea,
@@ -1310,7 +1330,46 @@ body {
   .ant-input-affix-wrapper > input.ant-input,
   .ant-select-selection-search-input,
   .ant-input-number-input,
-  .ant-picker-input > input {
+  .ant-picker-input > input,
+  .ce-input,
+  .ProseMirror,
+  [contenteditable="true"] {
     font-size: 16px !important;
+    -webkit-tap-highlight-color: transparent;
+  }
+}
+
+/* Ant Design Table smooth horizontal touch scrolling on mobile / small devices */
+.ant-table-wrapper {
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+}
+
+.ant-table-container {
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+}
+
+.ant-table-content {
+  width: 100% !important;
+  max-width: 100% !important;
+  overflow-x: auto !important;
+  -webkit-overflow-scrolling: touch !important;
+  touch-action: pan-x pan-y !important;
+  overscroll-behavior-x: contain !important;
+}
+
+/* On small screens, unstick fixed columns so they don't cover the screen or block touch scrolling */
+@media (max-width: 768px) {
+  .ant-table-cell-fix-left,
+  .ant-table-cell-fix-left-last,
+  .ant-table-cell-fix-right,
+  .ant-table-cell-fix-right-first {
+    position: static !important;
+    right: auto !important;
+    left: auto !important;
+    box-shadow: none !important;
   }
 }

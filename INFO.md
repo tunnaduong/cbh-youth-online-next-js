@@ -262,7 +262,28 @@ Weights: `font-medium` (default emphasis), `font-semibold` (titles, buttons), `f
 
 Every new or changed page or component must follow this section. If the part you touch is in the older style, bring it in line. When a deliberate, large redesign changes these rules (new card style, new palette, new navigation), **update this section in the same commit** - it must always describe the site as it is, not as it was.
 
-## Recent work (newest first, as of 2026-10)
+## Recent work (newest first, as of 2026-11)
+
+- **Gỡ quảng cáo trong trang quản trị / cửa hàng, khắc phục nhấp nháy (flicker) trên WebView và sửa lỗi cuộn ngang bảng admin trên thiết bị nhỏ** (`src/app/admin/AdminShell.js`, `src/app/admin/_components/ResourceTable.js`, `src/app/admin/reports/page.js`, `src/app/admin/shop/products/VariantEditor.js`, `src/app/globals.css`, `src/components/ads/GlobalAds.js`, `src/app/layout.js`, `src/utils/appMode.js`, `src/components/ads/*`, `src/components/AppBanner.js`, `src/components/LoadingWrapper.js`, `src/contexts/themeContext.js`, `src/components/chat/MessageInput.js`, `src/components/forum/CommentInput.js`):
+  - **Sửa lỗi không thể cuộn ngang (scroll left/right) bảng trong Admin trên màn hình nhỏ / điện thoại**:
+    - `AdminShell.js`: Thêm `minWidth: 0, maxWidth: "100%", width: "100%"` vào cả `Layout` và `Content`. Mặc định flex item có `min-width: auto`, khiến `Content` bị bảng nhiều cột kéo giãn vượt quá chiều rộng màn hình thiết bị, triệt tiêu vùng tràn (overflow) của bảng.
+    - `ResourceTable.js`, `reports/page.js`, `VariantEditor.js`: Thêm `min-w-0 max-w-full w-full overflow-hidden` cho các container bao ngoài bảng, đảm bảo khung bảng luôn giới hạn chuẩn trong viewport màn hình điện thoại.
+    - `globals.css`:
+      - Thiết lập `.ant-table-content` có `overflow-x: auto !important`, `-webkit-overflow-scrolling: touch !important`, `touch-action: pan-x pan-y !important` và `overscroll-behavior-x: contain !important` cho phép thao tác vuốt cuộn ngang mượt mà bằng ngón tay.
+      - Trên màn hình nhỏ (`@media (max-width: 768px)`), tự động gỡ `position: sticky` (`position: static !important`) khỏi các cột cố định (`.ant-table-cell-fix-left`, `.ant-table-cell-fix-right` - như cột thao tác chứa hàng loạt nút bấm), tránh việc cột cố định chiếm hết chiều ngang màn hình và chặn thao tác vuốt cuộn của người dùng.
+  - **Gỡ quảng cáo trên Admin & Shop & WebView**:
+    - Tạo `GlobalAds.js` quản lý tải mã quảng cáo tập trung. Chặn tuyệt đối AdSense, SocialBar (`bicea.org`), và Ezoic khi ở trang `/admin`, `/shop`, hoặc khi đang chạy trong WebView di động (`isInApp()`). Đồng thời tự động dọn dẹp các overlay/phần tử chèn động nếu người dùng chuyển trang.
+    - Cập nhật `AdSlot.js`, `Ad300x250.js`, `NativeBanner.js` sử dụng trạng thái client-mounted trước khi hiển thị, loại bỏ việc render tạm thời khung quảng cáo trên SSR gây giật/nhảy layout khi mở trong WebView.
+  - **Khắc phục nhấp nháy (flickering) khi gõ phím và lướt web trên WebView**:
+    - Thêm `THEME_INIT_SCRIPT` chạy trực tiếp trong `<head>` trước khi vẽ trang (pre-paint) đọc theme từ `localStorage` và `prefers-color-scheme`, đồng bộ class `dark` lên `<html>` và `<body>`, chấm dứt hoàn toàn hiện tượng chớp nháy giao diện sáng/tối khi tải trang hoặc điều hướng.
+    - `LoadingWrapper.js`: khởi tạo `isInitialLoading = false` đồng bộ ngay từ client khi phát hiện `isInApp()`, tránh chớp màn hình trắng/overlay splash 1 frame trong ứng dụng di động.
+    - `AppBanner.js`: dùng `requestAnimationFrame` và chỉ cập nhật biến CSS `--app-banner-offset` khi giá trị thực sự thay đổi, ngăn chặn style recalculation liên tục trên toàn bộ cây DOM trong quá trình cuộn lướt (surfing).
+    - `globals.css`:
+      - Cách ly phần cứng GPU cho thanh điều hướng cố định (`nav.fixed`) và trình soạn thảo TipTap (`.ProseMirror`) bằng `transform: translateZ(0); backface-visibility: hidden;`.
+      - Bỏ `-webkit-overflow-scrolling: touch;` trên `.ce-input` tránh xung đột engine cuộn gây nhảy con trỏ khi gõ trên iOS/WebKit.
+      - Thêm font-size 16px và `-webkit-tap-highlight-color: transparent` cho `.ce-input`, `.ProseMirror`, `[contenteditable="true"]` trên màn hình cảm ứng để ngăn WebView tự động phóng to (auto-zoom) và giật nhấp nháy khung nhìn khi focus gõ phím.
+      - Bổ sung GPU layer isolation cho `CommentInput.js` và `MessageInput.js`.
+      - `overscroll-behavior-y: none;` chặn hiện tượng nảy giật mép trang (bounce jitter) trong WebView.
 
 - **Fix: Web Chat Older Messages Pagination & Mobile WebView Input Flicker** (`src/contexts/provider/ChatProvider.js`, `src/components/chat/ChatConversation.js`, `src/utils/richInput.js`, `src/app/globals.css`, `src/components/chat/ChatMessageInput.js`):
   - **Fix Chat History Pagination**: Fixed bug where scrolling up failed to load older messages past page 1/2. `ChatProvider.js` and `ChatConversation.js` now correctly derive `has_more_pages` from `current_page < last_page` or `next_page_url` (and API now returns `has_more_pages`), and properly preserve scroll height on all prepended pages, allowing full historical chat messages to be loaded seamlessly without stopping.
@@ -306,6 +327,11 @@ Every new or changed page or component must follow this section. If the part you
 - **Dynamic share images, like GitHub's (branch `claude/jolly-volta-2p5f2n`; see the build note below):** new route handlers under `src/app/api/og` (Node runtime, `next/og`): `post/[id]` (title, a preview of the post's markdown - headings, lists, quotes, code blocks, via `src/lib/og/markdown.js` -, first photo, author, subforum, votes / comments / views), `profile/[username]` (cover, avatar, name + verified tick, bio, tier, posts / followers / points) and `page` (generic card from `title`, `description`, `label` query, text capped). Data comes from the public API without cookies, so private / followers-only / missing posts get the plain brand card. Images are fetched and sniffed (satori decodes only PNG / JPEG / GIF; anything else falls back to an initial-letter avatar). Inter (Regular / Bold / ExtraBold, full Vietnamese coverage) is bundled in `src/assets/fonts` and traced into the serverless bundle by `experimental.outputFileTracingIncludes` in `next.config.mjs`. Cache: 1 h browser, 1 day CDN, stale-while-revalidate. Wired into post, profile (+ tabs), `/forum/[forumId]` and `/forum/[forumId]/[subforumId]` metadata. Other pages still use `/images/cyo_thumbnail.png`; to give one a card, call `getOgImageURL("/page", {title, description, label})`.
 
 - **Cover picture for posts without a photo (branch `claude/eloquent-turing-56wgc0`; not linted or built):** `FeaturedPosts.js`, `LatestPosts.js` and `pickFeaturedPosts` use the API's new `cover_url` (first video frame, or the post's markdown drawn as a page) when `image_urls` is empty. The post itself and its kind label ("Thảo luận" / "Video") are unchanged. Needs the API's migration and `php artisan topics:generate-covers` for old posts.
+
+- **Admin UI for Mobile App Icon Management (`/admin/app-icon`)**:
+  - Added new admin page `src/app/admin/app-icon/page.js` linked in `AdminShell.js` sidebar under "HỆ THỐNG & APP".
+  - Allows administrators to inspect current active/seasonal icon status, select any available preset (TeachersDay, Christmas, NewYear2026, Dark, Clear, Tinted, Classic, SchoolCrest), toggle `Force Override` (for all users vs default only), supply an optional reason, or reset back to automated seasonal calendar.
+  - Added API endpoints `getAppConfig` and `adminUpdateAppIcon` in `src/app/Api.js`.
 
 - **Student verification submit button uses the theme colours (branch `claude/gracious-dirac-cranie`; not linted or built):** in `SettingsClient.js` the "Gửi yêu cầu xác minh" button had `!bg-green-600 ...` overrides, which forced a bright green fill under antd's dark disabled text. The overrides are gone: it is a plain antd `type="primary"` button (`colorPrimary` green when enabled, antd's grey when disabled). Don't force `!bg-*` on antd buttons - it breaks the disabled state.
 

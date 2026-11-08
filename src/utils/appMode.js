@@ -20,7 +20,16 @@ export function isInApp() {
       }
       return true;
     }
-    return sessionStorage.getItem(APP_MODE_KEY) === "1";
+    if (sessionStorage.getItem(APP_MODE_KEY) === "1") return true;
+
+    // Detect app WebView via user agent or React Native WebView bridge
+    const ua = navigator.userAgent || "";
+    if (ua.includes("CBHYouthApp/") || ua.includes("; wv)") || typeof window.ReactNativeWebView !== "undefined") {
+      sessionStorage.setItem(APP_MODE_KEY, "1");
+      return true;
+    }
+
+    return false;
   } catch {
     return false;
   }

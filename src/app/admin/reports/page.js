@@ -416,7 +416,7 @@ export default function AdminReportsPage() {
 
   return (
     <div>
-      <div className="max-w-[1280px] mx-auto w-full px-4 sm:px-6 py-6">
+      <div className="max-w-[1280px] mx-auto w-full min-w-0 max-w-full px-4 sm:px-6 py-6">
         <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 tracking-tight mb-5">Quản lý báo cáo</h1>
 
         {stats && (
@@ -484,19 +484,21 @@ export default function AdminReportsPage() {
           <RangePicker value={dateRange} onChange={setDateRange} />
         </div>
 
-        <Table
-          rowKey="id"
-          columns={columns}
-          dataSource={reports}
-          loading={loading}
-          pagination={{
-            current: pagination.current,
-            pageSize: pagination.pageSize,
-            total: pagination.total,
-            onChange: (page) => fetchReports(page),
-          }}
-          scroll={{ x: "max-content" }}
-        />
+        <div className="bg-white dark:bg-neutral-800 rounded-2xl border border-[#eef0ee] dark:border-neutral-700 shadow-[0_1px_2px_rgba(16,24,16,0.04)] overflow-hidden min-w-0 max-w-full w-full">
+          <Table
+            rowKey="id"
+            columns={columns}
+            dataSource={reports}
+            loading={loading}
+            pagination={{
+              current: pagination.current,
+              pageSize: pagination.pageSize,
+              total: pagination.total,
+              onChange: (page) => fetchReports(page),
+            }}
+            scroll={{ x: "max-content" }}
+          />
+        </div>
       </div>
 
       <ReviewModal
