@@ -323,24 +323,12 @@ export const CallProvider = ({ children }) => {
           }
         }
 
-        // Call backend API to initiate call session
-        const res = await initiateCallApi(conversationId, type);
-        const callData = res?.data?.call;
-
-        if (!callData) {
-          throw new Error("Không nhận được dữ liệu cuộc gọi từ máy chủ.");
-        }
-
-        setActiveCall(callData);
-        setCallStatus("ringing");
-        playOutgoingRing();
-
-        // 10s connection timeout: Try connecting for 10s
+        // 10s connection timeout: If cannot connect to backend or callee within 10s
         clearConnectingTimeout();
         clearRingingTimeout();
         connectingTimeoutRef.current = setTimeout(async () => {
-          if (callStatusRef.current === "calling" || callStatusRef.current === "ringing") {
-            console.log("[WebRTC] Callee unreachable after 10s.");
+          if (callStatusRef.current === "calling") {
+            console.log("[WebRTC] Callee unreachable / connect timeout after 10s.");
             antdMessage.warning("Không thể kết nối đến người kia.");
             const cur = activeCallRef.current;
             if (cur?.id) {
@@ -351,6 +339,35 @@ export const CallProvider = ({ children }) => {
             cleanupCall();
           }
         }, 10000);
+
+        // Call backend API to initiate call session
+        const res = await initiateCallApi(conversationId, type);
+        const callData = res?.data?.call;
+
+        if (!callData) {
+          throw new Error("Không nhận được dữ liệu cuộc gọi từ máy chủ.");
+        }
+
+        clearConnectingTimeout();
+        setActiveCall(callData);
+        setCallStatus("ringing");
+        playOutgoingRing();
+
+        // 45s ringing timeout: Ring for at most 45s
+        clearRingingTimeout();
+        ringingTimeoutRef.current = setTimeout(async () => {
+          if (callStatusRef.current === "calling" || callStatusRef.current === "ringing") {
+            console.log("[WebRTC] Outgoing call timed out after 45s without answer.");
+            antdMessage.info("Người nhận không trả lời.");
+            const cur = activeCallRef.current;
+            if (cur?.id) {
+              try {
+                await endCallApi(cur.id);
+              } catch {}
+            }
+            cleanupCall();
+          }
+        }, 45000);
       } catch (err) {
         console.error("[startCall] error:", err);
         const errMsg =
@@ -623,7 +640,7 @@ export const CallProvider = ({ children }) => {
             clearRingingTimeout();
             ringingTimeoutRef.current = setTimeout(async () => {
               if (callStatusRef.current === "calling" || callStatusRef.current === "ringing") {
-                console.log("[WebRTC] Outgoing call timed out after 60s without answer.");
+                console.log("[WebRTC] Outgoing call timed out after 45s without answer.");
                 antdMessage.info("Người nhận không trả lời.");
                 const cur = activeCallRef.current;
                 if (cur?.id) {
@@ -633,7 +650,7 @@ export const CallProvider = ({ children }) => {
                 }
                 cleanupCall();
               }
-            }, 60000);
+            }, 45000);
           }
           return;
         } else if (type === "offer") {
@@ -719,17 +736,17 @@ export const CallProvider = ({ children }) => {
       // Start incoming ringtone
       playIncomingRing();
 
-      // Auto-disconnect callee after 60s if not answered
+      // Auto-disconnect callee after 45s if not answered
       clearRingingTimeout();
       ringingTimeoutRef.current = setTimeout(async () => {
         if (activeCallRef.current && callStatusRef.current === "ringing") {
-          console.log("[WebRTC] Incoming call ringing timed out after 60s.");
+          console.log("[WebRTC] Incoming call ringing timed out after 45s.");
           try {
             await rejectCallApi(callData.id, "missed");
           } catch {}
           cleanupCall();
         }
-      }, 60000);
+      }, 45000);
     },
     [currentUser?.id]
   );
