@@ -488,6 +488,10 @@ export const search = (params) => {
   return Api.getRequest("/v1.0/search", params);
 };
 
+export const getSearchSuggestions = (params) => {
+  return Api.getRequest("/v1.0/search/suggestions", params);
+};
+
 // Stories
 export const getStories = () => {
   return Api.getRequest("/v1.0/stories");

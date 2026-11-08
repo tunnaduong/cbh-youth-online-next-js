@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { search } from "../Api";
+import { search, getSearchSuggestions } from "../Api";
 import HomeLayout from "@/layouts/HomeLayout";
 import { PersonOutline } from "react-ionicons";
 import Link from "next/link";
@@ -33,6 +33,20 @@ export default function SearchClient() {
   // clicking a hashtag or typing "#x" into the search box), rather than
   // the normal all/users/posts tabs.
   const [hashtagTag, setHashtagTag] = useState(null);
+  const [suggestedTopics, setSuggestedTopics] = useState([]);
+
+  useEffect(() => {
+    getSearchSuggestions()
+      .then((res) => {
+        const topics = res.data?.data?.topics || res.data?.topics;
+        if (Array.isArray(topics) && topics.length > 0) {
+          setSuggestedTopics(topics);
+        }
+      })
+      .catch((err) => {
+        console.warn("[SearchClient] Failed to load suggestions:", err?.message || err);
+      });
+  }, []);
 
   useEffect(() => {
     setSearchQuery(queryParam);
@@ -394,16 +408,60 @@ export default function SearchClient() {
               )}
             </div>
           ) : (
-            <div className="text-center py-8 px-5 text-gray-500 dark:text-gray-400">
+            <div className="py-8 px-4 text-center">
+              {suggestedTopics.length > 0 && (
+                <div className="mb-8 max-w-md mx-auto text-left">
+                  <div className="flex items-center gap-2 mb-3">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="18"
+                      height="18"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      className="text-primary-600 dark:text-primary-400"
+                    >
+                      <polyline points="23 6 13.5 15.5 8.5 10.5 1 18" />
+                      <polyline points="17 6 23 6 23 12" />
+                    </svg>
+                    <h3 className="text-sm font-semibold text-gray-800 dark:text-neutral-200">
+                      Chủ đề gợi ý & Thịnh hành
+                    </h3>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {suggestedTopics.map((item, idx) => {
+                      const tagLabel = item.label?.startsWith("#") ? item.label : `#${item.label}`;
+                      const rawTag = item.label?.replace(/^#/, "");
+                      return (
+                        <button
+                          key={`${item.label}-${idx}`}
+                          type="button"
+                          onClick={() => {
+                            setSearchQuery(tagLabel);
+                            router.push(`/search?type=hashtag&q=${encodeURIComponent(rawTag)}`);
+                            performSearch(rawTag, "hashtag");
+                          }}
+                          className="px-3 py-1.5 rounded-full text-xs font-medium bg-primary-50 dark:bg-primary-950/40 text-primary-700 dark:text-primary-300 border border-primary-200 dark:border-primary-800/40 hover:bg-primary-100 dark:hover:bg-primary-900/40 transition-colors"
+                        >
+                          {tagLabel}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
               <img
                 src="/images/search-main.png"
                 alt="Search"
-                className="h-48 mx-auto"
+                className="h-44 mx-auto mb-3"
               />
-              <br />
-              Thử bắt đầu bằng cách tìm kiếm người
-              <br />
-              dùng, bài viết...
+              <p className="text-gray-500 dark:text-gray-400 text-sm">
+                Thử bắt đầu bằng cách tìm kiếm người dùng, bài viết, chủ đề...
+              </p>
             </div>
           )}
         </div>

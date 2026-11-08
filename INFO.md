@@ -348,6 +348,11 @@ Every new or changed page or component must follow this section. If the part you
 
 - **Cover picture for posts without a photo (branch `claude/eloquent-turing-56wgc0`; not linted or built):** `FeaturedPosts.js`, `LatestPosts.js` and `pickFeaturedPosts` use the API's new `cover_url` (first video frame, or the post's markdown drawn as a page) when `image_urls` is empty. The post itself and its kind label ("Thảo luận" / "Video") are unchanged. Needs the API's migration and `php artisan topics:generate-covers` for old posts.
 
+- **Server-driven Search Suggestions & Admin Button in Left Sidebar (branch `feat/search-suggestions`)**:
+  - `src/app/Api.js`: Added `getSearchSuggestions` calling `GET /v1.0/search/suggestions`.
+  - `src/app/search/SearchClient.js`: Integrated server-driven suggestions displaying real trending tags and topics above empty search prompt. Clicking a suggestion automatically runs a hashtag search.
+  - `src/components/layout/SidebarNav.js`: For logged-in users with staff/admin role (`isStaffRole(currentUser?.role)`), dynamically renders an admin navigation button ("Quản trị viên" with `ShieldAlert` icon and "Admin" badge) in the desktop left sidebar and mobile drawer leading directly to `/admin`. Non-admin users do not see this button.
+
 - **Admin 403 Forbidden Access Restriction & Outward Call Ringing Status**:
   - `src/app/admin/AdminShell.js`: Restricted non-staff/non-admin users from accessing `/admin/*` routes. Validates local user role and verifies via `Api.getCurrentUser()`. If user is not staff (`!isStaffRole(role)`), displays Ant Design 403 `Result` ("Truy cập bị từ chối...").
   - `src/components/call/ActiveCallModal.js` & `src/contexts/provider/CallProvider.js`: When initiating outgoing call, status starts as "Đang kết nối...". Once `initiateCallApi` connects and returns call data, switches status to `ringing` ("Đang đổ chuông...") and plays outgoing ring sound.
