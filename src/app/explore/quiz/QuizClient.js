@@ -687,95 +687,186 @@ export default function QuizClient() {
           </div>
         )}
 
-        {phase === "result" && result && quiz && (
-          <div>
-            <div className="bg-white dark:bg-neutral-800 rounded-2xl border border-gray-100 dark:border-neutral-700 p-6 mb-6 text-center">
-              <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">Kết quả</p>
-              <p className="text-4xl font-bold text-[#319527] mb-1">
-                {result.score}/{result.total}
-              </p>
-              {result.points != null && (
-                <p className="text-sm font-semibold text-yellow-600 dark:text-yellow-400 mb-1">
-                  +{result.points} điểm
+        {phase === "result" && result && quiz && (() => {
+          const score = Math.max(0, Number(result.score) || 0);
+          const total = Math.max(1, Number(result.total) || 1);
+          const wrong = Math.max(0, total - score);
+          const percent = Math.round((score / total) * 100);
+          const correctRatio = score / total;
+          const wrongRatio = wrong / total;
+          const size = 144;
+          const strokeWidth = 9;
+          const center = size / 2;
+          const radius = (size - strokeWidth) / 2;
+          const circumference = 2 * Math.PI * radius;
+          const gap = Math.min(8, (circumference * Math.min(correctRatio, wrongRatio)) / 3);
+          const correctLength = Math.max(1, correctRatio * circumference - gap);
+          const wrongLength = Math.max(1, wrongRatio * circumference - gap);
+
+          return (
+            <div>
+              <div className="bg-white dark:bg-neutral-800 rounded-2xl border border-gray-100 dark:border-neutral-700 p-6 mb-6 text-center">
+                <p className="text-sm text-gray-500 dark:text-gray-400 mb-3">Kết quả</p>
+
+                <div className="relative w-36 h-36 mx-auto mb-4 flex items-center justify-center">
+                  <svg width={size} height={size} className="transform -rotate-90">
+                    <circle
+                      cx={center}
+                      cy={center}
+                      r={radius}
+                      stroke="currentColor"
+                      strokeWidth={strokeWidth}
+                      fill="none"
+                      className="text-gray-100 dark:text-neutral-700"
+                    />
+                    {score === total ? (
+                      <circle
+                        cx={center}
+                        cy={center}
+                        r={radius}
+                        stroke="#319527"
+                        strokeWidth={strokeWidth}
+                        strokeDasharray={`${circumference} ${circumference}`}
+                        fill="none"
+                      />
+                    ) : score === 0 ? (
+                      <circle
+                        cx={center}
+                        cy={center}
+                        r={radius}
+                        stroke="#ef4444"
+                        strokeWidth={strokeWidth}
+                        strokeDasharray={`${circumference} ${circumference}`}
+                        fill="none"
+                      />
+                    ) : (
+                      <>
+                        <circle
+                          cx={center}
+                          cy={center}
+                          r={radius}
+                          stroke="#319527"
+                          strokeWidth={strokeWidth}
+                          strokeDasharray={`${correctLength} ${circumference}`}
+                          strokeDashoffset={0}
+                          strokeLinecap="round"
+                          fill="none"
+                        />
+                        <circle
+                          cx={center}
+                          cy={center}
+                          r={radius}
+                          stroke="#ef4444"
+                          strokeWidth={strokeWidth}
+                          strokeDasharray={`${wrongLength} ${circumference}`}
+                          strokeDashoffset={-(correctRatio * circumference)}
+                          strokeLinecap="round"
+                          fill="none"
+                        />
+                      </>
+                    )}
+                  </svg>
+                  <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                    <p className={`text-2xl font-bold ${percent >= 50 ? "text-[#319527]" : "text-red-500"}`}>
+                      {score}/{total}
+                    </p>
+                    <p className="text-xs font-semibold text-gray-500 dark:text-gray-400">
+                      {percent}%
+                    </p>
+                    {total > 0 && (
+                      <div className="flex items-center gap-2 mt-0.5">
+                        <span className="text-[11px] font-bold text-[#319527]">✓ {score}</span>
+                        {wrong > 0 && (
+                          <span className="text-[11px] font-bold text-red-500">✗ {wrong}</span>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {result.points != null && (
+                  <p className="text-sm font-semibold text-yellow-600 dark:text-yellow-400 mb-1">
+                    +{result.points} điểm
+                  </p>
+                )}
+                <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+                  Chủ đề: {quiz.topic}
                 </p>
-              )}
-              <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
-                Chủ đề: {quiz.topic}
-              </p>
-              <div className="flex items-center justify-center gap-2 flex-wrap">
-                <button
-                  onClick={handleRetrySame}
-                  disabled={retrying}
-                  className="inline-flex items-center gap-2 px-5 py-2 rounded-full text-sm font-medium border border-gray-200 dark:border-neutral-600 text-gray-700 dark:text-gray-200 hover:border-[#319527] disabled:opacity-60"
-                >
-                  {retrying ? (
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                  ) : (
-                    <RotateCcw className="w-4 h-4" />
-                  )}
-                  Làm lại bài này
-                </button>
-                <button
-                  onClick={handleRestart}
-                  className="inline-flex items-center gap-2 px-5 py-2 rounded-full text-sm font-medium bg-[#319527] hover:bg-[#3dbb31] text-white"
-                >
-                  <Sparkles className="w-4 h-4" />
-                  Làm bài mới
-                </button>
+                <div className="flex items-center justify-center gap-2 flex-wrap">
+                  <button
+                    onClick={handleRetrySame}
+                    disabled={retrying}
+                    className="inline-flex items-center gap-2 px-5 py-2 rounded-full text-sm font-medium border border-gray-200 dark:border-neutral-600 text-gray-700 dark:text-gray-200 hover:border-[#319527] disabled:opacity-60"
+                  >
+                    {retrying ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <RotateCcw className="w-4 h-4" />
+                    )}
+                    Làm lại bài này
+                  </button>
+                  <button
+                    onClick={handleRestart}
+                    className="inline-flex items-center gap-2 px-5 py-2 rounded-full text-sm font-medium bg-[#319527] hover:bg-[#3dbb31] text-white"
+                  >
+                    <Sparkles className="w-4 h-4" />
+                    Làm bài mới
+                  </button>
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-3">
+                {(quiz.questions || []).map((q) => {
+                  const r = result.results.find((item) => item.id === q.id);
+                  if (!r) return null;
+                  return (
+                    <div
+                      key={q.id}
+                      className="bg-white dark:bg-neutral-800 rounded-xl border border-gray-100 dark:border-neutral-700 p-4"
+                    >
+                      <div className="flex items-start gap-2 mb-2">
+                        {r.is_correct ? (
+                          <CheckCircle2 className="w-5 h-5 text-[#319527] flex-shrink-0 mt-0.5" />
+                        ) : (
+                          <XCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
+                        )}
+                        <p className="font-medium text-gray-900 dark:text-white">{q.question}</p>
+                      </div>
+                      <div className="pl-7 flex flex-col gap-1">
+                        {q.options.map((opt, optIndex) => {
+                          if (opt.trim() === "") return null;
+                          const letter = ["A", "B", "C", "D"][optIndex];
+                          const isCorrect = letter === r.correct_answer;
+                          const isYours = letter === r.your_answer;
+                          return (
+                            <p
+                              key={opt}
+                              className={`text-sm px-2 py-1 rounded ${
+                                isCorrect
+                                  ? "text-[#319527] font-semibold"
+                                  : isYours
+                                  ? "text-red-500 font-semibold"
+                                  : "text-gray-600 dark:text-gray-300"
+                              }`}
+                            >
+                              {opt}
+                              {isCorrect ? " ✓" : isYours ? " ✗" : ""}
+                            </p>
+                          );
+                        })}
+                        {r.explanation && (
+                          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 italic">
+                            {r.explanation}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             </div>
-
-            <div className="flex flex-col gap-3">
-              {(quiz.questions || []).map((q) => {
-                const r = result.results.find((item) => item.id === q.id);
-                if (!r) return null;
-                return (
-                  <div
-                    key={q.id}
-                    className="bg-white dark:bg-neutral-800 rounded-xl border border-gray-100 dark:border-neutral-700 p-4"
-                  >
-                    <div className="flex items-start gap-2 mb-2">
-                      {r.is_correct ? (
-                        <CheckCircle2 className="w-5 h-5 text-[#319527] flex-shrink-0 mt-0.5" />
-                      ) : (
-                        <XCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
-                      )}
-                      <p className="font-medium text-gray-900 dark:text-white">{q.question}</p>
-                    </div>
-                    <div className="pl-7 flex flex-col gap-1">
-                      {q.options.map((opt, optIndex) => {
-                        if (opt.trim() === "") return null;
-                        const letter = ["A", "B", "C", "D"][optIndex];
-                        const isCorrect = letter === r.correct_answer;
-                        const isYours = letter === r.your_answer;
-                        return (
-                          <p
-                            key={opt}
-                            className={`text-sm px-2 py-1 rounded ${
-                              isCorrect
-                                ? "text-[#319527] font-semibold"
-                                : isYours
-                                ? "text-red-500 font-semibold"
-                                : "text-gray-600 dark:text-gray-300"
-                            }`}
-                          >
-                            {opt}
-                            {isCorrect ? " ✓" : isYours ? " ✗" : ""}
-                          </p>
-                        );
-                      })}
-                      {r.explanation && (
-                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 italic">
-                          {r.explanation}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        )}
+          );
+        })()}
         </>
         )}
       </div>

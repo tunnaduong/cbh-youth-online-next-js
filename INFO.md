@@ -328,6 +328,11 @@ Every new or changed page or component must follow this section. If the part you
 
 - **Cover picture for posts without a photo (branch `claude/eloquent-turing-56wgc0`; not linted or built):** `FeaturedPosts.js`, `LatestPosts.js` and `pickFeaturedPosts` use the API's new `cover_url` (first video frame, or the post's markdown drawn as a page) when `image_urls` is empty. The post itself and its kind label ("Thảo luận" / "Video") are unchanged. Needs the API's migration and `php artisan topics:generate-covers` for old posts.
 
+- **Quiz result score percentage ring & WebView hydration / admin login loop fix**:
+  - In `src/app/explore/quiz/QuizClient.js`, added an SVG segmented circular progress ring displaying exact correct (green `#319527`) vs wrong (red `#ef4444`) percentages with centered breakdown tallies (`✓` correct and `✗` wrong) when quizzes are completed.
+  - In `src/components/LoadingWrapper.js`, resolved fatal SSR/client hydration mismatch by aligning initial state between SSR and client, and bypassed duplicate loading overlay on `/admin` and `/explore/games`.
+  - In `src/app/admin/AdminShell.js`, added cookie auth verification check to prevent infinite redirect loops on mobile WebView entry.
+  - Resolved merge conflicts with `origin/main` for PR #83.
 - **Admin UI for Forced OTA Upgrade Management (`/admin/app-ota`)**:
   - Added new admin page `src/app/admin/app-ota/page.js` linked in `AdminShell.js` sidebar under "HỆ THỐNG & APP".
   - Allows administrators to remotely enforce OTA auto-updates across mobile clients regardless of client in-app settings.
