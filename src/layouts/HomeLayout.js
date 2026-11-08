@@ -57,7 +57,7 @@ function HomeLayoutContent({
     <div>
       <Navbar hasSidebar={showLeftSidebar} />
       <div>
-        <div className="flex flex-col xl:flex-row flex-1">
+        <div className="flex flex-col xl:flex-row flex-1 min-w-0 max-w-full w-full">
           {showLeftSidebar && (
             <LeftSidebar
               activeBar={activeBar}
@@ -67,7 +67,7 @@ function HomeLayoutContent({
             />
           )}
           <div
-            className={`flex-1 ${loggedIn && !currentUser?.email_verified_at
+            className={`flex-1 min-w-0 max-w-full w-full ${loggedIn && !currentUser?.email_verified_at
               ? "mt-[calc(4.3rem+56px)] md:mt-[calc(4.3rem+30px)]"
               : "mt-[4.3rem]"
               }`}

@@ -14,7 +14,7 @@ export default function SkeletonLoader() {
         </div>
 
         {/* Forum Topics Table skeleton */}
-        <div className="bg-white dark:!bg-[var(--main-white)] rounded-lg long-shadow overflow-hidden">
+        <div className="bg-white dark:!bg-[var(--main-white)] rounded-lg long-shadow overflow-x-auto max-w-full w-full">
           <div className="bg-gray-100 dark:!bg-neutral-600 p-3">
             <div className="flex justify-between">
               <div className="h-4 bg-gray-200 dark:bg-gray-600 rounded w-1/4"></div>

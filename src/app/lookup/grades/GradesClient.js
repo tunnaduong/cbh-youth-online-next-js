@@ -8,6 +8,7 @@ import {
   Col,
   Typography,
   Table,
+  Grid,
   Space,
   Form,
   Spin,
@@ -198,45 +199,57 @@ export default function GradesClient() {
     }
   };
 
+  const screens = Grid.useBreakpoint();
+  const isDesktop = screens.md;
+
   // Columns for Info Table
   const infoColumns = [
     {
       title: "Họ và tên",
       dataIndex: "full_name",
       key: "full_name",
+      width: 180,
+      render: (text) => <span className="whitespace-nowrap font-medium">{text}</span>,
     },
     {
       title: "Ngày sinh",
       dataIndex: "birth_date",
       key: "birth_date",
-      render: (text) => (text ? moment(text).format("DD/MM/YYYY") : ""),
+      width: 120,
+      render: (text) => <span className="whitespace-nowrap">{text ? moment(text).format("DD/MM/YYYY") : ""}</span>,
     },
     {
       title: "Trường",
       dataIndex: "dept_name",
       key: "dept_name",
+      width: 220,
+      render: (text) => <span className="whitespace-nowrap">{text}</span>,
     },
     {
       title: "Lớp",
       dataIndex: "class_name",
       key: "class_name",
+      width: 100,
+      render: (text) => <span className="whitespace-nowrap">{text}</span>,
     },
     {
       title: "Giới tính",
       dataIndex: "sex",
       key: "sex",
-      render: (text) => (text == -1 ? "Nữ" : "Nam"),
+      width: 100,
+      render: (text) => <span className="whitespace-nowrap">{text == -1 ? "Nữ" : "Nam"}</span>,
     },
   ];
 
   // Columns for Grade Table
-  const gradeColumns = [
+  const rawGradeColumns = [
     {
       title: "Môn học",
       dataIndex: "subject_name",
       key: "subject_name",
-      width: 200,
+      width: 170,
       fixed: "left",
+      render: (text) => <span className="whitespace-nowrap font-medium">{text}</span>,
     },
     {
       title: "Điểm thành phần",
@@ -244,12 +257,14 @@ export default function GradesClient() {
         {
           title: "Thường xuyên",
           key: "diem_thuong_xuyen",
-          width: 150,
+          width: 140,
           render: (_, record) => {
             const semester = form.getFieldValue("semester");
-            return semester == 3
-              ? record.grade_3_1
-              : record[`grade_${semester}_1M`];
+            const val =
+              semester == 3
+                ? record.grade_3_1
+                : record[`grade_${semester}_1M`];
+            return <span className="whitespace-nowrap">{val}</span>;
           },
         },
         {
@@ -258,7 +273,11 @@ export default function GradesClient() {
           width: 100,
           render: (_, record) => {
             const semester = form.getFieldValue("semester");
-            return record[`grade_${semester}_2`];
+            return (
+              <span className="whitespace-nowrap">
+                {record[`grade_${semester}_2`]}
+              </span>
+            );
           },
         },
         {
@@ -267,7 +286,11 @@ export default function GradesClient() {
           width: 100,
           render: (_, record) => {
             const semester = form.getFieldValue("semester");
-            return record[`grade_${semester}_3`];
+            return (
+              <span className="whitespace-nowrap">
+                {record[`grade_${semester}_3`]}
+              </span>
+            );
           },
         },
       ],
@@ -280,13 +303,17 @@ export default function GradesClient() {
       render: (_, record) => {
         const semester = form.getFieldValue("semester");
         return (
-          <span className="font-bold text-green-600">
+          <span className="font-bold text-green-600 whitespace-nowrap">
             {record[`grade_${semester}_4`]}
           </span>
         );
       },
     },
   ];
+
+  const gradeColumns = isDesktop
+    ? rawGradeColumns
+    : rawGradeColumns.map(({ fixed, ...col }) => col);
 
   return (
     <HomeLayout
@@ -296,8 +323,8 @@ export default function GradesClient() {
       sidebarType="all"
       showRightSidebar={false}
     >
-      <div className="px-4 py-8">
-        <main className="max-w-[800px] mx-auto min-h-screen">
+      <div className="px-4 py-8 w-full min-w-0 max-w-full">
+        <main className="max-w-[800px] mx-auto min-h-screen w-full min-w-0">
           <div className="flex justify-between items-center mb-8">
             <Title level={2} style={{ margin: 0 }}>
               Tra cứu điểm thi
@@ -440,31 +467,37 @@ export default function GradesClient() {
           {resultGrade && (
             <Card
               title="Kết quả học tập"
-              className="rounded-2xl shadow-sm border-none mb-8 dark:bg-neutral-800"
+              className="rounded-2xl shadow-sm border-none mb-8 dark:bg-neutral-800 overflow-hidden min-w-0 max-w-full w-full"
             >
-              <Table
-                dataSource={resultGrade}
-                columns={gradeColumns}
-                rowKey="subject_id"
-                pagination={false}
-                scroll={{ x: 600 }}
-                bordered
-              />
+              <div className="w-full min-w-0 max-w-full overflow-hidden">
+                <Table
+                  dataSource={resultGrade}
+                  columns={gradeColumns}
+                  rowKey="subject_id"
+                  pagination={false}
+                  tableLayout="auto"
+                  scroll={{ x: "max-content" }}
+                  bordered
+                />
+              </div>
             </Card>
           )}
 
           {resultInfo && (
             <Card
               title="Thông tin học sinh"
-              className="rounded-2xl shadow-sm border-none mb-8 dark:bg-neutral-800"
+              className="rounded-2xl shadow-sm border-none mb-8 dark:bg-neutral-800 overflow-hidden min-w-0 max-w-full w-full"
             >
-              <Table
-                dataSource={resultInfo}
-                columns={infoColumns}
-                rowKey="student_id"
-                pagination={false}
-                scroll={{ x: true }}
-              />
+              <div className="w-full min-w-0 max-w-full overflow-hidden">
+                <Table
+                  dataSource={resultInfo}
+                  columns={infoColumns}
+                  rowKey="student_id"
+                  pagination={false}
+                  tableLayout="auto"
+                  scroll={{ x: "max-content" }}
+                />
+              </div>
             </Card>
           )}
 
