@@ -46,18 +46,18 @@ export default function CallMessageCard({ message, conversationId, isMyself }) {
 
   return (
     <div
-      className={`inline-flex items-center gap-2.5 px-3 py-1.5 rounded-2xl border shadow-none text-xs transition-all ${
+      className={`inline-flex items-center gap-2.5 px-3 py-1.5 rounded-2xl border shadow-sm text-xs transition-all ${
         isMyself
-          ? "bg-primary-50/70 border-primary-200/80 dark:bg-primary-950/20 dark:border-primary-900/40"
-          : "bg-white/90 border-gray-200/80 dark:bg-neutral-800 dark:border-neutral-700"
+          ? "bg-primary-50/70 border-primary-200/80 dark:bg-[#1c351c] dark:border-[#2f5e2d]"
+          : "bg-white/95 border-gray-200/80 dark:bg-[#252825] dark:border-neutral-700"
       }`}
     >
       {/* Compact Icon circle */}
       <div
         className={`w-7 h-7 rounded-xl flex items-center justify-center flex-shrink-0 ${
           isMissed
-            ? "bg-red-100 text-red-600 dark:bg-red-950/50 dark:text-red-400"
-            : "bg-primary-100 text-primary-600 dark:bg-primary-950/50 dark:text-primary-400"
+            ? "bg-red-100 text-red-600 dark:bg-red-950/70 dark:text-red-400 dark:border dark:border-red-900/40"
+            : "bg-primary-100 text-primary-600 dark:bg-[#203f1e] dark:text-[#4ade80] dark:border dark:border-[#2d5c2b]"
         }`}
       >
         {isMissed ? (
@@ -75,7 +75,7 @@ export default function CallMessageCard({ message, conversationId, isMyself }) {
           className={`font-semibold text-xs leading-tight truncate ${
             isMissed
               ? "text-red-600 dark:text-red-400"
-              : "text-gray-900 dark:text-white"
+              : "text-gray-900 dark:text-neutral-100"
           }`}
         >
           {titleText}
@@ -89,7 +89,7 @@ export default function CallMessageCard({ message, conversationId, isMyself }) {
       {conversationId && (
         <button
           onClick={() => startCall(conversationId, isVideo ? "video" : "audio")}
-          className="ml-auto px-2 py-1 rounded-lg bg-gray-100 hover:bg-gray-200 dark:bg-neutral-700 dark:hover:bg-neutral-600 text-[11px] font-medium text-gray-700 dark:text-gray-200 flex-shrink-0 transition-colors"
+          className="ml-auto px-2.5 py-1 rounded-lg bg-gray-100 hover:bg-gray-200 dark:bg-neutral-700 dark:hover:bg-neutral-600 text-[11px] font-medium text-gray-700 dark:text-neutral-200 border border-transparent dark:border-neutral-600 flex-shrink-0 transition-colors"
         >
           Gọi lại
         </button>

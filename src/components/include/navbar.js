@@ -9,6 +9,7 @@ import {
   ArrowRight,
   ChevronDown,
   CircleHelp,
+  Clock,
   FileUp,
   Hash,
   LogIn,
@@ -24,6 +25,7 @@ import {
   User,
   UserRound,
   Wallet,
+  X,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import NotificationBell from "@/components/notifications/NotificationBell";
@@ -40,6 +42,12 @@ import UserName from "@/components/profile/UserName";
 import StyledUsername from "@/components/profile/StyledUsername";
 import useOwnProfileTheme from "@/hooks/useOwnProfileTheme";
 import { getSavedAccounts, removeSavedAccount, activateSavedAccount, storedPushEndpoint } from "@/utils/savedAccounts";
+import {
+  getRecentSearches,
+  saveRecentSearch,
+  removeRecentSearch,
+  clearRecentSearches,
+} from "@/utils/recentSearches";
 import { NAV_BADGE_CLASS, NAV_ICON_BUTTON_CLASS } from "./navStyles";
 
 const MENU_ITEM_CLASS =
@@ -79,9 +87,28 @@ export default function Navbar({ hasSidebar = false }) {
   const [searchOpen, setSearchOpen] = useState(false);
   const [suggestedTopics, setSuggestedTopics] = useState([]);
   const [loadingSuggestions, setLoadingSuggestions] = useState(false);
+  const [recentSearches, setRecentSearches] = useState([]);
   const [shortcutLabel, setShortcutLabel] = useState("Ctrl /");
   const searchInputRef = useRef(null);
   const searchContainerRef = useRef(null);
+
+  const refreshRecentSearches = useCallback(() => {
+    setRecentSearches(getRecentSearches());
+  }, []);
+
+  useEffect(() => {
+    refreshRecentSearches();
+  }, [refreshRecentSearches]);
+
+  const handleRemoveRecent = (term) => {
+    const updated = removeRecentSearch(term);
+    setRecentSearches(updated);
+  };
+
+  const handleClearAllRecent = () => {
+    clearRecentSearches();
+    setRecentSearches([]);
+  };
 
   const fetchSuggestions = useCallback((q = "") => {
     setLoadingSuggestions(true);
@@ -130,6 +157,9 @@ export default function Navbar({ hasSidebar = false }) {
     if (searchInputRef.current) searchInputRef.current.blur();
     const trimmed = (val || "").trim();
     if (!trimmed) return;
+
+    saveRecentSearch(trimmed);
+    refreshRecentSearches();
 
     if (type === "hashtag" || trimmed.startsWith("#")) {
       const clean = trimmed.replace(/^#/, "");
@@ -260,6 +290,7 @@ export default function Navbar({ hasSidebar = false }) {
                   }}
                   onFocus={() => {
                     setSearchOpen(true);
+                    refreshRecentSearches();
                     if (suggestedTopics.length === 0) fetchSuggestions();
                   }}
                   onKeyDown={(e) => {
@@ -271,18 +302,30 @@ export default function Navbar({ hasSidebar = false }) {
                   placeholder="Tìm kiếm bài viết, thành viên, chủ đề..."
                   aria-label="Tìm kiếm"
                   aria-keyshortcuts="Control+/"
-                  className="h-11 w-full rounded-xl border border-gray-200 bg-white pl-10 pr-16 text-sm text-gray-800 shadow-none placeholder:text-gray-400 focus:border-primary-400 focus:ring-2 focus:ring-primary-100 dark:border-neutral-600 dark:!bg-neutral-800 dark:text-neutral-100 dark:placeholder:text-neutral-500 dark:focus:ring-[#2b3a2a]"
+                  className="h-11 w-full rounded-xl border border-gray-200 bg-white pl-10 pr-12 text-sm text-gray-800 shadow-none placeholder:text-gray-400 focus:border-primary-400 focus:ring-2 focus:ring-primary-100 dark:border-neutral-600 dark:!bg-neutral-800 dark:text-neutral-100 dark:placeholder:text-neutral-500 dark:focus:ring-[#2b3a2a] [&::-webkit-search-cancel-button]:hidden [&::-webkit-search-decoration]:hidden"
                 />
-                {!searchQuery && (
+                {!searchQuery ? (
                   <kbd className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 rounded-md border border-gray-200 bg-gray-50 px-1.5 py-0.5 font-sans text-[11px] font-medium text-gray-500 dark:border-neutral-600 dark:bg-neutral-700 dark:text-neutral-300">
                     {shortcutLabel}
                   </kbd>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSearchQuery("");
+                      searchInputRef.current?.focus();
+                    }}
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 flex items-center justify-center w-7 h-7 rounded-full text-gray-400 hover:text-gray-600 hover:bg-gray-100 dark:text-neutral-400 dark:hover:text-neutral-200 dark:hover:bg-neutral-700 transition-colors"
+                    aria-label="Xóa nội dung tìm kiếm"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
                 )}
               </form>
 
               {/* Suggestions dropdown */}
               {searchOpen && (
-                <div className="absolute top-[calc(100%+6px)] left-0 right-0 z-50 rounded-2xl bg-white dark:bg-neutral-800 shadow-2xl border border-gray-200/90 dark:border-neutral-700 overflow-hidden">
+                <div className="absolute top-[calc(100%+6px)] left-0 right-0 z-50 rounded-2xl bg-white dark:bg-neutral-800 shadow-2xl border border-gray-200/90 dark:border-neutral-700 overflow-hidden divide-y divide-gray-100 dark:divide-neutral-700">
                   {searchQuery.trim() ? (
                     <div>
                       <button
@@ -338,6 +381,60 @@ export default function Navbar({ hasSidebar = false }) {
                     </div>
                   ) : (
                     <div className="p-3">
+                      {/* Recent searches row if present */}
+                      {recentSearches.length > 0 && (
+                        <div className="mb-3 pb-3 border-b border-gray-100 dark:border-neutral-700/80">
+                          <div className="flex items-center justify-between px-1 pb-2 text-xs font-semibold text-gray-500 dark:text-neutral-400 uppercase tracking-wider">
+                            <span className="flex items-center gap-1.5">
+                              <Clock className="w-3.5 h-3.5 text-primary-500" />
+                              Tìm kiếm gần đây
+                            </span>
+                            <button
+                              type="button"
+                              onMouseDown={(e) => {
+                                e.preventDefault();
+                                handleClearAllRecent();
+                              }}
+                              className="text-[11px] font-normal lowercase text-gray-400 hover:text-gray-600 dark:text-neutral-400 dark:hover:text-neutral-200 transition-colors"
+                            >
+                              xóa tất cả
+                            </button>
+                          </div>
+                          <div className="flex flex-wrap gap-1.5">
+                            {recentSearches.map((term, idx) => (
+                              <div
+                                key={`nav-recent-${idx}`}
+                                className="inline-flex items-center gap-1 pl-2.5 pr-1 py-1 rounded-full text-xs font-medium bg-gray-100 dark:bg-neutral-700 text-gray-700 dark:text-neutral-200 border border-gray-200 dark:border-neutral-600 hover:border-gray-300 dark:hover:border-neutral-500 transition-colors"
+                              >
+                                <button
+                                  type="button"
+                                  onMouseDown={(e) => {
+                                    e.preventDefault();
+                                    handleExecuteSearch(term, term.startsWith("#") ? "hashtag" : "all");
+                                  }}
+                                  className="flex items-center gap-1 hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
+                                >
+                                  <Search className="w-3 h-3 text-gray-400 dark:text-neutral-400" />
+                                  <span className="truncate max-w-[140px]">{term}</span>
+                                </button>
+                                <button
+                                  type="button"
+                                  onMouseDown={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    handleRemoveRecent(term);
+                                  }}
+                                  className="w-4 h-4 rounded-full flex items-center justify-center text-gray-400 hover:text-gray-600 hover:bg-gray-200/60 dark:text-neutral-400 dark:hover:text-neutral-200 dark:hover:bg-neutral-600/60 transition-colors"
+                                  aria-label={`Xóa ${term}`}
+                                >
+                                  <X className="w-3 h-3" />
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
                       <div className="flex items-center justify-between px-1 pb-2.5 text-xs font-semibold text-gray-500 dark:text-neutral-400 uppercase tracking-wider">
                         <span className="flex items-center gap-1.5">
                           <TrendingUp className="w-3.5 h-3.5 text-primary-500" />

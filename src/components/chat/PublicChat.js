@@ -937,7 +937,7 @@ export default function PublicChat() {
                 if (message.type === "system") {
                   return (
                     <div key={message.id} className="flex justify-center my-2">
-                      <span className="text-xs text-gray-400 dark:text-gray-500 bg-gray-100 dark:bg-neutral-800 rounded-full px-3 py-1">
+                      <span className="text-xs text-gray-600 dark:text-neutral-200 bg-gray-100/90 dark:bg-neutral-800/90 border border-gray-200/60 dark:border-neutral-700 rounded-full px-3.5 py-1 font-medium shadow-2xs">
                         {message.content}
                       </span>
                     </div>
