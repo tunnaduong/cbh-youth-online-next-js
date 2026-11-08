@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { search, getSearchSuggestions } from "../Api";
 import HomeLayout from "@/layouts/HomeLayout";
@@ -34,6 +34,9 @@ export default function SearchClient() {
   // the normal all/users/posts tabs.
   const [hashtagTag, setHashtagTag] = useState(null);
   const [suggestedTopics, setSuggestedTopics] = useState([]);
+  const [hasSearched, setHasSearched] = useState(Boolean(queryParam));
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const searchContainerRef = useRef(null);
 
   useEffect(() => {
     getSearchSuggestions()
@@ -49,13 +52,28 @@ export default function SearchClient() {
   }, []);
 
   useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (searchContainerRef.current && !searchContainerRef.current.contains(e.target)) {
+        setDropdownOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  useEffect(() => {
     setSearchQuery(queryParam);
     if (queryParam) {
+      setHasSearched(true);
       if (isHashtagParam) {
         performSearch(queryParam, "hashtag");
       } else {
         performSearch(queryParam, "all");
       }
+    } else {
+      setHasSearched(false);
+      setResults({ users: [], posts: [] });
+      setHashtagTag(null);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [queryParam, isHashtagParam]);
@@ -64,10 +82,12 @@ export default function SearchClient() {
     if (!query.trim()) {
       setResults({ users: [], posts: [] });
       setHashtagTag(null);
+      setHasSearched(false);
       return;
     }
 
     setLoading(true);
+    setHasSearched(true);
     try {
       const response = await search({
         query: type === "hashtag" ? query.trim().replace(/^#/, "") : query.trim(),
@@ -111,10 +131,21 @@ export default function SearchClient() {
     }
   };
 
+  const handleSelectTopic = (rawTag) => {
+    setDropdownOpen(false);
+    const tag = rawTag.replace(/^#/, "");
+    setSearchQuery(`#${tag}`);
+    setHasSearched(true);
+    router.push(`/search?type=hashtag&q=${encodeURIComponent(tag)}`);
+    performSearch(tag, "hashtag");
+  };
+
   const handleSearch = (e) => {
     e.preventDefault();
+    setDropdownOpen(false);
     const trimmed = searchQuery.trim();
     if (!trimmed) return;
+    setHasSearched(true);
 
     if (trimmed.startsWith("#") && trimmed.length > 1) {
       const tag = trimmed.slice(1);
@@ -138,6 +169,8 @@ export default function SearchClient() {
     setSearchQuery("");
     setResults({ users: [], posts: [] });
     setHashtagTag(null);
+    setHasSearched(false);
+    setDropdownOpen(false);
     router.push("/search");
   };
 
@@ -201,11 +234,18 @@ export default function SearchClient() {
                 </svg>
               </button>
               <form onSubmit={handleSearch} className="flex-1">
-                <div className="relative">
+                <div ref={searchContainerRef} className="relative">
                   <input
                     type="text"
                     value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
+                    onChange={(e) => {
+                      setSearchQuery(e.target.value);
+                      if (!dropdownOpen) setDropdownOpen(true);
+                    }}
+                    onFocus={() => setDropdownOpen(true)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Escape") setDropdownOpen(false);
+                    }}
                     placeholder="Tìm kiếm"
                     className="w-full bg-gray-100 dark:bg-neutral-700 rounded-lg px-4 pr-10 py-2.5 text-sm text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 border-0 focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-600 outline-none"
                   />
@@ -231,6 +271,68 @@ export default function SearchClient() {
                         <path d="m9 9 6 6" />
                       </svg>
                     </button>
+                  )}
+
+                  {/* Autocomplete Suggestions Dropdown */}
+                  {dropdownOpen && (
+                    <div className="absolute top-[calc(100%+6px)] left-0 right-0 z-50 rounded-2xl bg-white dark:bg-neutral-800 shadow-xl border border-gray-200 dark:border-neutral-700 overflow-hidden">
+                      {searchQuery.trim() && (
+                        <button
+                          type="button"
+                          onMouseDown={(e) => {
+                            e.preventDefault();
+                            handleSearch(e);
+                          }}
+                          className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-gray-50 dark:hover:bg-neutral-700/60 transition-colors border-b border-gray-100 dark:border-neutral-700"
+                        >
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            width="16"
+                            height="16"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            className="text-primary-600 dark:text-primary-400 shrink-0"
+                          >
+                            <circle cx="11" cy="11" r="8" />
+                            <path d="m21 21-4.3-4.3" />
+                          </svg>
+                          <div className="text-sm text-gray-800 dark:text-neutral-100 truncate">
+                            Tìm kiếm <span className="font-semibold text-primary-600 dark:text-primary-400">"{searchQuery.trim()}"</span>
+                          </div>
+                        </button>
+                      )}
+
+                      {suggestedTopics.length > 0 && (
+                        <div className="p-3">
+                          <div className="text-xs font-semibold text-gray-500 dark:text-neutral-400 uppercase tracking-wider mb-2">
+                            {searchQuery.trim() ? "Chủ đề liên quan" : "Chủ đề gợi ý & thịnh hành"}
+                          </div>
+                          <div className="flex flex-wrap gap-1.5">
+                            {suggestedTopics.map((item, idx) => {
+                              const tagLabel = item.label?.startsWith("#") ? item.label : `#${item.label}`;
+                              const rawTag = item.label?.replace(/^#/, "");
+                              return (
+                                <button
+                                  key={`${item.label}-${idx}`}
+                                  type="button"
+                                  onMouseDown={(e) => {
+                                    e.preventDefault();
+                                    handleSelectTopic(rawTag);
+                                  }}
+                                  className="px-3 py-1.5 rounded-full text-xs font-medium bg-primary-50 hover:bg-primary-100 dark:bg-primary-950/50 dark:hover:bg-primary-900/50 text-primary-700 dark:text-primary-300 border border-primary-200/80 dark:border-primary-800/50 transition-colors"
+                                >
+                                  {tagLabel}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
+                    </div>
                   )}
                 </div>
               </form>
@@ -269,6 +371,49 @@ export default function SearchClient() {
                 Bài viết
               </button>
             </div>
+
+            {/* Quick Suggested Topics Row */}
+            {suggestedTopics.length > 0 && (
+              <div className="mt-3 flex items-center gap-2 overflow-x-auto pb-1 pt-0.5 no-scrollbar">
+                <span className="flex items-center gap-1 text-xs font-semibold text-gray-500 dark:text-neutral-400 whitespace-nowrap shrink-0">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="14"
+                    height="14"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="text-primary-500"
+                  >
+                    <polyline points="23 6 13.5 15.5 8.5 10.5 1 18" />
+                    <polyline points="17 6 23 6 23 12" />
+                  </svg>
+                  Gợi ý:
+                </span>
+                {suggestedTopics.map((item, idx) => {
+                  const tagLabel = item.label?.startsWith("#") ? item.label : `#${item.label}`;
+                  const rawTag = item.label?.replace(/^#/, "");
+                  const isSelected = hashtagTag === rawTag || (isHashtagParam && queryParam === rawTag);
+                  return (
+                    <button
+                      key={`${item.label}-${idx}`}
+                      type="button"
+                      onClick={() => handleSelectTopic(rawTag)}
+                      className={`px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap transition-colors shrink-0 ${
+                        isSelected
+                          ? "bg-primary-600 text-white shadow-sm font-semibold"
+                          : "bg-primary-50 hover:bg-primary-100 dark:bg-primary-950/40 dark:hover:bg-primary-900/40 text-primary-700 dark:text-primary-300 border border-primary-200/80 dark:border-primary-800/40"
+                      }`}
+                    >
+                      {tagLabel}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
           </div>
 
           {/* Results */}
@@ -284,7 +429,7 @@ export default function SearchClient() {
                 Đang tìm kiếm...
               </div>
             </>
-          ) : searchQuery.trim() ? (
+          ) : hasSearched && searchQuery.trim() ? (
             <div className="space-y-6">
               {/* Users Section */}
               {(activeTab === "all" || activeTab === "users") && (
@@ -439,11 +584,7 @@ export default function SearchClient() {
                         <button
                           key={`${item.label}-${idx}`}
                           type="button"
-                          onClick={() => {
-                            setSearchQuery(tagLabel);
-                            router.push(`/search?type=hashtag&q=${encodeURIComponent(rawTag)}`);
-                            performSearch(rawTag, "hashtag");
-                          }}
+                          onClick={() => handleSelectTopic(rawTag)}
                           className="px-3 py-1.5 rounded-full text-xs font-medium bg-primary-50 dark:bg-primary-950/40 text-primary-700 dark:text-primary-300 border border-primary-200 dark:border-primary-800/40 hover:bg-primary-100 dark:hover:bg-primary-900/40 transition-colors"
                         >
                           {tagLabel}

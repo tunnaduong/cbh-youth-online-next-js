@@ -10,9 +10,9 @@ import { SunOutlined, MoonOutlined } from "@ant-design/icons";
 import { useTheme } from "@/contexts/themeContext";
 import { useIsDarkMode } from "@/hooks/useIsDarkMode";
 import { isInApp } from "@/utils/appMode";
-import { getAuthCookie } from "@/utils/cookies";
+import { getAuthCookie, getTokenFromAnywhere, migrateTokenToCookies } from "@/utils/cookies";
 import { isStaffRole } from "@/utils/roles";
-import Api from "@/app/Api";
+import * as Api from "@/app/Api";
 import {
   DashboardOutlined,
   FlagOutlined,
@@ -205,8 +205,11 @@ export default function AdminShell({ children }) {
       setCheckingRole(false);
       return;
     }
+
+    migrateTokenToCookies();
     const session = sessionStorage.getItem(ADMIN_SESSION_KEY);
-    const authToken = getAuthCookie();
+    const authToken = getTokenFromAnywhere();
+
     if (!session && !authToken) {
       // Remember where we were headed: someone arriving already signed in
       // (e.g. from the mobile app's in-app browser) is bounced straight back
@@ -228,27 +231,34 @@ export default function AdminShell({ children }) {
     }
 
     if (localUser && localUser.role) {
-      if (!isStaffRole(localUser.role)) {
+      if (isStaffRole(localUser.role)) {
+        setIsForbidden(false);
+        setAuthed(true);
+        setCheckingRole(false);
+      } else {
         setIsForbidden(true);
         setAuthed(false);
         setCheckingRole(false);
         return;
       }
-      setIsForbidden(false);
-      setAuthed(true);
     }
 
-    // Verify fresh role from backend to prevent client-side role tampering
+    // Verify fresh role from backend to confirm/update rights
     Api.getCurrentUser()
       .then((res) => {
-        const freshUser = res?.data || res;
-        if (freshUser?.role) {
+        const freshUser = res?.data?.data || res?.data || res;
+        if (freshUser && typeof freshUser === "object") {
           setMe(freshUser);
-          localStorage.setItem("CURRENT_USER", JSON.stringify(freshUser));
-          if (!isStaffRole(freshUser.role)) {
-            setIsForbidden(true);
-            setAuthed(false);
-          } else {
+          if (freshUser.role) {
+            localStorage.setItem("CURRENT_USER", JSON.stringify(freshUser));
+            if (isStaffRole(freshUser.role)) {
+              setIsForbidden(false);
+              setAuthed(true);
+            } else {
+              setIsForbidden(true);
+              setAuthed(false);
+            }
+          } else if (localUser && isStaffRole(localUser.role)) {
             setIsForbidden(false);
             setAuthed(true);
           }
@@ -256,10 +266,15 @@ export default function AdminShell({ children }) {
       })
       .catch((err) => {
         if (err?.response?.status === 401) {
+          sessionStorage.removeItem(ADMIN_SESSION_KEY);
           router.replace(`/admin/login?next=${encodeURIComponent(pathname)}`);
         } else if (err?.response?.status === 403) {
           setIsForbidden(true);
           setAuthed(false);
+        } else if (localUser && isStaffRole(localUser.role)) {
+          // If a non-auth error occurred but localUser is already known staff, allow access
+          setIsForbidden(false);
+          setAuthed(true);
         }
       })
       .finally(() => {

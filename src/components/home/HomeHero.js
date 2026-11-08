@@ -2,9 +2,10 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "@bprogress/next/app";
-import { BookOpen, CircleHelp, FileText, Gamepad2, Search } from "lucide-react";
+import { BookOpen, CircleHelp, FileText, Gamepad2, Search, TrendingUp } from "lucide-react";
+import { getSearchSuggestions } from "@/app/Api";
 
 const QUICK_ACTIONS = [
   {
@@ -39,6 +40,20 @@ const QUICK_ACTIONS = [
 export default function HomeHero({ currentUser, authLoading, onCreatePost }) {
   const router = useRouter();
   const [query, setQuery] = useState("");
+  const [suggestedTopics, setSuggestedTopics] = useState([]);
+
+  useEffect(() => {
+    getSearchSuggestions()
+      .then((res) => {
+        const topics = res.data?.data?.topics || res.data?.topics;
+        if (Array.isArray(topics) && topics.length > 0) {
+          setSuggestedTopics(topics);
+        }
+      })
+      .catch((err) => {
+        console.warn("[HomeHero] Failed to load suggestions:", err);
+      });
+  }, []);
 
   const displayName = currentUser?.profile_name || currentUser?.username;
 
@@ -113,6 +128,31 @@ export default function HomeHero({ currentUser, authLoading, onCreatePost }) {
               <Search className="h-[18px] w-[18px]" strokeWidth={2.4} />
             </button>
           </form>
+
+          {suggestedTopics.length > 0 && (
+            <div className="mt-3 flex flex-wrap items-center gap-1.5 text-xs text-white/90">
+              <span className="flex items-center gap-1 font-medium text-white/80">
+                <TrendingUp className="h-3.5 w-3.5" />
+                Gợi ý:
+              </span>
+              {suggestedTopics.slice(0, 5).map((topic, idx) => {
+                const tagLabel = topic.label?.startsWith("#") ? topic.label : `#${topic.label}`;
+                const rawTag = topic.label?.replace(/^#/, "");
+                return (
+                  <button
+                    key={`${topic.label}-${idx}`}
+                    type="button"
+                    onClick={() => {
+                      router.push(`/search?type=hashtag&q=${encodeURIComponent(rawTag)}`);
+                    }}
+                    className="rounded-full bg-white/20 px-2.5 py-1 font-medium text-white backdrop-blur-sm transition hover:bg-white/30"
+                  >
+                    {tagLabel}
+                  </button>
+                );
+              })}
+            </div>
+          )}
         </div>
 
         <div className="mt-6 grid grid-cols-2 gap-2.5 sm:gap-3 md:grid-cols-4 lg:mt-8">
