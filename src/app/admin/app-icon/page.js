@@ -229,7 +229,7 @@ export default function AdminAppIconPage() {
                   <strong>Lịch tự động</strong>:
                   Tuần 20/11 (14/11 - 21/11) sang icon <strong>TeachersDay</strong>;
                   Trước Giáng Sinh (18/12 - 27/12) sang icon <strong>Christmas</strong>;
-                  Năm mới (28/12 - 05/01) sang <strong>NewYear2026</strong>.
+                  Năm mới & Tết Âm Lịch (28/12 đến hết Tết Âm lịch / Rằm tháng Giêng) sang <strong>NewYear2026</strong>.
                 </li>
               </ul>
             }

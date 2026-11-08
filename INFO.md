@@ -336,11 +336,11 @@ Every new or changed page or component must follow this section. If the part you
 - **Admin UI for Forced OTA Upgrade Management (`/admin/app-ota`)**:
   - Added new admin page `src/app/admin/app-ota/page.js` linked in `AdminShell.js` sidebar under "HỆ THỐNG & APP".
   - Allows administrators to remotely enforce OTA auto-updates across mobile clients regardless of client in-app settings.
-  - Supports setting minimum build requirements (`min_build`), target channel (`production` / `preview`), and custom notice/reason messages.
+  - Supports setting minimum version/build (`min_version` - oldest version affected) and maximum version/build (`max_version` - highest version forced to upgrade), target channel including "All branches" (`all`), and custom notice/reason messages.
   - Added API method `adminUpdateAppOta` in `src/app/Api.js` and audit log label `ADMIN_FORCE_OTA_UPDATE` in `src/app/admin/audit-logs/page.js`.
 - **Admin UI for Mobile App Icon Management (`/admin/app-icon`)**:
   - Added new admin page `src/app/admin/app-icon/page.js` linked in `AdminShell.js` sidebar under "HỆ THỐNG & APP".
-  - Allows administrators to inspect current active/seasonal icon status, select any available preset (TeachersDay, Christmas, NewYear2026, Dark, Clear, Tinted, Classic, SchoolCrest), toggle `Force Override` (for all users vs default only), supply an optional reason, or reset back to automated seasonal calendar.
+  - Allows administrators to inspect current active/seasonal icon status, select any available preset (TeachersDay, Christmas, NewYear2026, Dark, Clear, Tinted, Classic, SchoolCrest), toggle `Force Override` (for all users vs default only), supply an optional reason, or reset back to automated seasonal calendar (with New Year season spanning from Tết Dương Lịch to hết Tết Âm Lịch).
   - Added API endpoints `getAppConfig` and `adminUpdateAppIcon` in `src/app/Api.js`.
 
 - **Student verification submit button uses the theme colours (branch `claude/gracious-dirac-cranie`; not linted or built):** in `SettingsClient.js` the "Gửi yêu cầu xác minh" button had `!bg-green-600 ...` overrides, which forced a bright green fill under antd's dark disabled text. The overrides are gone: it is a plain antd `type="primary"` button (`colorPrimary` green when enabled, antd's grey when disabled). Don't force `!bg-*` on antd buttons - it breaks the disabled state.

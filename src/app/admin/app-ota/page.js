@@ -35,8 +35,9 @@ export default function AdminAppOtaPage() {
 
   // Form state
   const [isForced, setIsForced] = useState(false);
-  const [minBuild, setMinBuild] = useState(null);
-  const [targetChannel, setTargetChannel] = useState(null);
+  const [minVersion, setMinVersion] = useState("");
+  const [maxVersion, setMaxVersion] = useState("");
+  const [targetChannel, setTargetChannel] = useState("all");
   const [reasonMessage, setReasonMessage] = useState("");
 
   const fetchConfig = async () => {
@@ -49,8 +50,13 @@ export default function AdminAppOtaPage() {
       if (otaUpdate) {
         setConfig(otaUpdate);
         setIsForced(Boolean(otaUpdate.force));
-        setMinBuild(otaUpdate.min_build ?? null);
-        setTargetChannel(otaUpdate.channel ?? null);
+        setMinVersion(
+          otaUpdate.min_version ?? (otaUpdate.min_build ? String(otaUpdate.min_build) : "")
+        );
+        setMaxVersion(
+          otaUpdate.max_version ?? (otaUpdate.max_build ? String(otaUpdate.max_build) : "")
+        );
+        setTargetChannel(otaUpdate.channel || "all");
         setReasonMessage(otaUpdate.message ?? "");
       }
     } catch (err) {
@@ -68,10 +74,15 @@ export default function AdminAppOtaPage() {
   const handleSave = async () => {
     setSaving(true);
     try {
+      const cleanMin = minVersion ? String(minVersion).trim() : null;
+      const cleanMax = maxVersion ? String(maxVersion).trim() : null;
       await adminUpdateAppOta({
         force: isForced,
-        min_build: minBuild ? parseInt(minBuild, 10) : null,
-        channel: targetChannel || null,
+        min_version: cleanMin,
+        max_version: cleanMax,
+        min_build: cleanMin && !isNaN(cleanMin) ? parseInt(cleanMin, 10) : null,
+        max_build: cleanMax && !isNaN(cleanMax) ? parseInt(cleanMax, 10) : null,
+        channel: targetChannel || "all",
         message: reasonMessage.trim() || undefined,
       });
       message.success("Cập nhật chỉ thị nâng cấp OTA bắt buộc và ghi nhật ký thành công!");
@@ -89,8 +100,11 @@ export default function AdminAppOtaPage() {
     try {
       await adminUpdateAppOta({
         force: false,
+        min_version: null,
+        max_version: null,
         min_build: null,
-        channel: null,
+        max_build: null,
+        channel: "all",
         message: "Hủy bỏ chỉ thị bắt buộc cập nhật",
       });
       message.success("Đã tắt chế độ bắt buộc nâng cấp. Thiết bị sẽ tuân theo cài đặt cá nhân của người dùng.");
@@ -145,12 +159,18 @@ export default function AdminAppOtaPage() {
 
         <Col xs={24} sm={12} md={6}>
           <Card bordered size="small" style={{ borderRadius: 8 }}>
-            <div style={{ color: "#888", fontSize: 13, marginBottom: 4 }}>Yêu cầu Build tối thiểu</div>
-            <div style={{ fontSize: 18, fontWeight: "bold", color: config?.min_build ? "#1677ff" : "#555" }}>
-              {config?.min_build ? `Build ≥ ${config.min_build}` : "Tất cả các bản build"}
+            <div style={{ color: "#888", fontSize: 13, marginBottom: 4 }}>Phạm vi phiên bản bị ép</div>
+            <div style={{ fontSize: 15, fontWeight: "bold", color: "#1677ff" }}>
+              {config?.min_version || config?.max_version ? (
+                `${config?.min_version || "Cũ nhất"} → ${config?.max_version || "Mới nhất"}`
+              ) : (
+                "Tất cả các phiên bản"
+              )}
             </div>
             <div style={{ fontSize: 12, color: "#888", marginTop: 8 }}>
-              {config?.min_build ? "Chỉ ép buộc các máy dưới build này" : "Áp dụng toàn bộ thiết bị"}
+              {config?.min_version || config?.max_version
+                ? "Chỉ ép trong khoảng phiên bản này"
+                : "Áp dụng toàn bộ thiết bị"}
             </div>
           </Card>
         </Col>
@@ -164,11 +184,13 @@ export default function AdminAppOtaPage() {
               ) : config?.channel === "production" ? (
                 <Tag color="blue">Production (main)</Tag>
               ) : (
-                <Tag color="default">Kênh hiện tại của App</Tag>
+                <Tag color="green">Tất cả các nhánh (All branches)</Tag>
               )}
             </div>
             <div style={{ fontSize: 12, color: "#888", marginTop: 8 }}>
-              Kênh OTA được tải bundle
+              {config?.channel === "all" || !config?.channel
+                ? "Mọi nhánh tự nâng cấp lên bản mới nhất của nhánh đó"
+                : "Chỉ ép các máy thuộc nhánh này"}
             </div>
           </Card>
         </Col>
@@ -211,7 +233,10 @@ export default function AdminAppOtaPage() {
                   - Khi <b>BẬT</b>: Ứng dụng di động khi khởi động hoặc truy cập hệ thống sẽ tự động kiểm tra bản cập nhật OTA từ máy chủ và <b>ngay lập tức tải và áp dụng</b>, bỏ qua cài đặt tắt OTA trong Cài đặt của người dùng.
                 </p>
                 <p style={{ margin: "4px 0" }}>
-                  - Nếu thiết lập <b>Build tối thiểu</b>, các máy đã ở build đó trở lên sẽ không bị ép buộc tải lại.
+                  - <b>Phạm vi phiên bản</b>: Cho phép chỉ định phiên bản/build tối thiểu (oldest version affected) và tối đa (highest version forced to upgrade). Các máy ngoài khoảng này sẽ không bị ép nâng cấp.
+                </p>
+                <p style={{ margin: "4px 0" }}>
+                  - <b>Tất cả các nhánh (All branches)</b>: Mọi thiết bị (Production hoặc Preview) đều được nâng cấp lên bản mới nhất của chính nhánh đó.
                 </p>
                 <p style={{ margin: "4px 0" }}>
                   - Mọi thay đổi từ Admin Web hoặc lệnh CLI <code>php artisan app:ota</code> đều được lưu vào <b>Nhật ký hoạt động hệ thống (Audit Logs)</b>.
@@ -237,7 +262,7 @@ export default function AdminAppOtaPage() {
                   />
                   <span style={{ color: isForced ? "#d4380d" : "#666", fontWeight: isForced ? "600" : "normal" }}>
                     {isForced
-                      ? "Đang ép buộc tất cả thiết bị đủ điều kiện tự động nâng cấp"
+                      ? "Đang ép buộc thiết bị trong phạm vi tự động nâng cấp"
                       : "Thiết bị hoạt động theo chế độ cập nhật bình thường của người dùng"}
                   </span>
                 </div>
@@ -245,17 +270,29 @@ export default function AdminAppOtaPage() {
 
               <div style={{ marginBottom: 16 }}>
                 <label style={{ display: "block", fontWeight: 600, marginBottom: 6 }}>
-                  Yêu cầu Build tối thiểu (Tùy chọn):
+                  Phiên bản / Build tối thiểu bị ảnh hưởng (Oldest version affected):
                 </label>
-                <InputNumber
-                  style={{ width: "100%" }}
-                  placeholder="Ví dụ: 1025 (để trống nếu áp dụng mọi build)"
-                  value={minBuild}
-                  onChange={(val) => setMinBuild(val)}
-                  min={1}
+                <Input
+                  placeholder="Ví dụ: 1020 hoặc 6.4.0 (để trống nếu áp dụng từ bản cũ nhất)"
+                  value={minVersion}
+                  onChange={(e) => setMinVersion(e.target.value)}
                 />
                 <span style={{ fontSize: 12, color: "#888", display: "block", marginTop: 4 }}>
-                  Nếu nhập, chỉ những máy đang chạy build nhỏ hơn số này mới bị ép nâng cấp.
+                  Phiên bản/build cũ nhất chịu tác động. Các thiết bị chạy bản thấp hơn mức này sẽ <b>KHÔNG</b> bị ép nâng cấp.
+                </span>
+              </div>
+
+              <div style={{ marginBottom: 16 }}>
+                <label style={{ display: "block", fontWeight: 600, marginBottom: 6 }}>
+                  Phiên bản / Build tối đa bị ép nâng cấp (Highest version forced to upgrade):
+                </label>
+                <Input
+                  placeholder="Ví dụ: 1050 hoặc 6.4.2 (để trống nếu áp dụng đến bản mới nhất)"
+                  value={maxVersion}
+                  onChange={(e) => setMaxVersion(e.target.value)}
+                />
+                <span style={{ fontSize: 12, color: "#888", display: "block", marginTop: 4 }}>
+                  Phiên bản/build cao nhất cần ép nâng cấp. Các thiết bị chạy bản cao hơn mức này đã được coi là mới và <b>KHÔNG</b> bị ép nâng cấp.
                 </span>
               </div>
             </Col>
@@ -269,15 +306,14 @@ export default function AdminAppOtaPage() {
                   style={{ width: "100%" }}
                   value={targetChannel}
                   onChange={(val) => setTargetChannel(val)}
-                  placeholder="Theo kênh hiện tại của ứng dụng"
-                  allowClear
                   options={[
+                    { value: "all", label: "Tất cả các nhánh (All branches) - Ép nâng cấp lên bản mới nhất của từng nhánh" },
                     { value: "production", label: "Production (Nhánh ổn định main)" },
                     { value: "preview", label: "Preview (Nhánh xem trước dhphuc)" },
                   ]}
                 />
                 <span style={{ fontSize: 12, color: "#888", display: "block", marginTop: 4 }}>
-                  Để trống để ứng dụng tự cập nhật theo kênh mà thiết bị đó đang đăng ký.
+                  Chọn <b>Tất cả các nhánh</b> để mọi thiết bị (dù đang ở Production hay Preview) đều tự động nâng cấp lên bản mới nhất của chính nhánh đó.
                 </span>
               </div>
 
