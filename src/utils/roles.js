@@ -3,4 +3,7 @@
 // code used to check `role === "admin"`.
 export const STAFF_ROLES = ["admin", "teacher"];
 
-export const isStaffRole = (role) => STAFF_ROLES.includes(role);
+export const isStaffRole = (role) => {
+  if (!role || typeof role !== "string") return false;
+  return STAFF_ROLES.includes(role.trim().toLowerCase());
+};

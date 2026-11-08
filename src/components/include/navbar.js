@@ -6,9 +6,11 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "@bprogress/next/app";
 import { Alert, Drawer } from "antd";
 import {
+  ArrowRight,
   ChevronDown,
   CircleHelp,
   FileUp,
+  Hash,
   LogIn,
   LogOut,
   Menu,
@@ -18,6 +20,7 @@ import {
   Search,
   Settings,
   SquarePen,
+  TrendingUp,
   User,
   UserRound,
   Wallet,
@@ -30,7 +33,7 @@ import { useAuthContext, useChatContext } from "@/contexts/Support";
 import { useTheme } from "@/contexts/themeContext";
 import useCreatePostGate from "@/hooks/useCreatePostGate";
 import CreatePostModal from "@/components/modals/CreatePostModal";
-import { logoutRequest } from "@/app/Api";
+import { logoutRequest, getSearchSuggestions } from "@/app/Api";
 import AccountSwitcher from "./AccountSwitcher";
 import AvatarFrameWrap from "@/components/profile/AvatarFrameWrap";
 import UserName from "@/components/profile/UserName";
@@ -73,8 +76,70 @@ export default function Navbar({ hasSidebar = false }) {
 
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [suggestedTopics, setSuggestedTopics] = useState([]);
+  const [loadingSuggestions, setLoadingSuggestions] = useState(false);
   const [shortcutLabel, setShortcutLabel] = useState("Ctrl /");
   const searchInputRef = useRef(null);
+  const searchContainerRef = useRef(null);
+
+  const fetchSuggestions = useCallback((q = "") => {
+    setLoadingSuggestions(true);
+    getSearchSuggestions(q ? { q } : {})
+      .then((res) => {
+        const topics = res.data?.data?.topics || res.data?.topics;
+        if (Array.isArray(topics)) {
+          setSuggestedTopics(topics);
+        }
+      })
+      .catch((err) => {
+        console.warn("[Navbar] Failed to load suggestions:", err);
+      })
+      .finally(() => {
+        setLoadingSuggestions(false);
+      });
+  }, []);
+
+  // Close search suggestions on click outside
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (searchContainerRef.current && !searchContainerRef.current.contains(e.target)) {
+        setSearchOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  // Fetch suggestions with debounce when query changes
+  useEffect(() => {
+    if (!searchOpen) return;
+    const timer = setTimeout(() => {
+      fetchSuggestions(searchQuery.trim());
+    }, 250);
+    return () => clearTimeout(timer);
+  }, [searchQuery, searchOpen, fetchSuggestions]);
+
+  // Close search dropdown on page change
+  useEffect(() => {
+    setSearchOpen(false);
+  }, [pathname]);
+
+  const handleExecuteSearch = (val, type = "all") => {
+    setSearchOpen(false);
+    if (searchInputRef.current) searchInputRef.current.blur();
+    const trimmed = (val || "").trim();
+    if (!trimmed) return;
+
+    if (type === "hashtag" || trimmed.startsWith("#")) {
+      const clean = trimmed.replace(/^#/, "");
+      setSearchQuery(`#${clean}`);
+      router.push(`/search?type=hashtag&q=${encodeURIComponent(clean)}`);
+    } else {
+      setSearchQuery(trimmed);
+      router.push(`/search?q=${encodeURIComponent(trimmed)}`);
+    }
+  };
 
   // Calculate total unread messages
   // Filter out the public chat group "Tán gẫu linh tinh" from unread count
@@ -129,8 +194,7 @@ export default function Navbar({ hasSidebar = false }) {
 
   const handleSearch = (e) => {
     e.preventDefault();
-    const q = searchQuery.trim();
-    router.push(q ? `/search?q=${encodeURIComponent(q)}` : "/search");
+    handleExecuteSearch(searchQuery, "all");
   };
 
   // Built on click (not during render) so server and client markup match.
@@ -183,24 +247,138 @@ export default function Navbar({ hasSidebar = false }) {
           </div>
 
           <div className="hidden min-w-0 flex-1 lg:block">
-            <form role="search" onSubmit={handleSearch} className="relative max-w-[560px]">
-              <Search className="pointer-events-none absolute left-3.5 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-gray-400 dark:text-neutral-400" />
-              <input
-                ref={searchInputRef}
-                type="search"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Tìm kiếm bài viết, thành viên, chủ đề..."
-                aria-label="Tìm kiếm"
-                aria-keyshortcuts="Control+/"
-                className="h-11 w-full rounded-xl border border-gray-200 bg-white pl-10 pr-16 text-sm text-gray-800 shadow-none placeholder:text-gray-400 focus:border-primary-400 focus:ring-2 focus:ring-primary-100 dark:border-neutral-600 dark:!bg-neutral-800 dark:text-neutral-100 dark:placeholder:text-neutral-500 dark:focus:ring-[#2b3a2a]"
-              />
-              {!searchQuery && (
-                <kbd className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 rounded-md border border-gray-200 bg-gray-50 px-1.5 py-0.5 font-sans text-[11px] font-medium text-gray-500 dark:border-neutral-600 dark:bg-neutral-700 dark:text-neutral-300">
-                  {shortcutLabel}
-                </kbd>
+            <div ref={searchContainerRef} className="relative max-w-[560px]">
+              <form role="search" onSubmit={handleSearch} className="relative w-full">
+                <Search className="pointer-events-none absolute left-3.5 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-gray-400 dark:text-neutral-400" />
+                <input
+                  ref={searchInputRef}
+                  type="search"
+                  value={searchQuery}
+                  onChange={(e) => {
+                    setSearchQuery(e.target.value);
+                    if (!searchOpen) setSearchOpen(true);
+                  }}
+                  onFocus={() => {
+                    setSearchOpen(true);
+                    if (suggestedTopics.length === 0) fetchSuggestions();
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === "Escape") {
+                      setSearchOpen(false);
+                      searchInputRef.current?.blur();
+                    }
+                  }}
+                  placeholder="Tìm kiếm bài viết, thành viên, chủ đề..."
+                  aria-label="Tìm kiếm"
+                  aria-keyshortcuts="Control+/"
+                  className="h-11 w-full rounded-xl border border-gray-200 bg-white pl-10 pr-16 text-sm text-gray-800 shadow-none placeholder:text-gray-400 focus:border-primary-400 focus:ring-2 focus:ring-primary-100 dark:border-neutral-600 dark:!bg-neutral-800 dark:text-neutral-100 dark:placeholder:text-neutral-500 dark:focus:ring-[#2b3a2a]"
+                />
+                {!searchQuery && (
+                  <kbd className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 rounded-md border border-gray-200 bg-gray-50 px-1.5 py-0.5 font-sans text-[11px] font-medium text-gray-500 dark:border-neutral-600 dark:bg-neutral-700 dark:text-neutral-300">
+                    {shortcutLabel}
+                  </kbd>
+                )}
+              </form>
+
+              {/* Suggestions dropdown */}
+              {searchOpen && (
+                <div className="absolute top-[calc(100%+6px)] left-0 right-0 z-50 rounded-2xl bg-white dark:bg-neutral-800 shadow-2xl border border-gray-200/90 dark:border-neutral-700 overflow-hidden">
+                  {searchQuery.trim() ? (
+                    <div>
+                      <button
+                        type="button"
+                        onMouseDown={(e) => {
+                          e.preventDefault();
+                          handleExecuteSearch(searchQuery.trim(), "all");
+                        }}
+                        className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-gray-50 dark:hover:bg-neutral-700/60 transition-colors border-b border-gray-100 dark:border-neutral-700"
+                      >
+                        <div className="w-8 h-8 rounded-full bg-primary-50 dark:bg-primary-950/50 flex items-center justify-center text-primary-600 dark:text-primary-400 shrink-0">
+                          <Search className="w-4 h-4" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="text-sm text-gray-800 dark:text-neutral-100 truncate">
+                            Tìm kiếm <span className="font-semibold text-primary-600 dark:text-primary-400">"{searchQuery.trim()}"</span>
+                          </div>
+                          <div className="text-xs text-gray-400 dark:text-neutral-400">
+                            Nhấn Enter để xem kết quả
+                          </div>
+                        </div>
+                        <ArrowRight className="w-4 h-4 text-gray-400 shrink-0" />
+                      </button>
+
+                      {suggestedTopics.length > 0 && (
+                        <div className="p-3">
+                          <div className="flex items-center gap-1.5 text-xs font-semibold text-gray-500 dark:text-neutral-400 uppercase tracking-wider mb-2 px-1">
+                            <Hash className="w-3.5 h-3.5 text-primary-500" />
+                            Chủ đề liên quan
+                          </div>
+                          <div className="flex flex-wrap gap-1.5">
+                            {suggestedTopics.map((item, idx) => {
+                              const tagLabel = item.label?.startsWith("#") ? item.label : `#${item.label}`;
+                              const rawTag = item.label?.replace(/^#/, "");
+                              return (
+                                <button
+                                  key={`${item.label}-${idx}`}
+                                  type="button"
+                                  onMouseDown={(e) => {
+                                    e.preventDefault();
+                                    handleExecuteSearch(rawTag, "hashtag");
+                                  }}
+                                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-gray-100 hover:bg-primary-50 dark:bg-neutral-700 dark:hover:bg-primary-950/50 text-gray-700 dark:text-neutral-200 hover:text-primary-700 dark:hover:text-primary-300 border border-gray-200 dark:border-neutral-600 hover:border-primary-200 dark:hover:border-primary-800 transition-colors"
+                                >
+                                  <Hash className="w-3 h-3 text-primary-500" />
+                                  <span>{tagLabel}</span>
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="p-3">
+                      <div className="flex items-center justify-between px-1 pb-2.5 text-xs font-semibold text-gray-500 dark:text-neutral-400 uppercase tracking-wider">
+                        <span className="flex items-center gap-1.5">
+                          <TrendingUp className="w-3.5 h-3.5 text-primary-500" />
+                          Chủ đề gợi ý & thịnh hành
+                        </span>
+                        <span className="text-[11px] font-normal lowercase text-gray-400 dark:text-neutral-400">
+                          chạm để khám phá
+                        </span>
+                      </div>
+
+                      {suggestedTopics.length > 0 ? (
+                        <div className="flex flex-wrap gap-1.5">
+                          {suggestedTopics.map((item, idx) => {
+                            const tagLabel = item.label?.startsWith("#") ? item.label : `#${item.label}`;
+                            const rawTag = item.label?.replace(/^#/, "");
+                            return (
+                              <button
+                                key={`${item.label}-${idx}`}
+                                type="button"
+                                onMouseDown={(e) => {
+                                  e.preventDefault();
+                                  handleExecuteSearch(rawTag, "hashtag");
+                                }}
+                                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-primary-50 hover:bg-primary-100 dark:bg-primary-950/50 dark:hover:bg-primary-900/50 text-primary-700 dark:text-primary-300 border border-primary-200/80 dark:border-primary-800/50 transition-colors"
+                              >
+                                <Hash className="w-3 h-3 text-primary-500" />
+                                <span>{tagLabel}</span>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      ) : (
+                        <div className="py-4 text-center text-xs text-gray-400 dark:text-neutral-400">
+                          {loadingSuggestions ? "Đang tải chủ đề gợi ý..." : "Không có chủ đề gợi ý"}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
               )}
-            </form>
+            </div>
           </div>
 
           <div className="ml-auto flex shrink-0 items-center gap-1 sm:gap-2">
