@@ -333,7 +333,6 @@ Every new or changed page or component must follow this section. If the part you
   - Allows administrators to remotely enforce OTA auto-updates across mobile clients regardless of client in-app settings.
   - Supports setting minimum build requirements (`min_build`), target channel (`production` / `preview`), and custom notice/reason messages.
   - Added API method `adminUpdateAppOta` in `src/app/Api.js` and audit log label `ADMIN_FORCE_OTA_UPDATE` in `src/app/admin/audit-logs/page.js`.
-
 - **Admin UI for Mobile App Icon Management (`/admin/app-icon`)**:
   - Added new admin page `src/app/admin/app-icon/page.js` linked in `AdminShell.js` sidebar under "HỆ THỐNG & APP".
   - Allows administrators to inspect current active/seasonal icon status, select any available preset (TeachersDay, Christmas, NewYear2026, Dark, Clear, Tinted, Classic, SchoolCrest), toggle `Force Override` (for all users vs default only), supply an optional reason, or reset back to automated seasonal calendar.
