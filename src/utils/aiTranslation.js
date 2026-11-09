@@ -40,6 +40,7 @@ export function setAiTranslatePreference(code) {
 }
 
 export function getLanguageLabel(code) {
-  const found = AI_TRANSLATION_LANGUAGES.find((item) => item.code === code);
+  const normCode = code === "zh-cn" ? "zh" : code;
+  const found = AI_TRANSLATION_LANGUAGES.find((item) => item.code === normCode);
   return found ? found.label : "Tiếng Việt";
 }
