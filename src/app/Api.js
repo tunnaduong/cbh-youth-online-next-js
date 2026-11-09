@@ -145,6 +145,10 @@ export const updatePost = (id, params, config = {}) => {
   return Api.postFormDataRequest("/v1.0/topics/" + id, params, config);
 };
 
+export const translateTopic = (id, targetLang = "vi") => {
+  return Api.postRequest(`/v1.0/topics/${id}/translate`, { target_lang: targetLang });
+};
+
 export const verifyEmail = (token) => {
   return Api.getRequest("/v1.0/email/verify/" + token);
 };

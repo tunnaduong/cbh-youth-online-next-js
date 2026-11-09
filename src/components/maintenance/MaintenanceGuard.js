@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import MaintenanceScreen from "./MaintenanceScreen";
 import { API_DOWN_EVENT, checkApiAlive } from "./apiStatus";
+import { isInApp } from "@/utils/appMode";
 
 const POLL_INTERVAL = 15000;
 
@@ -21,7 +22,11 @@ export default function MaintenanceGuard({ initialDown = false, reloadOnRecover 
     checkingRef.current = false;
     setChecking(false);
     setDown((wasDown) => {
-      if (wasDown && alive && reloadOnRecover) window.location.reload();
+      // Trong webview ứng dụng di động (game, admin, giftshop...), không tự tải lại trang khi mạng hồi phục
+      // để tránh mất dữ liệu game hoặc form đang điền dở
+      if (wasDown && alive && reloadOnRecover && !isInApp()) {
+        window.location.reload();
+      }
       return !alive;
     });
   }, [reloadOnRecover]);

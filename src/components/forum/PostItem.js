@@ -34,7 +34,9 @@ import {
   archivePost as archivePostApi,
   unarchivePost as unarchivePostApi,
   deletePost,
+  translateTopic,
 } from "@/app/Api";
+import { getAiTranslateLanguage, getLanguageLabel } from "@/utils/aiTranslation";
 import {
   MoreHorizontal,
   Share,
@@ -46,6 +48,8 @@ import {
   Archive,
   ArchiveRestore,
   Gift,
+  Sparkles,
+  Loader2,
 } from "lucide-react";
 import { usePostRefresh } from "@/contexts/PostRefreshContext";
 import PostVotesModal from "./PostVotesModal";
@@ -98,6 +102,12 @@ export default function PostItem({
   const [showShareModal, setShowShareModal] = useState(false);
   const [showGiftModal, setShowGiftModal] = useState(false);
   const [isHidden, setIsHidden] = useState(false);
+  const [isTranslating, setIsTranslating] = useState(false);
+  const [translatedData, setTranslatedData] = useState(null);
+  const [isTranslated, setIsTranslated] = useState(false);
+
+  const activeTitle = isTranslated && translatedData?.title ? translatedData.title : post.title;
+  const activeContent = isTranslated && translatedData?.content_html ? translatedData.content_html : post.content;
   const [isArchived, setIsArchived] = useState(!!post.archived);
   const maxLength = 300; // Số ký tự tối đa trước khi truncate
   const myVote =
@@ -310,14 +320,14 @@ export default function PostItem({
     : null;
 
   const getContentWithReadMore = () => {
-    const textContent = post.content?.replace(/<[^>]*>/g, ""); // Remove HTML tags để đếm text
+    const textContent = activeContent?.replace(/<[^>]*>/g, ""); // Remove HTML tags để đếm text
     const needsTruncation = textContent?.length > maxLength;
 
     let content;
     if (showFullContent) {
-      content = post.content;
+      content = activeContent;
     } else {
-      content = truncateHtml(post.content, maxLength);
+      content = truncateHtml(activeContent, maxLength);
     }
 
     // Wrap iframes in responsive containers
@@ -338,18 +348,18 @@ export default function PostItem({
   // Only build a "Xem nhanh" ToC for the single post view, from the raw content
   // (headings get injected once here so ids match between the ToC and the body).
   const { html: contentWithHeadingIds, headings: tocHeadings } = useMemo(() => {
-    if (!single || !post.content) return { html: post.content, headings: [] };
-    return extractHeadingsAndInjectIds(linkifyMentionsInHtml(post.content, validMentions));
-  }, [single, post.content, post.mentions]);
+    if (!single || !activeContent) return { html: activeContent, headings: [] };
+    return extractHeadingsAndInjectIds(linkifyMentionsInHtml(activeContent, validMentions));
+  }, [single, activeContent, post.mentions]);
 
   const soundcloudEmbedUrls = useMemo(
-    () => extractSoundCloudEmbedUrls(post.content),
-    [post.content]
+    () => extractSoundCloudEmbedUrls(activeContent),
+    [activeContent]
   );
 
   const youtubeEmbedIds = useMemo(
-    () => extractYoutubeEmbedIds(post.content),
-    [post.content]
+    () => extractYoutubeEmbedIds(activeContent),
+    [activeContent]
   );
 
   // Facebook-style card for the first link in the body - only when the post
@@ -359,8 +369,8 @@ export default function PostItem({
     post.video_urls?.length > 0 ||
     post.document_urls?.length > 0;
   const linkPreviewUrl = useMemo(
-    () => (hasAttachedMedia ? null : findPreviewableUrlInHtml(post.content)),
-    [hasAttachedMedia, post.content]
+    () => (hasAttachedMedia ? null : findPreviewableUrlInHtml(activeContent)),
+    [hasAttachedMedia, activeContent]
   );
 
   const handleShare = () => {
@@ -513,12 +523,50 @@ export default function PostItem({
   );
   const isAdmin = isStaffRole(currentUser?.role);
 
+
+  const handleToggleAiTranslate = async () => {
+    if (isTranslated) {
+      setIsTranslated(false);
+      return;
+    }
+    if (translatedData) {
+      setIsTranslated(true);
+      return;
+    }
+    const targetLang = getAiTranslateLanguage();
+    setIsTranslating(true);
+    try {
+      const res = await translateTopic(post.id, targetLang);
+      if (res.data?.success && res.data?.translated) {
+        setTranslatedData({
+          ...res.data.translated,
+          target_lang: res.data.target_lang || targetLang,
+        });
+        setIsTranslated(true);
+        message.success(`Đã dịch bài viết sang ${getLanguageLabel(res.data.target_lang || targetLang)}`);
+      } else {
+        message.error("Không thể dịch bài viết lúc này");
+      }
+    } catch (err) {
+      message.error(err?.response?.data?.message || "Lỗi dịch bài viết bằng Yoyo AI");
+    } finally {
+      setIsTranslating(false);
+    }
+  };
+
   const menuItems = [
     {
       key: "share",
       label: "Chia sẻ",
       icon: <Share size={16} />,
       onClick: handleShare,
+    },
+    {
+      key: "translate-ai",
+      label: isTranslating ? "Đang dịch bằng Yoyo AI..." : isTranslated ? "Xem bài viết gốc" : (translatedData ? "Xem bản dịch Yoyo AI" : "Dịch bằng Yoyo AI"),
+      icon: isTranslating ? <Loader2 size={16} className="animate-spin text-emerald-500" /> : <Sparkles size={16} className="text-emerald-500" />,
+      disabled: isTranslating,
+      onClick: handleToggleAiTranslate,
     },
     // Gifting points to the author: other people's posts only (the server
     // resolves the recipient from the post, so anonymous authors stay hidden).
@@ -792,9 +840,24 @@ export default function PostItem({
                   Đã lưu trữ
                 </span>
               )}
+              {isTranslated && translatedData && (
+                <div className="flex items-center justify-between text-xs px-3 py-1.5 mb-2 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/60 transition-colors">
+                  <span className="flex items-center gap-1.5 font-medium">
+                    <Sparkles size={13} className="text-emerald-600 dark:text-emerald-400" />
+                    Đã dịch bởi Yoyo AI sang {getLanguageLabel(translatedData.target_lang)}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setIsTranslated(false)}
+                    className="text-xs font-semibold hover:underline text-emerald-800 dark:text-emerald-200 cursor-pointer ml-2"
+                  >
+                    Xem bản gốc
+                  </button>
+                </div>
+              )}
               {single ? (
                 <h1 className="text-xl font-semibold mb-1 dark:text-neutral-300">
-                  {post.title || (
+                  {activeTitle || (
                     <span className="text-gray-500">(Chưa có tiêu đề)</span>
                   )}
                 </h1>
@@ -808,7 +871,7 @@ export default function PostItem({
                   }
                 >
                   <h1 className="text-xl font-semibold mb-1 dark:text-neutral-300">
-                    {post.title || (
+                    {activeTitle || (
                       <span className="text-gray-500">Chưa có tiêu đề</span>
                     )}
                   </h1>
@@ -841,7 +904,7 @@ export default function PostItem({
             className="text-base max-w-[600px] overflow-wrap prose mt-[0.75em]"
             dangerouslySetInnerHTML={{
               __html:
-                !post.content || post.content.trim() === ""
+                !activeContent || activeContent.trim() === ""
                   ? '<span style="color: #9ca3af;">(Chưa có nội dung)</span>'
                   : rewriteExternalLinksInHtml(
                       single
