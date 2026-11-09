@@ -264,6 +264,10 @@ Every new or changed page or component must follow this section. If the part you
 
 ## Recent work (newest first, as of 2026-11)
 
+- **Fix WebRTC Two-Way Audio, Incoming vs Outgoing Modal Collision & Offer/Answer Race (`src/components/call/ActiveCallModal.js`, `src/components/call/IncomingCallModal.js`, `src/contexts/provider/CallProvider.js`)**:
+  - `ActiveCallModal.js`: Mounted `<audio ref={remoteAudioRef} autoPlay playsInline className="hidden" />` in both minimized PiP and full-screen modal views so remote voice/video audio always plays in the DOM. Guarded `ActiveCallModal` from rendering when `callStatus === "ringing" && !isCaller` so incoming calls always display `IncomingCallModal` (with Answer/Decline buttons) instead of being covered by the outgoing call screen.
+  - `CallProvider.js`: Uses `ringingOutward` for outgoing ringing state; creates `RTCPeerConnection` and attaches local tracks *before* calling `answerCallApi` (and queues any early offers in `pendingOfferRef`); listens for call events on both `App.Models.User.{id}` and `chat.{conversationId}` with deduplication; retries `ringing` acknowledgment at 1.5s/3.5s; includes OpenRelay TURN servers and receive-only fallback when microphone/camera access fails.
+
 - **Thêm tính năng chuyển đổi Ảnh và Video (Photos & Videos toggle) trên trang thông tin cá nhân** (`src/components/profile/ProfilePhotoGallery.js`, `src/app/Api.js`):
   - **API**: Bổ sung hàm `getUserVideos(username, page, perPage)` gọi endpoint `/v1.0/users/{username}/videos`.
   - **Media Gallery trên Profile**: Nâng cấp thẻ thư viện phương tiện trên trang cá nhân của người dùng (cả trên desktop sidebar và mobile card) với nút chuyển đổi tab Ảnh và Video (`activeMedia`), hiển thị số lượng tương ứng, hỗ trợ lưới video với biểu tượng phát (play overlay), cuộn tải thêm trang (`loadMoreVideos`) và liên kết xem bài viết gốc.

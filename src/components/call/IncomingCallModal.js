@@ -10,11 +10,20 @@ export default function IncomingCallModal() {
   const { callStatus, callType, activeCall, answerCall, rejectCall } = useCallContext();
   const { currentUser } = useAuthContext();
 
-  if (
-    callStatus !== "ringing" ||
-    !activeCall ||
-    (currentUser?.id && activeCall.caller?.id === currentUser?.id)
-  ) {
+  const isCaller =
+    Boolean(
+      currentUser?.id &&
+        activeCall?.caller?.id &&
+        String(activeCall.caller.id) === String(currentUser.id)
+    ) ||
+    Boolean(
+      currentUser?.username &&
+        activeCall?.caller?.username &&
+        activeCall.caller.username === currentUser.username
+    ) ||
+    Boolean(!activeCall?.caller && activeCall?.receiver);
+
+  if (callStatus !== "ringing" || !activeCall || isCaller) {
     return null;
   }
 
