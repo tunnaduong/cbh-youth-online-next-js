@@ -14,7 +14,6 @@ import {
   PhoneOff,
   Minimize2,
   Maximize2,
-  Phone,
 } from "lucide-react";
 
 function formatSeconds(secs) {
@@ -52,7 +51,11 @@ export default function ActiveCallModal() {
   // Attach remote media stream to dedicated audio element so sound always plays
   useEffect(() => {
     if (remoteAudioRef.current && remoteStream) {
-      remoteAudioRef.current.srcObject = remoteStream;
+      if (remoteAudioRef.current.srcObject !== remoteStream) {
+        remoteAudioRef.current.srcObject = remoteStream;
+      }
+      remoteAudioRef.current.muted = false;
+      remoteAudioRef.current.volume = 1.0;
       const playPromise = remoteAudioRef.current.play();
       if (playPromise !== undefined) {
         playPromise.catch((err) => {
@@ -60,7 +63,7 @@ export default function ActiveCallModal() {
         });
       }
     }
-  }, [remoteStream, callStatus]);
+  }, [remoteStream, isMinimized, callStatus]);
 
   // Attach local media stream
   useEffect(() => {
@@ -76,30 +79,56 @@ export default function ActiveCallModal() {
     }
   }, [remoteStream, isMinimized, callStatus]);
 
-  // Only render when we are calling (outgoing), ringing or connected
-  if (callStatus !== "calling" && callStatus !== "ringing" && callStatus !== "connected") {
+  const isCaller =
+    Boolean(
+      currentUser?.id &&
+        activeCall?.caller?.id &&
+        String(activeCall.caller.id) === String(currentUser.id)
+    ) ||
+    Boolean(
+      currentUser?.username &&
+        activeCall?.caller?.username &&
+        activeCall.caller.username === currentUser.username
+    ) ||
+    Boolean(!activeCall?.caller && activeCall?.receiver);
+
+  // Never render ActiveCallModal for incoming ringing calls (IncomingCallModal handles those)
+  if (!activeCall) {
+    return null;
+  }
+  if (callStatus === "ringing" && !isCaller) {
+    return null;
+  }
+  if (
+    callStatus !== "calling" &&
+    callStatus !== "ringing" &&
+    callStatus !== "ringingOutward" &&
+    callStatus !== "connected"
+  ) {
     return null;
   }
 
   const isConnected = callStatus === "connected";
   const isVideo = callType === "video";
-  const isCaller = String(activeCall?.caller?.id) === String(currentUser?.id);
   const otherUser = isCaller
-    ? (activeCall?.receiver || activeCall?.caller)
-    : (activeCall?.caller || activeCall?.receiver);
-  const otherName = otherUser?.profile_name || otherUser?.username || "Người dùng";
+    ? activeCall?.receiver || activeCall?.caller
+    : activeCall?.caller || activeCall?.receiver;
+  const otherName =
+    otherUser?.profile_name || otherUser?.username || "Người dùng";
   const avatarUrl = otherUser?.avatar_url;
 
   // --- MINIMIZED FLOATING PIP WIDGET ---
   if (isMinimized) {
     return (
       <div className="fixed bottom-20 right-6 z-[99999] flex items-center gap-3 bg-gray-900/90 backdrop-blur-md text-white p-3 rounded-2xl shadow-2xl border border-gray-700 animate-in slide-in-from-bottom-5">
+        <audio ref={remoteAudioRef} autoPlay playsInline className="hidden" />
         <div className="relative w-12 h-12 rounded-full overflow-hidden flex-shrink-0 bg-neutral-800 flex items-center justify-center">
           {isVideo && remoteStream ? (
             <video
               ref={remoteVideoRef}
               autoPlay
               playsInline
+              muted
               className="w-full h-full object-cover"
             />
           ) : (
@@ -122,7 +151,11 @@ export default function ActiveCallModal() {
             {otherName}
           </span>
           <span className="text-xs text-green-400 font-mono">
-            {isConnected ? formatSeconds(callDuration) : callStatus === "ringing" ? "Đang đổ chuông..." : "Đang kết nối..."}
+            {isConnected
+              ? formatSeconds(callDuration)
+              : callStatus === "ringing" || callStatus === "ringingOutward"
+                ? "Đang đổ chuông..."
+                : "Đang kết nối..."}
           </span>
         </div>
 
@@ -150,6 +183,7 @@ export default function ActiveCallModal() {
   // --- FULL SCREEN / MODAL VIEW ---
   return (
     <div className="fixed inset-0 z-[99999] flex items-center justify-center p-2 sm:p-4 bg-black/75 backdrop-blur-md animate-in fade-in duration-200">
+      <audio ref={remoteAudioRef} autoPlay playsInline className="hidden" />
       <div className="relative w-full max-w-4xl h-[85vh] max-h-[720px] rounded-3xl bg-neutral-900 border border-neutral-800 shadow-2xl overflow-hidden flex flex-col justify-between">
         {/* Top Header Bar */}
         <div className="relative z-20 flex items-center justify-between px-6 py-4 bg-gradient-to-b from-black/80 via-black/40 to-transparent">
@@ -182,7 +216,9 @@ export default function ActiveCallModal() {
                   </>
                 ) : (
                   <span className="text-amber-400 animate-pulse">
-                    Đang đổ chuông...
+                    {callStatus === "ringing" || callStatus === "ringingOutward"
+                      ? "Đang đổ chuông..."
+                      : "Đang kết nối..."}
                   </span>
                 )}
               </span>
@@ -210,6 +246,7 @@ export default function ActiveCallModal() {
                   ref={remoteVideoRef}
                   autoPlay
                   playsInline
+                  muted
                   className="w-full h-full object-contain"
                 />
               ) : (
@@ -290,7 +327,7 @@ export default function ActiveCallModal() {
                     <span className="text-primary-400 font-mono text-base">
                       {formatSeconds(callDuration)}
                     </span>
-                  ) : callStatus === "ringing" ? (
+                  ) : callStatus === "ringing" || callStatus === "ringingOutward" ? (
                     <span className="text-primary-400 font-medium animate-pulse">
                       Đang đổ chuông...
                     </span>
