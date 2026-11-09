@@ -527,16 +527,20 @@ export default function PostItem({
   const handleToggleAiTranslate = async () => {
     if (isTranslated) {
       setIsTranslated(false);
+      message.info("Đã chuyển về bài viết gốc");
       return;
     }
     if (translatedData) {
       setIsTranslated(true);
+      message.success(`Đã hiển thị bản dịch (${getLanguageLabel(translatedData.target_lang)})`);
       return;
     }
     const targetLang = getAiTranslateLanguage();
     setIsTranslating(true);
+    const hideToast = message.loading("Đang dịch bài viết bằng Yoyo AI...", 0);
     try {
       const res = await translateTopic(post.id, targetLang);
+      hideToast();
       if (res.data?.success && res.data?.translated) {
         setTranslatedData({
           ...res.data.translated,
@@ -548,6 +552,7 @@ export default function PostItem({
         message.error("Không thể dịch bài viết lúc này");
       }
     } catch (err) {
+      hideToast();
       message.error(err?.response?.data?.message || "Lỗi dịch bài viết bằng Yoyo AI");
     } finally {
       setIsTranslating(false);
@@ -848,7 +853,10 @@ export default function PostItem({
                   </span>
                   <button
                     type="button"
-                    onClick={() => setIsTranslated(false)}
+                    onClick={() => {
+                      setIsTranslated(false);
+                      message.info("Đã chuyển về bài viết gốc");
+                    }}
                     className="text-xs font-semibold hover:underline text-emerald-800 dark:text-emerald-200 cursor-pointer ml-2"
                   >
                     Xem bản gốc
