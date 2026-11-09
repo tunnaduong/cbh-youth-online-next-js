@@ -264,6 +264,12 @@ Every new or changed page or component must follow this section. If the part you
 
 ## Recent work (newest first, as of 2026-11)
 
+- **Post Translation by Yoyo AI, Settings Target Language & Disable WebView Auto-Reload on Recover** (`src/components/forum/PostItem.js`, `src/app/settings/SettingsClient.js`, `src/utils/aiTranslation.js`, `src/app/Api.js`, `src/components/maintenance/MaintenanceGuard.js`):
+  - Added "Dịch bằng Yoyo AI" / "Xem bài viết gốc" option in `PostItem.js` dropdown menu (applied to Home feed, Explore, Profile screen timeline & liked posts, and individual post views). When translated, displays an emerald sparkle badge indicating translation target language with one-click toggle back to original. Caches translated data locally on component mount so switching is instant.
+  - Added Yoyo AI Translation setting in `SettingsClient.js` under Account settings allowing users to choose their preferred target language (Auto, Vietnamese, English, Russian, Simplified Chinese), stored in `localStorage` (`cbh_ai_translate_lang`).
+  - Added `translateTopic(id, targetLang)` in `src/app/Api.js`.
+  - In `MaintenanceGuard.js`, guarded `window.location.reload()` with `!isInApp()` so webviews in mobile apps (games, admin, gift shop) never auto-refresh and wipe out in-progress games or form inputs when connection recovers.
+
 - **Fix WebRTC Two-Way Audio, Incoming vs Outgoing Modal Collision & Offer/Answer Race (`src/components/call/ActiveCallModal.js`, `src/components/call/IncomingCallModal.js`, `src/contexts/provider/CallProvider.js`)**:
   - `ActiveCallModal.js`: Mounted `<audio ref={remoteAudioRef} autoPlay playsInline className="hidden" />` in both minimized PiP and full-screen modal views so remote voice/video audio always plays in the DOM. Guarded `ActiveCallModal` from rendering when `callStatus === "ringing" && !isCaller` so incoming calls always display `IncomingCallModal` (with Answer/Decline buttons) instead of being covered by the outgoing call screen.
   - `CallProvider.js`: Uses `ringingOutward` for outgoing ringing state; creates `RTCPeerConnection` and attaches local tracks *before* calling `answerCallApi` (and queues any early offers in `pendingOfferRef`); listens for call events on both `App.Models.User.{id}` and `chat.{conversationId}` with deduplication; retries `ringing` acknowledgment at 1.5s/3.5s; includes OpenRelay TURN servers and receive-only fallback when microphone/camera access fails.

@@ -4,7 +4,8 @@ import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Button, DatePicker, Radio, Select, Switch, message } from "antd";
-import { Edit2Icon, User, Bell, Shield, Trash2, UserX, GraduationCap, CheckCircle2, Clock, XCircle, Palette } from "lucide-react";
+import { Edit2Icon, User, Bell, Shield, Trash2, UserX, GraduationCap, CheckCircle2, Clock, XCircle, Palette, Sparkles } from "lucide-react";
+import { AI_TRANSLATION_LANGUAGES, getAiTranslatePreference, setAiTranslatePreference } from "@/utils/aiTranslation";
 import Input from "@/components/ui/input";
 import DefaultLayout from "@/layouts/DefaultLayout";
 import dayjs from "dayjs";
@@ -38,6 +39,7 @@ export default function SettingsClient({ initialUser, hasAuthError }) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [activeTab, setActiveTab] = useState(() => searchParams.get("tab") || "profile");
+  const [aiTranslateLang, setAiTranslateLang] = useState(() => getAiTranslatePreference());
   const [loading, setLoading] = useState(false);
   const [resendingEmail, setResendingEmail] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
@@ -1348,6 +1350,40 @@ export default function SettingsClient({ initialUser, hasAuthError }) {
                     }
                   }}
                   className="ml-4"
+                />
+              </div>
+            </div>
+
+            {/* Yoyo AI Translation */}
+            <div className="mt-8 pt-8 border-t border-gray-200 dark:border-gray-700">
+              <h3 className="text-base font-semibold text-gray-900 dark:text-white mb-2 flex items-center gap-2">
+                <Sparkles className="w-5 h-5 text-emerald-500" />
+                Dịch thuật Yoyo AI
+              </h3>
+              <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+                Chọn ngôn ngữ đích khi dịch bài viết diễn đàn bằng Yoyo AI.
+              </p>
+              <div className="flex items-center justify-between py-2">
+                <div>
+                  <h4 className="text-sm font-medium text-gray-800 dark:text-gray-200">
+                    Ngôn ngữ dịch bài viết
+                  </h4>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                    Bài viết sẽ được Yoyo AI dịch sang ngôn ngữ này khi chọn &quot;Dịch bằng Yoyo AI&quot;.
+                  </p>
+                </div>
+                <Select
+                  value={aiTranslateLang}
+                  onChange={(val) => {
+                    setAiTranslateLang(val);
+                    setAiTranslatePreference(val);
+                    message.success("Đã cập nhật ngôn ngữ dịch Yoyo AI");
+                  }}
+                  className="w-56"
+                  options={AI_TRANSLATION_LANGUAGES.map((l) => ({
+                    value: l.code,
+                    label: `${l.flag} ${l.label}`,
+                  }))}
                 />
               </div>
             </div>
