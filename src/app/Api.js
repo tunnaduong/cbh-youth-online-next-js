@@ -1060,7 +1060,7 @@ export const adminDeleteViolationReport = (id) => Api.deleteRequest(`/v1.0/admin
 
 // WebRTC Voice & Video Call Endpoints
 export const getIceServers = () => Api.getRequest("/v1.0/chat/ice-servers");
-export const getActiveCall = () => Api.getRequest("/v1.0/chat/calls/active");
+export const getActiveCall = (callId = null) => Api.getRequest(`/v1.0/chat/calls/active${callId ? `?call_id=${encodeURIComponent(callId)}` : ""}`);
 export const initiateCall = (conversationId, type = "audio") =>
   Api.postRequest(`/v1.0/chat/conversations/${conversationId}/call/initiate`, { type });
 export const answerCall = (callId) =>

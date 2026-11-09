@@ -38,6 +38,24 @@ const DEFAULT_ICE_SERVERS = [
   },
 ];
 
+function serializeSdp(desc) {
+  if (!desc) return null;
+  return {
+    type: desc.type,
+    sdp: desc.sdp,
+  };
+}
+
+function serializeCandidate(cand) {
+  if (!cand) return null;
+  return {
+    candidate: cand.candidate,
+    sdpMid: cand.sdpMid ?? null,
+    sdpMLineIndex: cand.sdpMLineIndex ?? null,
+    usernameFragment: cand.usernameFragment ?? null,
+  };
+}
+
 export const CallProvider = ({ children }) => {
   const { loggedIn, currentUser } = useAuthContext();
 
@@ -68,6 +86,9 @@ export const CallProvider = ({ children }) => {
   const answerProcessedForCallRef = useRef(null);
   const offerProcessedForCallRef = useRef(null);
   const ringingAckReceivedRef = useRef(false);
+  const sdpChunksBufferRef = useRef({});
+  const processedSignalSeqRef = useRef(0);
+  const processedCandidatesSetRef = useRef(new Set());
 
   const clearConnectingTimeout = useCallback(() => {
     if (connectingTimeoutRef.current) {
@@ -173,6 +194,9 @@ export const CallProvider = ({ children }) => {
     answerProcessedForCallRef.current = null;
     offerProcessedForCallRef.current = null;
     ringingAckReceivedRef.current = false;
+    sdpChunksBufferRef.current = {};
+    processedSignalSeqRef.current = 0;
+    processedCandidatesSetRef.current = new Set();
 
     setLocalStream(null);
     setRemoteStream(null);
@@ -213,7 +237,11 @@ export const CallProvider = ({ children }) => {
 
     pc.onicecandidate = (event) => {
       if (event.candidate && callId) {
-        sendCallSignalApi(callId, "candidate", event.candidate).catch((err) => {
+        sendCallSignalApi(
+          callId,
+          "candidate",
+          serializeCandidate(event.candidate)
+        ).catch((err) => {
           console.warn("[WebRTC] send ICE candidate error:", err?.message);
         });
       }
@@ -221,16 +249,21 @@ export const CallProvider = ({ children }) => {
 
     pc.ontrack = (event) => {
       console.log("[WebRTC] ontrack received remote track:", event.track.kind);
+      const existing = remoteStreamRef.current || new MediaStream();
       if (event.streams && event.streams[0]) {
-        setRemoteStream(event.streams[0]);
-        remoteStreamRef.current = event.streams[0];
-      } else {
-        const existing = remoteStreamRef.current || new MediaStream();
-        existing.addTrack(event.track);
-        const updatedStream = new MediaStream(existing.getTracks());
-        setRemoteStream(updatedStream);
-        remoteStreamRef.current = updatedStream;
+        event.streams[0].getTracks().forEach((t) => {
+          if (!existing.getTracks().includes(t)) {
+            existing.addTrack(t);
+          }
+        });
+      } else if (event.track) {
+        if (!existing.getTracks().includes(event.track)) {
+          existing.addTrack(event.track);
+        }
       }
+      const updatedStream = new MediaStream(existing.getTracks());
+      remoteStreamRef.current = updatedStream;
+      setRemoteStream(updatedStream);
     };
 
     pc.onconnectionstatechange = () => {
@@ -347,10 +380,7 @@ export const CallProvider = ({ children }) => {
 
   const startOutgoingRingingPhase = useCallback(() => {
     clearConnectingTimeout();
-    if (
-      callStatusRef.current === "calling" ||
-      callStatusRef.current === "ringingOutward"
-    ) {
+    if (callStatusRef.current === "calling") {
       callStatusRef.current = "ringingOutward";
       setCallStatus("ringingOutward");
       playOutgoingRing();
@@ -405,6 +435,7 @@ export const CallProvider = ({ children }) => {
       }
 
       ringingAckReceivedRef.current = false;
+      processedSignalSeqRef.current = 0;
 
       // Immediate visual feedback so the modal opens right away with receiver name & avatar
       const receiver =
@@ -534,7 +565,11 @@ export const CallProvider = ({ children }) => {
         await drainIceCandidates(pc);
         const answer = await pc.createAnswer();
         await pc.setLocalDescription(answer);
-        await sendCallSignalApi(current.id, "answer", answer);
+        await sendCallSignalApi(
+          current.id,
+          "answer",
+          serializeSdp(pc.localDescription)
+        );
       }
 
       // 4. Inform API that we answered (triggers .call.answered on Caller)
@@ -628,7 +663,6 @@ export const CallProvider = ({ children }) => {
     if (!pc) return;
 
     if (isScreenSharing) {
-      // Revert to original camera video track
       const originalTrack = originalVideoTrackRef.current;
       if (originalTrack) {
         const sender = pc
@@ -647,7 +681,6 @@ export const CallProvider = ({ children }) => {
         });
         const screenTrack = screenStream.getVideoTracks()[0];
 
-        // Store current webcam track to restore later
         const currentVideoTrack = localStreamRef.current?.getVideoTracks()[0];
         if (currentVideoTrack) {
           originalVideoTrackRef.current = currentVideoTrack;
@@ -663,7 +696,6 @@ export const CallProvider = ({ children }) => {
         }
 
         screenTrack.onended = () => {
-          // Revert when user stops sharing via browser UI
           toggleScreenShare();
         };
 
@@ -705,7 +737,7 @@ export const CallProvider = ({ children }) => {
         return;
       }
 
-      // Deduplicate in case received on both userChannel and conversationChannel
+      // Deduplicate in case received on both userChannel, conversationChannel, and HTTP sync
       if (offerCreatedForCallRef.current === String(callData.id)) {
         return;
       }
@@ -731,7 +763,11 @@ export const CallProvider = ({ children }) => {
         });
         await pc.setLocalDescription(offer);
 
-        await sendCallSignalApi(callData.id, "offer", offer);
+        await sendCallSignalApi(
+          callData.id,
+          "offer",
+          serializeSdp(pc.localDescription)
+        );
 
         callStatusRef.current = "connected";
         setCallStatus("connected");
@@ -801,7 +837,7 @@ export const CallProvider = ({ children }) => {
   );
 
   /**
-   * Process WebRTC signaling packets (Offer, Answer, ICE Candidates).
+   * Process WebRTC signaling packets (Offer, Answer, ICE Candidates, Chunked SDP).
    */
   const handleCallSignaled = useCallback(
     async (data) => {
@@ -824,10 +860,39 @@ export const CallProvider = ({ children }) => {
       if (String(data?.sender_id) === String(currentUser?.id)) return;
 
       const pc = peerConnectionRef.current;
-      const { type, payload } = data;
+      let { type, payload } = data;
       const callIdKey = String(data?.call_id || current.id || "");
 
       try {
+        if (type === "sdp_chunk" && payload) {
+          const {
+            chunk_group_id,
+            chunk_index,
+            total_chunks,
+            original_type,
+            chunk,
+          } = payload;
+          if (!chunk_group_id || typeof chunk_index !== "number") return;
+          if (!sdpChunksBufferRef.current[chunk_group_id]) {
+            sdpChunksBufferRef.current[chunk_group_id] = {
+              total: total_chunks,
+              parts: {},
+            };
+          }
+          sdpChunksBufferRef.current[chunk_group_id].parts[chunk_index] = chunk;
+          const group = sdpChunksBufferRef.current[chunk_group_id];
+          if (Object.keys(group.parts).length < group.total) {
+            return;
+          }
+          let fullJson = "";
+          for (let i = 0; i < group.total; i++) {
+            fullJson += group.parts[i] || "";
+          }
+          delete sdpChunksBufferRef.current[chunk_group_id];
+          type = original_type;
+          payload = JSON.parse(fullJson);
+        }
+
         if (type === "ringing") {
           console.log("[WebRTC] Callee received call and started ringing.");
           ringingAckReceivedRef.current = true;
@@ -841,7 +906,6 @@ export const CallProvider = ({ children }) => {
           }
           console.log("[WebRTC] Received remote offer.");
           if (!pc) {
-            // Queue offer until answerCall initializes pc
             pendingOfferRef.current = payload;
             return;
           }
@@ -853,7 +917,11 @@ export const CallProvider = ({ children }) => {
           const answer = await pc.createAnswer();
           await pc.setLocalDescription(answer);
 
-          await sendCallSignalApi(current.id || data.call_id, "answer", answer);
+          await sendCallSignalApi(
+            current.id || data.call_id,
+            "answer",
+            serializeSdp(pc.localDescription)
+          );
         } else if (type === "answer") {
           if (answerProcessedForCallRef.current === callIdKey) {
             return;
@@ -869,7 +937,11 @@ export const CallProvider = ({ children }) => {
           await pc.setRemoteDescription(new RTCSessionDescription(payload));
           await drainIceCandidates(pc);
         } else if (type === "candidate") {
-          if (!payload) return;
+          if (!payload || !payload.candidate) return;
+          const candKey = payload.candidate;
+          if (processedCandidatesSetRef.current.has(candKey)) return;
+          processedCandidatesSetRef.current.add(candKey);
+
           if (pc && pc.remoteDescription && pc.remoteDescription.type) {
             try {
               await pc.addIceCandidate(new RTCIceCandidate(payload));
@@ -909,6 +981,7 @@ export const CallProvider = ({ children }) => {
       }
 
       console.log("[WebRTC] Incoming call received:", callData);
+      processedSignalSeqRef.current = 0;
       activeCallRef.current = callData;
       setActiveCall(callData);
       callTypeRef.current = callData.type || "audio";
@@ -960,6 +1033,76 @@ export const CallProvider = ({ children }) => {
       cleanupCall,
     ]
   );
+
+  // Continuous HTTP signal & call state sync while a call is active
+  // (guarantees 100% signal delivery even if WebSocket drops or SDP exceeds Reverb limits)
+  useEffect(() => {
+    if (!loggedIn || callStatus === "idle") return;
+
+    let cancelled = false;
+    const syncCallSignals = async () => {
+      const cur = activeCallRef.current;
+      if (!cur?.id || cancelled) return;
+
+      try {
+        const res = await getActiveCall(cur.id);
+        if (cancelled) return;
+        const remoteCall = res?.data?.call;
+        const signals = res?.data?.signals;
+
+        if (Array.isArray(signals)) {
+          for (const sig of signals) {
+            if (sig.seq && sig.seq > processedSignalSeqRef.current) {
+              processedSignalSeqRef.current = sig.seq;
+            }
+            if (String(sig.sender_id) !== String(currentUser?.id)) {
+              await handleCallSignaled(sig);
+            }
+          }
+        }
+
+        if (remoteCall && String(remoteCall.id) === String(cur.id)) {
+          if (
+            remoteCall.status === "accepted" &&
+            String(remoteCall.caller?.id) === String(currentUser?.id)
+          ) {
+            await handleCallAnswered({ call: remoteCall });
+          } else if (
+            remoteCall.status === "rejected" ||
+            remoteCall.status === "busy"
+          ) {
+            handleCallRejected({
+              call_id: remoteCall.id,
+              reason: remoteCall.end_reason || remoteCall.status,
+            });
+          } else if (
+            remoteCall.status === "ended" ||
+            remoteCall.status === "cancelled" ||
+            remoteCall.status === "missed"
+          ) {
+            handleCallEnded({ call: remoteCall });
+          }
+        }
+      } catch {}
+    };
+
+    const interval = setInterval(syncCallSignals, 1200);
+    syncCallSignals();
+
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+    };
+  }, [
+    loggedIn,
+    callStatus,
+    activeCall?.id,
+    currentUser?.id,
+    handleCallSignaled,
+    handleCallAnswered,
+    handleCallRejected,
+    handleCallEnded,
+  ]);
 
   const checkActiveCalls = useCallback(async () => {
     if (!loggedIn || callStatusRef.current !== "idle") return;
