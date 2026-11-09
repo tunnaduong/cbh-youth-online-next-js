@@ -264,6 +264,11 @@ Every new or changed page or component must follow this section. If the part you
 
 ## Recent work (newest first, as of 2026-11)
 
+- **Thêm tính năng chuyển đổi Ảnh và Video (Photos & Videos toggle) trên trang thông tin cá nhân** (`src/components/profile/ProfilePhotoGallery.js`, `src/app/Api.js`):
+  - **API**: Bổ sung hàm `getUserVideos(username, page, perPage)` gọi endpoint `/v1.0/users/{username}/videos`.
+  - **Media Gallery trên Profile**: Nâng cấp thẻ thư viện phương tiện trên trang cá nhân của người dùng (cả trên desktop sidebar và mobile card) với nút chuyển đổi tab Ảnh và Video (`activeMedia`), hiển thị số lượng tương ứng, hỗ trợ lưới video với biểu tượng phát (play overlay), cuộn tải thêm trang (`loadMoreVideos`) và liên kết xem bài viết gốc.
+
+
 - **Thêm lịch sử tìm kiếm gần đây (Recent Searches), căn chỉnh nút xóa (cross button), tối ưu dark theme cho tìm kiếm và tin nhắn cuộc gọi/hệ thống trong chat** (`src/utils/recentSearches.js`, `src/app/search/SearchClient.js`, `src/components/include/navbar.js`, `src/components/call/CallMessageCard.js`, `src/components/chat/ChatConversation.js`, `src/components/chat/PublicChat.js`):
   - **Lịch sử tìm kiếm gần đây (Recent Searches)**: Tạo `src/utils/recentSearches.js` lưu trữ tối đa 8 từ khóa gần nhất trên `localStorage` (`cbh_recent_searches_v1`). Tích hợp giao diện hiển thị tìm kiếm gần đây ở trang tìm kiếm (`SearchClient.js`) và menu gợi ý trên thanh điều hướng (`navbar.js`) với biểu tượng đồng hồ, thao tác xóa từng mục và "Xóa lịch sử", tương tự ứng dụng di động.
   - **Căn chỉnh nút xóa (cross button) thanh tìm kiếm**: Ẩn nút hủy mặc định của trình duyệt (`[&::-webkit-search-cancel-button]:hidden`), sử dụng nút xóa tùy biến với kích thước `w-7 h-7` căn giữa tuyệt đối (`absolute right-2.5 top-1/2 -translate-y-1/2 flex items-center justify-center`) và biểu tượng `X` từ Lucide, đảm bảo căn lề hoàn hảo theo cả chiều ngang và chiều dọc.

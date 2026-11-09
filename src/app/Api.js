@@ -622,6 +622,12 @@ export const getUserPhotos = (username, page = 1, perPage = 12) => {
   );
 };
 
+export const getUserVideos = (username, page = 1, perPage = 12) => {
+  return Api.getRequest(
+    `/v1.0/users/${username}/videos?page=${page}&per_page=${perPage}`
+  );
+};
+
 export const getStoryArchive = () => {
   return Api.getRequest("/v1.0/stories/archive");
 };
