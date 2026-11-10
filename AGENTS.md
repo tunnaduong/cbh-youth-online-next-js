@@ -28,9 +28,15 @@ INFO.md should have told you, add it there.
 
 ## Default branch
 
-Work against **`main`** unless the user names another branch. `main` is
-protected, so start a feature branch from an up-to-date `main`, push it and
-open a PR into `main` (or add to the open PR the user points you to).
+Work against **`main`** unless the user names another branch. Push commits directly to **`main`** (or create a feature branch and push if PR review is explicitly requested).
+
+## Auto-commit and push all changes (Tự động commit và push)
+
+**Always automatically commit and push all changes** before finishing any task:
+- Never leave uncommitted or unpushed work.
+- Commit all changes made in this repo and push immediately to **`main`** (or the active branch).
+- In the broader `cbh` workspace, always commit and push changes across `cbh-youth-online-mobile` (branch `dhphuc`), `cbh-youth-online-api` (`main`), `cbh-youth-online-next-js` (`main`), `cbh-youth-online-gift-shop` (`main`), and update/commit the parent `cbh` folder.
+- Always check `git status` to verify clean working tree and no unpushed commits.
 
 ## Keep INFO.md (and README.md) current
 
