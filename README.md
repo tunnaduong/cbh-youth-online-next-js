@@ -92,7 +92,7 @@ e2e/                     # Kiểm thử Playwright
    npm run build
    npm start
    ```
-6. **Lint trước khi mở PR**
+6. **Lint trước khi push**
    ```bash
    npm run lint
    ```
@@ -128,8 +128,8 @@ e2e/                     # Kiểm thử Playwright
   - Thiết lập `NEXT_PUBLIC_*` trong dashboard môi trường.
   - Bật build cache cho npm.
   - Cấu hình domain client (`https://chuyenbienhoa.com`) để khớp với API backend.
-- Nhánh mặc định: **`main`** - nếu không có yêu cầu khác, tạo nhánh mới từ `main` mới nhất rồi mở pull request vào `main`.
-- Nhánh `main` được bảo vệ: mọi thay đổi phải qua pull request, cần review và vượt qua kiểm thử Playwright E2E cùng các bản deploy Vercel.
+- Nhánh mặc định: **`main`** - commit và push thẳng lên `main`, không cần mở pull request.
+- Nhánh `main` không còn được bảo vệ. Mỗi lần push vẫn chạy kiểm thử Playwright E2E và deploy Vercel, nên hãy chạy `npm run lint` trước khi push.
 - Nếu deploy self-hosted, dùng `npm run build && npm start` sau khi reverse proxy qua Nginx/PM2.
 
 ## Tài liệu tham khảo

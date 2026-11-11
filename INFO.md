@@ -2,7 +2,7 @@
 
 > **For AI agents.** Project map for agents working in this repo: how it connects to the sibling repos, features, structure, setup, conventions and recent work. Humans: see `README.md`. Keep this file current - add to **Recent work** and update other sections whenever you change the repo.
 
-- **Default branch: `main`** - unless the user names another branch, branch off an up-to-date `main` and open a PR into it (direct pushes are rejected).
+- **Default branch: `main`** - unless the user names another branch, commit and push straight to `main` (it isn't protected). Cloud Claude sessions never open a PR (see AGENTS.md).
 - **Find code via this file first**: check the project structure / features sections below before grepping the repo by hand.
 
 The web app at **https://chuyenbienhoa.com** (also `www.`): the student community/forum for THPT Chuyên Biên Hòa (Hà Nam). It's built with Next.js 14 (App Router) and React 18. The UI text is in Vietnamese. All data comes from the Laravel API.
@@ -123,12 +123,8 @@ The first time, run `npx playwright install chromium` before `test:e2e`.
 
 ## Deploy and branch rules
 - It deploys on **Vercel** (several projects: `cbh-youth-online-next-js`, `cbhonline`, `cbhtest`) and on a **Netlify** preview (`chuyenbienhoa`).
-- **`main` is protected.** Direct pushes are rejected. Changes have to go through a pull request with:
-  - an approving review (you can't approve your own PR; the owner is `tunnaduong`)
-  - the **Playwright E2E** check passing (`.github/workflows/e2e.yml`)
-  - successful Vercel Preview and Production deployments
-
-  Work on a feature branch, open a PR, and click "Update branch" if it falls behind `main`.
+- **`main` is not protected** (branch protection was removed, 2026-11). Commit and push straight to `main`; no pull request, no required review. Cloud Claude sessions must never open a PR (rule at the top of AGENTS.md).
+- Each push to `main` still runs the **Playwright E2E** workflow (`.github/workflows/e2e.yml`) and deploys on Vercel - nothing blocks the push, so run `npm run lint` (and `npm run build` when you can) before pushing, and check the run afterwards.
 
 ## Conventions
 - **Commits:** conventional style, with the message body in **Vietnamese**, e.g. `feat(auth): …`, `fix(admin): …`.
@@ -264,6 +260,8 @@ Weights: `font-medium` (default emphasis), `font-semibold` (titles, buttons), `f
 Every new or changed page or component must follow this section. If the part you touch is in the older style, bring it in line. When a deliberate, large redesign changes these rules (new card style, new palette, new navigation), **update this section in the same commit** - it must always describe the site as it is, not as it was.
 
 ## Recent work (newest first, as of 2026-11)
+
+- **`main` is no longer protected; agents push directly, never open PRs** (docs only: `AGENTS.md`, `INFO.md`, `README.md`): the branch-protection rules (PR, review, required checks) were removed. Every agent session commits and pushes straight to `main`; cloud Claude sessions must not create pull requests.
 
 - **Admin print requests: preview and print screen** (`src/app/admin/print-requests/page.js`, `[id]/page.js`, `_shared.js`, `src/app/Api.js`; checked in headless Chrome with a mocked API): the list is now a `ResourceTable` (padding, search + status filters, document column with type / pages / size, "Xem & in" button). The old list re-fetched forever because it wrote the total back into the `pagination` object its effect depended on. `/admin/print-requests/[id]`: large preview + "In tài liệu". PDFs and pictures come from `adminGetPrintRequestFile` (`GET /v1.0/admin/print-requests/{id}/file`, new in the API) as a Blob, so the preview frame is same-origin and `contentWindow.print()` works; Word / Excel / PowerPoint preview in the Office Online viewer from the public `/storage` URL, and "In" opens that viewer in a new tab (no direct print). After printing an approved request it offers to move it to "Đang in". Side panel: status actions from the API's state machine (reject asks for a reason the user sees), details, user notes highlighted, timeline. The old staff-assign picker is gone - approving assigns the approver (API). Printing from inside the app's WebView is not supported; teachers print from a computer.
 

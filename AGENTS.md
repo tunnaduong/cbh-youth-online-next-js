@@ -69,10 +69,9 @@ task here:
 
 ## Repo rules (details in INFO.md)
 
-- Cloud Claude sessions commit and push directly, never open a PR (see the
-  rule at the top). If `main` still rejects direct pushes (branch
-  protection), push to the session's branch and tell the user. Vietnamese
-  commit messages.
+- `main` is not protected: commit and push straight to it, never open a PR
+  (see the rule at the top). Pushes still run Playwright E2E and the Vercel
+  deploy, so lint before pushing. Vietnamese commit messages.
 - `?app=true` / `src/utils/appMode.js` mark pages running inside the mobile
   app's WebView - respect it when adding sign-out, splash or "get the app" UI.
 - **UI work must follow INFO.md's "Design system" section** (colour pairs,
