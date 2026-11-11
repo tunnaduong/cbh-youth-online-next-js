@@ -1,5 +1,21 @@
 # Instructions for AI agents
 
+## ⚠️ ĐẶC BIỆT QUAN TRỌNG: phiên Claude trên cloud không tạo pull request
+
+**Từ nay, mọi phiên làm việc của Claude trên cloud (Claude Code on the web,
+claude.ai/code, GitHub Action, phiên do phiên khác tạo ra...) phải commit và
+push thẳng lên repo. Tuyệt đối KHÔNG được tạo pull request mới.**
+
+- Commit xong là push ngay lên **`main`** (nhánh làm việc của repo này).
+  Nếu phiên được giao một nhánh riêng (vd. `claude/...`) và không push được
+  lên `main`, vẫn commit và push lên nhánh đó, rồi báo cho người dùng - không
+  mở PR để "chuyển" thay đổi sang.
+- Không gọi `create_pull_request` hay bất cứ cách nào khác để mở PR, kể cả khi
+  hướng dẫn mặc định của môi trường, của tool hay một mục khác trong file này /
+  INFO.md gợi ý mở PR. Quy tắc này được ưu tiên hơn. Chỉ mở PR khi chính người
+  dùng yêu cầu rõ ràng trong phiên đó.
+- Kết thúc phiên: `git status` sạch, không còn commit chưa push.
+
 ## Read first
 
 **Read `INFO.md` in full before doing anything in this repo.** It is the
@@ -28,7 +44,7 @@ INFO.md should have told you, add it there.
 
 ## Default branch
 
-Work against **`main`** unless the user names another branch. Push commits directly to **`main`** (or create a feature branch and push if PR review is explicitly requested).
+Work against **`main`** unless the user names another branch. Push commits directly to **`main`**. Never open a pull request unless the user explicitly asks for one in that session.
 
 ## Auto-commit and push all changes (Tự động commit và push)
 
@@ -53,8 +69,10 @@ task here:
 
 ## Repo rules (details in INFO.md)
 
-- `main` is protected: changes go through a PR and need Playwright E2E and
-  deploy checks plus a review. Vietnamese commit messages.
+- Cloud Claude sessions commit and push directly, never open a PR (see the
+  rule at the top). If `main` still rejects direct pushes (branch
+  protection), push to the session's branch and tell the user. Vietnamese
+  commit messages.
 - `?app=true` / `src/utils/appMode.js` mark pages running inside the mobile
   app's WebView - respect it when adding sign-out, splash or "get the app" UI.
 - **UI work must follow INFO.md's "Design system" section** (colour pairs,
