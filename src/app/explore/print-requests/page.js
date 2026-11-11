@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { message } from 'antd';
 import { Plus } from 'lucide-react';
-import DefaultLayout from '@/layouts/DefaultLayout';
+import HomeLayout from '@/layouts/HomeLayout';
 import HomeCard from '@/components/home/HomeCard';
 import {
   getPrintRequests,
@@ -11,6 +11,16 @@ import {
 } from '@/app/Api';
 import PrintRequestForm from '@/components/print/PrintRequestForm';
 import PrintRequestList from '@/components/print/PrintRequestList';
+import { EXPLORE_FEATURES } from '@/data/exploreFeatures';
+
+// Explore sub-page: same sidebar as /explore/universities etc.
+const sidebarItems = EXPLORE_FEATURES.map((f) => ({
+  key: f.key,
+  href: f.href,
+  label: f.title,
+  Icon: f.sidebarIcon,
+  isExternal: false,
+}));
 
 export default function PrintRequestsPage() {
   const [requests, setRequests] = useState([]);
@@ -56,7 +66,14 @@ export default function PrintRequestsPage() {
   };
 
   return (
-    <DefaultLayout>
+    <HomeLayout
+      activeNav="explore"
+      activeBar="print"
+      sidebarItems={sidebarItems}
+      sidebarType="all"
+      showRightSidebar={false}
+      sidebarWidth="306px"
+    >
       <div className="mx-auto w-full max-w-[775px] px-3 sm:px-4 py-6">
         <div className="flex items-center justify-between mb-6">
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Yêu cầu in tài liệu</h1>
@@ -84,6 +101,6 @@ export default function PrintRequestsPage() {
           onPageChange={setPage}
         />
       </div>
-    </DefaultLayout>
+    </HomeLayout>
   );
 }

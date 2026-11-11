@@ -39,6 +39,7 @@ const STATIC_ROUTES: string[] = [
   "/explore/study-materials",
   "/explore/study-materials/upload",
   "/explore/universities",
+  "/explore/print-requests",
   "/feed",
   "/guide/points",
   "/help",

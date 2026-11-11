@@ -56,7 +56,7 @@ export const EXPLORE_FEATURES = [
     sidebarIcon: Print,
     title: "In ấn tài liệu",
     key: "print",
-    href: "#",
+    href: "/explore/print-requests",
   },
   {
     icon: HelpCircle,

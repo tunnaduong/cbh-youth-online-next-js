@@ -54,7 +54,7 @@ The web app at **https://chuyenbienhoa.com** (also `www.`): the student communit
 | Stories | `src/components/stories` (viewer, overlays in `src/lib/storyOverlays.js`) |
 | Explore | `/explore`, `/explore/games` (+`[slug]`), `/explore/quiz` (+`custom`), `/explore/study-materials` (+`[id]`, `upload`), `/explore/universities` |
 | Points & money | `/wallet` (+`deposit`, `withdraw`; SePay QR, see `SEPAY_*.md`), `/guide/points`, `/users/ranking` |
-| Print requests | `/print-requests` (user page: submit documents, track status), `/admin/print-requests` (staff management, status workflow) |
+| Print requests | `/explore/print-requests` (user page: submit documents, track status; linked from Explore, `EXPLORE_FEATURES`), `/admin/print-requests` (staff management, status workflow) |
 | Shop | `/shop` (the main gift shop is the separate repo) |
 | Search / saved / archives | `/search`, `/saved`, `/my-archives` |
 | Lookup | `/lookup`, `/lookup/grades` |
@@ -265,8 +265,9 @@ Every new or changed page or component must follow this section. If the part you
 
 ## Recent work (newest first, as of 2026-11)
 
-- **Document Printing Request System UI** (`src/app/print-requests/page.js`, `src/app/admin/print-requests/page.js`, `src/components/print/PrintRequestForm.js`, `src/components/print/PrintRequestList.js`, `src/app/Api.js`, `src/app/admin/AdminShell.js`):
-  - **User page** (`/print-requests`): form to submit documents with file, title, page count, delivery method (class / office), destination, optional notes. List displays own requests with status tags (pending, approved, printing, ready, delivered, picked_up, cancelled, rejected), delivery info, timestamps. Cancel button for pending/approved requests. Pagination with load-more.
+- **Print requests moved under Explore** (`src/app/explore/print-requests/page.js`): the user page is now `/explore/print-requests` with the Explore sidebar (`HomeLayout`, like `/explore/universities`); the Explore card and sidebar link point to it (`src/data/exploreFeatures.js`). The mobile app opens it in its WebView (`PrintRequestsScreen`, `WebAppScreen` site `print`).
+- **Document Printing Request System UI** (`src/app/explore/print-requests/page.js`, `src/app/admin/print-requests/page.js`, `src/components/print/PrintRequestForm.js`, `src/components/print/PrintRequestList.js`, `src/app/Api.js`, `src/app/admin/AdminShell.js`):
+  - **User page** (now `/explore/print-requests`): form to submit documents with file, title, page count, delivery method (class / office), destination, optional notes. List displays own requests with status tags (pending, approved, printing, ready, delivered, picked_up, cancelled, rejected), delivery info, timestamps. Cancel button for pending/approved requests. Pagination with load-more.
   - **Form component** (`PrintRequestForm`): file upload (accept PDF, images, Office docs, 50MB max), title input, optional description/notes, pages counter, delivery method radio, class/location text, all with validation.
   - **List component** (`PrintRequestList`): displays request grid with status tags (color-coded), pages, method, recipient info, assigned staff, and rejection reason if any. Per-request details modal with timestamps for each status transition.
   - **Admin page** (`/admin/print-requests`): table (ID, requester, title, status, pages, date) with search (username/title), status filter multi-select, per-row actions (view details, delete). Modal shows request details and **status transition buttons** (validated state machine: pending→approved/rejected/cancelled, approved→printing/cancelled, etc.). Assign staff picker on view. Links in admin sidebar via `PrinterOutlined` icon.
