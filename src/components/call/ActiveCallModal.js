@@ -45,26 +45,10 @@ export default function ActiveCallModal() {
 
   const localVideoRef = useRef(null);
   const remoteVideoRef = useRef(null);
-  const remoteAudioRef = useRef(null);
   const { currentUser } = useAuthContext();
 
-  // Attach remote media stream to dedicated audio element so sound always plays
-  useEffect(() => {
-    if (remoteAudioRef.current && remoteStream) {
-      if (remoteAudioRef.current.srcObject !== remoteStream) {
-        remoteAudioRef.current.srcObject = remoteStream;
-      }
-      remoteAudioRef.current.muted = false;
-      remoteAudioRef.current.volume = 1.0;
-      const playPromise = remoteAudioRef.current.play();
-      if (playPromise !== undefined) {
-        playPromise.catch((err) => {
-          console.warn("[WebRTC] remoteAudio play error:", err);
-        });
-      }
-    }
-  }, [remoteStream, isMinimized, callStatus]);
-
+  // Remote audio is played by CallProvider's single <audio> element; a second
+  // one here doubled the voice. The remote <video> below stays muted.
   // Attach local media stream
   useEffect(() => {
     if (localVideoRef.current && localStream) {
@@ -121,20 +105,6 @@ export default function ActiveCallModal() {
   if (isMinimized) {
     return (
       <div className="fixed bottom-20 right-6 z-[99999] flex items-center gap-3 bg-gray-900/90 backdrop-blur-md text-white p-3 rounded-2xl shadow-2xl border border-gray-700 animate-in slide-in-from-bottom-5">
-        <audio
-          ref={remoteAudioRef}
-          autoPlay
-          playsInline
-          style={{
-            position: "fixed",
-            top: -9999,
-            left: -9999,
-            width: 1,
-            height: 1,
-            opacity: 0.01,
-            pointerEvents: "none",
-          }}
-        />
         <div className="relative w-12 h-12 rounded-full overflow-hidden flex-shrink-0 bg-neutral-800 flex items-center justify-center">
           {isVideo && remoteStream ? (
             <video
@@ -196,20 +166,6 @@ export default function ActiveCallModal() {
   // --- FULL SCREEN / MODAL VIEW ---
   return (
     <div className="fixed inset-0 z-[99999] flex items-center justify-center p-2 sm:p-4 bg-black/75 backdrop-blur-md animate-in fade-in duration-200">
-      <audio
-        ref={remoteAudioRef}
-        autoPlay
-        playsInline
-        style={{
-          position: "fixed",
-          top: -9999,
-          left: -9999,
-          width: 1,
-          height: 1,
-          opacity: 0.01,
-          pointerEvents: "none",
-        }}
-      />
       <div className="relative w-full max-w-4xl h-[85vh] max-h-[720px] rounded-3xl bg-neutral-900 border border-neutral-800 shadow-2xl overflow-hidden flex flex-col justify-between">
         {/* Top Header Bar */}
         <div className="relative z-20 flex items-center justify-between px-6 py-4 bg-gradient-to-b from-black/80 via-black/40 to-transparent">

@@ -131,10 +131,8 @@ export const CallProvider = ({ children }) => {
   const processedAudioSeqRef = useRef(0);
   const processedCandidatesSetRef = useRef(new Set());
   const persistentAudioRef = useRef(null);
-  const persistentVideoAudioRef = useRef(null);
   const audioCtxRef = useRef(null);
   const remoteGainNodeRef = useRef(null);
-  const remoteMediaSourceRef = useRef(null);
   const captureSourceRef = useRef(null);
   const captureProcessorRef = useRef(null);
   const captureSilentGainRef = useRef(null);
@@ -143,6 +141,11 @@ export const CallProvider = ({ children }) => {
   const lastInboundBytesRef = useRef(0);
   const nextRelayPlayTimeRef = useRef(0);
   const isMutedRef = useRef(false);
+  // Seconds in a row the peer connection has not been connected (relay kicks in after 3)
+  const transportDownSecondsRef = useRef(0);
+  const transportConnectedRef = useRef(false);
+  const lastRelayAseqRef = useRef(0);
+  const recentRelayChunkKeysRef = useRef([]);
 
   const clearConnectingTimeout = useCallback(() => {
     if (connectingTimeoutRef.current) {
@@ -199,7 +202,7 @@ export const CallProvider = ({ children }) => {
       }
       if (audioCtxRef.current && !remoteGainNodeRef.current) {
         const gain = audioCtxRef.current.createGain();
-        gain.gain.value = 1.15;
+        gain.gain.value = 1;
         gain.connect(audioCtxRef.current.destination);
         remoteGainNodeRef.current = gain;
       }
@@ -246,6 +249,7 @@ export const CallProvider = ({ children }) => {
         silentGain.gain.value = 0;
 
         let sampleBuf = [];
+        let bufSumSq = 0;
         let lastSentAt = 0;
 
         processor.onaudioprocess = (e) => {
@@ -257,15 +261,20 @@ export const CallProvider = ({ children }) => {
             callStatusRef.current !== "connected"
           ) {
             sampleBuf = [];
+            bufSumSq = 0;
             return;
           }
           const input = e.inputBuffer.getChannelData(0);
           const ratio = inRate / outRate;
-          let sumSq = 0;
           for (let i = 0; i < input.length; i += ratio) {
-            const idx = Math.floor(i);
-            const s = idx < input.length ? input[idx] : 0;
-            sumSq += s * s;
+            // Average the source samples behind each 8 kHz sample: taking one
+            // in six without filtering folds high frequencies back as noise.
+            const from = Math.floor(i);
+            const to = Math.min(input.length, Math.max(from + 1, Math.floor(i + ratio)));
+            let acc = 0;
+            for (let k = from; k < to; k++) acc += input[k];
+            const s = acc / (to - from);
+            bufSumSq += s * s;
             const pcm16 = Math.max(
               -32768,
               Math.min(32767, Math.round(s * 32767))
@@ -277,7 +286,8 @@ export const CallProvider = ({ children }) => {
           if (sampleBuf.length >= 2000 && now - lastSentAt >= 220) {
             lastSentAt = now;
             const chunkBytes = sampleBuf.splice(0, sampleBuf.length);
-            const rms = Math.sqrt(sumSq / Math.max(1, input.length / ratio));
+            const rms = Math.sqrt(bufSumSq / Math.max(1, chunkBytes.length));
+            bufSumSq = 0;
             if (rms < 0.002) return;
             let binary = "";
             for (let j = 0; j < chunkBytes.length; j++) {
@@ -303,11 +313,25 @@ export const CallProvider = ({ children }) => {
   );
 
   const playIncomingAudioChunk = useCallback(
-    (payload) => {
+    (payload, aseq) => {
       if (webrtcAudioReceivingRef.current || !payload) return;
       const b64 =
         typeof payload === "string" ? payload : payload.d || payload.chunk;
       if (!b64) return;
+
+      // One chunk reaches us up to three times (user channel, conversation
+      // channel, HTTP poll). Play it once, and never one older than the last.
+      const seq = Number(aseq ?? payload?.aseq) || 0;
+      if (seq) {
+        if (seq <= lastRelayAseqRef.current) return;
+        lastRelayAseqRef.current = seq;
+      }
+      const key = `${b64.length}:${b64.slice(0, 32)}:${b64.slice(-32)}`;
+      const recent = recentRelayChunkKeysRef.current;
+      if (recent.includes(key)) return;
+      recent.push(key);
+      if (recent.length > 64) recent.shift();
+
       const sr = payload?.sr || payload?.sampleRate || 8000;
       try {
         const ctx = ensureCallAudioContext();
@@ -320,79 +344,51 @@ export const CallProvider = ({ children }) => {
         for (let i = 0; i < len; i++) {
           channel[i] = ulawToLinear(bin.charCodeAt(i)) / 32768.0;
         }
+        const now = ctx.currentTime;
+        let startAt = nextRelayPlayTimeRef.current;
+        if (startAt < now + 0.02) {
+          // Queue ran dry: wait a little so the next chunks, which arrive
+          // unevenly over HTTP, play back to back instead of with gaps.
+          startAt = now + 0.18;
+        } else if (startAt > now + 1.2) {
+          // More than a second queued: drop this chunk to catch up, rather
+          // than letting the delay grow or playing it over the queued audio.
+          return;
+        }
         const src = ctx.createBufferSource();
         src.buffer = audioBuffer;
         src.connect(remoteGainNodeRef.current || ctx.destination);
-        const now = ctx.currentTime;
-        if (
-          nextRelayPlayTimeRef.current < now ||
-          nextRelayPlayTimeRef.current > now + 0.6
-        ) {
-          nextRelayPlayTimeRef.current = now + 0.03;
-        }
-        src.start(nextRelayPlayTimeRef.current);
-        nextRelayPlayTimeRef.current += audioBuffer.duration;
+        src.start(startAt);
+        nextRelayPlayTimeRef.current = startAt + audioBuffer.duration;
       } catch {}
     },
     [ensureCallAudioContext]
   );
 
-  const attachRemoteStreamToAllOutputs = useCallback(
-    (stream) => {
-      if (!stream) return;
-      const ctx = ensureCallAudioContext();
-
-      if (persistentAudioRef.current) {
-        if (persistentAudioRef.current.srcObject !== stream) {
-          persistentAudioRef.current.srcObject = stream;
-        }
-        persistentAudioRef.current.muted = false;
-        persistentAudioRef.current.volume = 1.0;
-        const p1 = persistentAudioRef.current.play();
-        if (p1 && typeof p1.catch === "function") {
-          p1.catch(() => {
-            setTimeout(() => {
-              try {
-                persistentAudioRef.current?.play().catch(() => {});
-              } catch {}
-            }, 250);
-          });
-        }
-      }
-
-      if (persistentVideoAudioRef.current) {
-        if (persistentVideoAudioRef.current.srcObject !== stream) {
-          persistentVideoAudioRef.current.srcObject = stream;
-        }
-        persistentVideoAudioRef.current.muted = false;
-        persistentVideoAudioRef.current.volume = 1.0;
-        const p2 = persistentVideoAudioRef.current.play();
-        if (p2 && typeof p2.catch === "function") {
-          p2.catch(() => {
-            setTimeout(() => {
-              try {
-                persistentVideoAudioRef.current?.play().catch(() => {});
-              } catch {}
-            }, 250);
-          });
-        }
-      }
-
-      if (ctx) {
-        try {
-          if (remoteMediaSourceRef.current) {
-            try {
-              remoteMediaSourceRef.current.disconnect();
-            } catch {}
-          }
-          const srcNode = ctx.createMediaStreamSource(stream);
-          srcNode.connect(remoteGainNodeRef.current || ctx.destination);
-          remoteMediaSourceRef.current = srcNode;
-        } catch {}
-      }
-    },
-    [ensureCallAudioContext]
-  );
+  /**
+   * Play the remote audio through ONE element. It used to go to an <audio>, a
+   * <video>, a WebAudio graph and the call window's own <audio> at once; each
+   * output has its own delay, so the voice came out doubled and echoing.
+   */
+  const attachRemoteAudio = useCallback((stream) => {
+    const el = persistentAudioRef.current;
+    if (!el || !stream) return;
+    if (el.srcObject !== stream) {
+      el.srcObject = stream;
+    }
+    el.muted = false;
+    el.volume = 1.0;
+    const p = el.play();
+    if (p && typeof p.catch === "function") {
+      p.catch(() => {
+        setTimeout(() => {
+          try {
+            persistentAudioRef.current?.play().catch(() => {});
+          } catch {}
+        }, 250);
+      });
+    }
+  }, []);
 
   // Fetch STUN/TURN servers on mount
   useEffect(() => {
@@ -429,22 +425,9 @@ export const CallProvider = ({ children }) => {
 
     stopAudioFallbackCapture();
 
-    if (remoteMediaSourceRef.current) {
-      try {
-        remoteMediaSourceRef.current.disconnect();
-      } catch {}
-      remoteMediaSourceRef.current = null;
-    }
-
     if (persistentAudioRef.current) {
       try {
         persistentAudioRef.current.srcObject = null;
-      } catch {}
-    }
-
-    if (persistentVideoAudioRef.current) {
-      try {
-        persistentVideoAudioRef.current.srcObject = null;
       } catch {}
     }
 
@@ -487,6 +470,10 @@ export const CallProvider = ({ children }) => {
     webrtcAudioReceivingRef.current = false;
     lastInboundBytesRef.current = 0;
     nextRelayPlayTimeRef.current = 0;
+    transportDownSecondsRef.current = 0;
+    transportConnectedRef.current = false;
+    lastRelayAseqRef.current = 0;
+    recentRelayChunkKeysRef.current = [];
 
     setLocalStream(null);
     setRemoteStream(null);
@@ -539,6 +526,18 @@ export const CallProvider = ({ children }) => {
 
     pc.ontrack = (event) => {
       console.log("[WebRTC] ontrack received remote track:", event.track.kind);
+      // Ask for the smallest playout buffer the network allows (the browser
+      // still grows it when packets arrive unevenly).
+      try {
+        if (event.receiver) {
+          if ("jitterBufferTarget" in event.receiver) {
+            event.receiver.jitterBufferTarget = 0;
+          } else if ("playoutDelayHint" in event.receiver) {
+            event.receiver.playoutDelayHint = 0;
+          }
+        }
+      } catch {}
+
       const existing = remoteStreamRef.current || new MediaStream();
       if (event.streams && event.streams[0]) {
         event.streams[0].getTracks().forEach((t) => {
@@ -554,23 +553,31 @@ export const CallProvider = ({ children }) => {
       const updatedStream = new MediaStream(existing.getTracks());
       remoteStreamRef.current = updatedStream;
       setRemoteStream(updatedStream);
-      attachRemoteStreamToAllOutputs(updatedStream);
+
+      // The audio element gets its own audio-only stream, set once, so a video
+      // track arriving later does not restart the sound.
+      if (event.track.kind === "audio") {
+        attachRemoteAudio(new MediaStream([event.track]));
+      }
     };
 
     pc.onconnectionstatechange = () => {
       console.log("[WebRTC] connectionState changed:", pc.connectionState);
       if (pc.connectionState === "connected") {
+        transportConnectedRef.current = true;
+        transportDownSecondsRef.current = 0;
+        webrtcAudioReceivingRef.current = true;
         stopAllSounds();
         playConnectedTone();
-        if (remoteStreamRef.current) {
-          attachRemoteStreamToAllOutputs(remoteStreamRef.current);
-        }
-      } else if (
-        pc.connectionState === "disconnected" ||
-        pc.connectionState === "failed"
-      ) {
+      } else if (pc.connectionState === "failed") {
+        transportConnectedRef.current = false;
         webrtcAudioReceivingRef.current = false;
-        console.warn("[WebRTC] Connection lost or failed");
+        console.warn("[WebRTC] Connection failed");
+      } else if (pc.connectionState === "disconnected") {
+        // Often a short network blip that recovers by itself: the 1s check
+        // below switches to the relay only if it lasts.
+        transportConnectedRef.current = false;
+        console.warn("[WebRTC] Connection interrupted");
       }
     };
 
@@ -578,11 +585,15 @@ export const CallProvider = ({ children }) => {
       clearInterval(statsIntervalRef.current);
     }
     lastInboundBytesRef.current = 0;
-    webrtcAudioReceivingRef.current = false;
+    transportDownSecondsRef.current = 0;
+    transportConnectedRef.current = false;
+    // Assume the direct connection works. The HTTP relay (8 kHz, a quarter of a
+    // second per chunk, noticeably delayed) is only used once the connection
+    // has been down for 3 seconds in a row - not during every call start.
+    webrtcAudioReceivingRef.current = true;
     statsIntervalRef.current = setInterval(() => {
       const curPc = peerConnectionRef.current;
       if (!curPc) return;
-      ensureCallAudioContext();
       if (
         persistentAudioRef.current &&
         persistentAudioRef.current.paused &&
@@ -592,15 +603,32 @@ export const CallProvider = ({ children }) => {
           persistentAudioRef.current.play().catch(() => {});
         } catch {}
       }
-      if (
-        persistentVideoAudioRef.current &&
-        persistentVideoAudioRef.current.paused &&
-        persistentVideoAudioRef.current.srcObject
-      ) {
-        try {
-          persistentVideoAudioRef.current.play().catch(() => {});
-        } catch {}
-      }
+
+      const applyTransportState = (packetsFlowing) => {
+        const connected =
+          curPc.connectionState === "connected" ||
+          curPc.iceConnectionState === "connected" ||
+          curPc.iceConnectionState === "completed";
+        transportConnectedRef.current = connected;
+        if (connected || packetsFlowing) {
+          transportDownSecondsRef.current = 0;
+        } else {
+          transportDownSecondsRef.current += 1;
+        }
+        const useRelay = transportDownSecondsRef.current >= 3;
+        webrtcAudioReceivingRef.current = !useRelay;
+
+        // The microphone tap for the relay runs only while the relay is in use.
+        if (useRelay) {
+          ensureCallAudioContext();
+          if (!captureProcessorRef.current && localStreamRef.current) {
+            startAudioFallbackCapture(localStreamRef.current, callId);
+          }
+        } else if (captureProcessorRef.current) {
+          stopAudioFallbackCapture();
+        }
+      };
+
       if (typeof curPc.getStats === "function") {
         curPc
           .getStats(null)
@@ -614,23 +642,24 @@ export const CallProvider = ({ children }) => {
                 currentBytes += report.bytesReceived || 0;
               }
             });
-            if (currentBytes > lastInboundBytesRef.current + 200) {
-              webrtcAudioReceivingRef.current = true;
-            } else if (
-              curPc.connectionState === "disconnected" ||
-              curPc.connectionState === "failed"
-            ) {
-              webrtcAudioReceivingRef.current = false;
-            }
+            const flowing = currentBytes > lastInboundBytesRef.current;
             lastInboundBytesRef.current = currentBytes;
+            applyTransportState(flowing);
           })
-          .catch(() => {});
+          .catch(() => applyTransportState(false));
+      } else {
+        applyTransportState(false);
       }
     }, 1000);
 
     peerConnectionRef.current = pc;
     return pc;
-  }, [attachRemoteStreamToAllOutputs, ensureCallAudioContext]);
+  }, [
+    attachRemoteAudio,
+    ensureCallAudioContext,
+    startAudioFallbackCapture,
+    stopAudioFallbackCapture,
+  ]);
 
   /**
    * Get user media stream for audio and/or video.
@@ -744,6 +773,22 @@ export const CallProvider = ({ children }) => {
         }
       } catch {}
     }
+  }, []);
+
+  /**
+   * Keep the camera from using the whole uplink: on a weak connection an
+   * uncapped 720p stream delays the audio packets queued behind it.
+   */
+  const limitVideoBitrate = useCallback((pc) => {
+    try {
+      pc.getSenders().forEach((sender) => {
+        if (!sender.track || sender.track.kind !== "video") return;
+        const params = sender.getParameters();
+        if (!params.encodings || params.encodings.length === 0) return;
+        params.encodings[0].maxBitrate = 900000;
+        sender.setParameters(params).catch(() => {});
+      });
+    } catch {}
   }, []);
 
   const drainIceCandidates = useCallback(async (pc) => {
@@ -931,7 +976,6 @@ export const CallProvider = ({ children }) => {
       // so we are ready the exact millisecond Caller sends the SDP offer!
       const pc = createPeerConnection(current.id);
       attachLocalTracksOrTransceivers(pc, stream, effectiveType);
-      startAudioFallbackCapture(stream, current.id);
 
       callStatusRef.current = "connected";
       setCallStatus("connected");
@@ -950,6 +994,7 @@ export const CallProvider = ({ children }) => {
         });
         answer.sdp = enhanceSdpOpus(answer.sdp);
         await pc.setLocalDescription(answer);
+        limitVideoBitrate(pc);
         await sendCallSignalApi(
           current.id,
           "answer",
@@ -968,8 +1013,8 @@ export const CallProvider = ({ children }) => {
     acquireMediaWithFallback,
     createPeerConnection,
     attachLocalTracksOrTransceivers,
-    startAudioFallbackCapture,
     drainIceCandidates,
+    limitVideoBitrate,
     clearRingingTimeout,
     clearRingingRetryTimers,
     startTimer,
@@ -1144,7 +1189,6 @@ export const CallProvider = ({ children }) => {
           localStreamRef.current,
           callTypeRef.current
         );
-        startAudioFallbackCapture(localStreamRef.current, callData.id);
 
         const offer = await pc.createOffer({
           offerToReceiveAudio: true,
@@ -1152,6 +1196,7 @@ export const CallProvider = ({ children }) => {
         });
         offer.sdp = enhanceSdpOpus(offer.sdp);
         await pc.setLocalDescription(offer);
+        limitVideoBitrate(pc);
 
         await sendCallSignalApi(
           callData.id,
@@ -1174,7 +1219,7 @@ export const CallProvider = ({ children }) => {
       ensureCallAudioContext,
       createPeerConnection,
       attachLocalTracksOrTransceivers,
-      startAudioFallbackCapture,
+      limitVideoBitrate,
       startTimer,
       cleanupCall,
     ]
@@ -1312,6 +1357,7 @@ export const CallProvider = ({ children }) => {
           });
           answer.sdp = enhanceSdpOpus(answer.sdp);
           await pc.setLocalDescription(answer);
+          limitVideoBitrate(pc);
 
           await sendCallSignalApi(
             current.id || data.call_id,
@@ -1357,6 +1403,7 @@ export const CallProvider = ({ children }) => {
       currentUser?.id,
       startOutgoingRingingPhase,
       drainIceCandidates,
+      limitVideoBitrate,
       playIncomingAudioChunk,
     ]
   );
@@ -1478,7 +1525,7 @@ export const CallProvider = ({ children }) => {
               String(chunk.sender_id) !== String(currentUser?.id) &&
               chunk.payload
             ) {
-              playIncomingAudioChunk(chunk.payload);
+              playIncomingAudioChunk(chunk.payload, chunk.aseq);
             }
           }
         }
@@ -1508,12 +1555,22 @@ export const CallProvider = ({ children }) => {
       } catch {}
     };
 
-    const interval = setInterval(syncCallSignals, 1200);
-    syncCallSignals();
+    // Poll fast while the call is being set up or runs on the relay; once the
+    // direct connection is up the poll only watches for the call ending, so it
+    // slows down and stops competing with the audio for the connection.
+    let timer = null;
+    const loop = async () => {
+      await syncCallSignals();
+      if (cancelled) return;
+      const settled =
+        callStatusRef.current === "connected" && transportConnectedRef.current;
+      timer = setTimeout(loop, settled ? 5000 : 1200);
+    };
+    loop();
 
     return () => {
       cancelled = true;
-      clearInterval(interval);
+      if (timer) clearTimeout(timer);
     };
   }, [
     loggedIn,
@@ -1671,20 +1728,6 @@ export const CallProvider = ({ children }) => {
       {children}
       <audio
         ref={persistentAudioRef}
-        autoPlay
-        playsInline
-        style={{
-          position: "fixed",
-          top: -9999,
-          left: -9999,
-          width: 1,
-          height: 1,
-          opacity: 0.01,
-          pointerEvents: "none",
-        }}
-      />
-      <video
-        ref={persistentVideoAudioRef}
         autoPlay
         playsInline
         style={{
