@@ -9,7 +9,6 @@ import {
   adminUpdatePrintRequestStatus,
   adminDeletePrintRequest,
   adminAssignPrintRequest,
-  getCurrentUser,
 } from '@/app/Api';
 
 const STATUS_CONFIG = {
@@ -39,24 +38,18 @@ export default function AdminPrintRequestsPage() {
   const [loading, setLoading] = useState(true);
   const [searchText, setSearchText] = useState('');
   const [statusFilter, setStatusFilter] = useState(null);
+  const [searchInput, setSearchInput] = useState('');
   const [pagination, setPagination] = useState({ current: 1, pageSize: 20 });
+  // Kept apart from `pagination`: writing the total back into it made a new
+  // object after every load, which re-ran the effect below forever (the table
+  // spun without end).
+  const [total, setTotal] = useState(0);
   const [selectedRequest, setSelectedRequest] = useState(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
-  const [currentUser, setCurrentUser] = useState(null);
 
   useEffect(() => {
-    loadCurrentUser();
     loadRequests();
-  }, [pagination, statusFilter, searchText]);
-
-  const loadCurrentUser = async () => {
-    try {
-      const user = await getCurrentUser();
-      setCurrentUser(user);
-    } catch (error) {
-      console.error('Failed to load user:', error);
-    }
-  };
+  }, [pagination.current, pagination.pageSize, statusFilter, searchText]);
 
   const loadRequests = async () => {
     try {
@@ -71,10 +64,7 @@ export default function AdminPrintRequestsPage() {
       // axios wraps the body: the Laravel paginator is response.data.
       const body = (await adminGetPrintRequests(params)).data;
       setRequests(body.data || []);
-      setPagination({
-        ...pagination,
-        total: body.total,
-      });
+      setTotal(body.total || 0);
     } catch (error) {
       message.error('Không thể tải danh sách yêu cầu in.');
       console.error(error);
@@ -194,20 +184,28 @@ export default function AdminPrintRequestsPage() {
       <div className="mb-6 flex flex-wrap items-center gap-3">
         <Input.Search
           placeholder="Tìm kiếm theo tên người dùng, tiêu đề..."
-          value={searchText}
+          value={searchInput}
           onChange={(e) => {
-            setSearchText(e.target.value);
-            setPagination({ ...pagination, current: 1 });
+            setSearchInput(e.target.value);
+            // Clearing the box shows everything again straight away.
+            if (!e.target.value) {
+              setSearchText('');
+              setPagination((p) => ({ ...p, current: 1 }));
+            }
           }}
-          style={{ width: 300 }}
+          onSearch={(value) => {
+            setSearchText(value.trim());
+            setPagination((p) => ({ ...p, current: 1 }));
+          }}
+          style={{ width: '100%', maxWidth: 300 }}
           allowClear
         />
         <Select
           placeholder="Lọc theo trạng thái"
           value={statusFilter}
           onChange={(value) => {
-            setStatusFilter(value);
-            setPagination({ ...pagination, current: 1 });
+            setStatusFilter(value ?? null);
+            setPagination((p) => ({ ...p, current: 1 }));
           }}
           options={[
             { label: 'Tất cả', value: null },
@@ -216,7 +214,7 @@ export default function AdminPrintRequestsPage() {
               value: key,
             })),
           ]}
-          style={{ width: 200 }}
+          style={{ width: '100%', maxWidth: 200 }}
           allowClear
         />
       </div>
@@ -227,6 +225,7 @@ export default function AdminPrintRequestsPage() {
         loading={loading}
         pagination={{
           ...pagination,
+          total,
           onChange: (page, pageSize) => {
             setPagination({ current: page, pageSize });
           },
