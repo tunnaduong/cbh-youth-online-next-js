@@ -23,36 +23,76 @@ import {
 import { message as antdMessage } from "antd";
 
 const DEFAULT_ICE_SERVERS = [
+  { urls: "stun:stun.cloudflare.com:3478" },
   { urls: "stun:stun.l.google.com:19302" },
   { urls: "stun:stun1.l.google.com:19302" },
   { urls: "stun:stun2.l.google.com:19302" },
-  { urls: "stun:stun.cloudflare.com:3478" },
-  {
-    urls: [
-      "turn:openrelay.metered.ca:80",
-      "turn:openrelay.metered.ca:443",
-      "turn:openrelay.metered.ca:443?transport=tcp",
-    ],
-    username: "openrelayproject",
-    credential: "openrelayproject",
-  },
+  { urls: "stun:stun3.l.google.com:19302" },
+  { urls: "stun:stun4.l.google.com:19302" },
 ];
+
+function filterDeadIceServers(list) {
+  if (!Array.isArray(list)) return [...DEFAULT_ICE_SERVERS];
+  const filtered = list.filter((s) => {
+    if (!s || !s.urls) return false;
+    return !JSON.stringify(s.urls).includes("openrelay.metered.ca");
+  });
+  return filtered.length > 0 ? filtered : [...DEFAULT_ICE_SERVERS];
+}
+
+function enhanceSdpOpus(sdpStr) {
+  if (!sdpStr || typeof sdpStr !== "string") return sdpStr;
+  return sdpStr.replace(/a=fmtp:111 (.*)/g, (match, params) => {
+    let next = params;
+    if (!next.includes("useinbandfec=")) next += ";useinbandfec=1";
+    if (!next.includes("maxaveragebitrate=")) next += ";maxaveragebitrate=64000";
+    return `a=fmtp:111 ${next}`;
+  });
+}
+
+function linearToUlaw(sample) {
+  const BIAS = 0x84;
+  const CLIP = 32635;
+  let sign = (sample >> 8) & 0x80;
+  if (sign !== 0) sample = -sample;
+  if (sample > CLIP) sample = CLIP;
+  sample = sample + BIAS;
+  let exponent = 7;
+  for (
+    let expMask = 0x4000;
+    (sample & expMask) === 0 && exponent > 0;
+    exponent--, expMask >>= 1
+  ) {}
+  const mantissa = (sample >> (exponent + 3)) & 0x0f;
+  return ~(sign | (exponent << 4) | mantissa) & 0xff;
+}
+
+function ulawToLinear(uVal) {
+  uVal = ~uVal & 0xff;
+  let t = ((uVal & 0x0f) << 3) + 0x84;
+  t <<= (uVal & 0x70) >> 4;
+  return uVal & 0x80 ? 0x84 - t : t - 0x84;
+}
 
 function serializeSdp(desc) {
   if (!desc) return null;
   return {
     type: desc.type,
-    sdp: desc.sdp,
+    sdp: enhanceSdpOpus(desc.sdp),
   };
 }
 
 function serializeCandidate(cand) {
   if (!cand) return null;
+  const inner =
+    cand.candidate && typeof cand.candidate === "object"
+      ? cand.candidate
+      : cand;
   return {
-    candidate: cand.candidate,
-    sdpMid: cand.sdpMid ?? null,
-    sdpMLineIndex: cand.sdpMLineIndex ?? null,
-    usernameFragment: cand.usernameFragment ?? null,
+    candidate: inner.candidate,
+    sdpMid: inner.sdpMid ?? null,
+    sdpMLineIndex: inner.sdpMLineIndex ?? null,
+    usernameFragment: inner.usernameFragment ?? null,
   };
 }
 
@@ -88,7 +128,21 @@ export const CallProvider = ({ children }) => {
   const ringingAckReceivedRef = useRef(false);
   const sdpChunksBufferRef = useRef({});
   const processedSignalSeqRef = useRef(0);
+  const processedAudioSeqRef = useRef(0);
   const processedCandidatesSetRef = useRef(new Set());
+  const persistentAudioRef = useRef(null);
+  const persistentVideoAudioRef = useRef(null);
+  const audioCtxRef = useRef(null);
+  const remoteGainNodeRef = useRef(null);
+  const remoteMediaSourceRef = useRef(null);
+  const captureSourceRef = useRef(null);
+  const captureProcessorRef = useRef(null);
+  const captureSilentGainRef = useRef(null);
+  const statsIntervalRef = useRef(null);
+  const webrtcAudioReceivingRef = useRef(false);
+  const lastInboundBytesRef = useRef(0);
+  const nextRelayPlayTimeRef = useRef(0);
+  const isMutedRef = useRef(false);
 
   const clearConnectingTimeout = useCallback(() => {
     if (connectingTimeoutRef.current) {
@@ -127,20 +181,226 @@ export const CallProvider = ({ children }) => {
     callTypeRef.current = callType;
   }, [callType]);
 
+  useEffect(() => {
+    isMutedRef.current = isMuted;
+  }, [isMuted]);
+
+  const ensureCallAudioContext = useCallback(() => {
+    if (typeof window === "undefined") return null;
+    try {
+      if (!audioCtxRef.current) {
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        if (AudioCtx) {
+          audioCtxRef.current = new AudioCtx();
+        }
+      }
+      if (audioCtxRef.current && audioCtxRef.current.state === "suspended") {
+        audioCtxRef.current.resume().catch(() => {});
+      }
+      if (audioCtxRef.current && !remoteGainNodeRef.current) {
+        const gain = audioCtxRef.current.createGain();
+        gain.gain.value = 1.15;
+        gain.connect(audioCtxRef.current.destination);
+        remoteGainNodeRef.current = gain;
+      }
+      return audioCtxRef.current;
+    } catch {
+      return null;
+    }
+  }, []);
+
+  const stopAudioFallbackCapture = useCallback(() => {
+    if (captureProcessorRef.current) {
+      try {
+        captureProcessorRef.current.disconnect();
+        captureProcessorRef.current.onaudioprocess = null;
+      } catch {}
+      captureProcessorRef.current = null;
+    }
+    if (captureSourceRef.current) {
+      try {
+        captureSourceRef.current.disconnect();
+      } catch {}
+      captureSourceRef.current = null;
+    }
+    if (captureSilentGainRef.current) {
+      try {
+        captureSilentGainRef.current.disconnect();
+      } catch {}
+      captureSilentGainRef.current = null;
+    }
+  }, []);
+
+  const startAudioFallbackCapture = useCallback(
+    (stream, callId) => {
+      stopAudioFallbackCapture();
+      if (!stream || stream.getAudioTracks().length === 0) return;
+      try {
+        const ctx = ensureCallAudioContext();
+        if (!ctx) return;
+        const inRate = ctx.sampleRate || 48000;
+        const outRate = 8000;
+        const source = ctx.createMediaStreamSource(stream);
+        const processor = ctx.createScriptProcessor(4096, 1, 1);
+        const silentGain = ctx.createGain();
+        silentGain.gain.value = 0;
+
+        let sampleBuf = [];
+        let lastSentAt = 0;
+
+        processor.onaudioprocess = (e) => {
+          const activeId = callId || activeCallRef.current?.id;
+          if (
+            isMutedRef.current ||
+            webrtcAudioReceivingRef.current ||
+            !activeId ||
+            callStatusRef.current !== "connected"
+          ) {
+            sampleBuf = [];
+            return;
+          }
+          const input = e.inputBuffer.getChannelData(0);
+          const ratio = inRate / outRate;
+          let sumSq = 0;
+          for (let i = 0; i < input.length; i += ratio) {
+            const idx = Math.floor(i);
+            const s = idx < input.length ? input[idx] : 0;
+            sumSq += s * s;
+            const pcm16 = Math.max(
+              -32768,
+              Math.min(32767, Math.round(s * 32767))
+            );
+            sampleBuf.push(linearToUlaw(pcm16));
+          }
+
+          const now = Date.now();
+          if (sampleBuf.length >= 2000 && now - lastSentAt >= 220) {
+            lastSentAt = now;
+            const chunkBytes = sampleBuf.splice(0, sampleBuf.length);
+            const rms = Math.sqrt(sumSq / Math.max(1, input.length / ratio));
+            if (rms < 0.002) return;
+            let binary = "";
+            for (let j = 0; j < chunkBytes.length; j++) {
+              binary += String.fromCharCode(chunkBytes[j]);
+            }
+            sendCallSignalApi(activeId, "audio_chunk", {
+              d: btoa(binary),
+              sr: outRate,
+            }).catch(() => {});
+          }
+        };
+
+        source.connect(processor);
+        processor.connect(silentGain);
+        silentGain.connect(ctx.destination);
+
+        captureSourceRef.current = source;
+        captureProcessorRef.current = processor;
+        captureSilentGainRef.current = silentGain;
+      } catch {}
+    },
+    [ensureCallAudioContext, stopAudioFallbackCapture]
+  );
+
+  const playIncomingAudioChunk = useCallback(
+    (payload) => {
+      if (webrtcAudioReceivingRef.current || !payload) return;
+      const b64 =
+        typeof payload === "string" ? payload : payload.d || payload.chunk;
+      if (!b64) return;
+      const sr = payload?.sr || payload?.sampleRate || 8000;
+      try {
+        const ctx = ensureCallAudioContext();
+        if (!ctx) return;
+        const bin = atob(b64);
+        const len = bin.length;
+        if (len === 0) return;
+        const audioBuffer = ctx.createBuffer(1, len, sr);
+        const channel = audioBuffer.getChannelData(0);
+        for (let i = 0; i < len; i++) {
+          channel[i] = ulawToLinear(bin.charCodeAt(i)) / 32768.0;
+        }
+        const src = ctx.createBufferSource();
+        src.buffer = audioBuffer;
+        src.connect(remoteGainNodeRef.current || ctx.destination);
+        const now = ctx.currentTime;
+        if (
+          nextRelayPlayTimeRef.current < now ||
+          nextRelayPlayTimeRef.current > now + 0.6
+        ) {
+          nextRelayPlayTimeRef.current = now + 0.03;
+        }
+        src.start(nextRelayPlayTimeRef.current);
+        nextRelayPlayTimeRef.current += audioBuffer.duration;
+      } catch {}
+    },
+    [ensureCallAudioContext]
+  );
+
+  const attachRemoteStreamToAllOutputs = useCallback(
+    (stream) => {
+      if (!stream) return;
+      const ctx = ensureCallAudioContext();
+
+      if (persistentAudioRef.current) {
+        if (persistentAudioRef.current.srcObject !== stream) {
+          persistentAudioRef.current.srcObject = stream;
+        }
+        persistentAudioRef.current.muted = false;
+        persistentAudioRef.current.volume = 1.0;
+        const p1 = persistentAudioRef.current.play();
+        if (p1 && typeof p1.catch === "function") {
+          p1.catch(() => {
+            setTimeout(() => {
+              try {
+                persistentAudioRef.current?.play().catch(() => {});
+              } catch {}
+            }, 250);
+          });
+        }
+      }
+
+      if (persistentVideoAudioRef.current) {
+        if (persistentVideoAudioRef.current.srcObject !== stream) {
+          persistentVideoAudioRef.current.srcObject = stream;
+        }
+        persistentVideoAudioRef.current.muted = false;
+        persistentVideoAudioRef.current.volume = 1.0;
+        const p2 = persistentVideoAudioRef.current.play();
+        if (p2 && typeof p2.catch === "function") {
+          p2.catch(() => {
+            setTimeout(() => {
+              try {
+                persistentVideoAudioRef.current?.play().catch(() => {});
+              } catch {}
+            }, 250);
+          });
+        }
+      }
+
+      if (ctx) {
+        try {
+          if (remoteMediaSourceRef.current) {
+            try {
+              remoteMediaSourceRef.current.disconnect();
+            } catch {}
+          }
+          const srcNode = ctx.createMediaStreamSource(stream);
+          srcNode.connect(remoteGainNodeRef.current || ctx.destination);
+          remoteMediaSourceRef.current = srcNode;
+        } catch {}
+      }
+    },
+    [ensureCallAudioContext]
+  );
+
   // Fetch STUN/TURN servers on mount
   useEffect(() => {
     if (!loggedIn) return;
     getIceServers()
       .then((res) => {
         if (res?.data?.ice_servers && Array.isArray(res.data.ice_servers)) {
-          const merged = [...res.data.ice_servers];
-          const hasTurn = merged.some((s) =>
-            JSON.stringify(s.urls || "").includes("turn:")
-          );
-          if (!hasTurn) {
-            merged.push(DEFAULT_ICE_SERVERS[DEFAULT_ICE_SERVERS.length - 1]);
-          }
-          iceServersRef.current = merged;
+          iceServersRef.current = filterDeadIceServers(res.data.ice_servers);
         }
       })
       .catch(() => {
@@ -160,6 +420,32 @@ export const CallProvider = ({ children }) => {
     if (timerIntervalRef.current) {
       clearInterval(timerIntervalRef.current);
       timerIntervalRef.current = null;
+    }
+
+    if (statsIntervalRef.current) {
+      clearInterval(statsIntervalRef.current);
+      statsIntervalRef.current = null;
+    }
+
+    stopAudioFallbackCapture();
+
+    if (remoteMediaSourceRef.current) {
+      try {
+        remoteMediaSourceRef.current.disconnect();
+      } catch {}
+      remoteMediaSourceRef.current = null;
+    }
+
+    if (persistentAudioRef.current) {
+      try {
+        persistentAudioRef.current.srcObject = null;
+      } catch {}
+    }
+
+    if (persistentVideoAudioRef.current) {
+      try {
+        persistentVideoAudioRef.current.srcObject = null;
+      } catch {}
     }
 
     if (localStreamRef.current) {
@@ -196,7 +482,11 @@ export const CallProvider = ({ children }) => {
     ringingAckReceivedRef.current = false;
     sdpChunksBufferRef.current = {};
     processedSignalSeqRef.current = 0;
+    processedAudioSeqRef.current = 0;
     processedCandidatesSetRef.current = new Set();
+    webrtcAudioReceivingRef.current = false;
+    lastInboundBytesRef.current = 0;
+    nextRelayPlayTimeRef.current = 0;
 
     setLocalStream(null);
     setRemoteStream(null);
@@ -208,7 +498,7 @@ export const CallProvider = ({ children }) => {
     setIsVideoOff(false);
     setIsScreenSharing(false);
     setIsMinimized(false);
-  }, [clearConnectingTimeout, clearRingingTimeout, clearRingingRetryTimers]);
+  }, [clearConnectingTimeout, clearRingingTimeout, clearRingingRetryTimers, stopAudioFallbackCapture]);
 
   /**
    * Helper to start the duration timer once connected.
@@ -264,6 +554,7 @@ export const CallProvider = ({ children }) => {
       const updatedStream = new MediaStream(existing.getTracks());
       remoteStreamRef.current = updatedStream;
       setRemoteStream(updatedStream);
+      attachRemoteStreamToAllOutputs(updatedStream);
     };
 
     pc.onconnectionstatechange = () => {
@@ -271,17 +562,75 @@ export const CallProvider = ({ children }) => {
       if (pc.connectionState === "connected") {
         stopAllSounds();
         playConnectedTone();
+        if (remoteStreamRef.current) {
+          attachRemoteStreamToAllOutputs(remoteStreamRef.current);
+        }
       } else if (
         pc.connectionState === "disconnected" ||
         pc.connectionState === "failed"
       ) {
+        webrtcAudioReceivingRef.current = false;
         console.warn("[WebRTC] Connection lost or failed");
       }
     };
 
+    if (statsIntervalRef.current) {
+      clearInterval(statsIntervalRef.current);
+    }
+    lastInboundBytesRef.current = 0;
+    webrtcAudioReceivingRef.current = false;
+    statsIntervalRef.current = setInterval(() => {
+      const curPc = peerConnectionRef.current;
+      if (!curPc) return;
+      ensureCallAudioContext();
+      if (
+        persistentAudioRef.current &&
+        persistentAudioRef.current.paused &&
+        persistentAudioRef.current.srcObject
+      ) {
+        try {
+          persistentAudioRef.current.play().catch(() => {});
+        } catch {}
+      }
+      if (
+        persistentVideoAudioRef.current &&
+        persistentVideoAudioRef.current.paused &&
+        persistentVideoAudioRef.current.srcObject
+      ) {
+        try {
+          persistentVideoAudioRef.current.play().catch(() => {});
+        } catch {}
+      }
+      if (typeof curPc.getStats === "function") {
+        curPc
+          .getStats(null)
+          .then((stats) => {
+            let currentBytes = 0;
+            stats.forEach((report) => {
+              if (
+                report.type === "inbound-rtp" &&
+                (report.kind === "audio" || report.mediaType === "audio")
+              ) {
+                currentBytes += report.bytesReceived || 0;
+              }
+            });
+            if (currentBytes > lastInboundBytesRef.current + 200) {
+              webrtcAudioReceivingRef.current = true;
+            } else if (
+              curPc.connectionState === "disconnected" ||
+              curPc.connectionState === "failed"
+            ) {
+              webrtcAudioReceivingRef.current = false;
+            }
+            lastInboundBytesRef.current = currentBytes;
+          })
+          .catch(() => {});
+      }
+    }, 1000);
+
     peerConnectionRef.current = pc;
     return pc;
-  }, []);
+  }, [attachRemoteStreamToAllOutputs, ensureCallAudioContext]);
 
   /**
    * Get user media stream for audio and/or video.
@@ -297,26 +646,40 @@ export const CallProvider = ({ children }) => {
       );
     }
 
-    const constraints = {
-      audio: {
-        echoCancellation: true,
-        noiseSuppression: true,
-        autoGainControl: true,
+    const attempts = [
+      {
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true,
+        },
+        video:
+          type === "video"
+            ? {
+                width: { ideal: 1280 },
+                height: { ideal: 720 },
+                facingMode: "user",
+              }
+            : false,
       },
-      video:
-        type === "video"
-          ? {
-              width: { ideal: 1280 },
-              height: { ideal: 720 },
-              facingMode: "user",
-            }
-          : false,
-    };
+      {
+        audio: true,
+        video: type === "video",
+      },
+    ];
 
-    const stream = await navigator.mediaDevices.getUserMedia(constraints);
-    setLocalStream(stream);
-    localStreamRef.current = stream;
-    return stream;
+    let lastError = null;
+    for (const constraints of attempts) {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia(constraints);
+        setLocalStream(stream);
+        localStreamRef.current = stream;
+        return stream;
+      } catch (err) {
+        lastError = err;
+      }
+    }
+    throw lastError || new Error("Không thể truy cập Microphone.");
   }, []);
 
   /**
@@ -354,9 +717,25 @@ export const CallProvider = ({ children }) => {
 
   const attachLocalTracksOrTransceivers = useCallback((pc, stream, type) => {
     if (stream && stream.getTracks().length > 0) {
+      const existingTracks = pc
+        .getSenders()
+        .map((s) => s.track)
+        .filter(Boolean);
       stream.getTracks().forEach((track) => {
-        pc.addTrack(track, stream);
+        if (track.kind === "audio") {
+          track.enabled = !isMutedRef.current;
+        }
+        if (!existingTracks.includes(track)) {
+          pc.addTrack(track, stream);
+        }
       });
+      try {
+        pc.getTransceivers().forEach((t) => {
+          if (t.sender && t.sender.track && t.direction !== "sendrecv") {
+            t.direction = "sendrecv";
+          }
+        });
+      } catch {}
     } else {
       try {
         pc.addTransceiver("audio", { direction: "recvonly" });
@@ -544,6 +923,7 @@ export const CallProvider = ({ children }) => {
       const requestedType = current.type || "audio";
 
       // 1. Acquire local media (with graceful fallback)
+      ensureCallAudioContext();
       const { stream, effectiveType } =
         await acquireMediaWithFallback(requestedType);
 
@@ -551,6 +931,7 @@ export const CallProvider = ({ children }) => {
       // so we are ready the exact millisecond Caller sends the SDP offer!
       const pc = createPeerConnection(current.id);
       attachLocalTracksOrTransceivers(pc, stream, effectiveType);
+      startAudioFallbackCapture(stream, current.id);
 
       callStatusRef.current = "connected";
       setCallStatus("connected");
@@ -563,7 +944,11 @@ export const CallProvider = ({ children }) => {
         offerProcessedForCallRef.current = String(current.id);
         await pc.setRemoteDescription(new RTCSessionDescription(earlyOffer));
         await drainIceCandidates(pc);
-        const answer = await pc.createAnswer();
+        const answer = await pc.createAnswer({
+          offerToReceiveAudio: true,
+          offerToReceiveVideo: effectiveType === "video",
+        });
+        answer.sdp = enhanceSdpOpus(answer.sdp);
         await pc.setLocalDescription(answer);
         await sendCallSignalApi(
           current.id,
@@ -579,9 +964,11 @@ export const CallProvider = ({ children }) => {
       cleanupCall();
     }
   }, [
+    ensureCallAudioContext,
     acquireMediaWithFallback,
     createPeerConnection,
     attachLocalTracksOrTransceivers,
+    startAudioFallbackCapture,
     drainIceCandidates,
     clearRingingTimeout,
     clearRingingRetryTimers,
@@ -749,6 +1136,7 @@ export const CallProvider = ({ children }) => {
       stopAllSounds();
 
       try {
+        ensureCallAudioContext();
         const pc = createPeerConnection(callData.id);
 
         attachLocalTracksOrTransceivers(
@@ -756,11 +1144,13 @@ export const CallProvider = ({ children }) => {
           localStreamRef.current,
           callTypeRef.current
         );
+        startAudioFallbackCapture(localStreamRef.current, callData.id);
 
         const offer = await pc.createOffer({
           offerToReceiveAudio: true,
           offerToReceiveVideo: callTypeRef.current === "video",
         });
+        offer.sdp = enhanceSdpOpus(offer.sdp);
         await pc.setLocalDescription(offer);
 
         await sendCallSignalApi(
@@ -781,8 +1171,10 @@ export const CallProvider = ({ children }) => {
       currentUser?.id,
       clearConnectingTimeout,
       clearRingingTimeout,
+      ensureCallAudioContext,
       createPeerConnection,
       attachLocalTracksOrTransceivers,
+      startAudioFallbackCapture,
       startTimer,
       cleanupCall,
     ]
@@ -914,7 +1306,11 @@ export const CallProvider = ({ children }) => {
           await pc.setRemoteDescription(new RTCSessionDescription(payload));
           await drainIceCandidates(pc);
 
-          const answer = await pc.createAnswer();
+          const answer = await pc.createAnswer({
+            offerToReceiveAudio: true,
+            offerToReceiveVideo: callTypeRef.current === "video",
+          });
+          answer.sdp = enhanceSdpOpus(answer.sdp);
           await pc.setLocalDescription(answer);
 
           await sendCallSignalApi(
@@ -937,24 +1333,32 @@ export const CallProvider = ({ children }) => {
           await pc.setRemoteDescription(new RTCSessionDescription(payload));
           await drainIceCandidates(pc);
         } else if (type === "candidate") {
-          if (!payload || !payload.candidate) return;
-          const candKey = payload.candidate;
+          const normCand = serializeCandidate(payload);
+          if (!normCand || !normCand.candidate) return;
+          const candKey = normCand.candidate;
           if (processedCandidatesSetRef.current.has(candKey)) return;
           processedCandidatesSetRef.current.add(candKey);
 
           if (pc && pc.remoteDescription && pc.remoteDescription.type) {
             try {
-              await pc.addIceCandidate(new RTCIceCandidate(payload));
+              await pc.addIceCandidate(new RTCIceCandidate(normCand));
             } catch {}
           } else {
-            iceCandidatesQueueRef.current.push(payload);
+            iceCandidatesQueueRef.current.push(normCand);
           }
+        } else if (type === "audio_chunk" && payload) {
+          playIncomingAudioChunk(payload);
         }
       } catch (err) {
         console.error("[WebRTC] Signaling handling error:", err);
       }
     },
-    [currentUser?.id, startOutgoingRingingPhase, drainIceCandidates]
+    [
+      currentUser?.id,
+      startOutgoingRingingPhase,
+      drainIceCandidates,
+      playIncomingAudioChunk,
+    ]
   );
 
   /**
@@ -1049,6 +1453,7 @@ export const CallProvider = ({ children }) => {
         if (cancelled) return;
         const remoteCall = res?.data?.call;
         const signals = res?.data?.signals;
+        const audioChunks = res?.data?.audio_chunks;
 
         if (Array.isArray(signals)) {
           for (const sig of signals) {
@@ -1057,6 +1462,23 @@ export const CallProvider = ({ children }) => {
             }
             if (String(sig.sender_id) !== String(currentUser?.id)) {
               await handleCallSignaled(sig);
+            }
+          }
+        }
+
+        if (Array.isArray(audioChunks)) {
+          for (const chunk of audioChunks) {
+            if (chunk.aseq && chunk.aseq <= processedAudioSeqRef.current) {
+              continue;
+            }
+            if (chunk.aseq) {
+              processedAudioSeqRef.current = chunk.aseq;
+            }
+            if (
+              String(chunk.sender_id) !== String(currentUser?.id) &&
+              chunk.payload
+            ) {
+              playIncomingAudioChunk(chunk.payload);
             }
           }
         }
@@ -1099,6 +1521,7 @@ export const CallProvider = ({ children }) => {
     activeCall?.id,
     currentUser?.id,
     handleCallSignaled,
+    playIncomingAudioChunk,
     handleCallAnswered,
     handleCallRejected,
     handleCallEnded,
@@ -1243,7 +1666,39 @@ export const CallProvider = ({ children }) => {
     toggleMinimize,
   };
 
-  return <CallContext.Provider value={value}>{children}</CallContext.Provider>;
+  return (
+    <CallContext.Provider value={value}>
+      {children}
+      <audio
+        ref={persistentAudioRef}
+        autoPlay
+        playsInline
+        style={{
+          position: "fixed",
+          top: -9999,
+          left: -9999,
+          width: 1,
+          height: 1,
+          opacity: 0.01,
+          pointerEvents: "none",
+        }}
+      />
+      <video
+        ref={persistentVideoAudioRef}
+        autoPlay
+        playsInline
+        style={{
+          position: "fixed",
+          top: -9999,
+          left: -9999,
+          width: 1,
+          height: 1,
+          opacity: 0.01,
+          pointerEvents: "none",
+        }}
+      />
+    </CallContext.Provider>
+  );
 };
 
 export default CallProvider;
