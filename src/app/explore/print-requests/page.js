@@ -36,9 +36,10 @@ export default function PrintRequestsPage() {
   const loadRequests = async () => {
     try {
       setLoading(true);
-      const response = await getPrintRequests({ page, per_page: 10 });
-      setRequests(response.data);
-      setHasMore(response.current_page < response.last_page);
+      // axios wraps the body: the Laravel paginator is response.data.
+      const body = (await getPrintRequests({ page, per_page: 10 })).data;
+      setRequests(body.data || []);
+      setHasMore(body.current_page < body.last_page);
     } catch (error) {
       message.error('Không thể tải danh sách yêu cầu in.');
       console.error(error);

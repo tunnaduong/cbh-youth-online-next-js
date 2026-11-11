@@ -68,11 +68,12 @@ export default function AdminPrintRequestsPage() {
       if (statusFilter) params.status = statusFilter;
       if (searchText) params.search = searchText;
 
-      const response = await adminGetPrintRequests(params);
-      setRequests(response.data);
+      // axios wraps the body: the Laravel paginator is response.data.
+      const body = (await adminGetPrintRequests(params)).data;
+      setRequests(body.data || []);
       setPagination({
         ...pagination,
-        total: response.total,
+        total: body.total,
       });
     } catch (error) {
       message.error('Không thể tải danh sách yêu cầu in.');
