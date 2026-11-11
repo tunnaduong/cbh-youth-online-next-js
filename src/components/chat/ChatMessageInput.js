@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect, useCallback } from "react";
 import { message as antdMessage } from "antd";
-import { FileText, Paperclip, Pencil, Send, Video, X } from "lucide-react";
+import { FileText, Paperclip, Pencil, Send, Undo2, Video, X } from "lucide-react";
 import MentionSuggestionsDropdown from "@/components/ui/MentionSuggestionsDropdown";
 import SlashCommandSuggestionsDropdown from "@/components/ui/SlashCommandSuggestionsDropdown";
 import { useMentionInput } from "@/hooks/useMentionInput";
@@ -39,6 +39,14 @@ function ReplyComposerBar({ replyingTo, onCancel }) {
     replyingTo.sender?.profile_name || replyingTo.sender?.username || "Ai đó";
 
   const renderPreview = () => {
+    if (replyingTo.is_recalled) {
+      return (
+        <span className="flex items-center gap-1.5 text-gray-500 dark:text-gray-400 italic">
+          <Undo2 className="w-3.5 h-3.5 flex-shrink-0 opacity-70" />
+          Tin nhắn đã bị thu hồi
+        </span>
+      );
+    }
     if (replyingTo.type === "image") {
       return (
         <span className="flex items-center gap-1.5">

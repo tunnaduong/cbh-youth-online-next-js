@@ -473,6 +473,7 @@ export default function ChatConversation({
   };
 
   const handleStartReply = (message) => {
+    if (!message || message.is_recalled) return;
     setReplyingTo({
       id: message.id,
       content: message.content,
@@ -981,7 +982,7 @@ export default function ChatConversation({
                 } đã bình luận về tin của bạn`
             : null;
 
-          const replyBtn = !message.is_sending && (
+          const replyBtn = !message.is_sending && !message.is_recalled && (
             <div className={`flex items-center flex-shrink-0 transition-opacity ${hoveredMessageId === message.id ? "opacity-100" : "opacity-0 pointer-events-none"}`}>
               <button
                 type="button"

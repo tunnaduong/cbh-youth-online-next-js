@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect, useCallback } from "react";
 import { Button, Popover } from "antd";
-import { Send, Paperclip, Pencil, X, FileText, Video } from "lucide-react";
+import { Send, Paperclip, Pencil, X, FileText, Video, Undo2 } from "lucide-react";
 import { RiEmojiStickerLine } from "react-icons/ri";
 import Picker from "@emoji-mart/react";
 import { useTheme } from "@/contexts/themeContext";
@@ -38,7 +38,9 @@ function ReplyComposerBar({ replyingTo, onCancel }) {
     !url ? url : url.startsWith("http") || url.startsWith("blob:") ? url : `${process.env.NEXT_PUBLIC_API_URL}${url}`;
 
   const preview =
-    replyingTo.type === "image" ? (
+    replyingTo.is_recalled ? (
+      <span className="flex items-center gap-1 opacity-70 italic"><Undo2 className="w-3.5 h-3.5" /> Tin nhắn đã bị thu hồi</span>
+    ) : replyingTo.type === "image" ? (
       <span className="flex items-center gap-1.5">
         {replyingTo.file_url && <img src={resolveUrl(replyingTo.file_url)} alt="" className="w-6 h-6 rounded object-cover flex-shrink-0" />}
         <span className="truncate opacity-70">Hình ảnh</span>
