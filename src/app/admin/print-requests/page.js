@@ -1,178 +1,117 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { Table, Button, Tag, Input, Select, Space, Modal, message, Popconfirm, Select as AntSelect } from 'antd';
-import { Plus, Trash2, Check, X } from 'lucide-react';
-import dayjs from 'dayjs';
+import { useRef } from 'react';
+import Link from 'next/link';
+import { Button, Popconfirm, Space, Tag, message } from 'antd';
+import { Printer, Trash2 } from 'lucide-react';
+import ResourceTable, { fmtDate, errMsg, UserLink } from '../_components/ResourceTable';
+import { adminGetPrintRequests, adminDeletePrintRequest } from '@/app/Api';
 import {
-  adminGetPrintRequests,
-  adminUpdatePrintRequestStatus,
-  adminDeletePrintRequest,
-  adminAssignPrintRequest,
-} from '@/app/Api';
+  STATUS_CONFIG,
+  DELIVERY_METHOD_LABEL,
+  fileExtension,
+  formatFileSize,
+} from './_shared';
 
-const STATUS_CONFIG = {
-  pending: { color: 'orange', label: 'Chờ duyệt' },
-  approved: { color: 'blue', label: 'Đã duyệt' },
-  printing: { color: 'cyan', label: 'Đang in' },
-  ready: { color: 'green', label: 'Sẵn sàng' },
-  delivered: { color: 'green', label: 'Đã giao' },
-  picked_up: { color: 'green', label: 'Đã nhận' },
-  cancelled: { color: 'red', label: 'Đã hủy' },
-  rejected: { color: 'red', label: 'Bị từ chối' },
-};
+// Module level so ResourceTable's load callback stays stable.
+const fetcher = (params) => adminGetPrintRequests(params);
 
-const STATUS_TRANSITIONS = {
-  pending: ['approved', 'rejected', 'cancelled'],
-  approved: ['printing', 'cancelled'],
-  printing: ['ready', 'cancelled'],
-  ready: ['delivered', 'picked_up', 'cancelled'],
-  delivered: [],
-  picked_up: [],
-  cancelled: [],
-  rejected: [],
-};
+const STATUS_OPTIONS = Object.entries(STATUS_CONFIG).map(([value, c]) => ({
+  value,
+  label: c.label,
+}));
 
 export default function AdminPrintRequestsPage() {
-  const [requests, setRequests] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [searchText, setSearchText] = useState('');
-  const [statusFilter, setStatusFilter] = useState(null);
-  const [searchInput, setSearchInput] = useState('');
-  const [pagination, setPagination] = useState({ current: 1, pageSize: 20 });
-  // Kept apart from `pagination`: writing the total back into it made a new
-  // object after every load, which re-ran the effect below forever (the table
-  // spun without end).
-  const [total, setTotal] = useState(0);
-  const [selectedRequest, setSelectedRequest] = useState(null);
-  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
-
-  useEffect(() => {
-    loadRequests();
-  }, [pagination.current, pagination.pageSize, statusFilter, searchText]);
-
-  const loadRequests = async () => {
-    try {
-      setLoading(true);
-      const params = {
-        page: pagination.current,
-        per_page: pagination.pageSize,
-      };
-      if (statusFilter) params.status = statusFilter;
-      if (searchText) params.search = searchText;
-
-      // axios wraps the body: the Laravel paginator is response.data.
-      const body = (await adminGetPrintRequests(params)).data;
-      setRequests(body.data || []);
-      setTotal(body.total || 0);
-    } catch (error) {
-      message.error('Không thể tải danh sách yêu cầu in.');
-      console.error(error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleStatusChange = async (id, newStatus, notes = '') => {
-    try {
-      await adminUpdatePrintRequestStatus(id, { status: newStatus, notes });
-      message.success('Đã cập nhật trạng thái.');
-      loadRequests();
-      setIsDetailModalOpen(false);
-    } catch (error) {
-      message.error('Không thể cập nhật trạng thái.');
-      console.error(error);
-    }
-  };
+  const tableRef = useRef(null);
 
   const handleDelete = async (id) => {
     try {
       await adminDeletePrintRequest(id);
       message.success('Đã xóa yêu cầu in.');
-      loadRequests();
-    } catch (error) {
-      message.error('Không thể xóa yêu cầu in.');
-      console.error(error);
+      tableRef.current?.reload();
+    } catch (err) {
+      message.error(errMsg(err, 'Không thể xóa yêu cầu in.'));
     }
-  };
-
-  const handleAssign = async (id, staffId) => {
-    try {
-      await adminAssignPrintRequest(id, { assigned_staff_id: staffId });
-      message.success('Đã gán người xử lý.');
-      loadRequests();
-    } catch (error) {
-      message.error('Không thể gán người xử lý.');
-      console.error(error);
-    }
-  };
-
-  const showDetailModal = (request) => {
-    setSelectedRequest(request);
-    setIsDetailModalOpen(true);
   };
 
   const columns = [
     {
       title: 'ID',
       dataIndex: 'id',
-      width: 80,
-      render: (id) => <span className="font-medium">#{id}</span>,
+      width: 70,
+      render: (id) => <span className="font-medium text-gray-500 dark:text-gray-400">#{id}</span>,
     },
     {
-      title: 'Người yêu cầu',
-      dataIndex: ['user', 'username'],
-      width: 150,
-      render: (username) => <span>{username || 'N/A'}</span>,
+      title: 'Tài liệu',
+      key: 'document',
+      render: (_, r) => {
+        const ext = fileExtension(r.file);
+        return (
+          <Link href={`/admin/print-requests/${r.id}`} className="block max-w-[280px]">
+            <span className="block truncate font-medium text-gray-900 dark:text-gray-100">{r.title}</span>
+            <span className="mt-0.5 flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400">
+              {ext && (
+                <span className="rounded bg-gray-100 px-1.5 py-px font-semibold uppercase text-gray-600 dark:bg-neutral-700 dark:text-neutral-300">
+                  {ext}
+                </span>
+              )}
+              <span>{r.pages_count} trang</span>
+              {r.file?.file_size ? <span>· {formatFileSize(r.file.file_size)}</span> : null}
+            </span>
+          </Link>
+        );
+      },
     },
     {
-      title: 'Tiêu đề',
-      dataIndex: 'title',
-      render: (title) => <span className="line-clamp-2">{title}</span>,
+      title: 'Người gửi',
+      key: 'user',
+      render: (_, r) => <UserLink user={r.user} userId={r.user_id} />,
+    },
+    {
+      title: 'Nhận tại',
+      key: 'delivery',
+      render: (_, r) => (
+        <div className="max-w-[200px]">
+          <div className="truncate text-gray-900 dark:text-gray-100">{r.class_or_location || '-'}</div>
+          <div className="text-xs text-gray-500 dark:text-gray-400">
+            {DELIVERY_METHOD_LABEL[r.delivery_method] || '-'}
+          </div>
+        </div>
+      ),
     },
     {
       title: 'Trạng thái',
       dataIndex: 'status',
-      width: 120,
-      render: (status) => {
-        const config = STATUS_CONFIG[status] || { color: 'default', label: 'N/A' };
-        return <Tag color={config.color}>{config.label}</Tag>;
+      render: (s) => {
+        const c = STATUS_CONFIG[s] || { color: 'default', label: s };
+        return <Tag color={c.color}>{c.label}</Tag>;
       },
-    },
-    {
-      title: 'Số trang',
-      dataIndex: 'pages_count',
-      width: 80,
-      render: (count) => <span>{count} trang</span>,
     },
     {
       title: 'Ngày gửi',
       dataIndex: 'created_at',
-      width: 150,
-      render: (date) => dayjs(date).format('DD/MM/YYYY HH:mm'),
+      render: (v) => <span className="whitespace-nowrap">{fmtDate(v)}</span>,
     },
     {
-      title: 'Hành động',
-      width: 200,
-      render: (_, record) => (
-        <Space size="small">
-          <Button
-            type="primary"
-            size="small"
-            onClick={() => showDetailModal(record)}
-          >
-            Chi tiết
-          </Button>
-          <Popconfirm
-            title="Xóa yêu cầu"
-            description="Bạn chắc chắn muốn xóa?"
-            onConfirm={() => handleDelete(record.id)}
-            okText="Xóa"
-            cancelText="Hủy"
-          >
-            <Button type="text" danger size="small" icon={<Trash2 className="h-4 w-4" />}>
-              Xóa
+      title: '',
+      key: 'actions',
+      fixed: 'right',
+      render: (_, r) => (
+        <Space size={4}>
+          <Link href={`/admin/print-requests/${r.id}`}>
+            <Button type="primary" size="small" icon={<Printer className="h-3.5 w-3.5" />}>
+              Xem & in
             </Button>
+          </Link>
+          <Popconfirm
+            title="Xóa yêu cầu in này?"
+            description="Người gửi sẽ không thấy yêu cầu này nữa."
+            okText="Xóa"
+            okButtonProps={{ danger: true }}
+            cancelText="Hủy"
+            onConfirm={() => handleDelete(r.id)}
+          >
+            <Button size="small" danger type="text" aria-label="Xóa" icon={<Trash2 className="h-3.5 w-3.5" />} />
           </Popconfirm>
         </Space>
       ),
@@ -180,134 +119,15 @@ export default function AdminPrintRequestsPage() {
   ];
 
   return (
-    <div>
-      <div className="mb-6 flex flex-wrap items-center gap-3">
-        <Input.Search
-          placeholder="Tìm kiếm theo tên người dùng, tiêu đề..."
-          value={searchInput}
-          onChange={(e) => {
-            setSearchInput(e.target.value);
-            // Clearing the box shows everything again straight away.
-            if (!e.target.value) {
-              setSearchText('');
-              setPagination((p) => ({ ...p, current: 1 }));
-            }
-          }}
-          onSearch={(value) => {
-            setSearchText(value.trim());
-            setPagination((p) => ({ ...p, current: 1 }));
-          }}
-          style={{ width: '100%', maxWidth: 300 }}
-          allowClear
-        />
-        <Select
-          placeholder="Lọc theo trạng thái"
-          value={statusFilter}
-          onChange={(value) => {
-            setStatusFilter(value ?? null);
-            setPagination((p) => ({ ...p, current: 1 }));
-          }}
-          options={[
-            { label: 'Tất cả', value: null },
-            ...Object.entries(STATUS_CONFIG).map(([key, config]) => ({
-              label: config.label,
-              value: key,
-            })),
-          ]}
-          style={{ width: '100%', maxWidth: 200 }}
-          allowClear
-        />
-      </div>
-
-      <Table
-        columns={columns}
-        dataSource={requests}
-        loading={loading}
-        pagination={{
-          ...pagination,
-          total,
-          onChange: (page, pageSize) => {
-            setPagination({ current: page, pageSize });
-          },
-        }}
-        scroll={{ x: 'max-content' }}
-        rowKey="id"
-      />
-
-      <Modal
-        title={`Yêu cầu in #${selectedRequest?.id}`}
-        open={isDetailModalOpen}
-        onCancel={() => setIsDetailModalOpen(false)}
-        footer={null}
-        width={700}
-      >
-        {selectedRequest && (
-          <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Người yêu cầu</p>
-                <p className="font-medium">{selectedRequest.user?.username}</p>
-              </div>
-              <div>
-                <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Trạng thái</p>
-                <Tag color={STATUS_CONFIG[selectedRequest.status].color}>
-                  {STATUS_CONFIG[selectedRequest.status].label}
-                </Tag>
-              </div>
-              <div>
-                <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Số trang</p>
-                <p className="font-medium">{selectedRequest.pages_count}</p>
-              </div>
-              <div>
-                <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Ngày gửi</p>
-                <p className="font-medium">{dayjs(selectedRequest.created_at).format('DD/MM/YYYY HH:mm')}</p>
-              </div>
-              <div>
-                <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Giao tới</p>
-                <p className="font-medium">{selectedRequest.class_or_location}</p>
-              </div>
-              <div>
-                <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Được xử lý bởi</p>
-                <p className="font-medium">{selectedRequest.assigned_staff?.username || 'Chưa gán'}</p>
-              </div>
-            </div>
-
-            <div>
-              <p className="text-sm font-medium mb-2">Tiêu đề</p>
-              <p className="text-sm text-gray-700 dark:text-gray-300">{selectedRequest.title}</p>
-            </div>
-
-            {selectedRequest.description && (
-              <div>
-                <p className="text-sm font-medium mb-2">Mô tả</p>
-                <p className="text-sm text-gray-700 dark:text-gray-300">{selectedRequest.description}</p>
-              </div>
-            )}
-
-            {selectedRequest.notes && (
-              <div>
-                <p className="text-sm font-medium mb-2">Ghi chú của người dùng</p>
-                <p className="text-sm text-gray-700 dark:text-gray-300">{selectedRequest.notes}</p>
-              </div>
-            )}
-
-            <div className="border-t border-gray-200 dark:border-neutral-600 pt-4">
-              <p className="text-sm font-medium mb-3">Cập nhật trạng thái</p>
-              <Space wrap>
-                {STATUS_TRANSITIONS[selectedRequest.status].map((newStatus) => (
-                  <Button
-                    key={newStatus}
-                    type="primary"
-                    onClick={() => handleStatusChange(selectedRequest.id, newStatus)}
-                  >
-                    {STATUS_CONFIG[newStatus].label}
-                  </Button>
-                ))}
-              </Space>
-            </div>
-          </div>
-        )}
-      </Modal>
-    </div>
+    <ResourceTable
+      ref={tableRef}
+      title="Yêu cầu in tài liệu"
+      fetcher={fetcher}
+      columns={columns}
+      filters={[
+        { key: 'search', type: 'search', placeholder: 'Tên người gửi, tiêu đề' },
+        { key: 'status', type: 'select', placeholder: 'Trạng thái', options: STATUS_OPTIONS },
+      ]}
+    />
   );
 }

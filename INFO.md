@@ -54,7 +54,7 @@ The web app at **https://chuyenbienhoa.com** (also `www.`): the student communit
 | Stories | `src/components/stories` (viewer, overlays in `src/lib/storyOverlays.js`) |
 | Explore | `/explore`, `/explore/games` (+`[slug]`), `/explore/quiz` (+`custom`), `/explore/study-materials` (+`[id]`, `upload`), `/explore/universities` |
 | Points & money | `/wallet` (+`deposit`, `withdraw`; SePay QR, see `SEPAY_*.md`), `/guide/points`, `/users/ranking` |
-| Print requests | `/explore/print-requests` (user page: submit documents, track status; linked from Explore, `EXPLORE_FEATURES`), `/admin/print-requests` (staff management, status workflow) |
+| Print requests | `/explore/print-requests` (user page: submit documents, track status; linked from Explore, `EXPLORE_FEATURES`), `/admin/print-requests` (staff list, `ResourceTable`), `/admin/print-requests/[id]` (preview + print the document, status actions, timeline) |
 | Shop | `/shop` (the main gift shop is the separate repo) |
 | Search / saved / archives | `/search`, `/saved`, `/my-archives` |
 | Lookup | `/lookup`, `/lookup/grades` |
@@ -264,6 +264,8 @@ Weights: `font-medium` (default emphasis), `font-semibold` (titles, buttons), `f
 Every new or changed page or component must follow this section. If the part you touch is in the older style, bring it in line. When a deliberate, large redesign changes these rules (new card style, new palette, new navigation), **update this section in the same commit** - it must always describe the site as it is, not as it was.
 
 ## Recent work (newest first, as of 2026-11)
+
+- **Admin print requests: preview and print screen** (`src/app/admin/print-requests/page.js`, `[id]/page.js`, `_shared.js`, `src/app/Api.js`; checked in headless Chrome with a mocked API): the list is now a `ResourceTable` (padding, search + status filters, document column with type / pages / size, "Xem & in" button). The old list re-fetched forever because it wrote the total back into the `pagination` object its effect depended on. `/admin/print-requests/[id]`: large preview + "In tài liệu". PDFs and pictures come from `adminGetPrintRequestFile` (`GET /v1.0/admin/print-requests/{id}/file`, new in the API) as a Blob, so the preview frame is same-origin and `contentWindow.print()` works; Word / Excel / PowerPoint preview in the Office Online viewer from the public `/storage` URL, and "In" opens that viewer in a new tab (no direct print). After printing an approved request it offers to move it to "Đang in". Side panel: status actions from the API's state machine (reject asks for a reason the user sees), details, user notes highlighted, timeline. The old staff-assign picker is gone - approving assigns the approver (API). Printing from inside the app's WebView is not supported; teachers print from a computer.
 
 - **Print requests moved under Explore** (`src/app/explore/print-requests/page.js`): the user page is now `/explore/print-requests` with the Explore sidebar (`HomeLayout`, like `/explore/universities`); the Explore card and sidebar link point to it (`src/data/exploreFeatures.js`). The mobile app opens it in its WebView (`PrintRequestsScreen`, `WebAppScreen` site `print`).
 - **Document Printing Request System UI** (`src/app/explore/print-requests/page.js`, `src/app/admin/print-requests/page.js`, `src/components/print/PrintRequestForm.js`, `src/components/print/PrintRequestList.js`, `src/app/Api.js`, `src/app/admin/AdminShell.js`):

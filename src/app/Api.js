@@ -1,4 +1,5 @@
 import * as Api from "../services/api/ApiByAxios";
+import axiosInstance from "../services/api/AxiosCustom";
 
 // Authentication
 export const loginRequest = (params) => {
@@ -1086,6 +1087,9 @@ export const cancelPrintRequest = (id) => Api.postRequest(`/v1.0/print-requests/
 // Print Requests (admin endpoints)
 export const adminGetPrintRequests = (params) => Api.getRequest("/v1.0/admin/print-requests", params);
 export const adminGetPrintRequest = (id) => Api.getRequest(`/v1.0/admin/print-requests/${id}`);
+// The document itself as a Blob (preview / print from a same-origin object URL).
+export const adminGetPrintRequestFile = (id) =>
+  axiosInstance.get(`/v1.0/admin/print-requests/${id}/file`, { responseType: "blob" });
 export const adminUpdatePrintRequestStatus = (id, params) =>
   Api.putRequest(`/v1.0/admin/print-requests/${id}/status`, params);
 export const adminAssignPrintRequest = (id, params) =>
