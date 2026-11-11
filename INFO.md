@@ -54,6 +54,7 @@ The web app at **https://chuyenbienhoa.com** (also `www.`): the student communit
 | Stories | `src/components/stories` (viewer, overlays in `src/lib/storyOverlays.js`) |
 | Explore | `/explore`, `/explore/games` (+`[slug]`), `/explore/quiz` (+`custom`), `/explore/study-materials` (+`[id]`, `upload`), `/explore/universities` |
 | Points & money | `/wallet` (+`deposit`, `withdraw`; SePay QR, see `SEPAY_*.md`), `/guide/points`, `/users/ranking` |
+| Print requests | `/print-requests` (user page: submit documents, track status), `/admin/print-requests` (staff management, status workflow) |
 | Shop | `/shop` (the main gift shop is the separate repo) |
 | Search / saved / archives | `/search`, `/saved`, `/my-archives` |
 | Lookup | `/lookup`, `/lookup/grades` |
@@ -263,6 +264,13 @@ Weights: `font-medium` (default emphasis), `font-semibold` (titles, buttons), `f
 Every new or changed page or component must follow this section. If the part you touch is in the older style, bring it in line. When a deliberate, large redesign changes these rules (new card style, new palette, new navigation), **update this section in the same commit** - it must always describe the site as it is, not as it was.
 
 ## Recent work (newest first, as of 2026-11)
+
+- **Document Printing Request System UI** (`src/app/print-requests/page.js`, `src/app/admin/print-requests/page.js`, `src/components/print/PrintRequestForm.js`, `src/components/print/PrintRequestList.js`, `src/app/Api.js`, `src/app/admin/AdminShell.js`):
+  - **User page** (`/print-requests`): form to submit documents with file, title, page count, delivery method (class / office), destination, optional notes. List displays own requests with status tags (pending, approved, printing, ready, delivered, picked_up, cancelled, rejected), delivery info, timestamps. Cancel button for pending/approved requests. Pagination with load-more.
+  - **Form component** (`PrintRequestForm`): file upload (accept PDF, images, Office docs, 50MB max), title input, optional description/notes, pages counter, delivery method radio, class/location text, all with validation.
+  - **List component** (`PrintRequestList`): displays request grid with status tags (color-coded), pages, method, recipient info, assigned staff, and rejection reason if any. Per-request details modal with timestamps for each status transition.
+  - **Admin page** (`/admin/print-requests`): table (ID, requester, title, status, pages, date) with search (username/title), status filter multi-select, per-row actions (view details, delete). Modal shows request details and **status transition buttons** (validated state machine: pending→approved/rejected/cancelled, approved→printing/cancelled, etc.). Assign staff picker on view. Links in admin sidebar via `PrinterOutlined` icon.
+  - **API wrappers** in `Api.js`: user endpoints `getPrintRequests`, `getPrintRequest`, `createPrintRequest`, `updatePrintRequest`, `cancelPrintRequest`; admin endpoints `adminGetPrintRequests`, `adminGetPrintRequest`, `adminUpdatePrintRequestStatus`, `adminAssignPrintRequest`, `adminDeletePrintRequest`.
 
 - **Post Translation by Yoyo AI with Translation Status Toasts, Settings Target Language & Disable WebView Auto-Reload on Recover** (`src/components/forum/PostItem.js`, `src/app/settings/SettingsClient.js`, `src/utils/aiTranslation.js`, `src/app/Api.js`, `src/components/maintenance/MaintenanceGuard.js`):
   - Added "Dịch bằng Yoyo AI" / "Xem bài viết gốc" option in `PostItem.js` dropdown menu (applied to Home feed, Explore, Profile screen timeline & liked posts, and individual post views).
