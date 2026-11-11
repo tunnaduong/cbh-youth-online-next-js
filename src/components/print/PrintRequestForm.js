@@ -55,10 +55,14 @@ export default function PrintRequestForm({ onSuccess, onCancel }) {
       setLoading(true);
 
       // Upload file first
+      // The upload endpoint requires `uid` (the owner) and answers with the
+      // body in response.data (axios wraps it).
+      const currentUser = JSON.parse(localStorage.getItem('CURRENT_USER') || 'null');
       const formData = new FormData();
       formData.append('file', file);
+      formData.append('uid', currentUser?.id);
       const uploadResponse = await uploadFile(formData);
-      const fileId = uploadResponse.id;
+      const fileId = uploadResponse.data.id;
 
       // Create print request
       await createPrintRequest({
