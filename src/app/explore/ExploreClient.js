@@ -3,6 +3,7 @@
 import HomeLayout from "@/layouts/HomeLayout";
 import React from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { message } from "antd";
 import { EXPLORE_FEATURES } from "@/data/exploreFeatures";
 
@@ -75,7 +76,7 @@ export default function ExploreClient() {
               .map((feature, index) => {
                 const IconComponent = feature.icon;
                 return (
-                  <a
+                  <Link
                     key={index}
                     href={feature.href}
                     onClick={(e) => handleFeatureClick(e, feature)}
@@ -91,7 +92,7 @@ export default function ExploreClient() {
                     <h3 className="mt-4 text-center text-gray-900 dark:text-gray-100 font-medium">
                       {feature.title}
                     </h3>
-                  </a>
+                  </Link>
                 );
               })}
           </div>
