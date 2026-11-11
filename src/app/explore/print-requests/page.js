@@ -12,6 +12,7 @@ import {
 import PrintRequestForm from '@/components/print/PrintRequestForm';
 import PrintRequestList from '@/components/print/PrintRequestList';
 import { EXPLORE_FEATURES } from '@/data/exploreFeatures';
+import { isInApp } from '@/utils/appMode';
 
 // Explore sub-page: same sidebar as /explore/universities etc.
 const sidebarItems = EXPLORE_FEATURES.map((f) => ({
@@ -28,6 +29,15 @@ export default function PrintRequestsPage() {
   const [showForm, setShowForm] = useState(false);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(false);
+  // null until mounted: in the app's WebView (PrintRequestsScreen) the app
+  // draws its own header, so the site's navbar, sidebar and footer are left
+  // out. Deciding after mount keeps hydration matching and avoids flashing
+  // the navbar before hiding it.
+  const [inApp, setInApp] = useState(null);
+
+  useEffect(() => {
+    setInApp(isInApp());
+  }, []);
 
   useEffect(() => {
     loadRequests();
@@ -68,20 +78,17 @@ export default function PrintRequestsPage() {
     }
   };
 
-  return (
-    <HomeLayout
-      activeNav="explore"
-      activeBar="print"
-      sidebarItems={sidebarItems}
-      sidebarType="all"
-      showRightSidebar={false}
-      sidebarWidth="306px"
-    >
-      <div className="mx-auto w-full max-w-[775px] px-3 sm:px-4 py-6">
-        <div className="mb-5 flex items-start justify-between gap-3">
+  if (inApp === null) return null;
+
+  const content = (
+      <div className={`mx-auto w-full max-w-[775px] px-3 sm:px-4 ${inApp ? 'py-4' : 'py-6'}`}>
+        <div className={`mb-5 flex justify-between gap-3 ${inApp ? 'items-center' : 'items-start'}`}>
           <div className="min-w-0">
-            <h1 className="text-2xl font-bold text-gray-900 sm:text-3xl dark:text-white">In ấn tài liệu</h1>
-            <p className="mt-1 text-sm text-gray-500 sm:text-base dark:text-gray-400">
+            {/* The app's header already shows the page name. */}
+            {!inApp && (
+              <h1 className="text-2xl font-bold text-gray-900 sm:text-3xl dark:text-white">In ấn tài liệu</h1>
+            )}
+            <p className={`text-sm text-gray-500 sm:text-base dark:text-gray-400 ${inApp ? '' : 'mt-1'}`}>
               Gửi tài liệu cần in và nhận tại lớp hoặc văn phòng.
             </p>
           </div>
@@ -113,6 +120,20 @@ export default function PrintRequestsPage() {
           onPageChange={setPage}
         />
       </div>
+  );
+
+  if (inApp) return <main className="min-h-screen">{content}</main>;
+
+  return (
+    <HomeLayout
+      activeNav="explore"
+      activeBar="print"
+      sidebarItems={sidebarItems}
+      sidebarType="all"
+      showRightSidebar={false}
+      sidebarWidth="306px"
+    >
+      {content}
     </HomeLayout>
   );
 }
