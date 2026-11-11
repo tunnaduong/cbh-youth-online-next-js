@@ -38,7 +38,9 @@ export default function PrintRequestsPage() {
       setLoading(true);
       // axios wraps the body: the Laravel paginator is response.data.
       const body = (await getPrintRequests({ page, per_page: 10 })).data;
-      setRequests(body.data || []);
+      const items = body.data || [];
+      // "Xem thêm" appends the next page; page 1 replaces the list.
+      setRequests((prev) => (page === 1 ? items : [...prev, ...items]));
       setHasMore(body.current_page < body.last_page);
     } catch (error) {
       message.error('Không thể tải danh sách yêu cầu in.');
@@ -76,15 +78,23 @@ export default function PrintRequestsPage() {
       sidebarWidth="306px"
     >
       <div className="mx-auto w-full max-w-[775px] px-3 sm:px-4 py-6">
-        <div className="flex items-center justify-between mb-6">
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Yêu cầu in tài liệu</h1>
-          <button
-            onClick={() => setShowForm(!showForm)}
-            className="flex h-10 items-center gap-1.5 rounded-xl bg-primary-500 px-4 text-sm font-semibold !text-white shadow-sm transition-colors hover:bg-primary-600"
-          >
-            <Plus className="h-4 w-4" />
-            Gửi yêu cầu
-          </button>
+        <div className="mb-5 flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <h1 className="text-2xl font-bold text-gray-900 sm:text-3xl dark:text-white">In ấn tài liệu</h1>
+            <p className="mt-1 text-sm text-gray-500 sm:text-base dark:text-gray-400">
+              Gửi tài liệu cần in và nhận tại lớp hoặc văn phòng.
+            </p>
+          </div>
+          {!showForm && (
+            <button
+              type="button"
+              onClick={() => setShowForm(true)}
+              className="flex h-10 flex-shrink-0 items-center gap-1.5 rounded-xl bg-primary-500 px-4 text-sm font-semibold !text-white shadow-sm transition-colors hover:bg-primary-600"
+            >
+              <Plus className="h-4 w-4" />
+              Tạo yêu cầu
+            </button>
+          )}
         </div>
 
         {showForm && (
@@ -93,6 +103,7 @@ export default function PrintRequestsPage() {
           </HomeCard>
         )}
 
+        <h2 className="mb-3 text-base font-semibold text-gray-900 dark:text-white">Yêu cầu của bạn</h2>
         <PrintRequestList
           requests={requests}
           loading={loading}
