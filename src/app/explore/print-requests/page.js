@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { message } from 'antd';
 import { Plus } from 'lucide-react';
 import HomeLayout from '@/layouts/HomeLayout';
-import HomeCard from '@/components/home/HomeCard';
+import { HomeCard } from '@/components/home/HomeCard';
 import {
   getPrintRequests,
   cancelPrintRequest,
