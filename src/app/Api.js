@@ -280,6 +280,10 @@ export const markAsRead = (conversationId) => {
   return Api.postRequest(`/v1.0/chat/conversations/${conversationId}/read`);
 };
 
+export const markConversationAsDelivered = (conversationId, messageId = null) => {
+  return Api.postRequest(`/v1.0/chat/conversations/${conversationId}/delivered`, messageId ? { message_id: messageId } : {});
+};
+
 export const createGroupConversation = (params) => {
   return Api.postRequest("/v1.0/chat/groups", params);
 };
@@ -1072,3 +1076,18 @@ export const endCall = (callId) =>
 export const sendCallSignal = (callId, type, payload) =>
   Api.postRequest(`/v1.0/chat/calls/${callId}/signal`, { type, payload });
 
+// Print Requests (user endpoints)
+export const getPrintRequests = (params) => Api.getRequest("/v1.0/print-requests", params);
+export const getPrintRequest = (id) => Api.getRequest(`/v1.0/print-requests/${id}`);
+export const createPrintRequest = (params) => Api.postRequest("/v1.0/print-requests", params);
+export const updatePrintRequest = (id, params) => Api.putRequest(`/v1.0/print-requests/${id}`, params);
+export const cancelPrintRequest = (id) => Api.postRequest(`/v1.0/print-requests/${id}/cancel`);
+
+// Print Requests (admin endpoints)
+export const adminGetPrintRequests = (params) => Api.getRequest("/v1.0/admin/print-requests", params);
+export const adminGetPrintRequest = (id) => Api.getRequest(`/v1.0/admin/print-requests/${id}`);
+export const adminUpdatePrintRequestStatus = (id, params) =>
+  Api.putRequest(`/v1.0/admin/print-requests/${id}/status`, params);
+export const adminAssignPrintRequest = (id, params) =>
+  Api.postRequest(`/v1.0/admin/print-requests/${id}/assign`, params);
+export const adminDeletePrintRequest = (id) => Api.deleteRequest(`/v1.0/admin/print-requests/${id}`);

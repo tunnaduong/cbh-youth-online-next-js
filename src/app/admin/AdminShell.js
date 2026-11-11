@@ -35,6 +35,7 @@ import {
   BugOutlined,
   AlertOutlined,
   CloudSyncOutlined,
+  PrinterOutlined,
 } from "@ant-design/icons";
 
 const { Sider, Content, Header } = Layout;
@@ -97,6 +98,7 @@ export const NAV_GROUPS = [
       { key: "/admin/moderation", icon: <RobotOutlined />, label: "Kiểm duyệt AI" },
       { key: "/admin/feedback", icon: <BugOutlined />, label: "Góp ý & Báo lỗi" },
       { key: "/admin/study-materials", icon: <BookOutlined />, label: "Tài liệu học tập" },
+      { key: "/admin/print-requests", icon: <PrinterOutlined />, label: "Yêu cầu in tài liệu" },
     ],
   },
   {
