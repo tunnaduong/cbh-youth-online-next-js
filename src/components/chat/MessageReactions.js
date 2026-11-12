@@ -87,6 +87,12 @@ export default function MessageReactions({
   onCopy,
   onViewSeenBy,
   inline = false,
+  // Like Messenger/Zalo: the quick-react/options button doesn't sit
+  // permanently under every bubble - only the hovered message (or the last
+  // one in the conversation) shows it. It stays mounted either way (just
+  // visually hidden) so the popover still has an anchor to open against
+  // when it's triggered by long-press instead of a click on the button.
+  showQuickButton = true,
 }) {
   const summary = reactions?.summary || [];
   const total = reactions?.total || 0;
@@ -220,7 +226,9 @@ export default function MessageReactions({
     >
       <button
         type="button"
-        className="w-6 h-6 flex items-center justify-center rounded-full bg-white dark:bg-neutral-700 shadow border border-gray-200 dark:border-neutral-600 text-gray-500 dark:text-gray-300 hover:text-gray-700 dark:hover:text-gray-100"
+        className={`w-6 h-6 flex items-center justify-center rounded-full bg-white dark:bg-neutral-700 shadow border border-gray-200 dark:border-neutral-600 text-gray-500 dark:text-gray-300 hover:text-gray-700 dark:hover:text-gray-100 transition-opacity ${
+          showQuickButton || open ? "" : "opacity-0 pointer-events-none"
+        }`}
         title="Cảm xúc & tùy chọn"
       >
         <BsEmojiSmile className="w-3.5 h-3.5" />

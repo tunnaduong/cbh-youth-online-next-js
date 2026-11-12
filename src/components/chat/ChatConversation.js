@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { message as antdMessage, Dropdown } from "antd";
@@ -227,6 +227,19 @@ export default function ChatConversation({
   const conversationMessages = conversationId
     ? messages[conversationId] || []
     : [];
+  // The quick-react/options button on a bubble is kept hidden until that
+  // message is hovered (hoveredMessageId below) or it's the very last
+  // message of the conversation - like Messenger/Zalo, where that row of
+  // icons isn't permanently glued under every message. Reacting/replying to
+  // an older message still works via long-press (startLongPress), which
+  // opens the same popover regardless of the button's visibility.
+  const lastRealMessageId = useMemo(() => {
+    for (let i = conversationMessages.length - 1; i >= 0; i--) {
+      const m = conversationMessages[i];
+      if (m.type !== "call" && m.type !== "system") return m.id;
+    }
+    return null;
+  }, [conversationMessages]);
   const isGroupChat = conversation?.type === "group";
   const conversationTypingUsers = conversationId ? typingUsers[conversationId] : null;
   const typingEntries = conversationTypingUsers ? Object.values(conversationTypingUsers) : [];
@@ -1477,6 +1490,10 @@ export default function ChatConversation({
                   <MessageReactions
                     reactions={message.reactions}
                     isOwn={message.is_myself}
+                    showQuickButton={
+                      hoveredMessageId === message.id ||
+                      message.id === lastRealMessageId
+                    }
                     open={openReactionMessageId === message.id}
                     onOpenChange={(isOpen) =>
                       setOpenReactionMessageId(isOpen ? message.id : null)
