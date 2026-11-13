@@ -1118,3 +1118,6 @@ export const getTimetable = () => Api.getRequest("/v1.0/timetable");
 export const getTimetableDemo = () => Api.getRequest("/v1.0/timetable/demo");
 export const saveTimetable = (data) => Api.putRequest("/v1.0/timetable", { data });
 export const resetTimetable = () => Api.deleteRequest("/v1.0/timetable");
+// AI reads a timetable from text and/or a photo; returns { data, note } without saving.
+export const aiImportTimetable = (formData) =>
+  Api.postFormDataRequest("/v1.0/timetable/ai-import", formData, { timeout: 90000 });

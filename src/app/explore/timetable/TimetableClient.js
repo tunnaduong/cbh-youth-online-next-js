@@ -3,7 +3,8 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { Button, Input, Popconfirm, message } from "antd";
-import { CalendarDays, Clock, Coffee, Info, Pencil, Plus, Trash2 } from "lucide-react";
+import { CalendarDays, ChevronRight, Clock, Coffee, Info, Pencil, Plus, Sparkles, Trash2 } from "lucide-react";
+import AiImportModal from "./AiImportModal";
 import HomeLayout from "@/layouts/HomeLayout";
 import { HomeCard, SectionHeader } from "@/components/home/HomeCard";
 import { EXPLORE_FEATURES } from "@/data/exploreFeatures";
@@ -126,6 +127,7 @@ export default function TimetableClient() {
     content = (
       <TimetableEditor
         initial={schedule}
+        isDemo={payload.is_demo}
         loggedIn={loggedIn}
         startDay={day}
         onCancel={() => setEditing(false)}
@@ -342,17 +344,21 @@ function WeekCard({ schedule, day, setDay, now, status }) {
   );
 }
 
-function TimetableEditor({ initial, loggedIn, startDay, onCancel, onSaved }) {
+function TimetableEditor({ initial, isDemo, loggedIn, startDay, onCancel, onSaved }) {
   const [draft, setDraft] = useState(() => cloneSchedule(initial));
   const [day, setDay] = useState(startDay || "T2");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [jsonText, setJsonText] = useState("");
   const [showJson, setShowJson] = useState(false);
+  const [aiOpen, setAiOpen] = useState(false);
+  const [aiNote, setAiNote] = useState("");
+  const [touched, setTouched] = useState(false);
 
   const blocks = draft[day] || [];
 
   const update = (fn) => {
+    setTouched(true);
     setDraft((prev) => {
       const next = cloneSchedule(prev);
       fn(next);
@@ -443,6 +449,19 @@ function TimetableEditor({ initial, loggedIn, startDay, onCancel, onSaved }) {
     message.info("Đã nhập, bấm Lưu để lưu lại.");
   };
 
+  const applyAi = (data, note) => {
+    setDraft(cloneSchedule(data));
+    setTouched(true);
+    setAiNote(note);
+    setAiOpen(false);
+    setError("");
+    if (!(data?.[day] || []).length) {
+      const first = DAYS.find((d) => (data?.[d] || []).length);
+      if (first) setDay(first);
+    }
+    message.success("AI đã điền thời khóa biểu. Kiểm tra lại rồi bấm Lưu.");
+  };
+
   const counts = useMemo(() => Object.fromEntries(DAYS.map((d) => [d, (draft[d] || []).length])), [draft]);
 
   return (
@@ -452,6 +471,37 @@ function TimetableEditor({ initial, loggedIn, startDay, onCancel, onSaved }) {
         Thêm tiết học và giờ ra chơi cho từng ngày.
         {loggedIn ? " Lịch được lưu vào tài khoản, dùng chung trên web và ứng dụng." : " Lịch được lưu trên trình duyệt này."}
       </p>
+
+      <button
+        type="button"
+        onClick={() => setAiOpen(true)}
+        className="mt-4 flex w-full items-center gap-3 rounded-xl border border-primary-500 p-3.5 text-left transition-colors hover:bg-primary-50 dark:border-[#6bcf60] dark:hover:bg-[#2b3a2a]"
+      >
+        <span className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-gray-100 dark:bg-neutral-600">
+          <Sparkles className="h-6 w-6 text-primary-500 dark:text-[#6bcf60]" />
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className="block text-[15px] font-semibold text-gray-900 dark:text-neutral-100">Nhập bằng AI</span>
+          <span className="block text-sm text-gray-500 dark:text-gray-400">
+            Gõ hoặc dán lịch, hoặc chọn ảnh thời khóa biểu - AI tự điền vào
+          </span>
+        </span>
+        <ChevronRight className="h-5 w-5 flex-shrink-0 text-gray-400 dark:text-neutral-400" />
+      </button>
+      {aiNote && (
+        <div className="mt-3 flex items-start gap-2 rounded-xl border border-primary-500 px-3.5 py-3 dark:border-[#6bcf60]">
+          <Sparkles className="mt-0.5 h-[18px] w-[18px] flex-shrink-0 text-primary-500 dark:text-[#6bcf60]" />
+          <p className="text-sm text-gray-700 dark:text-gray-300">{aiNote}</p>
+        </div>
+      )}
+      <AiImportModal
+        open={aiOpen}
+        onClose={() => setAiOpen(false)}
+        loggedIn={loggedIn}
+        // The sample's subjects mean nothing for this class.
+        current={isDemo && !touched ? null : draft}
+        onResult={applyAi}
+      />
 
       <div className="mt-4 flex flex-wrap gap-2" role="tablist">
         {DAYS.map((d) => (
