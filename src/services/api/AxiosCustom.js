@@ -46,7 +46,9 @@ axiosInstance.interceptors.response.use(
   (error) => {
     try {
       if (typeof window !== "undefined") {
-        if (isApiDownError(error)) notifyApiDown();
+        // A request may opt out (skipApiDown) when its 5xx means a slow third
+        // party, not our API being down - e.g. the timetable AI import.
+        if (isApiDownError(error) && !error.config?.skipApiDown) notifyApiDown();
         if (error.response && error.response.status === 401) {
           // WHEN: ERROR 401 (Unauthorized)
           // Drop the dead token from the account switcher too. Use the token

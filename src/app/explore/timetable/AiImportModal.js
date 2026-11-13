@@ -63,7 +63,16 @@ export default function AiImportModal({ open, onClose, current, loggedIn, onResu
       setText("");
       setFile(null);
     } catch (err) {
-      setError(err?.response?.data?.message || "AI chưa đọc được thời khóa biểu, bạn thử lại nhé.");
+      // No JSON from our API (gateway timeout page, connection cut): the photo
+      // read took too long. Show the status so a report can be traced.
+      const status = err?.response?.status;
+      const apiMessage = typeof err?.response?.data?.message === "string" ? err.response.data.message : "";
+      setError(
+        apiMessage ||
+          (status >= 500 || err?.code === "ECONNABORTED"
+            ? `AI phản hồi quá lâu nên kết nối bị ngắt (mã ${status || "timeout"}). Bạn thử lại, hoặc dùng ảnh rõ hơn / chụp từng buổi.`
+            : "AI chưa đọc được thời khóa biểu, bạn thử lại nhé.")
+      );
     } finally {
       setBusy(false);
     }

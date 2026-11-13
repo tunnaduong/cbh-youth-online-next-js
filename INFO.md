@@ -132,7 +132,7 @@ The first time, run `npx playwright install chromium` before `test:e2e`.
 - **API calls:** go through `src/app/Api.js` → `ApiByAxios` → `AxiosCustom`.
   - **Request interceptor:** adds `Authorization: Bearer <cookie or localStorage token>`, plus `X-Socket-Id` for Echo `toOthers()`.
   - **On a 401:** removes the dead token from `SAVED_ACCOUNTS`. If that token is still the active one, it clears `TOKEN`, `CURRENT_USER` and the cookie, then redirects to `/login`. So never send a request whose expected failure is a 401 (like redeeming a code) through axios.
-  - **When the API is unreachable:** it shows the maintenance screen (`components/maintenance`).
+  - **When the API is unreachable:** it shows the maintenance screen (`components/maintenance`). A request whose 5xx means a slow third party rather than our API passes `skipApiDown: true` in its axios config (e.g. `aiImportTimetable`).
 - **Admin rights:** `admin` and `teacher` are equal - check with `isStaffRole(role)` (`src/utils/roles.js`), never `role === "admin"`.
 - **SSR data:** use `src/utils/serverFetch.js`. It forwards the cookie token.
 - **New static routes:** add them to `e2e/routes.spec.ts`.
