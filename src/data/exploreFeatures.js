@@ -42,7 +42,7 @@ export const EXPLORE_FEATURES = [
     sidebarIcon: Search,
     title: "Tra cứu điểm thi",
     key: "grades",
-    href: "/lookup/grades",
+    href: "/lookup",
   },
   {
     icon: MapOutline,

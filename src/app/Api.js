@@ -1095,3 +1095,20 @@ export const adminUpdatePrintRequestStatus = (id, params) =>
 export const adminAssignPrintRequest = (id, params) =>
   Api.postRequest(`/v1.0/admin/print-requests/${id}/assign`, params);
 export const adminDeletePrintRequest = (id) => Api.deleteRequest(`/v1.0/admin/print-requests/${id}`);
+
+// Exam score lookup (the API proxies the Sở GD&ĐT Ninh Bình sites)
+export const getExamScoreConfig = (source) => {
+  return Api.getRequest(`/v1.0/exam-scores/${source}/config`);
+};
+
+export const getExamScoreCaptcha = (source) => {
+  return Api.getRequest(`/v1.0/exam-scores/${source}/captcha`);
+};
+
+export const searchExamScore = (source, params) => {
+  return Api.postRequest(`/v1.0/exam-scores/${source}/search`, params);
+};
+
+export const searchGrade10Score = (sbd) => {
+  return Api.getRequest("/v1.0/exam-scores/ninh-binh-10/search", { sbd });
+};

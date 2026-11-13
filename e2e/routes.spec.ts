@@ -47,6 +47,8 @@ const STATIC_ROUTES: string[] = [
   "/login",
   "/lookup",
   "/lookup/grades",
+  "/lookup/thpt",
+  "/lookup/grade-10",
   "/password/reset",
   "/policy/forum-rules",
   "/policy/privacy",

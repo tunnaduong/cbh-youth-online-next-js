@@ -80,7 +80,7 @@ export default function StudyMaterialsClient() {
       Icon: Search,
       label: "Tra cứu điểm thi",
       key: "grades",
-      href: "/lookup/grades",
+      href: "/lookup",
     },
     {
       Icon: Map,
