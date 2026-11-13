@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Button, Input, Modal } from "antd";
 import { ImagePlus, Sparkles, X } from "lucide-react";
 import { aiImportTimetable } from "@/app/Api";
+import { isValidClassName, normalizeClassName, readTimetableClass, writeTimetableClass } from "@/lib/timetable";
 
 const PLACEHOLDER = `Ví dụ:
 Sáng tiết 1 từ 7h30 đến 8h15
@@ -19,9 +20,15 @@ export default function AiImportModal({ open, onClose, current, loggedIn, onResu
   const [text, setText] = useState("");
   const [file, setFile] = useState(null);
   const [preview, setPreview] = useState("");
+  const [className, setClassName] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const inputRef = useRef(null);
+
+  // Remembered in the browser, read after mount (no localStorage on the server).
+  useEffect(() => {
+    setClassName(readTimetableClass());
+  }, []);
 
   useEffect(() => {
     if (!file) {
@@ -58,6 +65,7 @@ export default function AiImportModal({ open, onClose, current, loggedIn, onResu
       if (text.trim()) form.append("text", text.trim());
       if (file) form.append("image", file);
       if (current) form.append("current", JSON.stringify(current));
+      if (className) form.append("class_name", className);
       const res = await aiImportTimetable(form);
       onResult(res.data.data, res.data.note || "");
       setText("");
@@ -108,6 +116,31 @@ export default function AiImportModal({ open, onClose, current, loggedIn, onResu
             Viết thời khóa biểu theo cách bạn quen (giờ vào tiết, giờ ra chơi, tên môn từng thứ...) hoặc chọn ảnh chụp
             thời khóa biểu. AI sẽ điền vào lịch để bạn kiểm tra trước khi lưu.
           </p>
+          <div>
+            <label htmlFor="tkb-ai-class" className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
+              Lớp của tôi (không bắt buộc)
+            </label>
+            <p className="mb-2 text-xs text-gray-500 dark:text-gray-400">
+              Khối + lớp chuyên, ví dụ 11C5 (11 là khối, C5 là lớp chuyên). Được lưu lại. Nếu ảnh có nhiều lớp, AI chỉ
+              đọc đúng lớp này.
+            </p>
+            <Input
+              id="tkb-ai-class"
+              value={className}
+              onChange={(e) => {
+                const next = normalizeClassName(e.target.value);
+                setClassName(next);
+                writeTimetableClass(next);
+              }}
+              placeholder="11C5"
+              maxLength={12}
+              autoCapitalize="characters"
+              status={className && !isValidClassName(className) ? "error" : undefined}
+            />
+            {className && !isValidClassName(className) && (
+              <p className="mt-1 text-xs text-red-500">Nhập khối (10-12) rồi đến lớp, ví dụ 11C5.</p>
+            )}
+          </div>
           <div>
             <label htmlFor="tkb-ai-text" className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
               Nội dung

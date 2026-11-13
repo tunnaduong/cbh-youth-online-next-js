@@ -137,3 +137,31 @@ export function parseTimetableJson(text) {
     return null;
   }
 }
+
+// "Lớp của tôi" for the AI import: a photo of the whole school's timetable has
+// many classes, so the user's one is given to the AI. Format: khối + lớp, e.g.
+// 11C5 (11 = khối, C5 = lớp chuyên). Remembered in the browser.
+const CLASS_KEY = "cbh_timetable_class";
+
+export const normalizeClassName = (value) => String(value || "").replace(/\s+/g, "").toUpperCase().slice(0, 12);
+
+/** 11C5, 10A1, 12T... : khối 10-12 then a class code. */
+export const isValidClassName = (value) => /^(10|11|12)[A-ZÀ-Ỹ][A-ZÀ-Ỹ0-9]{0,8}$/.test(normalizeClassName(value));
+
+export const readTimetableClass = () => {
+  try {
+    return normalizeClassName(localStorage.getItem(CLASS_KEY));
+  } catch {
+    return "";
+  }
+};
+
+export const writeTimetableClass = (value) => {
+  try {
+    const v = normalizeClassName(value);
+    if (v) localStorage.setItem(CLASS_KEY, v);
+    else localStorage.removeItem(CLASS_KEY);
+  } catch {
+    // storage blocked: the class is simply not remembered
+  }
+};
