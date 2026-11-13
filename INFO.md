@@ -52,7 +52,7 @@ The web app at **https://chuyenbienhoa.com** (also `www.`): the student communit
 | Chat | `/chat` (private and group chat, realtime), `/invite/[token]` (group invite) |
 | Ads | `src/data/ads.js` (creatives), `src/components/ads/AdSlot.js` |
 | Stories | `src/components/stories` (viewer, overlays in `src/lib/storyOverlays.js`) |
-| Explore | `/explore`, `/explore/games` (+`[slug]`), `/explore/quiz` (+`custom`), `/explore/study-materials` (+`[id]`, `upload`), `/explore/universities` |
+| Explore | `/explore`, `/explore/games` (+`[slug]`), `/explore/quiz` (+`custom`), `/explore/study-materials` (+`[id]`, `upload`), `/explore/universities`, `/explore/timetable` (class timetable, `src/lib/timetable.js`) |
 | Points & money | `/wallet` (+`deposit`, `withdraw`; SePay QR, see `SEPAY_*.md`), `/guide/points`, `/users/ranking` |
 | Print requests | `/explore/print-requests` (user page: submit documents, track status; linked from Explore, `EXPLORE_FEATURES`), `/admin/print-requests` (staff list, `ResourceTable`), `/admin/print-requests/[id]` (preview + print the document, status actions, timeline) |
 | Shop | `/shop` (the main gift shop is the separate repo) |
@@ -260,6 +260,8 @@ Weights: `font-medium` (default emphasis), `font-semibold` (titles, buttons), `f
 Every new or changed page or component must follow this section. If the part you touch is in the older style, bring it in line. When a deliberate, large redesign changes these rules (new card style, new palette, new navigation), **update this section in the same commit** - it must always describe the site as it is, not as it was.
 
 ## Recent work (newest first, as of 2026-11)
+
+- **Class timetable, like vaolop.app** (`src/app/explore/timetable/`, `src/lib/timetable.js` = port of the app's `utils/timetable.js`, keep the two in step; lint + headless Chrome against a local API, guest flow only - the signed-in path was not run): live clock, current period with progress, time elapsed / next period / time left, the week's schedule, and an editor (lessons + breaks per day, `<input type="time">`, JSON import/export compatible with vaolop.app). Signed in: one schedule on the account via `GET|PUT|DELETE /v1.0/timetable` (shared with the app; needs the API migration). Guests: `localStorage` `cbh_timetable_v1`, starting from `GET /v1.0/timetable/demo`. Linked from Explore (`EXPLORE_FEATURES` key `timetable`) and the old "Tra cứu thời khóa biểu" placeholder in `/lookup/grades`.
 
 - **Exam score lookup: THPT graduation + grade 10 (Ninh Bình)** (`src/app/lookup/{page,LookupClient}.js`, `lookup/thpt`, `lookup/grade-10`, `components/lookup/LookupShell.js`; lint + `next dev` against a local API in headless Chrome - wrong-captcha and not-found paths seen, no real SBD tried): `/lookup` is now a picker (was a redirect to `/lookup/grades`). Data comes from the API's `/v1.0/exam-scores/*` proxy (`getExamScoreConfig`, `getExamScoreCaptcha`, `searchExamScore`, `searchGrade10Score` in `Api.js`); the THPT page shows the Sở's SVG captcha as a data-URI `<img>` and the visitor types it (one lookup per captcha). The API answers 424 (not 5xx) when the Sở's site is down, so the maintenance screen stays away. Same feature as the mobile app's `ScoreLookupScreen`.
 

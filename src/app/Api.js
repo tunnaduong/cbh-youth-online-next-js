@@ -1112,3 +1112,9 @@ export const searchExamScore = (source, params) => {
 export const searchGrade10Score = (sbd) => {
   return Api.getRequest("/v1.0/exam-scores/ninh-binh-10/search", { sbd });
 };
+
+// Class timetable (one per account, shared with the app; vaolop.app format)
+export const getTimetable = () => Api.getRequest("/v1.0/timetable");
+export const getTimetableDemo = () => Api.getRequest("/v1.0/timetable/demo");
+export const saveTimetable = (data) => Api.putRequest("/v1.0/timetable", { data });
+export const resetTimetable = () => Api.deleteRequest("/v1.0/timetable");

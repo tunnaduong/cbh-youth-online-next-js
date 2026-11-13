@@ -66,7 +66,7 @@ export default function GradesClient() {
   }, []);
 
   const handleFeatureClick = (e, key, href) => {
-    if (["schedule", "class-ranking"].includes(key)) {
+    if (["class-ranking"].includes(key)) {
       e.preventDefault();
       message.info("Chức năng đang phát triển");
     }
@@ -81,9 +81,9 @@ export default function GradesClient() {
     },
     {
       Icon: Calendar,
-      label: "Tra cứu thời khóa biểu",
+      label: "Thời khóa biểu",
       key: "schedule",
-      href: "#",
+      href: "/explore/timetable",
       onClick: (e) => handleFeatureClick(e, "schedule", "#"),
     },
     {

@@ -11,6 +11,8 @@ import {
   Search,
   MapOutline,
   Map,
+  TimeOutline,
+  Time,
   PrintOutline,
   Print,
   HelpCircle,
@@ -43,6 +45,13 @@ export const EXPLORE_FEATURES = [
     title: "Tra cứu điểm thi",
     key: "grades",
     href: "/lookup",
+  },
+  {
+    icon: TimeOutline,
+    sidebarIcon: Time,
+    title: "Thời khóa biểu",
+    key: "timetable",
+    href: "/explore/timetable",
   },
   {
     icon: MapOutline,
