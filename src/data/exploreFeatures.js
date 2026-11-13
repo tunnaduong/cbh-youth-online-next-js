@@ -22,7 +22,22 @@ import {
   Trophy,
   PeopleOutline,
   People,
+  Location,
+  Help,
+  DocumentTextOutline,
+  CalendarOutline,
+  BusinessOutline,
+  BulbOutline,
 } from "react-ionicons";
+
+// Visual theme for each card on the Explore screen (mirrors the mobile app).
+const theme = (color, lightBg, lightBorder, darkBg, darkBorder) => ({
+  color,
+  lightBg,
+  lightBorder,
+  darkBg,
+  darkBorder,
+});
 
 export const EXPLORE_FEATURES = [
   {
@@ -37,6 +52,10 @@ export const EXPLORE_FEATURES = [
     sidebarIcon: Book,
     title: "Chợ tài liệu",
     key: "study",
+    description: "Tài liệu học tập, đề thi, sách và nhiều hơn nữa",
+    badgeIcon: Book,
+    watermarkIcon: BookOutline,
+    theme: theme("#22C55E", "#F0FAF2", "#D8F3DC", "#12251A", "#1B3C29"),
     href: "/explore/study-materials",
   },
   {
@@ -44,6 +63,10 @@ export const EXPLORE_FEATURES = [
     sidebarIcon: Search,
     title: "Tra cứu điểm thi",
     key: "grades",
+    description: "Tra cứu điểm thi nhanh chóng, chính xác",
+    badgeIcon: Search,
+    watermarkIcon: DocumentTextOutline,
+    theme: theme("#3B82F6", "#EFF6FF", "#DBEAFE", "#112038", "#193155"),
     href: "/lookup",
   },
   {
@@ -51,6 +74,10 @@ export const EXPLORE_FEATURES = [
     sidebarIcon: Time,
     title: "Thời khóa biểu",
     key: "timetable",
+    description: "Giờ vào lớp, tiết hiện tại và tiết kế tiếp",
+    badgeIcon: Time,
+    watermarkIcon: CalendarOutline,
+    theme: theme("#0EA5E9", "#F0F9FF", "#E0F2FE", "#0F2230", "#16384D"),
     href: "/explore/timetable",
   },
   {
@@ -58,6 +85,10 @@ export const EXPLORE_FEATURES = [
     sidebarIcon: Map,
     title: "Tìm trường ĐH-CĐ",
     key: "universities",
+    description: "Khám phá các trường Đại học, Cao đẳng",
+    badgeIcon: Location,
+    watermarkIcon: BusinessOutline,
+    theme: theme("#F59E0B", "#FFFBEB", "#FEF3C7", "#282011", "#3E3117"),
     href: "/explore/universities",
   },
   {
@@ -65,6 +96,10 @@ export const EXPLORE_FEATURES = [
     sidebarIcon: Print,
     title: "In ấn tài liệu",
     key: "print",
+    description: "In tài liệu, bài tập, đồ án... tiện lợi",
+    badgeIcon: Print,
+    watermarkIcon: PrintOutline,
+    theme: theme("#8B5CF6", "#F5F3FF", "#EDE9FE", "#201833", "#332552"),
     href: "/explore/print-requests",
   },
   {
@@ -72,6 +107,10 @@ export const EXPLORE_FEATURES = [
     sidebarIcon: HelpCircle,
     title: "Đố vui",
     key: "quiz",
+    description: "Thử thách kiến thức, nhận quà hấp dẫn",
+    badgeIcon: Help,
+    watermarkIcon: BulbOutline,
+    theme: theme("#EC4899", "#FDF2F8", "#FCE7F3", "#291522", "#411D35"),
     href: "/explore/quiz",
   },
   {
@@ -79,6 +118,10 @@ export const EXPLORE_FEATURES = [
     sidebarIcon: GameController,
     title: "Game",
     key: "game",
+    description: "Giải trí, thư giãn sau giờ học",
+    badgeIcon: GameController,
+    watermarkIcon: GameControllerOutline,
+    theme: theme("#10B981", "#ECFDF5", "#D1FAE5", "#10261E", "#173D2F"),
     href: "/explore/games",
   },
   {
@@ -86,6 +129,10 @@ export const EXPLORE_FEATURES = [
     sidebarIcon: Trophy,
     title: "Xếp hạng thành viên",
     key: "ranking",
+    description: "Bảng xếp hạng thành viên tích cực nhất",
+    badgeIcon: Trophy,
+    watermarkIcon: TrophyOutline,
+    theme: theme("#EAB308", "#FEFCE8", "#FEF9C3", "#28240F", "#3F3815"),
     href: "/users/ranking",
   },
   {
@@ -93,6 +140,10 @@ export const EXPLORE_FEATURES = [
     sidebarIcon: People,
     title: "Xếp hạng lớp",
     key: "class-ranking",
+    description: "Thi đua giữa các lớp trong trường",
+    badgeIcon: People,
+    watermarkIcon: PeopleOutline,
+    theme: theme("#F43F5E", "#FFF1F2", "#FFE4E6", "#2A1418", "#451C24"),
     href: "#",
   },
 ];
