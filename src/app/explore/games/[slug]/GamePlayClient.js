@@ -142,13 +142,26 @@ export default function GamePlayClient({ slug }) {
     (game.platform === "pc" && platform === "mobile") ||
     (game.platform === "mobile" && platform === "pc");
 
+  const showingGame = playing && !unsupported;
+
   return (
-    <div className="fixed inset-0 bg-black z-[100] flex flex-col">
+    // Before the game starts this screen can be taller than the window (a phone
+    // held sideways in the app's WebView is only ~360px high), so it has to
+    // scroll - otherwise the "Bắt đầu chơi" button sits below the fold and
+    // cannot be reached. While the game runs the iframe fills the screen and
+    // scrolling stays off so it doesn't fight the game's own touch controls.
+    <div
+      className={`fixed inset-0 bg-black z-[100] flex flex-col ${
+        showingGame
+          ? "overflow-hidden"
+          : "overflow-y-auto overscroll-contain [-webkit-overflow-scrolling:touch] touch-pan-y"
+      }`}
+    >
       {!isInApp && (
         <button
           onClick={handleBack}
           aria-label="Quay lại"
-          className="absolute top-4 left-4 z-10 flex items-center justify-center w-10 h-10 rounded-full bg-black/60 hover:bg-black/80 text-white transition-colors"
+          className="fixed top-4 left-4 z-10 flex items-center justify-center w-10 h-10 rounded-full bg-black/60 hover:bg-black/80 text-white transition-colors"
         >
           <ArrowLeft className="w-5 h-5" />
         </button>
@@ -157,14 +170,14 @@ export default function GamePlayClient({ slug }) {
       {canOpenInApp && (
         <button
           onClick={handleOpenInApp}
-          className="absolute top-4 right-4 z-10 flex items-center gap-1.5 px-3 py-2 rounded-full bg-[#319527] hover:bg-[#3dbb31] text-white text-xs font-medium transition-colors"
+          className="fixed top-4 right-4 z-10 flex items-center gap-1.5 px-3 py-2 rounded-full bg-[#319527] hover:bg-[#3dbb31] text-white text-xs font-medium transition-colors"
         >
           <ExternalLink className="w-4 h-4" />
           Mở trong app
         </button>
       )}
 
-      {playing && !unsupported ? (
+      {showingGame ? (
         <iframe
           src={game.iframe_url}
           title={game.name}
@@ -179,9 +192,13 @@ export default function GamePlayClient({ slug }) {
           allowFullScreen
         />
       ) : (
-        <div className="flex-1 flex flex-col items-center justify-center text-center px-6">
+        // Room at the top for the fixed back / "open in app" buttons, and at
+        // the bottom so the play button clears the home bar.
+        <div className="flex-1 flex flex-col items-center justify-center text-center px-6 pt-[72px] pb-10">
           <div className="w-full max-w-sm">
-            <div className="rounded-2xl overflow-hidden aspect-[4/3] bg-gray-800 mb-5">
+            {/* Capped to 40% of the window height so on a short (landscape)
+                screen the title, text and play button are mostly on screen. */}
+            <div className="rounded-2xl overflow-hidden aspect-[4/3] max-h-[40vh] bg-gray-800 mb-5">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={game.image_url}
