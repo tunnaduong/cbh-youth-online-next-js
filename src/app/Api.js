@@ -915,6 +915,12 @@ export const getRandomGame = (platform) => {
   return Api.getRequest(`/v1.0/games/random${platform ? `?platform=${platform}` : ""}`);
 };
 
+// Games opened through the game proxy (save sync across devices, ad blocking):
+// the address to put in the iframe. { enabled: false } = use the game's own URL.
+export const getGameProxyLink = (slug) => {
+  return Api.postRequest(`/v1.0/games/${slug}/proxy-link`);
+};
+
 export const getGameLeaderboard = (period = "week") => {
   return Api.getRequest(`/v1.0/games/leaderboard?period=${period}`);
 };

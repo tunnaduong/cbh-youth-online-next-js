@@ -9,6 +9,7 @@ import {
   startGameSession,
   gameSessionHeartbeat,
   endGameSession,
+  getGameProxyLink,
 } from "@/app/Api";
 import { useAuthContext } from "@/contexts/Support";
 import { openDeepLink, isMobileDevice } from "@/lib/deepLink";
@@ -41,6 +42,10 @@ export default function GamePlayClient({ slug }) {
   const [game, setGame] = useState(null);
   const [loading, setLoading] = useState(true);
   const [playing, setPlaying] = useState(false);
+  const [starting, setStarting] = useState(false);
+  // Where the iframe loads from: the game's own URL, or - for a game the API
+  // opens through the game proxy - the signed proxy address.
+  const [frameUrl, setFrameUrl] = useState(null);
   const sessionIdRef = useRef(null);
   const heartbeatRef = useRef(null);
   const [platform, setPlatform] = useState("pc");
@@ -86,7 +91,26 @@ export default function GamePlayClient({ slug }) {
   }, [playing]);
 
   const handleStart = async () => {
+    if (starting) return;
+    setStarting(true);
+
+    // A game the API opens through the game proxy (the account's cookies and
+    // saves follow it across devices, ads are blocked) gets a signed proxy
+    // address first. Best-effort: on any failure - and always for guests, the
+    // link needs an account - the game runs from its own address as before.
+    let url = game.iframe_url;
+    if (loggedIn && game.use_proxy) {
+      try {
+        const res = await getGameProxyLink(slug);
+        const link = res?.data || res;
+        if (link?.enabled && link.url) url = link.url;
+      } catch {
+        // keep the game's own address
+      }
+    }
+    setFrameUrl(url);
     setPlaying(true);
+    setStarting(false);
     if (!loggedIn) return; // guests can still play, just don't earn XP
     try {
       const res = await startGameSession(slug);
@@ -166,7 +190,7 @@ export default function GamePlayClient({ slug }) {
 
       {playing && !unsupported ? (
         <iframe
-          src={game.iframe_url}
+          src={frameUrl || game.iframe_url}
           title={game.name}
           className="w-full h-full border-0"
           // Third-party games: no `allow-top-navigation`, so a game (its ads,
@@ -210,7 +234,8 @@ export default function GamePlayClient({ slug }) {
             ) : (
               <button
                 onClick={handleStart}
-                className="inline-flex items-center gap-2 bg-[#319527] hover:bg-[#3dbb31] text-white font-semibold px-6 py-3 rounded-full transition-colors"
+                disabled={starting}
+                className="inline-flex items-center gap-2 bg-[#319527] hover:bg-[#3dbb31] text-white font-semibold px-6 py-3 rounded-full transition-colors disabled:opacity-60"
               >
                 <Play className="w-5 h-5" />
                 Bắt đầu chơi
