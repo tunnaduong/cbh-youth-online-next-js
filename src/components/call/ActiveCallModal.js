@@ -31,6 +31,7 @@ export default function ActiveCallModal() {
     activeCall,
     localStream,
     remoteStream,
+    remoteVideoOff,
     isMuted,
     isVideoOff,
     isScreenSharing,
@@ -229,7 +230,7 @@ export default function ActiveCallModal() {
                   autoPlay
                   playsInline
                   muted
-                  className="w-full h-full object-contain"
+                  className={`w-full h-full object-contain ${remoteVideoOff ? "invisible" : ""}`}
                 />
               ) : (
                 <div className="flex flex-col items-center justify-center gap-4 text-white">

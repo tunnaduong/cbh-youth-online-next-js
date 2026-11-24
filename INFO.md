@@ -261,6 +261,8 @@ Every new or changed page or component must follow this section. If the part you
 
 ## Recent work (newest first, as of 2026-11)
 
+- **Video calls: camera-off sync** (`CallProvider.js`, `ActiveCallModal.js`): toggling the camera sends a `video_state` signal and the peer hides the frozen frame (`remoteVideoOff`). Not run in a browser.
+
 - **Game start screen scrolls** (`src/app/explore/games/[slug]/GamePlayClient.js`, branch `fix/game-scroll-mobile`): the "Bắt đầu chơi" screen is `fixed inset-0` and could not scroll, so on a phone held sideways in the app's WebView (~360px high) the play button was below the fold and could not be pressed. It now scrolls up/down (`overflow-y-auto`), the game picture is capped at 40vh, and the back / "Mở trong app" buttons are `fixed` so they stay put. While the game runs (iframe) scrolling stays off. Not built or run in a browser (no node_modules on the dev machine) - syntax-checked only.
 
 - **Timetable AI: "Lớp của tôi"** (`explore/timetable/AiImportModal.js`, `lib/timetable.js` `readTimetableClass`/`writeTimetableClass`, localStorage `cbh_timetable_class`; port of the app's field): a class like `11C5` is remembered and sent as `class_name` so a photo with many classes is read for that one only. Needs the API's `class_name` support deployed; headless-parse checked only.

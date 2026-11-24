@@ -104,6 +104,7 @@ export const CallProvider = ({ children }) => {
   const [activeCall, setActiveCall] = useState(null);
   const [localStream, setLocalStream] = useState(null);
   const [remoteStream, setRemoteStream] = useState(null);
+  const [remoteVideoOff, setRemoteVideoOff] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
   const [isVideoOff, setIsVideoOff] = useState(false);
   const [isScreenSharing, setIsScreenSharing] = useState(false);
@@ -477,6 +478,7 @@ export const CallProvider = ({ children }) => {
 
     setLocalStream(null);
     setRemoteStream(null);
+    setRemoteVideoOff(false);
     setActiveCall(null);
     callStatusRef.current = "idle";
     setCallStatus("idle");
@@ -1084,6 +1086,10 @@ export const CallProvider = ({ children }) => {
     if (videoTrack) {
       videoTrack.enabled = !videoTrack.enabled;
       setIsVideoOff(!videoTrack.enabled);
+      const cid = activeCallRef.current?.id;
+      if (cid) {
+        sendCallSignalApi(cid, "video_state", { enabled: videoTrack.enabled }).catch(() => {});
+      }
     }
   }, []);
 
@@ -1330,6 +1336,10 @@ export const CallProvider = ({ children }) => {
           payload = JSON.parse(fullJson);
         }
 
+        if (type === "video_state") {
+          setRemoteVideoOff(payload?.enabled === false);
+          return;
+        }
         if (type === "ringing") {
           console.log("[WebRTC] Callee received call and started ringing.");
           ringingAckReceivedRef.current = true;
@@ -1699,7 +1709,8 @@ export const CallProvider = ({ children }) => {
   useEffect(() => {
     return () => {
       cleanupCall();
-    };
+    remoteStream,
+    remoteVideoOff,
   }, [cleanupCall]);
 
   const value = {
