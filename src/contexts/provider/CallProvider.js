@@ -1709,8 +1709,7 @@ export const CallProvider = ({ children }) => {
   useEffect(() => {
     return () => {
       cleanupCall();
-    remoteStream,
-    remoteVideoOff,
+    };
   }, [cleanupCall]);
 
   const value = {
@@ -1719,6 +1718,7 @@ export const CallProvider = ({ children }) => {
     activeCall,
     localStream,
     remoteStream,
+    remoteVideoOff,
     isMuted,
     isVideoOff,
     isScreenSharing,
