@@ -171,6 +171,11 @@ export const CallProvider = ({ children }) => {
 
   const iceServersRef = useRef(DEFAULT_ICE_SERVERS);
   const originalVideoTrackRef = useRef(null);
+  const screenTrackRef = useRef(null);
+  const cameraFacingRef = useRef("user");
+  const [canSwitchCamera, setCanSwitchCamera] = useState(false);
+  // Camera denied/missing on a video call: we receive video but send none.
+  const cameraUnavailableRef = useRef(false);
 
   // Update refs on state changes
   useEffect(() => {
@@ -459,6 +464,13 @@ export const CallProvider = ({ children }) => {
 
     iceCandidatesQueueRef.current = [];
     originalVideoTrackRef.current = null;
+    if (screenTrackRef.current) {
+      try {
+        screenTrackRef.current.stop();
+      } catch {}
+      screenTrackRef.current = null;
+    }
+    cameraUnavailableRef.current = false;
     pendingOfferRef.current = null;
     offerCreatedForCallRef.current = null;
     answerProcessedForCallRef.current = null;
@@ -486,6 +498,8 @@ export const CallProvider = ({ children }) => {
     setIsMuted(false);
     setIsVideoOff(false);
     setIsScreenSharing(false);
+    setCanSwitchCamera(false);
+    cameraFacingRef.current = "user";
     setIsMinimized(false);
   }, [clearConnectingTimeout, clearRingingTimeout, clearRingingRetryTimers, stopAudioFallbackCapture]);
 
@@ -571,6 +585,12 @@ export const CallProvider = ({ children }) => {
         webrtcAudioReceivingRef.current = true;
         stopAllSounds();
         playConnectedTone();
+        // No camera: tell the peer to show our avatar instead of an empty frame.
+        if (cameraUnavailableRef.current && activeCallRef.current?.id) {
+          sendCallSignalApi(activeCallRef.current.id, "video_state", {
+            enabled: false,
+          }).catch(() => {});
+        }
       } else if (pc.connectionState === "failed") {
         transportConnectedRef.current = false;
         webrtcAudioReceivingRef.current = false;
@@ -703,6 +723,14 @@ export const CallProvider = ({ children }) => {
     for (const constraints of attempts) {
       try {
         const stream = await navigator.mediaDevices.getUserMedia(constraints);
+        if (constraints.video) {
+          navigator.mediaDevices
+            .enumerateDevices()
+            .then((devs) =>
+              setCanSwitchCamera(devs.filter((d) => d.kind === "videoinput").length > 1)
+            )
+            .catch(() => {});
+        }
         setLocalStream(stream);
         localStreamRef.current = stream;
         return stream;
@@ -725,12 +753,13 @@ export const CallProvider = ({ children }) => {
         if (requestedType === "video") {
           try {
             const audioStream = await acquireMedia("audio");
-            setCallType("audio");
-            callTypeRef.current = "audio";
+            // Stay a video call: we still receive the other person's video.
+            cameraUnavailableRef.current = true;
+            setIsVideoOff(true);
             antdMessage.info(
-              "Không tìm thấy camera, tự động chuyển sang cuộc gọi thoại."
+              "Không mở được camera. Bạn vẫn nghe và xem được người kia."
             );
-            return { stream: audioStream, effectiveType: "audio" };
+            return { stream: audioStream, effectiveType: "video" };
           } catch {}
         }
         console.warn(
@@ -745,6 +774,23 @@ export const CallProvider = ({ children }) => {
     },
     [acquireMedia]
   );
+
+  // AV1 is software-decoded on many phones and stutters; offer VP8/VP9/H.264 only.
+  const preferCodecs = useCallback((pc) => {
+    try {
+      const caps = RTCRtpSender.getCapabilities?.("video");
+      if (!caps?.codecs) return;
+      const codecs = caps.codecs.filter(
+        (c) => String(c.mimeType).toLowerCase() !== "video/av1"
+      );
+      pc.getTransceivers().forEach((t) => {
+        const kind = t.sender?.track?.kind || t.receiver?.track?.kind;
+        if (kind === "video" && typeof t.setCodecPreferences === "function") {
+          t.setCodecPreferences(codecs);
+        }
+      });
+    } catch {}
+  }, []);
 
   const attachLocalTracksOrTransceivers = useCallback((pc, stream, type) => {
     if (stream && stream.getTracks().length > 0) {
@@ -775,7 +821,8 @@ export const CallProvider = ({ children }) => {
         }
       } catch {}
     }
-  }, []);
+    preferCodecs(pc);
+  }, [preferCodecs]);
 
   /**
    * Keep the camera from using the whole uplink: on a weak connection an
@@ -925,6 +972,10 @@ export const CallProvider = ({ children }) => {
         // Call backend API to initiate call session
         const res = await initiateCallApi(conversationId, type);
         const callData = res?.data?.call;
+        // TURN logins fetched at page load may have expired: use this call's.
+        if (Array.isArray(res?.data?.ice_servers) && res.data.ice_servers.length) {
+          iceServersRef.current = filterDeadIceServers(res.data.ice_servers);
+        }
 
         if (!callData) {
           throw new Error("Không nhận được dữ liệu cuộc gọi từ máy chủ.");
@@ -1005,7 +1056,10 @@ export const CallProvider = ({ children }) => {
       }
 
       // 4. Inform API that we answered (triggers .call.answered on Caller)
-      await answerCallApi(current.id);
+      const answerRes = await answerCallApi(current.id);
+      if (Array.isArray(answerRes?.data?.ice_servers) && answerRes.data.ice_servers.length) {
+        iceServersRef.current = filterDeadIceServers(answerRes.data.ice_servers);
+      }
     } catch (err) {
       console.error("[answerCall] error:", err);
       cleanupCall();
@@ -1096,57 +1150,99 @@ export const CallProvider = ({ children }) => {
   /**
    * Toggle screen sharing.
    */
+  const stopScreenShare = useCallback(() => {
+    const pc = peerConnectionRef.current;
+    const screenTrack = screenTrackRef.current;
+    screenTrackRef.current = null;
+    if (screenTrack) {
+      screenTrack.onended = null;
+      try {
+        screenTrack.stop(); // turns the browser's "sharing" indicator off
+      } catch {}
+    }
+    const sender = pc?.getSenders().find((s) => s.track === screenTrack);
+    if (sender) {
+      // Back to the camera (or to nothing when the call has no camera).
+      sender.replaceTrack(originalVideoTrackRef.current || null).catch(() => {});
+    }
+    originalVideoTrackRef.current = null;
+    setIsScreenSharing(false);
+  }, []);
+
   const toggleScreenShare = useCallback(async () => {
     const pc = peerConnectionRef.current;
     if (!pc) return;
 
-    if (isScreenSharing) {
-      const originalTrack = originalVideoTrackRef.current;
-      if (originalTrack) {
-        const sender = pc
-          .getSenders()
-          .find((s) => s.track && s.track.kind === "video");
-        if (sender) {
-          sender.replaceTrack(originalTrack);
-        }
-      }
-      setIsScreenSharing(false);
-    } else {
-      try {
-        const screenStream = await navigator.mediaDevices.getDisplayMedia({
-          video: { cursor: "always" },
-          audio: false,
-        });
-        const screenTrack = screenStream.getVideoTracks()[0];
-
-        const currentVideoTrack = localStreamRef.current?.getVideoTracks()[0];
-        if (currentVideoTrack) {
-          originalVideoTrackRef.current = currentVideoTrack;
-        }
-
-        const sender = pc
-          .getSenders()
-          .find((s) => s.track && s.track.kind === "video");
-        if (sender) {
-          sender.replaceTrack(screenTrack);
-        } else {
-          pc.addTrack(screenTrack, screenStream);
-        }
-
-        screenTrack.onended = () => {
-          toggleScreenShare();
-        };
-
-        setIsScreenSharing(true);
-      } catch (err) {
-        console.warn("[WebRTC] Screen share cancelled or failed:", err);
-      }
+    if (screenTrackRef.current) {
+      stopScreenShare();
+      return;
     }
-  }, [isScreenSharing]);
+
+    if (!navigator.mediaDevices?.getDisplayMedia) {
+      antdMessage.info("Trình duyệt này không hỗ trợ chia sẻ màn hình.");
+      return;
+    }
+    const sender = pc
+      .getSenders()
+      .find((s) => s.track && s.track.kind === "video");
+    if (!sender) {
+      // Adding a sender mid-call would need renegotiation, which calls do not do.
+      antdMessage.info("Hãy bật camera để có thể chia sẻ màn hình.");
+      return;
+    }
+
+    try {
+      const screenStream = await navigator.mediaDevices.getDisplayMedia({
+        video: { cursor: "always" },
+        audio: false,
+      });
+      const screenTrack = screenStream.getVideoTracks()[0];
+      originalVideoTrackRef.current = sender.track;
+      await sender.replaceTrack(screenTrack);
+      screenTrackRef.current = screenTrack;
+      // The browser's own "Stop sharing" button ends the track.
+      screenTrack.onended = () => stopScreenShare();
+      setIsScreenSharing(true);
+    } catch (err) {
+      console.warn("[WebRTC] Screen share cancelled or failed:", err);
+    }
+  }, [stopScreenShare]);
 
   /**
    * Toggle minimizing the active call window to Picture-in-Picture.
    */
+  /** Swap front/back camera without renegotiating: replaceTrack on the video sender. */
+  const switchCamera = useCallback(async () => {
+    const pc = peerConnectionRef.current;
+    const local = localStreamRef.current;
+    const oldTrack = local?.getVideoTracks()[0];
+    if (!pc || !oldTrack || screenTrackRef.current) return;
+    const next = cameraFacingRef.current === "user" ? "environment" : "user";
+    try {
+      const s = await navigator.mediaDevices.getUserMedia({
+        audio: false,
+        video: {
+          facingMode: { ideal: next },
+          width: { ideal: 1280 },
+          height: { ideal: 720 },
+          frameRate: { ideal: 30, max: 30 },
+        },
+      });
+      const newTrack = s.getVideoTracks()[0];
+      newTrack.enabled = oldTrack.enabled;
+      const sender = pc.getSenders().find((x) => x.track === oldTrack);
+      if (sender) await sender.replaceTrack(newTrack);
+      local.removeTrack(oldTrack);
+      oldTrack.stop();
+      local.addTrack(newTrack);
+      cameraFacingRef.current = next;
+      setLocalStream(new MediaStream(local.getTracks()));
+    } catch (err) {
+      console.warn("[WebRTC] switch camera failed:", err);
+      antdMessage.info("Không đổi được camera.");
+    }
+  }, []);
+
   const toggleMinimize = useCallback(() => {
     setIsMinimized((prev) => !prev);
   }, []);
@@ -1506,7 +1602,7 @@ export const CallProvider = ({ children }) => {
       if (!cur?.id || cancelled) return;
 
       try {
-        const res = await getActiveCall(cur.id);
+        const res = await getActiveCall(cur.id, processedSignalSeqRef.current);
         if (cancelled) return;
         const remoteCall = res?.data?.call;
         const signals = res?.data?.signals;
@@ -1731,6 +1827,8 @@ export const CallProvider = ({ children }) => {
     toggleMute,
     toggleVideo,
     toggleScreenShare,
+    switchCamera,
+    canSwitchCamera,
     toggleMinimize,
   };
 

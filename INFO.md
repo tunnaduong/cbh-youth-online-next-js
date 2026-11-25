@@ -261,6 +261,8 @@ Every new or changed page or component must follow this section. If the part you
 
 ## Recent work (newest first, as of 2026-11)
 
+- **Video calls hardening** (`CallProvider.js`, `ActiveCallModal.js`, `Api.js`; `next build` only, not run in two browsers): the video stage shows only when the peer really sends video (else the avatar); camera denied keeps the call a video call (we still receive video, peer is told `video_state:false`); screen share stops cleanly (browser Stop button, track released), hidden where `getDisplayMedia` is missing; front/back camera switch (`switchCamera`, `canSwitchCamera`); AV1 excluded from the offer; polls use `since_seq`; fresh TURN logins taken from the initiate/answer response; `dvh` layout. No Playwright call test: a call needs a live API + two accounts.
+
 - **Video calls: camera-off sync** (`CallProvider.js`, `ActiveCallModal.js`): toggling the camera sends a `video_state` signal and the peer hides the frozen frame (`remoteVideoOff`). Not run in a browser.
 
 - **Game start screen scrolls** (`src/app/explore/games/[slug]/GamePlayClient.js`, branch `fix/game-scroll-mobile`): the "Bắt đầu chơi" screen is `fixed inset-0` and could not scroll, so on a phone held sideways in the app's WebView (~360px high) the play button was below the fold and could not be pressed. It now scrolls up/down (`overflow-y-auto`), the game picture is capped at 40vh, and the back / "Mở trong app" buttons are `fixed` so they stay put. While the game runs (iframe) scrolling stays off. Not built or run in a browser (no node_modules on the dev machine) - syntax-checked only.

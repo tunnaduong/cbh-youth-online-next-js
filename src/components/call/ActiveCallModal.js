@@ -14,6 +14,7 @@ import {
   PhoneOff,
   Minimize2,
   Maximize2,
+  SwitchCamera,
 } from "lucide-react";
 
 function formatSeconds(secs) {
@@ -42,7 +43,17 @@ export default function ActiveCallModal() {
     toggleVideo,
     toggleScreenShare,
     toggleMinimize,
+    switchCamera,
+    canSwitchCamera,
   } = useCallContext();
+
+  // Only draw the video stage when the peer really sends video (an audio-only
+  // remote stream or a camera-off peer would show an empty black box).
+  const hasRemoteVideo =
+    !!remoteStream && remoteStream.getVideoTracks().length > 0 && !remoteVideoOff;
+  const hasLocalCamera = !!localStream && localStream.getVideoTracks().length > 0;
+  const canShareScreen =
+    typeof navigator !== "undefined" && !!navigator.mediaDevices?.getDisplayMedia;
 
   const localVideoRef = useRef(null);
   const remoteVideoRef = useRef(null);
@@ -62,7 +73,7 @@ export default function ActiveCallModal() {
     if (remoteVideoRef.current && remoteStream) {
       remoteVideoRef.current.srcObject = remoteStream;
     }
-  }, [remoteStream, isMinimized, callStatus]);
+  }, [remoteStream, isMinimized, callStatus, hasRemoteVideo]);
 
   const isCaller =
     Boolean(
@@ -167,7 +178,7 @@ export default function ActiveCallModal() {
   // --- FULL SCREEN / MODAL VIEW ---
   return (
     <div className="fixed inset-0 z-[99999] flex items-center justify-center p-2 sm:p-4 bg-black/75 backdrop-blur-md animate-in fade-in duration-200">
-      <div className="relative w-full max-w-4xl h-[85vh] max-h-[720px] rounded-3xl bg-neutral-900 border border-neutral-800 shadow-2xl overflow-hidden flex flex-col justify-between">
+      <div className="relative w-full max-w-4xl h-[85dvh] max-h-[720px] rounded-3xl bg-neutral-900 border border-neutral-800 shadow-2xl overflow-hidden flex flex-col justify-between">
         {/* Top Header Bar */}
         <div className="relative z-20 flex items-center justify-between px-6 py-4 bg-gradient-to-b from-black/80 via-black/40 to-transparent">
           <div className="flex items-center gap-3">
@@ -224,13 +235,13 @@ export default function ActiveCallModal() {
           {isVideo ? (
             <div className="relative w-full h-full flex items-center justify-center bg-black">
               {/* Remote Video Stream */}
-              {remoteStream ? (
+              {hasRemoteVideo ? (
                 <video
                   ref={remoteVideoRef}
                   autoPlay
                   playsInline
                   muted
-                  className={`w-full h-full object-contain ${remoteVideoOff ? "invisible" : ""}`}
+                  className="w-full h-full object-contain"
                 />
               ) : (
                 <div className="flex flex-col items-center justify-center gap-4 text-white">
@@ -343,7 +354,7 @@ export default function ActiveCallModal() {
           </button>
 
           {/* Toggle Video Camera Button */}
-          {isVideo && (
+          {isVideo && hasLocalCamera && (
             <button
               onClick={toggleVideo}
               className={`p-3.5 sm:p-4 rounded-full transition-all active:scale-95 shadow-lg ${
@@ -361,8 +372,19 @@ export default function ActiveCallModal() {
             </button>
           )}
 
-          {/* Screen Share Button (Web) */}
-          {isVideo && isConnected && (
+          {/* Switch front/back camera (phones and tablets) */}
+          {isVideo && hasLocalCamera && canSwitchCamera && !isVideoOff && !isScreenSharing && (
+            <button
+              onClick={switchCamera}
+              className="p-3.5 sm:p-4 rounded-full transition-all active:scale-95 shadow-lg bg-white/15 hover:bg-white/25 text-white"
+              title="Đổi camera"
+            >
+              <SwitchCamera className="w-6 h-6" />
+            </button>
+          )}
+
+          {/* Screen Share Button (desktop browsers only) */}
+          {isVideo && isConnected && canShareScreen && hasLocalCamera && (
             <button
               onClick={toggleScreenShare}
               className={`p-3.5 sm:p-4 rounded-full transition-all active:scale-95 shadow-lg ${
