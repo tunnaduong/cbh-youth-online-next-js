@@ -7,6 +7,7 @@ import {
   ChevronDown,
   CirclePlay,
   Eye,
+  EyeOff,
   FileText,
   MessageSquare,
   MessagesSquare,
@@ -35,7 +36,23 @@ const MODES = [
   { key: "following", label: "Đang theo dõi", requiresLogin: true },
 ];
 
-function PostRow({ post }) {
+const HIDDEN_POSTS_KEY = "cbh_hidden_latest_posts";
+
+function getHiddenIds() {
+  try {
+    return new Set(JSON.parse(localStorage.getItem(HIDDEN_POSTS_KEY) || "[]"));
+  } catch {
+    return new Set();
+  }
+}
+
+function saveHiddenIds(ids) {
+  try {
+    localStorage.setItem(HIDDEN_POSTS_KEY, JSON.stringify([...ids]));
+  } catch {}
+}
+
+function PostRow({ post, onHide }) {
   const url = getPostUrl(post);
   const text = htmlToText(post.content);
   const title = post.title || text.slice(0, 100) || "(Chưa có tiêu đề)";
@@ -64,7 +81,7 @@ function PostRow({ post }) {
   );
 
   return (
-    <article className="flex gap-3 py-4 sm:gap-4">
+    <article className="group relative flex gap-3 py-4 sm:gap-4">
       {post.anonymous ? (
         <UserAvatar anonymous size={40} />
       ) : (
@@ -121,29 +138,40 @@ function PostRow({ post }) {
         {stats}
       </div>
 
-      {thumbnail ? (
-        <Link
-          href={url}
-          className="h-[68px] w-[68px] shrink-0 overflow-hidden rounded-xl bg-gray-100 dark:bg-neutral-700 sm:h-[72px] sm:w-[96px]"
+      <div className="flex shrink-0 flex-col items-end gap-1">
+        {thumbnail ? (
+          <Link
+            href={url}
+            className="h-[68px] w-[68px] overflow-hidden rounded-xl bg-gray-100 dark:bg-neutral-700 sm:h-[72px] sm:w-[96px]"
+          >
+            <img
+              src={thumbnail}
+              alt={`Ảnh minh họa: ${title}`}
+              loading="lazy"
+              className="h-full w-full object-cover"
+            />
+          </Link>
+        ) : (
+          <Link
+            href={url}
+            aria-hidden="true"
+            tabIndex={-1}
+            className="hidden h-[72px] w-[96px] items-center justify-center rounded-xl bg-gradient-to-br from-[#EEF7EC] to-[#DCEFD8] text-primary-500/60 dark:from-[#2b3a2a] dark:to-[#1f2b1e] sm:flex"
+          >
+            <PlaceholderIcon className="h-6 w-6" strokeWidth={1.8} />
+          </Link>
+        )}
+        <button
+          type="button"
+          onClick={() => onHide(post.id)}
+          aria-label="Ẩn bài viết này khỏi trang chủ"
+          title="Ẩn bài viết này"
+          className="opacity-0 group-hover:opacity-100 flex items-center gap-1 rounded-lg px-1.5 py-1 text-[11px] text-gray-400 transition hover:bg-gray-100 hover:text-gray-600 dark:text-neutral-500 dark:hover:bg-neutral-700 dark:hover:text-neutral-300"
         >
-          <img
-            src={thumbnail}
-            alt={`Ảnh minh họa: ${title}`}
-            loading="lazy"
-            className="h-full w-full object-cover"
-          />
-        </Link>
-      ) : (
-        // Same footprint as a thumbnail so the stats column lines up across rows.
-        <Link
-          href={url}
-          aria-hidden="true"
-          tabIndex={-1}
-          className="hidden h-[72px] w-[96px] shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-[#EEF7EC] to-[#DCEFD8] text-primary-500/60 dark:from-[#2b3a2a] dark:to-[#1f2b1e] sm:flex"
-        >
-          <PlaceholderIcon className="h-6 w-6" strokeWidth={1.8} />
-        </Link>
-      )}
+          <EyeOff className="h-3.5 w-3.5" />
+          <span className="hidden sm:inline">Ẩn</span>
+        </button>
+      </div>
     </article>
   );
 }
@@ -179,11 +207,26 @@ export default function LatestPosts({ loggedIn, initialFeed }) {
   const [loading, setLoading] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState(null);
+  const [hiddenIds, setHiddenIds] = useState(() => new Set());
   // The server already fetched page 2 (for the featured pool); reuse it once.
   const preloadedNextRef = useRef(initialFeed?.nextPosts || null);
   const seedRef = useRef(Math.floor(Math.random() * 1_000_000_000));
   const requestIdRef = useRef(0);
   const { refreshTrigger } = usePostRefresh();
+
+  // Load hidden IDs from localStorage on mount (client only)
+  useEffect(() => {
+    setHiddenIds(getHiddenIds());
+  }, []);
+
+  const handleHide = (postId) => {
+    setHiddenIds((prev) => {
+      const next = new Set(prev);
+      next.add(postId);
+      saveHiddenIds(next);
+      return next;
+    });
+  };
 
   const loadFirstPage = async (nextMode) => {
     const requestId = ++requestIdRef.current;
@@ -258,6 +301,7 @@ export default function LatestPosts({ loggedIn, initialFeed }) {
 
   const availableModes = MODES.filter((item) => loggedIn || !item.requiresLogin);
   const currentMode = MODES.find((item) => item.key === mode);
+  const visiblePosts = posts.filter((p) => !hiddenIds.has(p.id));
 
   return (
     <HomeCard className="p-4 sm:p-5">
@@ -296,8 +340,8 @@ export default function LatestPosts({ loggedIn, initialFeed }) {
       <div className="mt-1 divide-y divide-gray-100 dark:divide-neutral-600">
         {loading ? (
           [...Array(4)].map((_, index) => <PostRowSkeleton key={index} />)
-        ) : posts.length > 0 ? (
-          posts.map((post) => <PostRow key={post.id} post={post} />)
+        ) : visiblePosts.length > 0 ? (
+          visiblePosts.map((post) => <PostRow key={post.id} post={post} onHide={handleHide} />)
         ) : (
           <p className="py-10 text-center text-sm text-gray-500 dark:text-neutral-400">
             {error ||
@@ -308,7 +352,7 @@ export default function LatestPosts({ loggedIn, initialFeed }) {
         )}
       </div>
 
-      {!loading && posts.length > 0 && (
+      {!loading && visiblePosts.length > 0 && (
         <div className="mt-2">
           {error && <p className="mb-2 text-center text-[13px] text-red-500">{error}</p>}
           {hasMore ? (
