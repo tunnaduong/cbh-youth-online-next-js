@@ -21,7 +21,6 @@ export default function Ad300x250({ className = "" }) {
     iframe.style.overflow = "hidden";
     iframe.style.maxWidth = "100%";
     iframe.scrolling = "no";
-    iframe.loading = "lazy";
 
     const html = `<!DOCTYPE html>
 <html>
@@ -53,21 +52,8 @@ export default function Ad300x250({ className = "" }) {
 </body>
 </html>`;
 
+    iframe.srcdoc = html;
     container.appendChild(iframe);
-    try {
-      const doc = iframe.contentWindow || iframe.contentDocument;
-      if (doc.document) {
-        doc.document.open();
-        doc.document.write(html);
-        doc.document.close();
-      } else {
-        doc.open();
-        doc.write(html);
-        doc.close();
-      }
-    } catch {
-      iframe.srcdoc = html;
-    }
   }, []);
 
   if (!mounted || isInApp()) return null;
