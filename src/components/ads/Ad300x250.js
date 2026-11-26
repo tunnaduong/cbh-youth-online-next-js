@@ -7,6 +7,7 @@ import { isInApp } from "@/utils/appMode";
 export default function Ad300x250({ className = "" }) {
   const containerRef = useRef(null);
   const [mounted, setMounted] = useState(false);
+  const [fallback, setFallback] = useState(false);
 
   useEffect(() => {
     setMounted(true);
@@ -57,6 +58,19 @@ export default function Ad300x250({ className = "" }) {
 
     iframe.srcdoc = html;
     container.appendChild(iframe);
+
+    // Fallback: if Adsterra hasn't injected an ad after a few seconds, show placeholder
+    const timer = setTimeout(() => {
+      let filled = false;
+      try {
+        const d = iframe.contentDocument;
+        filled = !!d && !!d.querySelector("iframe, img, a, ins");
+      } catch {
+        filled = true; // cross-origin => something loaded
+      }
+      if (!filled) setFallback(true);
+    }, 6000);
+    return () => clearTimeout(timer);
   }, [mounted]);
 
   if (!mounted || isInApp()) return null;
@@ -82,7 +96,13 @@ export default function Ad300x250({ className = "" }) {
         className="flex justify-center items-center overflow-hidden my-1 w-full"
         style={{ minHeight: "250px" }}
       >
-        <div ref={containerRef} className="w-[300px] h-[250px] flex justify-center items-center max-w-full bg-center bg-no-repeat bg-contain" style={{ backgroundImage: "url(/images/ad-placeholder-300x250.png)" }} />
+        <div ref={containerRef} className={`w-[300px] h-[250px] flex justify-center items-center max-w-full ${fallback ? "hidden" : ""}`} />
+        {fallback && (
+          <Link href="/ads" className="block w-[300px] h-[250px] max-w-full">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/images/ad-placeholder-300x250.png" alt="Đặt quảng cáo tại đây" width={300} height={250} className="w-full h-full object-contain" />
+          </Link>
+        )}
       </div>
 
       {/* Info footer */}
