@@ -10,7 +10,10 @@ export default function Ad300x250({ className = "" }) {
 
   useEffect(() => {
     setMounted(true);
-    if (isInApp() || !containerRef.current) return;
+  }, []);
+
+  useEffect(() => {
+    if (!mounted || isInApp() || !containerRef.current) return;
     const container = containerRef.current;
     container.innerHTML = "";
 
@@ -54,7 +57,7 @@ export default function Ad300x250({ className = "" }) {
 
     iframe.srcdoc = html;
     container.appendChild(iframe);
-  }, []);
+  }, [mounted]);
 
   if (!mounted || isInApp()) return null;
 

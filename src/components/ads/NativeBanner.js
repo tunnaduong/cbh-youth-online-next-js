@@ -9,7 +9,10 @@ export default function NativeBanner({ className = "" }) {
 
   useEffect(() => {
     setMounted(true);
-    if (isInApp() || !containerRef.current) return;
+  }, []);
+
+  useEffect(() => {
+    if (!mounted || isInApp() || !containerRef.current) return;
     const container = containerRef.current;
     container.innerHTML = "";
 
@@ -19,7 +22,6 @@ export default function NativeBanner({ className = "" }) {
     iframe.style.border = "none";
     iframe.style.overflow = "hidden";
     iframe.scrolling = "no";
-    iframe.loading = "lazy";
 
     const html = `<!DOCTYPE html>
 <html>
@@ -54,22 +56,9 @@ export default function NativeBanner({ className = "" }) {
 </body>
 </html>`;
 
+    iframe.srcdoc = html;
     container.appendChild(iframe);
-    try {
-      const doc = iframe.contentWindow || iframe.contentDocument;
-      if (doc.document) {
-        doc.document.open();
-        doc.document.write(html);
-        doc.document.close();
-      } else {
-        doc.open();
-        doc.write(html);
-        doc.close();
-      }
-    } catch {
-      iframe.srcdoc = html;
-    }
-  }, []);
+  }, [mounted]);
 
   if (!mounted || isInApp()) return null;
 
