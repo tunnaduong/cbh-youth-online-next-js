@@ -867,6 +867,7 @@ export const adminDeleteFeedback = (id) => Api.deleteRequest(`/v1.0/admin/feedba
 export const getAppConfig = () => Api.getRequest("/v1.0/app/config");
 export const adminUpdateAppIcon = (params) => Api.postRequest("/v1.0/admin/app-icon", params);
 export const adminUpdateAppOta = (params) => Api.postRequest("/v1.0/admin/app-ota", params);
+export const adminToggleHideFromLatest = (topicId) => Api.putRequest(`/v1.0/admin/topics/${topicId}/hide-from-latest`);
 
 // Reports
 export const reportContent = (params) => {

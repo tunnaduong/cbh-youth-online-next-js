@@ -7,18 +7,23 @@ import {
   ChevronDown,
   CirclePlay,
   Eye,
+  EyeOff,
   FileText,
   MessageSquare,
   MessagesSquare,
   Newspaper,
   RefreshCw,
 } from "lucide-react";
+import { message } from "antd";
 import Dropdown from "@/components/ui/Dropdown";
 import {
+  adminToggleHideFromLatest,
   getFollowingFeedPosts,
   getLatestFeedPosts,
   getPersonalizedFeedPosts,
 } from "@/app/Api";
+import { useAuthContext } from "@/contexts/Support";
+import { isStaffRole } from "@/utils/roles";
 import { usePostRefresh } from "@/contexts/PostRefreshContext";
 import { HomeCard, SectionHeader, UserAvatar } from "./HomeCard";
 import {
@@ -35,7 +40,7 @@ const MODES = [
   { key: "following", label: "Đang theo dõi", requiresLogin: true },
 ];
 
-function PostRow({ post }) {
+function PostRow({ post, isAdmin, onToggleHide }) {
   const url = getPostUrl(post);
   const text = htmlToText(post.content);
   const title = post.title || text.slice(0, 100) || "(Chưa có tiêu đề)";
@@ -144,6 +149,23 @@ function PostRow({ post }) {
           <PlaceholderIcon className="h-6 w-6" strokeWidth={1.8} />
         </Link>
       )}
+
+      {isAdmin && (
+        <button
+          type="button"
+          onClick={() => onToggleHide(post)}
+          aria-label={post.hidden_from_latest ? "Hiện lại bài viết trên trang chủ" : "Ẩn bài viết khỏi trang chủ"}
+          title={post.hidden_from_latest ? "Hiện lại trên trang chủ" : "Ẩn khỏi trang chủ"}
+          className={`self-start mt-1 flex shrink-0 items-center gap-1 rounded-lg px-1.5 py-1 text-[11px] transition hover:bg-gray-100 dark:hover:bg-neutral-700 ${
+            post.hidden_from_latest
+              ? "text-amber-500 dark:text-amber-400"
+              : "text-gray-400 dark:text-neutral-500 hover:text-gray-600 dark:hover:text-neutral-300"
+          }`}
+        >
+          <EyeOff className="h-3.5 w-3.5" />
+          <span className="hidden sm:inline">{post.hidden_from_latest ? "Đang ẩn" : "Ẩn"}</span>
+        </button>
+      )}
     </article>
   );
 }
@@ -183,6 +205,8 @@ export default function LatestPosts({ loggedIn, initialFeed }) {
   const preloadedNextRef = useRef(initialFeed?.nextPosts || null);
   const seedRef = useRef(Math.floor(Math.random() * 1_000_000_000));
   const requestIdRef = useRef(0);
+  const { currentUser } = useAuthContext();
+  const isAdmin = isStaffRole(currentUser?.role);
   const { refreshTrigger } = usePostRefresh();
 
   const loadFirstPage = async (nextMode) => {
@@ -202,6 +226,19 @@ export default function LatestPosts({ loggedIn, initialFeed }) {
       setHasMore(false);
     } finally {
       if (requestId === requestIdRef.current) setLoading(false);
+    }
+  };
+
+  const handleToggleHide = async (post) => {
+    try {
+      const res = await adminToggleHideFromLatest(post.id);
+      const hidden = res.data?.hidden_from_latest;
+      setPosts((prev) =>
+        prev.map((p) => (p.id === post.id ? { ...p, hidden_from_latest: hidden } : p))
+      );
+      message.success(res.data?.message || (hidden ? "Đã ẩn bài viết." : "Đã hiện lại bài viết."));
+    } catch {
+      message.error("Có lỗi xảy ra.");
     }
   };
 
@@ -297,7 +334,7 @@ export default function LatestPosts({ loggedIn, initialFeed }) {
         {loading ? (
           [...Array(4)].map((_, index) => <PostRowSkeleton key={index} />)
         ) : posts.length > 0 ? (
-          posts.map((post) => <PostRow key={post.id} post={post} />)
+          posts.map((post) => <PostRow key={post.id} post={post} isAdmin={isAdmin} onToggleHide={handleToggleHide} />)
         ) : (
           <p className="py-10 text-center text-sm text-gray-500 dark:text-neutral-400">
             {error ||
