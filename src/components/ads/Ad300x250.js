@@ -82,7 +82,7 @@ export default function Ad300x250({ className = "" }) {
         className="flex justify-center items-center overflow-hidden my-1 w-full"
         style={{ minHeight: "250px" }}
       >
-        <div ref={containerRef} className="w-[300px] h-[250px] flex justify-center items-center max-w-full" />
+        <div ref={containerRef} className="w-[300px] h-[250px] flex justify-center items-center max-w-full bg-center bg-no-repeat bg-contain" style={{ backgroundImage: "url(/images/ad-placeholder-300x250.png)" }} />
       </div>
 
       {/* Info footer */}
