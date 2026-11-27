@@ -407,11 +407,17 @@ export default function FeedClient() {
             <div key={post.id}>
               <PostWithViewTracking />
               {(index + 1) % 5 === 0 && (
-                Math.floor((index + 1) / 5) % 2 === 0 ? (
-                  <NativeBanner className="my-3" />
-                ) : (
-                  <ManagedAd placement="feed-inline" className="my-3" fallback={<AdSlot slot="feed-inline" className="my-3" />} />
-                )
+                <ManagedAd
+                  placement="feed-inline"
+                  className="my-3"
+                  fallback={
+                    Math.floor((index + 1) / 5) % 2 === 0 ? (
+                      <NativeBanner className="my-3" />
+                    ) : (
+                      <AdSlot slot="feed-inline" className="my-3" />
+                    )
+                  }
+                />
               )}
               {/* Ranked posts ran out - everything below is chronological */}
               {overflowAfterId != null && post.id === overflowAfterId && (

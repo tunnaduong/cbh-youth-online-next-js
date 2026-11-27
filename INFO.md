@@ -50,7 +50,7 @@ The web app at **https://chuyenbienhoa.com** (also `www.`): the student communit
 | Composer | `/composer`: rich editor (TipTap, mentions, slash commands, image compression) |
 | Profiles | `/[username]`, `/[username]/[tab]`. Discord-style profile theme: frames, effects, name styles, points milestones (`src/lib/profileTheme.js`, `src/lib/nameFonts.js`) |
 | Chat | `/chat` (private and group chat, realtime), `/invite/[token]` (group invite) |
-| Ads | `src/data/ads.js` (creatives), `src/components/ads/AdSlot.js` |
+| Ads | `/admin/ads` (`src/app/admin/ads/page.js`), `src/components/ads/ManagedAd.js` (API-backed with Adsterra fallback), `src/components/ads/AdSlot.js`, `src/data/ads.js` |
 | Stories | `src/components/stories` (viewer, overlays in `src/lib/storyOverlays.js`) |
 | Explore | `/explore`, `/explore/games` (+`[slug]`), `/explore/quiz` (+`custom`), `/explore/study-materials` (+`[id]`, `upload`), `/explore/universities`, `/explore/timetable` (class timetable, `src/lib/timetable.js`) |
 | Points & money | `/wallet` (+`deposit`, `withdraw`; SePay QR, see `SEPAY_*.md`), `/guide/points`, `/users/ranking` |
@@ -260,6 +260,8 @@ Weights: `font-medium` (default emphasis), `font-semibold` (titles, buttons), `f
 Every new or changed page or component must follow this section. If the part you touch is in the older style, bring it in line. When a deliberate, large redesign changes these rules (new card style, new palette, new navigation), **update this section in the same commit** - it must always describe the site as it is, not as it was.
 
 ## Recent work (newest first, as of 2026-11)
+
+- **Managed ads on home sidebar & all feed inline slots** (`src/components/home/HomeClient.js`, `src/app/feed/FeedClient.js`): `HomeClient` previously rendered `<Ad300x250 />` directly (bypassing `/v1.0/ads?placement=sidebar`), so ads configured in `/admin/ads` for `sidebar` never appeared on `/`. It now wraps `<Ad300x250 />` in `<ManagedAd placement="sidebar" />`. `FeedClient` also wraps both alternating inline ad slots (including even slots that previously rendered `<NativeBanner />` directly) in `<ManagedAd placement="feed-inline" />`.
 
 - **Game start screen scrolls** (`src/app/explore/games/[slug]/GamePlayClient.js`, branch `fix/game-scroll-mobile`): the "Bắt đầu chơi" screen is `fixed inset-0` and could not scroll, so on a phone held sideways in the app's WebView (~360px high) the play button was below the fold and could not be pressed. It now scrolls up/down (`overflow-y-auto`), the game picture is capped at 40vh, and the back / "Mở trong app" buttons are `fixed` so they stay put. While the game runs (iframe) scrolling stays off. Not built or run in a browser (no node_modules on the dev machine) - syntax-checked only.
 

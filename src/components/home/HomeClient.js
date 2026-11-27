@@ -17,6 +17,7 @@ import LatestPosts from "./LatestPosts";
 import ProfileCard from "./ProfileCard";
 import RankingCard from "./RankingCard";
 import Ad300x250 from "@/components/ads/Ad300x250";
+import ManagedAd from "@/components/ads/ManagedAd";
 import NewsCard from "./NewsCard";
 import ForumStatsCard from "./ForumStatsCard";
 import CategoryGrid from "./CategoryGrid";
@@ -79,7 +80,7 @@ export default function HomeClient({
             authLoading={authLoading}
             topUsers={topUsers}
           />
-          <Ad300x250 />
+          <ManagedAd placement="sidebar" fallback={<Ad300x250 />} />
           <RankingCard
             topUsers={topUsers}
             loading={topUsersLoading}
