@@ -3,6 +3,7 @@
 import HomeLayout from "@/layouts/HomeLayout";
 import PostItem from "@/components/forum/PostItem";
 import AdSlot from "@/components/ads/AdSlot";
+import ManagedAd from "@/components/ads/ManagedAd";
 import NativeBanner from "@/components/ads/NativeBanner";
 import { useState, useEffect, useCallback, useRef } from "react";
 import Lottie from "lottie-react";
@@ -409,7 +410,7 @@ export default function FeedClient() {
                 Math.floor((index + 1) / 5) % 2 === 0 ? (
                   <NativeBanner className="my-3" />
                 ) : (
-                  <AdSlot slot="feed-inline" className="my-3" />
+                  <ManagedAd placement="feed-inline" className="my-3" fallback={<AdSlot slot="feed-inline" className="my-3" />} />
                 )
               )}
               {/* Ranked posts ran out - everything below is chronological */}

@@ -124,6 +124,7 @@ export const NAV_GROUPS = [
   {
     label: "HỆ THỐNG & APP",
     children: [
+      { key: "/admin/ads", icon: <AppstoreOutlined />, label: "Slot quảng cáo" },
       { key: "/admin/app-icon", icon: <AppstoreOutlined />, label: "Biểu tượng App" },
       { key: "/admin/app-ota", icon: <CloudSyncOutlined />, label: "Cập nhật OTA" },
     ],

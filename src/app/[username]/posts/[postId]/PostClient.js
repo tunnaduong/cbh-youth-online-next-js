@@ -17,6 +17,7 @@ import EmptyCommentsState from "@/components/forum/EmptyCommentsState";
 import RelatedPosts from "@/components/forum/RelatedPosts";
 import PostItem from "@/components/forum/PostItem";
 import NativeBanner from "@/components/ads/NativeBanner";
+import ManagedAd from "@/components/ads/ManagedAd";
 import { message } from "antd";
 import Link from "next/link";
 import Lottie from "lottie-react";
@@ -805,7 +806,7 @@ export default function PostClient({ params, initialPost = null }) {
     <div className="px-1 xl:min-h-screen pt-6">
       <PostItem post={post.post} single={true} onVote={handleVote} onRefresh={handleRefreshPost} />
       <div className="px-1.5 md:px-0 md:max-w-[775px] mx-auto w-full my-4">
-        <NativeBanner />
+        <ManagedAd placement="post-bottom" fallback={<NativeBanner />} />
       </div>
       <div className="px-1.5 md:px-0 md:max-w-[775px] mx-auto w-full mb-4">
         <div className="shadow !mb-4 long-shadow h-min rounded-lg bg-white post-comment-container overflow-clip">

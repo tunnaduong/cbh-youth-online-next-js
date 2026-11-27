@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { getActiveAds } from "@/data/ads";
 import { isInApp } from "@/utils/appMode";
 import Ad300x250 from "./Ad300x250";
+import ManagedAd from "./ManagedAd";
 
 // Renders one creative for `slot`. Picks it in useEffect so the server render
 // matches; hidden inside the mobile app, which owns its own ad policy.
@@ -22,7 +23,7 @@ export default function AdSlot({ slot, className = "" }) {
 
   // Banner 300x250 tại sidebar (bên cạnh bảng xếp hạng)
   if (slot === "sidebar") {
-    return <Ad300x250 className={className} />;
+    return <ManagedAd placement="sidebar" className={className} fallback={<Ad300x250 className={className} />} />;
   }
 
   if (!ad) return null;
