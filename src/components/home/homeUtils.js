@@ -74,6 +74,7 @@ export function pickFeaturedPosts(posts, count = 3) {
   return posts
     .filter((post) => {
       if (seen.has(post.id)) return false;
+      if (post.hidden_from_latest) return false;
       seen.add(post.id);
       return true;
     })
