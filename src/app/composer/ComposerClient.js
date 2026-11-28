@@ -72,13 +72,12 @@ export default function ComposerClient() {
     forumData,
     loading,
     handleDescriptionChange,
+    images,
     imageFiles,
-    imagePreviews,
-    existingImages,
-    setExistingImages,
     imageInputRef,
     handleImageChange,
     removeImage,
+    reorderImages,
     documentFiles,
     existingDocuments,
     setExistingDocuments,
@@ -173,13 +172,12 @@ export default function ComposerClient() {
         forumData={forumData}
         loading={loading}
         descriptionEditor={descriptionEditor}
+        images={images}
         imageFiles={imageFiles}
-        imagePreviews={imagePreviews}
-        existingImages={existingImages}
-        setExistingImages={setExistingImages}
         imageInputRef={imageInputRef}
         handleImageChange={handleImageChange}
         removeImage={removeImage}
+        reorderImages={reorderImages}
         documentFiles={documentFiles}
         existingDocuments={existingDocuments}
         setExistingDocuments={setExistingDocuments}

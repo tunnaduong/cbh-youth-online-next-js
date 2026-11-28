@@ -13,6 +13,7 @@ import {
   UploadOutlined,
 } from "@ant-design/icons";
 import { uploadInlineImage, MAX_INLINE_IMAGE_MB } from "@/utils/imageUpload";
+import SortableImageGrid, { arrayMove } from "@/components/ui/SortableImageGrid";
 
 const MAX_MB = MAX_INLINE_IMAGE_MB;
 
@@ -144,11 +145,11 @@ export default function MultiImageUploadInput({
   const handleMove = (index, direction) => {
     const newIndex = index + direction;
     if (newIndex < 0 || newIndex >= urls.length) return;
-    const next = [...urls];
-    const temp = next[index];
-    next[index] = next[newIndex];
-    next[newIndex] = temp;
-    updateUrls(next);
+    updateUrls(arrayMove(urls, index, newIndex));
+  };
+
+  const handleReorder = (fromIndex, toIndex) => {
+    updateUrls(arrayMove(urls, fromIndex, toIndex));
   };
 
   return (
@@ -208,92 +209,103 @@ export default function MultiImageUploadInput({
 
       {/* Images list / gallery */}
       {urls.length > 0 ? (
-        <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 gap-3 p-3 rounded-lg bg-gray-50 dark:bg-neutral-800/50 border border-gray-200 dark:border-neutral-700">
+        <div className="p-3 rounded-lg bg-gray-50 dark:bg-neutral-800/50 border border-gray-200 dark:border-neutral-700">
           <Image.PreviewGroup>
-            {urls.map((url, index) => {
-              const isPrimary = index === 0;
-              return (
-                <div
-                  key={`${url}-${index}`}
-                  className={`group relative rounded-lg border overflow-hidden bg-white dark:bg-neutral-800 flex flex-col transition-all ${
-                    isPrimary
-                      ? "border-green-500 ring-2 ring-green-500/20 shadow-sm"
-                      : "border-gray-200 dark:border-neutral-700 hover:border-gray-300 dark:hover:border-neutral-600"
-                  }`}
-                >
-                  {/* Badge */}
-                  <div className="absolute top-1 left-1 z-10">
-                    {isPrimary ? (
-                      <Tag color="success" className="!m-0 text-[10px] font-semibold flex items-center gap-1 shadow-sm">
-                        <StarFilled className="text-yellow-300" /> Chính
-                      </Tag>
-                    ) : (
-                      <Tag className="!m-0 text-[10px] bg-black/60 text-white border-0 shadow-sm">
-                        #{index + 1}
-                      </Tag>
-                    )}
-                  </div>
+            <SortableImageGrid
+              items={urls}
+              onReorder={handleReorder}
+              getKey={(url, index) => `${url}-${index}`}
+              getSrc={(url) => url}
+              gridClassName="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 gap-3"
+              showOrderBadge={false}
+              hintText="Kéo ảnh để sắp xếp thứ tự (ảnh #1 là ảnh chính)"
+              renderItem={(url, index) => {
+                const isPrimary = index === 0;
+                return (
+                  <div
+                    className={`group relative rounded-lg border overflow-hidden bg-white dark:bg-neutral-800 flex flex-col transition-all ${
+                      isPrimary
+                        ? "border-green-500 ring-2 ring-green-500/20 shadow-sm"
+                        : "border-gray-200 dark:border-neutral-700 hover:border-gray-300 dark:hover:border-neutral-600"
+                    }`}
+                  >
+                    {/* Badge */}
+                    <div className="absolute top-1 left-1 z-10 pointer-events-none">
+                      {isPrimary ? (
+                        <Tag color="success" className="!m-0 text-[10px] font-semibold flex items-center gap-1 shadow-sm">
+                          <StarFilled className="text-yellow-300" /> Chính
+                        </Tag>
+                      ) : (
+                        <Tag className="!m-0 text-[10px] bg-black/60 text-white border-0 shadow-sm">
+                          #{index + 1}
+                        </Tag>
+                      )}
+                    </div>
 
-                  {/* Image thumb */}
-                  <div className="aspect-square relative w-full overflow-hidden bg-gray-100 dark:bg-neutral-900 flex items-center justify-center">
-                    <Image
-                      src={url}
-                      alt={`Ảnh sản phẩm ${index + 1}`}
-                      className="!h-full !w-full !object-cover"
-                      wrapperClassName="!h-full !w-full"
-                    />
-                  </div>
+                    {/* Image thumb */}
+                    <div className="aspect-square relative w-full overflow-hidden bg-gray-100 dark:bg-neutral-900 flex items-center justify-center">
+                      <Image
+                        src={url}
+                        alt={`Ảnh sản phẩm ${index + 1}`}
+                        className="!h-full !w-full !object-cover"
+                        wrapperClassName="!h-full !w-full"
+                      />
+                    </div>
 
-                  {/* Actions footer */}
-                  <div className="p-1 flex items-center justify-between bg-gray-50 dark:bg-neutral-800/90 border-t border-gray-100 dark:border-neutral-700">
-                    <Space size={2}>
-                      <Tooltip title="Chuyển lên trước">
-                        <Button
-                          size="small"
-                          type="text"
-                          icon={<ArrowLeftOutlined />}
-                          disabled={index === 0}
-                          onClick={() => handleMove(index, -1)}
-                          className="!px-1"
-                        />
-                      </Tooltip>
-                      <Tooltip title="Chuyển ra sau">
-                        <Button
-                          size="small"
-                          type="text"
-                          icon={<ArrowRightOutlined />}
-                          disabled={index === urls.length - 1}
-                          onClick={() => handleMove(index, 1)}
-                          className="!px-1"
-                        />
-                      </Tooltip>
-                      {!isPrimary && (
-                        <Tooltip title="Đặt làm ảnh chính">
+                    {/* Actions footer */}
+                    <div
+                      data-no-drag="true"
+                      className="p-1 flex items-center justify-between bg-gray-50 dark:bg-neutral-800/90 border-t border-gray-100 dark:border-neutral-700"
+                    >
+                      <Space size={2}>
+                        <Tooltip title="Chuyển lên trước">
                           <Button
                             size="small"
                             type="text"
-                            icon={<StarOutlined className="text-amber-500" />}
-                            onClick={() => handleSetPrimary(index)}
+                            icon={<ArrowLeftOutlined />}
+                            disabled={index === 0}
+                            onClick={() => handleMove(index, -1)}
                             className="!px-1"
                           />
                         </Tooltip>
-                      )}
-                    </Space>
+                        <Tooltip title="Chuyển ra sau">
+                          <Button
+                            size="small"
+                            type="text"
+                            icon={<ArrowRightOutlined />}
+                            disabled={index === urls.length - 1}
+                            onClick={() => handleMove(index, 1)}
+                            className="!px-1"
+                          />
+                        </Tooltip>
+                        {!isPrimary && (
+                          <Tooltip title="Đặt làm ảnh chính">
+                            <Button
+                              size="small"
+                              type="text"
+                              icon={<StarOutlined className="text-amber-500" />}
+                              onClick={() => handleSetPrimary(index)}
+                              className="!px-1"
+                            />
+                          </Tooltip>
+                        )}
+                      </Space>
 
-                    <Tooltip title="Xóa ảnh này">
-                      <Button
-                        size="small"
-                        type="text"
-                        danger
-                        icon={<DeleteOutlined />}
-                        onClick={() => handleRemove(index)}
-                        className="!px-1"
-                      />
-                    </Tooltip>
+                      <Tooltip title="Xóa ảnh này">
+                        <Button
+                          size="small"
+                          type="text"
+                          danger
+                          icon={<DeleteOutlined />}
+                          onClick={() => handleRemove(index)}
+                          className="!px-1"
+                        />
+                      </Tooltip>
+                    </div>
                   </div>
-                </div>
-              );
-            })}
+                );
+              }}
+            />
           </Image.PreviewGroup>
         </div>
       ) : (

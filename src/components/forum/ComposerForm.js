@@ -9,6 +9,7 @@ import { FaMarkdown } from "react-icons/fa";
 import { FaFileLines } from "react-icons/fa6";
 import CustomInput from "@/components/ui/input";
 import { RichTextToolbar } from "@/components/ui/RichTextEditor";
+import SortableImageGrid from "@/components/ui/SortableImageGrid";
 
 /**
  * The actual composer UI (subforum/visibility pickers, title, body editor,
@@ -36,13 +37,12 @@ export default function ComposerForm({
   forumData,
   loading,
   descriptionEditor,
+  images = [],
   imageFiles,
-  imagePreviews,
-  existingImages,
-  setExistingImages,
   imageInputRef,
   handleImageChange,
   removeImage,
+  reorderImages,
   documentFiles,
   existingDocuments,
   setExistingDocuments,
@@ -183,41 +183,16 @@ export default function ComposerForm({
       </div>
 
       {/* Attachments preview */}
-      {(imagePreviews.length > 0 || existingImages.length > 0) && (
-        <div className="mt-4 grid grid-cols-4 gap-2">
-          {imagePreviews.map((preview, index) => (
-            <div key={preview.id} className="relative">
-              <img
-                src={preview.preview}
-                alt={`Preview ${index + 1}`}
-                className="h-24 w-full rounded-md border object-cover dark:!border-neutral-500"
-              />
-              <button
-                type="button"
-                onClick={() => removeImage(index)}
-                className="absolute -right-2 -top-2 flex h-6 w-6 items-center justify-center rounded-full bg-red-500 text-white hover:bg-red-600"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            </div>
-          ))}
-          {existingImages.map((img) => (
-            <div key={`existing-${img.id}`} className="relative">
-              <img
-                src={img.url}
-                alt="Existing"
-                className="h-24 w-full rounded-md border object-cover dark:!border-neutral-500"
-              />
-              <button
-                type="button"
-                onClick={() => setExistingImages((prev) => prev.filter((item) => item.id !== img.id))}
-                className="absolute -right-2 -top-2 flex h-6 w-6 items-center justify-center rounded-full bg-red-500 text-white hover:bg-red-600"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            </div>
-          ))}
-        </div>
+      {images.length > 0 && (
+        <SortableImageGrid
+          className="mt-4"
+          items={images}
+          onReorder={reorderImages}
+          onRemove={removeImage}
+          getKey={(item) => item.uid}
+          getSrc={(item) => (item.kind === "existing" ? item.url : item.preview)}
+          getAlt={(_item, index) => `Ảnh ${index + 1}`}
+        />
       )}
       {(videoPreviews.length > 0 || existingVideos.length > 0) && (
         <div className="mt-4 grid grid-cols-4 gap-2">

@@ -3,10 +3,11 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { Button, Input, message } from "antd";
-import { Bug, CheckCircle2, ImagePlus, Lightbulb, Mail, MessageSquare, X } from "lucide-react";
+import { Bug, CheckCircle2, ImagePlus, Lightbulb, Mail, MessageSquare } from "lucide-react";
 import { useAuthContext } from "@/contexts/Support";
 import { submitFeedback } from "@/app/Api";
 import { uploadInlineImage } from "@/utils/imageUpload";
+import SortableImageGrid, { arrayMove } from "@/components/ui/SortableImageGrid";
 
 const { TextArea } = Input;
 
@@ -68,6 +69,8 @@ export default function FeedbackClient() {
   };
 
   const removeImage = (idx) => setImages((prev) => prev.filter((_, i) => i !== idx));
+  const reorderImages = (fromIndex, toIndex) =>
+    setImages((prev) => arrayMove(prev, fromIndex, toIndex));
 
   const handleSubmit = async () => {
     if (content.trim().length < MIN_LENGTH) {
@@ -185,32 +188,31 @@ export default function FeedbackClient() {
             Ảnh chụp màn hình <span className="font-normal text-gray-500">(tùy chọn, tối đa {MAX_IMAGES})</span>
           </div>
           {loggedIn ? (
-            <div className="flex flex-wrap gap-2">
-              {images.map((img, idx) => (
-                <div key={img.url} className="relative w-20 h-20 rounded-lg overflow-hidden border border-gray-200 dark:border-neutral-600">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={img.preview} alt="" className="w-full h-full object-cover" />
-                  <button
-                    type="button"
-                    onClick={() => removeImage(idx)}
-                    aria-label="Xóa ảnh"
-                    className="absolute top-1 right-1 rounded-full bg-black/60 p-0.5 text-white"
-                  >
-                    <X size={14} />
-                  </button>
-                </div>
-              ))}
-              {images.length < MAX_IMAGES && (
-                <button
-                  type="button"
-                  disabled={uploading}
-                  onClick={() => fileInputRef.current?.click()}
-                  className="w-20 h-20 rounded-lg border-2 border-dashed border-gray-300 dark:border-neutral-600 flex flex-col items-center justify-center text-gray-500 dark:text-neutral-400 hover:border-primary-500 hover:text-primary-500 disabled:opacity-60"
-                >
-                  <ImagePlus size={20} />
-                  <span className="text-[11px] mt-1">{uploading ? "Đang tải..." : "Thêm ảnh"}</span>
-                </button>
-              )}
+            <div>
+              <SortableImageGrid
+                items={images}
+                onReorder={reorderImages}
+                onRemove={removeImage}
+                getKey={(img) => img.url}
+                getSrc={(img) => img.preview}
+                gridClassName="flex flex-wrap gap-2"
+                tileClassName="w-20 h-20"
+                imageClassName="w-20 h-20 rounded-lg object-cover border border-gray-200 dark:border-neutral-600"
+                removeButtonClassName="absolute top-1 right-1 z-20 rounded-full bg-black/60 p-0.5 text-white hover:bg-black/80"
+                trailingSlot={
+                  images.length < MAX_IMAGES ? (
+                    <button
+                      type="button"
+                      disabled={uploading}
+                      onClick={() => fileInputRef.current?.click()}
+                      className="w-20 h-20 rounded-lg border-2 border-dashed border-gray-300 dark:border-neutral-600 flex flex-col items-center justify-center text-gray-500 dark:text-neutral-400 hover:border-primary-500 hover:text-primary-500 disabled:opacity-60"
+                    >
+                      <ImagePlus size={20} />
+                      <span className="text-[11px] mt-1">{uploading ? "Đang tải..." : "Thêm ảnh"}</span>
+                    </button>
+                  ) : null
+                }
+              />
               <input
                 ref={fileInputRef}
                 type="file"

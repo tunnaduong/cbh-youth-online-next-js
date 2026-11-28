@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Button, Popover, Dropdown } from "antd";
-import { LuType, LuArrowUp, LuChevronDown, LuX } from "react-icons/lu";
+import { LuType, LuArrowUp, LuChevronDown } from "react-icons/lu";
 import { RiEmojiStickerLine, RiImageAddLine } from "react-icons/ri";
 import { useAuthContext } from "@/contexts/Support";
 import Picker from "@emoji-mart/react";
@@ -12,6 +12,7 @@ import MarkdownRenderer from "@/components/ui/MarkdownRenderer";
 import MentionSuggestionsDropdown from "@/components/ui/MentionSuggestionsDropdown";
 import { useMentionInput } from "@/hooks/useMentionInput";
 import { buildHtml, getCaretOffset, setCaretOffset, getContentText, makeProxyRef, applyHighlights } from "@/utils/richInput";
+import SortableImageGrid, { arrayMove } from "@/components/ui/SortableImageGrid";
 
 const MAX_IMAGES = 10;
 
@@ -90,6 +91,10 @@ export function CommentInput({
       URL.revokeObjectURL(prev[index].previewUrl);
       return prev.filter((_, i) => i !== index);
     });
+  };
+
+  const handleReorderImages = (fromIndex, toIndex) => {
+    setSelectedImages((prev) => arrayMove(prev, fromIndex, toIndex));
   };
 
   const handleTogglePreview = () => setIsPreviewMode((p) => !p);
@@ -300,35 +305,32 @@ export function CommentInput({
               </div>
             )}
 
-            {/* Image previews */}
+            {/* Image previews (drag to reorder) */}
             {selectedImages.length > 0 && (
-              <div className="flex flex-wrap gap-2 mt-2 mb-1">
-                {selectedImages.map((img, index) => (
-                  <div key={index} className="relative inline-block">
-                    <img
-                      src={img.previewUrl}
-                      alt={`Ảnh ${index + 1}`}
-                      className="h-20 w-20 rounded-lg border object-cover"
-                    />
+              <SortableImageGrid
+                className="mt-2 mb-1"
+                items={selectedImages}
+                onReorder={handleReorderImages}
+                onRemove={handleRemoveImage}
+                getKey={(img) => img.previewUrl}
+                getSrc={(img) => img.previewUrl}
+                getAlt={(_img, index) => `Ảnh ${index + 1}`}
+                gridClassName="flex flex-wrap gap-2"
+                tileClassName="h-20 w-20"
+                imageClassName="h-20 w-20 rounded-lg border object-cover"
+                removeButtonClassName="absolute -top-1.5 -right-1.5 z-20 w-5 h-5 rounded-full bg-gray-800/80 text-white flex items-center justify-center hover:bg-gray-900"
+                trailingSlot={
+                  selectedImages.length < MAX_IMAGES ? (
                     <button
                       type="button"
-                      onClick={() => handleRemoveImage(index)}
-                      className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-gray-800/80 text-white flex items-center justify-center hover:bg-gray-900"
+                      onClick={() => imageInputRef.current?.click()}
+                      className="h-20 w-20 rounded-lg border-2 border-dashed border-gray-300 dark:border-gray-600 flex items-center justify-center text-gray-400 hover:border-gray-400 hover:text-gray-500 transition-colors"
                     >
-                      <LuX className="w-3 h-3" />
+                      <RiImageAddLine className="w-5 h-5" />
                     </button>
-                  </div>
-                ))}
-                {selectedImages.length < MAX_IMAGES && (
-                  <button
-                    type="button"
-                    onClick={() => imageInputRef.current?.click()}
-                    className="h-20 w-20 rounded-lg border-2 border-dashed border-gray-300 dark:border-gray-600 flex items-center justify-center text-gray-400 hover:border-gray-400 hover:text-gray-500 transition-colors"
-                  >
-                    <RiImageAddLine className="w-5 h-5" />
-                  </button>
-                )}
-              </div>
+                  ) : null
+                }
+              />
             )}
           </div>
         </div>

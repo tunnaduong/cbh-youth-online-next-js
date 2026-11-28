@@ -8,6 +8,7 @@ import { getForumData, createPost, updatePost, getPostDetail } from "@/app/Api";
 import { normalizeNewlines } from "@/utils/richInput";
 import { compressImageForUpload } from "@/utils/imageUpload";
 import { compressVideoForUpload } from "@/utils/videoCompression";
+import { arrayMove } from "@/components/ui/SortableImageGrid";
 
 /**
  * All the state, refs, effects and handlers behind the post composer
@@ -40,8 +41,12 @@ export default function usePostComposer({ isEditMode = false, postData = null, o
   const { triggerRefresh } = usePostRefresh();
 
   const [selectedSubforum, setSelectedSubforum] = useState(null);
-  const [imageFiles, setImageFiles] = useState([]);
-  const [imagePreviews, setImagePreviews] = useState([]);
+  // Unified ordered list of attached images (existing + newly added), so the
+  // author can freely drag any image before/after any other image even in edit
+  // mode. Each entry is either:
+  //   { uid, kind: "existing", id, url }
+  //   { uid, kind: "new", file, preview }  (preview is an object URL)
+  const [images, setImages] = useState([]);
   const [documentFiles, setDocumentFiles] = useState([]);
   const [videoFiles, setVideoFiles] = useState([]);
   const [videoPreviews, setVideoPreviews] = useState([]);
@@ -52,6 +57,23 @@ export default function usePostComposer({ isEditMode = false, postData = null, o
   // "compressing" while photos are shrunk in the browser, "uploading" while
   // the request body is being sent, null otherwise.
   const [uploadStage, setUploadStage] = useState(null);
+
+  const objectUrlsRef = useRef(new Set());
+  const revokeObjectUrl = (url) => {
+    if (url && objectUrlsRef.current.has(url)) {
+      URL.revokeObjectURL(url);
+      objectUrlsRef.current.delete(url);
+    }
+  };
+  const revokeAllObjectUrls = () => {
+    objectUrlsRef.current.forEach((url) => URL.revokeObjectURL(url));
+    objectUrlsRef.current.clear();
+  };
+  useEffect(() => () => revokeAllObjectUrls(), []);
+
+  // Derived views for callers that inspect counts/progress
+  const imageFiles = images.filter((img) => img.kind === "new").map((img) => img.file);
+  const existingImages = images.filter((img) => img.kind === "existing");
 
   // Fetch forum data when the composer opens
   useEffect(() => {
@@ -95,7 +117,15 @@ export default function usePostComposer({ isEditMode = false, postData = null, o
             privacy: fetchedPost.privacy || "public",
             anonymous: fetchedPost.anonymous || false,
           });
-          setExistingImages(fetchedPost.images || []);
+          revokeAllObjectUrls();
+          setImages(
+            (fetchedPost.images || []).map((img) => ({
+              uid: `existing-${img.id}`,
+              kind: "existing",
+              id: img.id,
+              url: img.url,
+            }))
+          );
           setExistingDocuments(fetchedPost.documents || []);
           setExistingVideos(fetchedPost.videos || []);
           setSelectedSubforum(fetchedPost.subforum_id || null);
@@ -132,7 +162,6 @@ export default function usePostComposer({ isEditMode = false, postData = null, o
     privacy: "public", // public, followers, private
     anonymous: false, // false: normal post, true: anonymous post
   });
-  const [existingImages, setExistingImages] = useState([]);
   const [existingDocuments, setExistingDocuments] = useState([]);
   const [existingVideos, setExistingVideos] = useState([]);
   const [processing, setProcessing] = useState(false);
@@ -163,12 +192,11 @@ export default function usePostComposer({ isEditMode = false, postData = null, o
       privacy: "public",
       anonymous: false,
     });
-    setExistingImages([]);
+    revokeAllObjectUrls();
+    setImages([]);
     setExistingDocuments([]);
     setExistingVideos([]);
     setErrors({});
-    setImageFiles([]);
-    setImagePreviews([]);
     setDocumentFiles([]);
     setVideoFiles([]);
     setVideoPreviews([]);
@@ -217,9 +245,29 @@ export default function usePostComposer({ isEditMode = false, postData = null, o
       formData.append("privacy", data.privacy);
       formData.append("anonymous", data.anonymous ? "1" : "0");
 
+      // Collect ordered existing IDs, new files, and unified order tokens
+      // ("existing:<id>" / "new:<index>") so the API preserves the exact order
+      // even when new photos are dragged before or between existing photos.
+      const keptIds = [];
+      const orderedNewFiles = [];
+      const orderTokens = [];
+      for (const item of images) {
+        if (item.kind === "existing") {
+          keptIds.push(item.id);
+          orderTokens.push(`existing:${item.id}`);
+        } else if (item.kind === "new") {
+          const newIdx = orderedNewFiles.length;
+          orderedNewFiles.push(item.file);
+          orderTokens.push(`new:${newIdx}`);
+        }
+      }
+
       if (isEditMode) {
-        // Pass the list of IDs we want to KEEP
-        formData.append("kept_image_ids", existingImages.map(img => img.id).join(','));
+        // Pass the list of IDs we want to KEEP and the unified order
+        formData.append("kept_image_ids", keptIds.join(","));
+        if (orderTokens.length > 0) {
+          formData.append("image_order", orderTokens.join(","));
+        }
         formData.append("kept_document_ids", existingDocuments.map(doc => doc.id).join(','));
         formData.append("kept_video_ids", existingVideos.map(vid => vid.id).join(','));
 
@@ -231,13 +279,13 @@ export default function usePostComposer({ isEditMode = false, postData = null, o
       // photos made a dozen of them take minutes (or never finish).
       // One at a time so a batch of 12+ big photos doesn't hold a dozen
       // decoded bitmaps in memory at once.
-      if (imageFiles.length > 0) {
+      if (orderedNewFiles.length > 0) {
         setUploadStage("compressing");
         setUploadProgress(0);
-        for (let index = 0; index < imageFiles.length; index++) {
-          const file = await compressImageForUpload(imageFiles[index]);
+        for (let index = 0; index < orderedNewFiles.length; index++) {
+          const file = await compressImageForUpload(orderedNewFiles[index]);
           formData.append(`image_files[${index}]`, file);
-          setUploadProgress(Math.round(((index + 1) * 100) / imageFiles.length));
+          setUploadProgress(Math.round(((index + 1) * 100) / orderedNewFiles.length));
         }
       }
 
@@ -297,8 +345,6 @@ export default function usePostComposer({ isEditMode = false, postData = null, o
         }
         reset();
         setSelectedSubforum(null);
-        setImageFiles([]);
-        setImagePreviews([]);
         setDocumentFiles([]);
         setVideoFiles([]);
         setVideoPreviews([]);
@@ -356,25 +402,26 @@ export default function usePostComposer({ isEditMode = false, postData = null, o
       }
     }
 
-    // Add new files to existing ones
-    const newFiles = [...imageFiles, ...files];
-    setImageFiles(newFiles);
-    setData((prev) => ({ ...prev, image_files: newFiles }));
-
-    // Create previews for new files
-    files.forEach((file) => {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        setImagePreviews((prev) => [
-          ...prev,
-          {
-            id: Date.now() + Math.random(), // Unique ID for each preview
-            file: file,
-            preview: e.target.result,
-          },
-        ]);
+    // Append new images synchronously via object URLs so selection order is
+    // preserved (async FileReader callbacks could finish out of order).
+    const added = files.map((file) => {
+      const preview = URL.createObjectURL(file);
+      objectUrlsRef.current.add(preview);
+      return {
+        uid: `new-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+        kind: "new",
+        file,
+        preview,
       };
-      reader.readAsDataURL(file);
+    });
+
+    setImages((prev) => {
+      const next = [...prev, ...added];
+      setData((d) => ({
+        ...d,
+        image_files: next.filter((i) => i.kind === "new").map((i) => i.file),
+      }));
+      return next;
     });
   };
 
@@ -557,17 +604,30 @@ export default function usePostComposer({ isEditMode = false, postData = null, o
     if (dragCounterRef.current === 0) setIsDraggingFiles(false);
   };
 
-  // removeImage/removeDocument/removeVideo only drop *new* (not-yet-uploaded)
-  // files - existing (already-on-server) attachments are removed by filtering
-  // setExistingImages/Documents/Videos directly, which the composer UI calls
-  // inline.
+  // removeImage removes an item from the unified images list (existing or new);
+  // reorderImages moves an image from fromIndex to toIndex.
   const removeImage = (index) => {
-    const newFiles = imageFiles.filter((_, i) => i !== index);
-    const newPreviews = imagePreviews.filter((_, i) => i !== index);
+    setImages((prev) => {
+      const target = prev[index];
+      if (target?.kind === "new") revokeObjectUrl(target.preview);
+      const next = prev.filter((_, i) => i !== index);
+      setData((d) => ({
+        ...d,
+        image_files: next.filter((i) => i.kind === "new").map((i) => i.file),
+      }));
+      return next;
+    });
+  };
 
-    setImageFiles(newFiles);
-    setImagePreviews(newPreviews);
-    setData((prev) => ({ ...prev, image_files: newFiles }));
+  const reorderImages = (fromIndex, toIndex) => {
+    setImages((prev) => {
+      const next = arrayMove(prev, fromIndex, toIndex);
+      setData((d) => ({
+        ...d,
+        image_files: next.filter((i) => i.kind === "new").map((i) => i.file),
+      }));
+      return next;
+    });
   };
 
   const removeDocument = (index) => {
@@ -621,13 +681,13 @@ export default function usePostComposer({ isEditMode = false, postData = null, o
     handleDescriptionChange,
 
     // images
+    images,
     imageFiles,
-    imagePreviews,
     existingImages,
-    setExistingImages,
     imageInputRef,
     handleImageChange,
     removeImage,
+    reorderImages,
 
     // documents
     documentFiles,

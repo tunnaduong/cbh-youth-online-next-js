@@ -21,6 +21,7 @@ import { useMentionInput } from "@/hooks/useMentionInput";
 import { uploadInlineImage, collectImageFiles, compressImageForUpload } from "@/utils/imageUpload";
 import { compressVideoForUpload } from "@/utils/videoCompression";
 import MentionSuggestionsDropdown from "../ui/MentionSuggestionsDropdown";
+import SortableImageGrid, { arrayMove } from "../ui/SortableImageGrid";
 import {
   buildHtml,
   getCaretOffset,
@@ -47,8 +48,10 @@ const CreatePostModal = ({ open, onClose, isEditMode = false, postData = null, o
   const { fetchHomeData } = useForumData();
 
   const [selectedSubforum, setSelectedSubforum] = useState(null);
-  const [imageFiles, setImageFiles] = useState([]);
-  const [imagePreviews, setImagePreviews] = useState([]);
+  // Unified ordered list of attached images (existing + new), matching
+  // usePostComposer.js so drag-to-reorder works seamlessly in both create and
+  // edit modes.
+  const [images, setImages] = useState([]);
   const [documentFiles, setDocumentFiles] = useState([]);
   const [videoFiles, setVideoFiles] = useState([]);
   const [videoPreviews, setVideoPreviews] = useState([]);
@@ -59,6 +62,21 @@ const CreatePostModal = ({ open, onClose, isEditMode = false, postData = null, o
   // "compressing" while photos are shrunk in the browser, "uploading" while
   // the request body is being sent.
   const [uploadStage, setUploadStage] = useState(null);
+
+  const objectUrlsRef = useRef(new Set());
+  const revokeObjectUrl = (url) => {
+    if (url && objectUrlsRef.current.has(url)) {
+      URL.revokeObjectURL(url);
+      objectUrlsRef.current.delete(url);
+    }
+  };
+  const revokeAllObjectUrls = () => {
+    objectUrlsRef.current.forEach((url) => URL.revokeObjectURL(url));
+    objectUrlsRef.current.clear();
+  };
+  useEffect(() => () => revokeAllObjectUrls(), []);
+
+  const imageFiles = images.filter((img) => img.kind === "new").map((img) => img.file);
 
   // Fetch forum data when modal opens
   useEffect(() => {
@@ -108,7 +126,15 @@ const CreatePostModal = ({ open, onClose, isEditMode = false, postData = null, o
           descriptionHistoryRef.current = { undo: [], redo: [] };
           lastCommittedRef.current = { text: fetchedDescription, offset: 0 };
           lastEditTimeRef.current = 0;
-          setExistingImages(fetchedPost.images || []);
+          revokeAllObjectUrls();
+          setImages(
+            (fetchedPost.images || []).map((img) => ({
+              uid: `existing-${img.id}`,
+              kind: "existing",
+              id: img.id,
+              url: img.url,
+            }))
+          );
           setExistingDocuments(fetchedPost.documents || []);
           setExistingVideos(fetchedPost.videos || []);
           setSelectedSubforum(fetchedPost.subforum_id || null);
@@ -142,7 +168,6 @@ const CreatePostModal = ({ open, onClose, isEditMode = false, postData = null, o
     privacy: "public", // public, followers, private
     anonymous: false, // false: normal post, true: anonymous post
   });
-  const [existingImages, setExistingImages] = useState([]);
   const [existingDocuments, setExistingDocuments] = useState([]);
   const [existingVideos, setExistingVideos] = useState([]);
   const [processing, setProcessing] = useState(false);
@@ -364,12 +389,11 @@ const CreatePostModal = ({ open, onClose, isEditMode = false, postData = null, o
       privacy: "public",
       anonymous: false,
     });
-    setExistingImages([]);
+    revokeAllObjectUrls();
+    setImages([]);
     setExistingDocuments([]);
     setExistingVideos([]);
     setErrors({});
-    setImageFiles([]);
-    setImagePreviews([]);
     setDocumentFiles([]);
     setVideoFiles([]);
     setVideoPreviews([]);
@@ -418,9 +442,26 @@ const CreatePostModal = ({ open, onClose, isEditMode = false, postData = null, o
       formData.append("privacy", data.privacy);
       formData.append("anonymous", data.anonymous ? "1" : "0");
 
+      const keptIds = [];
+      const orderedNewFiles = [];
+      const orderTokens = [];
+      for (const item of images) {
+        if (item.kind === "existing") {
+          keptIds.push(item.id);
+          orderTokens.push(`existing:${item.id}`);
+        } else if (item.kind === "new") {
+          const newIdx = orderedNewFiles.length;
+          orderedNewFiles.push(item.file);
+          orderTokens.push(`new:${newIdx}`);
+        }
+      }
+
       if (isEditMode) {
-        // Pass the list of IDs we want to KEEP
-        formData.append("kept_image_ids", existingImages.map(img => img.id).join(','));
+        // Pass the list of IDs we want to KEEP and the unified order
+        formData.append("kept_image_ids", keptIds.join(","));
+        if (orderTokens.length > 0) {
+          formData.append("image_order", orderTokens.join(","));
+        }
         formData.append("kept_document_ids", existingDocuments.map(doc => doc.id).join(','));
         formData.append("kept_video_ids", existingVideos.map(vid => vid.id).join(','));
 
@@ -432,13 +473,13 @@ const CreatePostModal = ({ open, onClose, isEditMode = false, postData = null, o
       // photos made a dozen of them take minutes (or never finish).
       // One at a time so a batch of 12+ big photos doesn't hold a dozen
       // decoded bitmaps in memory at once.
-      if (imageFiles.length > 0) {
+      if (orderedNewFiles.length > 0) {
         setUploadStage("compressing");
         setUploadProgress(0);
-        for (let index = 0; index < imageFiles.length; index++) {
-          const file = await compressImageForUpload(imageFiles[index]);
+        for (let index = 0; index < orderedNewFiles.length; index++) {
+          const file = await compressImageForUpload(orderedNewFiles[index]);
           formData.append(`image_files[${index}]`, file);
-          setUploadProgress(Math.round(((index + 1) * 100) / imageFiles.length));
+          setUploadProgress(Math.round(((index + 1) * 100) / orderedNewFiles.length));
         }
       }
 
@@ -498,8 +539,6 @@ const CreatePostModal = ({ open, onClose, isEditMode = false, postData = null, o
         }
         reset();
         setSelectedSubforum(null);
-        setImageFiles([]);
-        setImagePreviews([]);
         setDocumentFiles([]);
         setVideoFiles([]);
         setVideoPreviews([]);
@@ -557,25 +596,24 @@ const CreatePostModal = ({ open, onClose, isEditMode = false, postData = null, o
       }
     }
 
-    // Add new files to existing ones
-    const newFiles = [...imageFiles, ...files];
-    setImageFiles(newFiles);
-    setData((prev) => ({ ...prev, image_files: newFiles }));
-
-    // Create previews for new files
-    files.forEach((file) => {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        setImagePreviews((prev) => [
-          ...prev,
-          {
-            id: Date.now() + Math.random(), // Unique ID for each preview
-            file: file,
-            preview: e.target.result,
-          },
-        ]);
+    const added = files.map((file) => {
+      const preview = URL.createObjectURL(file);
+      objectUrlsRef.current.add(preview);
+      return {
+        uid: `new-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+        kind: "new",
+        file,
+        preview,
       };
-      reader.readAsDataURL(file);
+    });
+
+    setImages((prev) => {
+      const next = [...prev, ...added];
+      setData((d) => ({
+        ...d,
+        image_files: next.filter((i) => i.kind === "new").map((i) => i.file),
+      }));
+      return next;
     });
   };
 
@@ -861,12 +899,27 @@ const CreatePostModal = ({ open, onClose, isEditMode = false, postData = null, o
   };
 
   const removeImage = (index) => {
-    const newFiles = imageFiles.filter((_, i) => i !== index);
-    const newPreviews = imagePreviews.filter((_, i) => i !== index);
+    setImages((prev) => {
+      const target = prev[index];
+      if (target?.kind === "new") revokeObjectUrl(target.preview);
+      const next = prev.filter((_, i) => i !== index);
+      setData((d) => ({
+        ...d,
+        image_files: next.filter((i) => i.kind === "new").map((i) => i.file),
+      }));
+      return next;
+    });
+  };
 
-    setImageFiles(newFiles);
-    setImagePreviews(newPreviews);
-    setData((prev) => ({ ...prev, image_files: newFiles }));
+  const reorderImages = (fromIndex, toIndex) => {
+    setImages((prev) => {
+      const next = arrayMove(prev, fromIndex, toIndex);
+      setData((d) => ({
+        ...d,
+        image_files: next.filter((i) => i.kind === "new").map((i) => i.file),
+      }));
+      return next;
+    });
   };
 
   const removeDocument = (index) => {
@@ -1283,46 +1336,17 @@ const CreatePostModal = ({ open, onClose, isEditMode = false, postData = null, o
               </div>
             </div>
 
-            {/* Images: New and Existing */}
-            {(imagePreviews.length > 0 || existingImages.length > 0) && (
-              <div className="grid grid-cols-4 gap-2 mb-4">
-                {imagePreviews.map((preview, index) => (
-                  <div key={preview.id} className="relative">
-                    <img
-                      src={preview.preview}
-                      alt={`Preview ${index + 1}`}
-                      className="border rounded-md dark:!border-neutral-500 w-full h-24 object-cover"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => removeImage(index)}
-                      className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center hover:bg-red-600 transition-colors"
-                    >
-                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
-                        <path d="M18 6 6 18" /><path d="m6 6 12 12" />
-                      </svg>
-                    </button>
-                  </div>
-                ))}
-                {existingImages.map((img) => (
-                  <div key={`existing-${img.id}`} className="relative">
-                    <img
-                      src={img.url}
-                      alt="Existing"
-                      className="border rounded-md dark:!border-neutral-500 w-full h-24 object-cover"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setExistingImages(prev => prev.filter(item => item.id !== img.id))}
-                      className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center hover:bg-red-600 transition-colors"
-                    >
-                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
-                        <path d="M18 6 6 18" /><path d="m6 6 12 12" />
-                      </svg>
-                    </button>
-                  </div>
-                ))}
-              </div>
+            {/* Images: New and Existing (drag to reorder) */}
+            {images.length > 0 && (
+              <SortableImageGrid
+                className="mb-4"
+                items={images}
+                onReorder={reorderImages}
+                onRemove={removeImage}
+                getKey={(item) => item.uid}
+                getSrc={(item) => (item.kind === "existing" ? item.url : item.preview)}
+                getAlt={(_item, index) => `Ảnh ${index + 1}`}
+              />
             )}
 
             {/* Videos: New and Existing */}
