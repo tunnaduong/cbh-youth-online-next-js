@@ -4,23 +4,13 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Input, Select, message, Dropdown } from "antd";
 import {
-  Book,
-  Search,
-  Home,
-  Map,
-  Print,
-  HelpCircle,
-  GameController,
-  Trophy,
-  People,
-} from "react-ionicons";
-import {
   Search as SearchIcon,
   SlidersHorizontal,
   FileQuestion,
   Plus,
 } from "lucide-react";
 import HomeLayout from "@/layouts/HomeLayout";
+import { getExploreSidebarItems } from "@/data/exploreFeatures";
 import MaterialCard from "@/components/study-materials/MaterialCard";
 import { useAuthContext } from "@/contexts/Support";
 import * as Api from "@/app/Api";
@@ -63,62 +53,7 @@ export default function StudyMaterialsClient() {
     has_more_pages: true,
   });
 
-  const sidebarItems = [
-    {
-      Icon: Home,
-      label: "Trang chủ",
-      key: "home",
-      href: "/explore",
-    },
-    {
-      Icon: Book,
-      label: "Chợ tài liệu",
-      key: "study",
-      href: "/explore/study-materials",
-    },
-    {
-      Icon: Search,
-      label: "Tra cứu điểm thi",
-      key: "grades",
-      href: "/lookup",
-    },
-    {
-      Icon: Map,
-      label: "Tìm trường ĐH-CĐ",
-      key: "universities",
-      href: "#",
-    },
-    {
-      Icon: Print,
-      label: "In ấn tài liệu",
-      key: "print",
-      href: "#",
-    },
-    {
-      Icon: HelpCircle,
-      label: "Đố vui",
-      key: "quiz",
-      href: "/explore/quiz",
-    },
-    {
-      Icon: GameController,
-      label: "Game",
-      key: "game",
-      href: "/explore/games",
-    },
-    {
-      Icon: Trophy,
-      label: "Xếp hạng thành viên",
-      key: "ranking",
-      href: "/users/ranking",
-    },
-    {
-      Icon: People,
-      label: "Xếp hạng lớp",
-      key: "class-ranking",
-      href: "#",
-    },
-  ];
+  const sidebarItems = getExploreSidebarItems();
 
   const handleUploadClick = (e) => {
     if (!loggedIn) {

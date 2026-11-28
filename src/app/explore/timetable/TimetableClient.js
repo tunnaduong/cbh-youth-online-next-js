@@ -7,7 +7,7 @@ import { CalendarDays, ChevronRight, Clock, Coffee, Info, Pencil, Plus, Sparkles
 import AiImportModal from "./AiImportModal";
 import HomeLayout from "@/layouts/HomeLayout";
 import { HomeCard, SectionHeader } from "@/components/home/HomeCard";
-import { EXPLORE_FEATURES } from "@/data/exploreFeatures";
+import { getExploreSidebarItems } from "@/data/exploreFeatures";
 import { useAuthContext } from "@/contexts/Support";
 import { getTimetable, getTimetableDemo, resetTimetable, saveTimetable } from "@/app/Api";
 import {
@@ -28,13 +28,7 @@ import {
 
 const DAY_LONG = { T2: "Thứ Hai", T3: "Thứ Ba", T4: "Thứ Tư", T5: "Thứ Năm", T6: "Thứ Sáu", T7: "Thứ Bảy", CN: "Chủ Nhật" };
 
-const sidebarItems = EXPLORE_FEATURES.map((f) => ({
-  key: f.key,
-  href: f.href,
-  label: f.title,
-  Icon: f.sidebarIcon,
-  isExternal: false,
-}));
+const sidebarItems = getExploreSidebarItems();
 
 const pad = (n) => String(n).padStart(2, "0");
 

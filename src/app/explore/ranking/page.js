@@ -13,7 +13,7 @@ export const metadata = enhanceMetadataWithURLs(
       type: "website",
     },
   },
-  "/users/ranking"
+  "/explore/ranking"
 );
 
 export default function RankingPage() {

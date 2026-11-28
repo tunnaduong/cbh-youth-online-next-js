@@ -218,7 +218,7 @@ export default function ThptClient() {
   }
 
   return (
-    <LookupShell title="Thi tốt nghiệp THPT" subtitle={subtitle} backHref="/lookup">
+    <LookupShell title="Thi tốt nghiệp THPT" subtitle={subtitle} backHref="/explore/lookup">
       {body}
     </LookupShell>
   );

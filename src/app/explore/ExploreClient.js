@@ -7,7 +7,9 @@ import Link from "next/link";
 import { message } from "antd";
 import { SearchOutline, ArrowForward } from "react-ionicons";
 import { Sparkles } from "lucide-react";
-import { EXPLORE_FEATURES } from "@/data/exploreFeatures";
+import { EXPLORE_FEATURES, getExploreSidebarItems } from "@/data/exploreFeatures";
+
+const sidebarItems = getExploreSidebarItems();
 
 export default function ExploreClient() {
   const features = EXPLORE_FEATURES;
@@ -18,16 +20,6 @@ export default function ExploreClient() {
       message.info("Chức năng đang phát triển");
     }
   };
-
-  // Convert features to LeftSidebar items format (using non-outline icons)
-  const sidebarItems = features.map((feature) => ({
-    key: feature.key,
-    href: feature.href,
-    label: feature.title,
-    Icon: feature.sidebarIcon,
-    isExternal: false,
-    onClick: (e) => handleFeatureClick(e, feature),
-  }));
 
   return (
     <HomeLayout

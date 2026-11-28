@@ -17,27 +17,23 @@ import {
   Tabs,
 } from "antd";
 import CustomInput from "@/components/ui/input";
+import Link from "next/link";
+import { ChevronLeft } from "lucide-react";
 import {
   SearchOutline,
   ReloadOutline,
   PersonOutline,
-  CalendarAsString,
-  CalendarOutline,
-  PeopleOutline,
-  TrophyOutline,
-  Search,
-  Calendar,
-  People,
-  Trophy,
 } from "react-ionicons";
 import HomeLayout from "@/layouts/HomeLayout";
+import { getExploreSidebarItems } from "@/data/exploreFeatures";
 import axios from "axios";
 import moment from "moment";
-import { useRouter } from "next/navigation";
 import { useTheme } from "@/contexts/themeContext";
 import SeoContent from "./SeoContent";
 
-const { Title, Text } = Typography;
+const { Title } = Typography;
+
+const sidebarItems = getExploreSidebarItems();
 
 export default function GradesClient() {
   const [loading, setLoading] = useState(false);
@@ -46,7 +42,6 @@ export default function GradesClient() {
   const [resultInfo, setResultInfo] = useState(null);
   const [showCaptcha, setShowCaptcha] = useState(false); // State to toggle captcha visibility
   const [form] = Form.useForm();
-  const router = useRouter();
   const { theme } = useTheme();
 
   // API Endpoint
@@ -64,42 +59,6 @@ export default function GradesClient() {
       semester: "1",
     });
   }, []);
-
-  const handleFeatureClick = (e, key, href) => {
-    if (["class-ranking"].includes(key)) {
-      e.preventDefault();
-      message.info("Chức năng đang phát triển");
-    }
-  };
-
-  const sidebarItems = [
-    {
-      Icon: Search,
-      label: "Tra cứu điểm thi",
-      key: "grades",
-      href: "/lookup/grades",
-    },
-    {
-      Icon: Calendar,
-      label: "Thời khóa biểu",
-      key: "schedule",
-      href: "/explore/timetable",
-      onClick: (e) => handleFeatureClick(e, "schedule", "#"),
-    },
-    {
-      Icon: People,
-      label: "Xếp hạng lớp",
-      key: "class-ranking",
-      href: "#",
-      onClick: (e) => handleFeatureClick(e, "class-ranking", "#"),
-    },
-    {
-      Icon: Trophy,
-      label: "Xếp hạng thành viên",
-      key: "member-ranking",
-      href: "/users/ranking",
-    },
-  ];
 
   const handleSearch = async (values, type) => {
     setLoading(true);
@@ -317,14 +276,22 @@ export default function GradesClient() {
 
   return (
     <HomeLayout
-      activeNav="lookup"
+      activeNav="explore"
       activeBar="grades"
       sidebarItems={sidebarItems}
       sidebarType="all"
       showRightSidebar={false}
+      sidebarWidth="306px"
     >
       <div className="px-4 py-8 w-full min-w-0 max-w-full">
         <main className="max-w-[800px] mx-auto min-h-screen w-full min-w-0">
+          <Link
+            href="/explore/lookup"
+            className="mb-3 inline-flex items-center gap-1 text-sm font-medium text-primary-500 transition-colors hover:text-primary-600 dark:text-[#6bcf60] dark:hover:text-[#86dc7c]"
+          >
+            <ChevronLeft className="h-4 w-4" />
+            Tra cứu điểm thi
+          </Link>
           <div className="flex justify-between items-center mb-8">
             <Title level={2} style={{ margin: 0 }}>
               Tra cứu điểm thi

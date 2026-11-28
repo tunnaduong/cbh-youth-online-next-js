@@ -77,6 +77,22 @@ const nextConfig = {
         destination: "https://www.chuyenbienhoa.com/:first/:rest*",
         permanent: true,
       },
+      // Redirects for routes moved under /explore so old links never 404.
+      {
+        source: "/lookup",
+        destination: "/explore/lookup",
+        permanent: true,
+      },
+      {
+        source: "/lookup/:path+",
+        destination: "/explore/lookup/:path+",
+        permanent: true,
+      },
+      {
+        source: "/users/ranking",
+        destination: "/explore/ranking",
+        permanent: true,
+      },
     ];
   },
   async rewrites() {

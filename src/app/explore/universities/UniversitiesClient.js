@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { Select, Spin, Empty, Typography, Tag, Tooltip } from "antd";
 import { Globe, Phone, MapPin, GraduationCap, ChevronDown, ChevronUp, Search, SlidersHorizontal, ChevronRight } from "lucide-react";
 import HomeLayout from "@/layouts/HomeLayout";
-import { EXPLORE_FEATURES } from "@/data/exploreFeatures";
+import { getExploreSidebarItems } from "@/data/exploreFeatures";
 
 const { Text, Title } = Typography;
 
@@ -259,13 +259,7 @@ export default function UniversitiesClient() {
     }
   };
 
-  const sidebarItems = EXPLORE_FEATURES.map((f) => ({
-    key: f.key,
-    href: f.href,
-    label: f.title,
-    Icon: f.sidebarIcon,
-    isExternal: false,
-  }));
+  const sidebarItems = getExploreSidebarItems();
 
   const cityOptions = filterOptions.city.map((name, i) => ({ value: i, label: name }));
   const majorOptions = filterOptions.major.map((name, i) => ({ value: i, label: name }));

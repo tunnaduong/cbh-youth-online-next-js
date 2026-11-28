@@ -10,13 +10,13 @@ const GROUPS = [
     title: "Sở GD&ĐT Ninh Bình",
     items: [
       {
-        href: "/lookup/thpt",
+        href: "/explore/lookup/thpt",
         Icon: GraduationCap,
         title: "Thi tốt nghiệp THPT",
         desc: "Điểm thi tốt nghiệp THPT quốc gia - cần mã xác nhận",
       },
       {
-        href: "/lookup/grade-10",
+        href: "/explore/lookup/grade-10",
         Icon: Award,
         title: "Thi vào lớp 10",
         desc: "Điểm thi tuyển sinh vào 10, thứ hạng trong trường, khả năng đỗ",
@@ -27,7 +27,7 @@ const GROUPS = [
     title: "THPT Chuyên Biên Hòa",
     items: [
       {
-        href: "/lookup/grades",
+        href: "/explore/lookup/grades",
         Icon: BookOpenCheck,
         title: "Điểm học kỳ",
         desc: "Bảng điểm và thông tin học sinh theo năm học, học kỳ",

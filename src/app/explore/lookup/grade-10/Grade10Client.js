@@ -58,7 +58,7 @@ export default function Grade10Client() {
     <LookupShell
       title="Thi vào lớp 10"
       subtitle="Nhập số báo danh thi vào lớp 10 Ninh Bình (2 số đầu là mã trường) để xem điểm, tổng điểm và thứ hạng trong trường."
-      backHref="/lookup"
+      backHref="/explore/lookup"
     >
       <HomeCard className="p-4 sm:p-5">
         <form onSubmit={submit} className="max-w-sm space-y-4">

@@ -11,17 +11,11 @@ import {
 } from '@/app/Api';
 import PrintRequestForm from '@/components/print/PrintRequestForm';
 import PrintRequestList from '@/components/print/PrintRequestList';
-import { EXPLORE_FEATURES } from '@/data/exploreFeatures';
+import { getExploreSidebarItems } from '@/data/exploreFeatures';
 import { isInApp } from '@/utils/appMode';
 
 // Explore sub-page: same sidebar as /explore/universities etc.
-const sidebarItems = EXPLORE_FEATURES.map((f) => ({
-  key: f.key,
-  href: f.href,
-  label: f.title,
-  Icon: f.sidebarIcon,
-  isExternal: false,
-}));
+const sidebarItems = getExploreSidebarItems();
 
 export default function PrintRequestsPage() {
   const [requests, setRequests] = useState([]);

@@ -1,9 +1,9 @@
-import Grade10Client from "./Grade10Client";
+import ThptClient from "./ThptClient";
 import { enhanceMetadataWithURLs } from "@/utils/seo";
 
-const title = "Tra cứu điểm thi vào lớp 10 Ninh Bình - Diễn đàn học sinh Chuyên Biên Hòa";
+const title = "Tra cứu điểm thi tốt nghiệp THPT Ninh Bình - Diễn đàn học sinh Chuyên Biên Hòa";
 const description =
-  "Tra cứu điểm thi tuyển sinh vào lớp 10 Ninh Bình: điểm từng môn, tổng điểm, thứ hạng trong trường và khả năng đỗ.";
+  "Tra cứu điểm thi tốt nghiệp THPT quốc gia của Sở GD&ĐT Ninh Bình theo số báo danh.";
 
 export const metadata = enhanceMetadataWithURLs(
   {
@@ -12,9 +12,9 @@ export const metadata = enhanceMetadataWithURLs(
     openGraph: { title, description, images: ["/images/cyo_thumbnail.png"], type: "website" },
     twitter: { card: "summary_large_image", title, description, images: ["/images/cyo_thumbnail.png"] },
   },
-  "/lookup/grade-10"
+  "/explore/lookup/thpt"
 );
 
 export default function Page() {
-  return <Grade10Client />;
+  return <ThptClient />;
 }

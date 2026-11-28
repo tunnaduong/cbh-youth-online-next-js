@@ -18,18 +18,8 @@ import {
   message,
   Breadcrumb, Row, Col
 } from "antd";
-import {
-  Book,
-  CloudUploadOutline,
-  Home,
-  Search,
-  Map,
-  Print,
-  HelpCircle,
-  GameController,
-  Trophy,
-  People,
-} from "react-ionicons";
+import { CloudUploadOutline } from "react-ionicons";
+import { getExploreSidebarItems } from "@/data/exploreFeatures";
 import { useAuthContext } from "@/contexts/Support";
 import { createStudyMaterial, uploadFile, getStudyMaterialCategories } from "@/app/Api";
 import CustomInput from "@/components/ui/input";
@@ -47,62 +37,7 @@ export default function UploadMaterialClient() {
   const [categories, setCategories] = useState([]);
   const [isFree, setIsFree] = useState(true);
 
-  const sidebarItems = [
-    {
-      Icon: Home,
-      label: "Trang chủ",
-      key: "home",
-      href: "/explore",
-    },
-    {
-      Icon: Book,
-      label: "Tài liệu ôn thi",
-      key: "study",
-      href: "/explore/study-materials",
-    },
-    {
-      Icon: Search,
-      label: "Tra cứu điểm thi",
-      key: "grades",
-      href: "#",
-    },
-    {
-      Icon: Map,
-      label: "Tìm trường ĐH-CĐ",
-      key: "universities",
-      href: "#",
-    },
-    {
-      Icon: Print,
-      label: "In ấn tài liệu",
-      key: "print",
-      href: "#",
-    },
-    {
-      Icon: HelpCircle,
-      label: "Đố vui",
-      key: "quiz",
-      href: "/explore/quiz",
-    },
-    {
-      Icon: GameController,
-      label: "Game",
-      key: "game",
-      href: "/explore/games",
-    },
-    {
-      Icon: Trophy,
-      label: "Xếp hạng thành viên",
-      key: "ranking",
-      href: "/users/ranking",
-    },
-    {
-      Icon: People,
-      label: "Xếp hạng lớp",
-      key: "class-ranking",
-      href: "#",
-    },
-  ];
+  const sidebarItems = getExploreSidebarItems();
 
   useEffect(() => {
     if (!loggedIn) {

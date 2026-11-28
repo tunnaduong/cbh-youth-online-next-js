@@ -25,7 +25,7 @@ import Color from "@tiptap/extension-color";
 import HomeLayout from "@/layouts/HomeLayout";
 import { createCustomQuiz } from "@/app/Api";
 import { useAuthContext } from "@/contexts/Support";
-import { EXPLORE_FEATURES } from "@/data/exploreFeatures";
+import { getExploreSidebarItems } from "@/data/exploreFeatures";
 
 const { TextArea } = Input;
 
@@ -168,20 +168,7 @@ export default function CustomQuizClient() {
     }
   }, [result]);
 
-  const sidebarItems = EXPLORE_FEATURES.map((feature) => ({
-    key: feature.key,
-    href: feature.href,
-    label: feature.title,
-    Icon: feature.sidebarIcon,
-    isExternal: false,
-    onClick:
-      feature.href === "#"
-        ? (e) => {
-            e.preventDefault();
-            message.info("Chức năng đang phát triển");
-          }
-        : undefined,
-  }));
+  const sidebarItems = getExploreSidebarItems();
 
   const validateFile = useCallback((candidate) => {
     if (!candidate) return "";

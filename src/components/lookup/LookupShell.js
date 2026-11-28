@@ -3,17 +3,11 @@
 import Link from "next/link";
 import { ChevronLeft } from "lucide-react";
 import HomeLayout from "@/layouts/HomeLayout";
-import { EXPLORE_FEATURES } from "@/data/exploreFeatures";
+import { getExploreSidebarItems } from "@/data/exploreFeatures";
 
-const sidebarItems = EXPLORE_FEATURES.map((f) => ({
-  key: f.key,
-  href: f.href,
-  label: f.title,
-  Icon: f.sidebarIcon,
-  isExternal: false,
-}));
+const sidebarItems = getExploreSidebarItems();
 
-// Explore layout + page title shared by the exam score lookup pages (/lookup/*).
+// Explore layout + page title shared by the exam score lookup pages (/explore/lookup/*).
 export default function LookupShell({ title, subtitle, backHref, children }) {
   return (
     <HomeLayout

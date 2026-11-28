@@ -34,22 +34,23 @@ const STATIC_ROUTES: string[] = [
   "/egg",
   "/explore",
   "/explore/games",
+  "/explore/lookup",
+  "/explore/lookup/grades",
+  "/explore/lookup/thpt",
+  "/explore/lookup/grade-10",
+  "/explore/print-requests",
   "/explore/quiz",
   "/explore/quiz/custom",
+  "/explore/ranking",
   "/explore/study-materials",
   "/explore/study-materials/upload",
-  "/explore/universities",
   "/explore/timetable",
-  "/explore/print-requests",
+  "/explore/universities",
   "/feed",
   "/guide/points",
   "/help",
   "/jobs",
   "/login",
-  "/lookup",
-  "/lookup/grades",
-  "/lookup/thpt",
-  "/lookup/grade-10",
   "/password/reset",
   "/policy/forum-rules",
   "/policy/privacy",
@@ -60,11 +61,18 @@ const STATIC_ROUTES: string[] = [
   "/settings",
   "/shop",
   "/unsubscribe",
-  "/users/ranking",
   "/wallet",
   "/wallet/deposit",
   "/wallet/withdraw",
   "/youth-news",
+];
+
+const LEGACY_REDIRECTS: Array<[string, string]> = [
+  ["/lookup", "/explore/lookup"],
+  ["/lookup/grades", "/explore/lookup/grades"],
+  ["/lookup/thpt", "/explore/lookup/thpt"],
+  ["/lookup/grade-10", "/explore/lookup/grade-10"],
+  ["/users/ranking", "/explore/ranking"],
 ];
 
 /**
@@ -128,6 +136,15 @@ test.describe("Dynamic routes handle unknown params gracefully", () => {
   for (const path of DYNAMIC_ROUTES) {
     test(`route ${path}`, async ({ page }) => {
       await expectNoCrash(page, path);
+    });
+  }
+});
+
+test.describe("Legacy routes redirect to their new /explore URLs", () => {
+  for (const [from, to] of LEGACY_REDIRECTS) {
+    test(`redirect ${from} -> ${to}`, async ({ page }) => {
+      await expectNoCrash(page, from);
+      expect(new URL(page.url()).pathname).toBe(to);
     });
   }
 });

@@ -106,7 +106,7 @@ export default function RankingCard({ topUsers, loading, currentUser }) {
       </div>
 
       <Link
-        href="/users/ranking"
+        href="/explore/ranking"
         className="mt-3 block rounded-xl border border-gray-200 py-2 text-center text-sm font-medium text-primary-500 transition hover:bg-primary-50 dark:border-neutral-600 dark:text-[#6bcf60] dark:hover:bg-[#2b3a2a]"
       >
         Xem bảng xếp hạng

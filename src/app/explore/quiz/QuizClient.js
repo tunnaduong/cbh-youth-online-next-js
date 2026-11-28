@@ -28,7 +28,7 @@ import {
   restartQuiz,
 } from "@/app/Api";
 import { useAuthContext } from "@/contexts/Support";
-import { EXPLORE_FEATURES } from "@/data/exploreFeatures";
+import { getExploreSidebarItems } from "@/data/exploreFeatures";
 
 const COUNT_PRESETS = [5, 10, 20, 50];
 const MAX_COUNT = 50;
@@ -179,20 +179,7 @@ export default function QuizClient() {
     });
   };
 
-  const sidebarItems = EXPLORE_FEATURES.map((feature) => ({
-    key: feature.key,
-    href: feature.href,
-    label: feature.title,
-    Icon: feature.sidebarIcon,
-    isExternal: false,
-    onClick:
-      feature.href === "#"
-        ? (e) => {
-            e.preventDefault();
-            message.info("Chức năng đang phát triển");
-          }
-        : undefined,
-  }));
+  const sidebarItems = getExploreSidebarItems();
 
   const resolvedCount = useCustomCount
     ? Math.max(1, Math.min(MAX_COUNT, parseInt(customCount, 10) || 0))

@@ -16,7 +16,7 @@ import {
   ChevronLeft,
   ChevronRight,
 } from "lucide-react";
-import { EXPLORE_FEATURES } from "@/data/exploreFeatures";
+import { getExploreSidebarItems } from "@/data/exploreFeatures";
 
 // Horizontal card row with prev/next buttons - touch-drag scrolling on a
 // row nested inside a vertically-scrolling page is finicky on mobile (the
@@ -289,20 +289,7 @@ export default function GamesClient() {
 
   // Explore's own sidebar (Trang chủ/Chợ tài liệu/Game/...) instead of the
   // main forum sidebar, matching every other page nested under /explore.
-  const sidebarItems = EXPLORE_FEATURES.map((feature) => ({
-    key: feature.key,
-    href: feature.href,
-    label: feature.title,
-    Icon: feature.sidebarIcon,
-    isExternal: false,
-    onClick:
-      feature.href === "#"
-        ? (e) => {
-            e.preventDefault();
-            message.info("Chức năng đang phát triển");
-          }
-        : undefined,
-  }));
+  const sidebarItems = getExploreSidebarItems();
 
   const load = async (params = "") => {
     setLoading(true);

@@ -26,26 +26,18 @@ import {
   Modal,
 } from "antd";
 import {
-  Book,
   DownloadOutline,
   EyeOutline,
   Star,
   PersonOutline,
   TimeOutline,
   WalletOutline,
-  Home,
-  Search,
-  Map,
-  Print,
-  HelpCircle,
-  GameController,
-  Trophy,
-  People,
   ChatbubbleEllipsesOutline,
   DocumentOutline,
   DocumentTextOutline,
   ChevronBackOutline,
 } from "react-ionicons";
+import { getExploreSidebarItems } from "@/data/exploreFeatures";
 import { useAuthContext, useTopUsersContext, useChatContext } from "@/contexts/Support";
 import {
   getStudyMaterial,
@@ -71,62 +63,7 @@ export default function StudyMaterialDetailClient({ materialId }) {
   const [submittingRate, setSubmittingRate] = useState(false);
   const [purchasing, setPurchasing] = useState(false);
 
-  const sidebarItems = [
-    {
-      Icon: Home,
-      label: "Trang chủ",
-      key: "home",
-      href: "/explore",
-    },
-    {
-      Icon: Book,
-      label: "Tài liệu ôn thi",
-      key: "study",
-      href: "/explore/study-materials",
-    },
-    {
-      Icon: Search,
-      label: "Tra cứu điểm thi",
-      key: "grades",
-      href: "#",
-    },
-    {
-      Icon: Map,
-      label: "Tìm trường ĐH-CĐ",
-      key: "universities",
-      href: "#",
-    },
-    {
-      Icon: Print,
-      label: "In ấn tài liệu",
-      key: "print",
-      href: "#",
-    },
-    {
-      Icon: HelpCircle,
-      label: "Đố vui",
-      key: "quiz",
-      href: "/explore/quiz",
-    },
-    {
-      Icon: GameController,
-      label: "Game",
-      key: "game",
-      href: "/explore/games",
-    },
-    {
-      Icon: Trophy,
-      label: "Xếp hạng thành viên",
-      key: "ranking",
-      href: "/users/ranking",
-    },
-    {
-      Icon: People,
-      label: "Xếp hạng lớp",
-      key: "class-ranking",
-      href: "#",
-    },
-  ];
+  const sidebarItems = getExploreSidebarItems();
 
   useEffect(() => {
     loadMaterial();

@@ -2,6 +2,8 @@
 // screen's card grid (ExploreClient) and by the left sidebar of every page
 // nested under /explore (e.g. /explore/games), which should show this
 // Explore-specific nav instead of the main forum sidebar.
+import { ArrowLeft } from "lucide-react";
+import { message } from "antd";
 import {
   HomeOutline,
   Home,
@@ -67,7 +69,7 @@ export const EXPLORE_FEATURES = [
     badgeIcon: Search,
     watermarkIcon: DocumentTextOutline,
     theme: theme("#3B82F6", "#EFF6FF", "#DBEAFE", "#112038", "#193155"),
-    href: "/lookup",
+    href: "/explore/lookup",
   },
   {
     icon: TimeOutline,
@@ -96,7 +98,7 @@ export const EXPLORE_FEATURES = [
     sidebarIcon: Print,
     title: "In ấn tài liệu",
     key: "print",
-    description: "In tài liệu, bài tập, đồ án... tiện lợi",
+    description: "In tài liệu, bài tập, đề thi... tiện lợi",
     badgeIcon: Print,
     watermarkIcon: PrintOutline,
     theme: theme("#8B5CF6", "#F5F3FF", "#EDE9FE", "#201833", "#332552"),
@@ -133,7 +135,7 @@ export const EXPLORE_FEATURES = [
     badgeIcon: Trophy,
     watermarkIcon: TrophyOutline,
     theme: theme("#EAB308", "#FEFCE8", "#FEF9C3", "#28240F", "#3F3815"),
-    href: "/users/ranking",
+    href: "/explore/ranking",
   },
   {
     icon: PeopleOutline,
@@ -147,3 +149,31 @@ export const EXPLORE_FEATURES = [
     href: "#",
   },
 ];
+
+// Shared left-sidebar items for /explore and every page nested under it.
+export function getExploreSidebarItems() {
+  return [
+    {
+      key: "back-to-forum",
+      href: "/",
+      label: "Quay lại diễn đàn",
+      Icon: ArrowLeft,
+      isExternal: false,
+    },
+    { type: "divider" },
+    ...EXPLORE_FEATURES.map((feature) => ({
+      key: feature.key,
+      href: feature.href,
+      label: feature.title,
+      Icon: feature.sidebarIcon,
+      isExternal: false,
+      onClick:
+        feature.href === "#"
+          ? (e) => {
+              e.preventDefault();
+              message.info("Chức năng đang phát triển");
+            }
+          : undefined,
+    })),
+  ];
+}

@@ -1,9 +1,9 @@
-import ThptClient from "./ThptClient";
+import LookupClient from "./LookupClient";
 import { enhanceMetadataWithURLs } from "@/utils/seo";
 
-const title = "Tra cứu điểm thi tốt nghiệp THPT Ninh Bình - Diễn đàn học sinh Chuyên Biên Hòa";
+const title = "Tra cứu điểm thi - Diễn đàn học sinh Chuyên Biên Hòa";
 const description =
-  "Tra cứu điểm thi tốt nghiệp THPT quốc gia của Sở GD&ĐT Ninh Bình theo số báo danh.";
+  "Tra cứu điểm thi tốt nghiệp THPT và thi vào lớp 10 Ninh Bình, điểm học kỳ THPT Chuyên Biên Hòa.";
 
 export const metadata = enhanceMetadataWithURLs(
   {
@@ -12,9 +12,9 @@ export const metadata = enhanceMetadataWithURLs(
     openGraph: { title, description, images: ["/images/cyo_thumbnail.png"], type: "website" },
     twitter: { card: "summary_large_image", title, description, images: ["/images/cyo_thumbnail.png"] },
   },
-  "/lookup/thpt"
+  "/explore/lookup"
 );
 
 export default function Page() {
-  return <ThptClient />;
+  return <LookupClient />;
 }

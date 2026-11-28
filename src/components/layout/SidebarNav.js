@@ -37,7 +37,7 @@ export const MAIN_NAV_ITEMS = [
   // own dev server (e.g. http://localhost:3000) instead of production -
   // unset in prod, so it falls back to the real giftshop domain there.
   { key: "shop", href: process.env.NEXT_PUBLIC_GIFTSHOP_URL || "https://giftshop.chuyenbienhoa.com", label: "Gift Shop", Icon: Gift, badge: "Mới" },
-  { key: "ranking", href: "/users/ranking", label: "Bảng xếp hạng", Icon: ChartNoAxesColumn },
+  { key: "ranking", href: "/explore/ranking", label: "Bảng xếp hạng", Icon: ChartNoAxesColumn },
   { key: "saved", href: "/saved", label: "Đã lưu", Icon: Bookmark },
 ];
 

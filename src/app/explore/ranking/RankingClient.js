@@ -9,10 +9,11 @@ import { message } from "antd";
 import { Trophy } from "lucide-react";
 import HomeLayout from "@/layouts/HomeLayout";
 import { getTopUsers } from "@/app/Api";
-import { EXPLORE_FEATURES } from "@/data/exploreFeatures";
+import { getExploreSidebarItems } from "@/data/exploreFeatures";
 import PointsInfoSidebar from "@/components/ranking/PointsInfoSidebar";
 
 const RANK_COLORS = ["text-yellow-500", "text-gray-400", "text-amber-700"];
+const sidebarItems = getExploreSidebarItems();
 
 export default function RankingClient() {
   const [users, setUsers] = useState([]);
@@ -24,21 +25,6 @@ export default function RankingClient() {
       .catch(() => message.error("Không thể tải bảng xếp hạng"))
       .finally(() => setLoading(false));
   }, []);
-
-  const sidebarItems = EXPLORE_FEATURES.map((feature) => ({
-    key: feature.key,
-    href: feature.href,
-    label: feature.title,
-    Icon: feature.sidebarIcon,
-    isExternal: false,
-    onClick:
-      feature.href === "#"
-        ? (e) => {
-            e.preventDefault();
-            message.info("Chức năng đang phát triển");
-          }
-        : undefined,
-  }));
 
   return (
     <HomeLayout

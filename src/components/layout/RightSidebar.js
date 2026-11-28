@@ -128,7 +128,7 @@ export default function RightSidebar({ onHandleCreatePost }) {
           <div className="bg-white dark:!bg-[var(--main-white)] text-sm p-3 xl:mt-4 rounded-xl long-shadow [@media(max-width:800px)]:mx-2.5">
             <div className="flex flex-row items-center justify-between">
               <Link
-                href="/users/ranking"
+                href="/explore/ranking"
                 className="font-bold text-[#6B6B6B] dark:text-neutral-300 block text-base hover:text-[#319527] dark:hover:text-[#6bcf60] transition-colors"
               >
                 Xếp hạng thành viên

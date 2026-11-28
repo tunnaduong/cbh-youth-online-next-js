@@ -1,9 +1,9 @@
-import LookupClient from "./LookupClient";
+import Grade10Client from "./Grade10Client";
 import { enhanceMetadataWithURLs } from "@/utils/seo";
 
-const title = "Tra cứu điểm thi - Diễn đàn học sinh Chuyên Biên Hòa";
+const title = "Tra cứu điểm thi vào lớp 10 Ninh Bình - Diễn đàn học sinh Chuyên Biên Hòa";
 const description =
-  "Tra cứu điểm thi tốt nghiệp THPT và thi vào lớp 10 Ninh Bình, điểm học kỳ THPT Chuyên Biên Hòa.";
+  "Tra cứu điểm thi tuyển sinh vào lớp 10 Ninh Bình: điểm từng môn, tổng điểm, thứ hạng trong trường và khả năng đỗ.";
 
 export const metadata = enhanceMetadataWithURLs(
   {
@@ -12,9 +12,9 @@ export const metadata = enhanceMetadataWithURLs(
     openGraph: { title, description, images: ["/images/cyo_thumbnail.png"], type: "website" },
     twitter: { card: "summary_large_image", title, description, images: ["/images/cyo_thumbnail.png"] },
   },
-  "/lookup"
+  "/explore/lookup/grade-10"
 );
 
 export default function Page() {
-  return <LookupClient />;
+  return <Grade10Client />;
 }
