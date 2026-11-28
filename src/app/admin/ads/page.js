@@ -1,20 +1,27 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import dayjs from "dayjs";
 import {
   Button, Card, DatePicker, Form, Image, Input, InputNumber, Modal, Popconfirm,
-  Select, Space, Switch, Table, Tag, message,
+  Segmented, Select, Space, Switch, Table, Tag, message,
 } from "antd";
 import { DeleteOutlined, EditOutlined, PlusOutlined, ReloadOutlined } from "@ant-design/icons";
 import ImageUploadInput from "../_components/ImageUploadInput";
 import { adminGetAds, adminCreateAd, adminUpdateAd, adminDeleteAd } from "@/app/Api";
 
 const PLACEMENTS = {
+  "mobile-home-header": "Header trang chủ app mobile",
   sidebar: "Bên dưới bảng xếp hạng (sidebar)",
   "post-bottom": "Dưới bài viết, trên bình luận",
   "feed-inline": "Xen giữa bảng tin",
-  "mobile-home-header": "Header trang chủ app mobile",
+};
+
+const PLACEMENT_COLORS = {
+  "mobile-home-header": "blue",
+  sidebar: "green",
+  "post-bottom": "gold",
+  "feed-inline": "purple",
 };
 
 const unwrap = (res) => res?.data ?? res;
@@ -23,9 +30,12 @@ const errMsg = (e) => e?.response?.data?.message || e?.message || "Có lỗi x�
 export default function AdminAdsPage() {
   const [ads, setAds] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [placementFilter, setPlacementFilter] = useState("all");
   const [editing, setEditing] = useState(null); // null | {} (new) | ad
   const [saving, setSaving] = useState(false);
   const [form] = Form.useForm();
+  const watchedPlacement = Form.useWatch("placement", form);
+  const watchedImageUrl = Form.useWatch("image_url", form);
 
   const load = async () => {
     setLoading(true);
@@ -43,6 +53,11 @@ export default function AdminAdsPage() {
     load();
   }, []);
 
+  const filteredAds = useMemo(
+    () => (placementFilter === "all" ? ads : ads.filter((ad) => ad.placement === placementFilter)),
+    [ads, placementFilter]
+  );
+
   const openEditor = (ad) => {
     setEditing(ad || {});
     form.setFieldsValue(
@@ -51,7 +66,12 @@ export default function AdminAdsPage() {
             ...ad,
             range: [ad.starts_at ? dayjs(ad.starts_at) : null, ad.ends_at ? dayjs(ad.ends_at) : null],
           }
-        : { placement: "sidebar", is_active: true, priority: 0, range: [null, null] }
+        : {
+            placement: placementFilter !== "all" ? placementFilter : "mobile-home-header",
+            is_active: true,
+            priority: 10,
+            range: [null, null],
+          }
     );
   };
 
@@ -99,8 +119,19 @@ export default function AdminAdsPage() {
     {
       title: "Ảnh",
       dataIndex: "image_url",
-      width: 90,
-      render: (src) => <Image src={src} alt="" width={64} height={64} style={{ objectFit: "cover", borderRadius: 8 }} />,
+      width: 130,
+      render: (src, ad) => {
+        const isWide = ad.placement === "mobile-home-header";
+        return (
+          <Image
+            src={src}
+            alt={ad.alt_text || ad.name || ""}
+            width={isWide ? 112 : 64}
+            height={isWide ? 42 : 64}
+            style={{ objectFit: "cover", borderRadius: 8 }}
+          />
+        );
+      },
     },
     {
       title: "Tên",
@@ -109,7 +140,7 @@ export default function AdminAdsPage() {
         <div>
           <div className="font-medium">{name}</div>
           {ad.link_url ? (
-            <a href={ad.link_url} target="_blank" rel="noreferrer" className="text-xs">
+            <a href={ad.link_url} target="_blank" rel="noreferrer" className="text-xs break-all">
               {ad.link_url}
             </a>
           ) : null}
@@ -119,9 +150,7 @@ export default function AdminAdsPage() {
     {
       title: "Vị trí",
       dataIndex: "placement",
-      filters: Object.entries(PLACEMENTS).map(([value, text]) => ({ value, text })),
-      onFilter: (v, ad) => ad.placement === v,
-      render: (p) => <Tag color="green">{PLACEMENTS[p] || p}</Tag>,
+      render: (p) => <Tag color={PLACEMENT_COLORS[p] || "green"}>{PLACEMENTS[p] || p}</Tag>,
     },
     { title: "Ưu tiên", dataIndex: "priority", width: 80 },
     {
@@ -153,6 +182,14 @@ export default function AdminAdsPage() {
     },
   ];
 
+  const segmentedOptions = [
+    { label: `Tất cả (${ads.length})`, value: "all" },
+    ...Object.entries(PLACEMENTS).map(([value, label]) => {
+      const count = ads.filter((a) => a.placement === value).length;
+      return { label: `${label} (${count})`, value };
+    }),
+  ];
+
   return (
     <Card
       title="Slot quảng cáo"
@@ -165,11 +202,28 @@ export default function AdminAdsPage() {
         </Space>
       }
     >
-      <p className="mb-4 text-gray-500 text-sm">
-        Quảng cáo đang bật sẽ thay thế quảng cáo mạng (Adsterra) ở vị trí tương ứng. Nhiều quảng cáo cùng vị trí:
-        hiện quảng cáo có độ ưu tiên cao nhất (bằng nhau thì xoay vòng ngẫu nhiên).
+      <p className="mb-3 text-gray-500 text-sm">
+        Quảng cáo đang bật sẽ hiển thị ở vị trí tương ứng (trên web sẽ thay thế quảng cáo mạng Adsterra; trên app
+        mobile hiển thị ngay header trang chủ). Nếu bật <strong>từ 2 quảng cáo trở lên</strong> cùng một vị trí, hệ
+        thống sẽ tự động hiển thị dạng <strong>carousel slider</strong> theo thứ tự độ ưu tiên từ cao xuống thấp.
       </p>
-      <Table rowKey="id" columns={columns} dataSource={ads} loading={loading} scroll={{ x: 900 }} pagination={false} />
+
+      <div className="mb-4 overflow-x-auto pb-1">
+        <Segmented
+          value={placementFilter}
+          onChange={setPlacementFilter}
+          options={segmentedOptions}
+        />
+      </div>
+
+      <Table
+        rowKey="id"
+        columns={columns}
+        dataSource={filteredAds}
+        loading={loading}
+        scroll={{ x: 940 }}
+        pagination={false}
+      />
 
       <Modal
         open={!!editing}
@@ -188,9 +242,27 @@ export default function AdminAdsPage() {
           <Form.Item name="placement" label="Vị trí chèn" rules={[{ required: true }]}>
             <Select options={Object.entries(PLACEMENTS).map(([value, label]) => ({ value, label }))} />
           </Form.Item>
-          <Form.Item name="image_url" label="Ảnh quảng cáo" rules={[{ required: true, message: "Tải ảnh lên" }]}>
+          <Form.Item
+            name="image_url"
+            label="Ảnh quảng cáo"
+            rules={[{ required: true, message: "Tải ảnh lên" }]}
+            extra={
+              watchedPlacement === "mobile-home-header"
+                ? "Khuyến nghị ảnh banner ngang tỉ lệ ~2.7:1 (VD: 1170×433 px) để hiển thị sắc nét trên header app mobile."
+                : undefined
+            }
+          >
             <ImageUploadInput />
           </Form.Item>
+          {watchedPlacement === "mobile-home-header" && watchedImageUrl ? (
+            <div className="mb-4">
+              <div className="text-xs text-gray-500 mb-1">Xem trước trên header app mobile:</div>
+              <div className="rounded-2xl overflow-hidden border border-gray-200 dark:border-neutral-700 aspect-[1170/433] bg-gray-50">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={watchedImageUrl} alt="Banner preview" className="w-full h-full object-cover" />
+              </div>
+            </div>
+          ) : null}
           <Form.Item name="link_url" label="Link khi bấm vào">
             <Input placeholder="https://..." />
           </Form.Item>
@@ -201,7 +273,11 @@ export default function AdminAdsPage() {
             <DatePicker.RangePicker allowEmpty={[true, true]} showTime format="DD/MM/YYYY HH:mm" className="w-full" />
           </Form.Item>
           <Space size="large">
-            <Form.Item name="priority" label="Độ ưu tiên">
+            <Form.Item
+              name="priority"
+              label="Độ ưu tiên"
+              tooltip="Số lớn hơn hiển thị trước trong carousel slider"
+            >
               <InputNumber />
             </Form.Item>
             <Form.Item name="is_active" label="Đang bật" valuePropName="checked">

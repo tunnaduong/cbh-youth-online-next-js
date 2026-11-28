@@ -261,7 +261,7 @@ Every new or changed page or component must follow this section. If the part you
 
 ## Recent work (newest first, as of 2026-11)
 
-- **Mobile home header ad slot in `/admin/ads`** (`src/app/admin/ads/page.js`, `public/images/ads/seeli-home-banner.jpg`): added `mobile-home-header` ("Header trang chủ app mobile") to `PLACEMENTS` and published the `1170×433` SEELI banner image used by the seeded API slot and mobile app's `HomeAdBanner`.
+- **Ad carousel slider & mobile home header management** (`src/components/ads/ManagedAd.js`, `src/app/admin/ads/page.js`, `public/images/ads/seeli-home-banner.jpg`): `ManagedAd` now renders multiple active creatives for a placement as an auto-sliding carousel with prev/next arrows, pagination dots, and per-slide impression/click tracking. `/admin/ads` adds a placement filter bar, wide banner preview for `mobile-home-header`, and carousel priority hints.
 
 - **Managed ads on home sidebar & all feed inline slots** (`src/components/home/HomeClient.js`, `src/app/feed/FeedClient.js`): `HomeClient` previously rendered `<Ad300x250 />` directly (bypassing `/v1.0/ads?placement=sidebar`), so ads configured in `/admin/ads` for `sidebar` never appeared on `/`. It now wraps `<Ad300x250 />` in `<ManagedAd placement="sidebar" />`. `FeedClient` also wraps both alternating inline ad slots (including even slots that previously rendered `<NativeBanner />` directly) in `<ManagedAd placement="feed-inline" />`.
 
