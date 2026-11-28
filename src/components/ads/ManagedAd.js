@@ -47,7 +47,7 @@ export default function ManagedAd({ placement, fallback = null, className = "" }
     loadAds(placement).then((ads) => {
       if (!alive) return;
       const raw = Array.isArray(ads) ? ads : ads?.data || [];
-      const list = raw.filter((a) => a && a.image_url);
+      const list = raw.filter((a) => a && (a.image_url || a.html_code));
       setIndex(0);
       setState({ loaded: true, ads: list });
     });
@@ -103,6 +103,20 @@ export default function ManagedAd({ placement, fallback = null, className = "" }
           style={{ transform: `translateX(-${index * 100}%)` }}
         >
           {state.ads.map((ad, idx) => {
+            if (!ad.image_url && ad.html_code) {
+              const doc = `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>body{margin:0;padding:0;display:flex;justify-content:center;align-items:center;background:transparent;overflow:hidden;}</style></head><body>${ad.html_code}</body></html>`;
+              return (
+                <div key={ad.id ?? idx} className="w-full shrink-0 flex justify-center">
+                  <iframe
+                    srcDoc={doc}
+                    title={ad.alt_text || ad.name || "Quảng cáo"}
+                    className="w-full border-0 overflow-hidden rounded-xl"
+                    style={{ minHeight: 250 }}
+                    scrolling="no"
+                  />
+                </div>
+              );
+            }
             const external = ad.link_url && /^https?:/.test(ad.link_url);
             const img = (
               // eslint-disable-next-line @next/next/no-img-element

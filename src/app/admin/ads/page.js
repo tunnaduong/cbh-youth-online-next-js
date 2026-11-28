@@ -4,21 +4,25 @@ import { useEffect, useMemo, useState } from "react";
 import dayjs from "dayjs";
 import {
   Button, Card, DatePicker, Form, Image, Input, InputNumber, Modal, Popconfirm,
-  Segmented, Select, Space, Switch, Table, Tag, message,
+  Radio, Segmented, Select, Space, Switch, Table, Tag, message,
 } from "antd";
-import { DeleteOutlined, EditOutlined, PlusOutlined, ReloadOutlined } from "@ant-design/icons";
+import { CodeOutlined, DeleteOutlined, EditOutlined, PlusOutlined, ReloadOutlined } from "@ant-design/icons";
 import ImageUploadInput from "../_components/ImageUploadInput";
 import { adminGetAds, adminCreateAd, adminUpdateAd, adminDeleteAd } from "@/app/Api";
 
 const PLACEMENTS = {
   "mobile-home-header": "Header trang chủ app mobile",
+  "mobile-feed-inline": "Xen giữa bảng tin app mobile",
+  "mobile-post-comments": "Bình luận bài viết app mobile",
   sidebar: "Bên dưới bảng xếp hạng (sidebar)",
   "post-bottom": "Dưới bài viết, trên bình luận",
-  "feed-inline": "Xen giữa bảng tin",
+  "feed-inline": "Xen giữa bảng tin (web)",
 };
 
 const PLACEMENT_COLORS = {
   "mobile-home-header": "blue",
+  "mobile-feed-inline": "cyan",
+  "mobile-post-comments": "geekblue",
   sidebar: "green",
   "post-bottom": "gold",
   "feed-inline": "purple",
@@ -36,6 +40,7 @@ export default function AdminAdsPage() {
   const [form] = Form.useForm();
   const watchedPlacement = Form.useWatch("placement", form);
   const watchedImageUrl = Form.useWatch("image_url", form);
+  const watchedCreativeType = Form.useWatch("creative_type", form) || "image";
 
   const load = async () => {
     setLoading(true);
@@ -60,25 +65,40 @@ export default function AdminAdsPage() {
 
   const openEditor = (ad) => {
     setEditing(ad || {});
-    form.setFieldsValue(
-      ad
-        ? {
-            ...ad,
-            range: [ad.starts_at ? dayjs(ad.starts_at) : null, ad.ends_at ? dayjs(ad.ends_at) : null],
-          }
-        : {
-            placement: placementFilter !== "all" ? placementFilter : "mobile-home-header",
-            is_active: true,
-            priority: 10,
-            range: [null, null],
-          }
-    );
+    if (ad) {
+      const isHtml = Boolean(ad.html_code && !ad.image_url);
+      form.setFieldsValue({
+        ...ad,
+        creative_type: isHtml ? "html" : "image",
+        range: [ad.starts_at ? dayjs(ad.starts_at) : null, ad.ends_at ? dayjs(ad.ends_at) : null],
+      });
+      return;
+    }
+    const defaultPlacement = placementFilter !== "all" ? placementFilter : "mobile-home-header";
+    form.setFieldsValue({
+      placement: defaultPlacement,
+      creative_type:
+        defaultPlacement === "mobile-feed-inline" || defaultPlacement === "mobile-post-comments"
+          ? "html"
+          : "image",
+      is_active: true,
+      priority: 10,
+      range: [null, null],
+      image_url: "",
+      html_code: "",
+      link_url: "",
+      alt_text: "",
+    });
   };
 
   const save = async () => {
-    const { range, ...values } = await form.validateFields();
+    const { range, creative_type, ...values } = await form.validateFields();
+    const isHtml = creative_type === "html";
     const payload = {
       ...values,
+      image_url: isHtml ? null : values.image_url || null,
+      link_url: isHtml ? null : values.link_url || null,
+      html_code: isHtml ? values.html_code || null : null,
       starts_at: range?.[0] ? range[0].toISOString() : null,
       ends_at: range?.[1] ? range[1].toISOString() : null,
     };
@@ -117,10 +137,22 @@ export default function AdminAdsPage() {
 
   const columns = [
     {
-      title: "Ảnh",
+      title: "Nội dung",
       dataIndex: "image_url",
-      width: 130,
+      width: 140,
       render: (src, ad) => {
+        if (!src && ad.html_code) {
+          return (
+            <div className="flex flex-col gap-1">
+              <Tag icon={<CodeOutlined />} color="cyan" className="w-fit m-0">
+                HTML / Script
+              </Tag>
+              <span className="text-[11px] text-gray-400 font-mono truncate max-w-[120px]">
+                {ad.html_code.replace(/\s+/g, " ").slice(0, 48)}
+              </span>
+            </div>
+          );
+        }
         const isWide = ad.placement === "mobile-home-header";
         return (
           <Image
@@ -203,9 +235,9 @@ export default function AdminAdsPage() {
       }
     >
       <p className="mb-3 text-gray-500 text-sm">
-        Quảng cáo đang bật sẽ hiển thị ở vị trí tương ứng (trên web sẽ thay thế quảng cáo mạng Adsterra; trên app
-        mobile hiển thị ngay header trang chủ). Nếu bật <strong>từ 2 quảng cáo trở lên</strong> cùng một vị trí, hệ
-        thống sẽ tự động hiển thị dạng <strong>carousel slider</strong> theo thứ tự độ ưu tiên từ cao xuống thấp.
+        Quảng cáo đang bật hỗ trợ cả <strong>ảnh banner</strong> lẫn <strong>mã HTML/Script (Adsterra…)</strong>. Nếu
+        bật <strong>từ 2 quảng cáo trở lên</strong> cùng một vị trí, hệ thống sẽ tự động hiển thị dạng{" "}
+        <strong>carousel slider</strong> theo thứ tự độ ưu tiên từ cao xuống thấp.
       </p>
 
       <div className="mb-4 overflow-x-auto pb-1">
@@ -221,7 +253,7 @@ export default function AdminAdsPage() {
         columns={columns}
         dataSource={filteredAds}
         loading={loading}
-        scroll={{ x: 940 }}
+        scroll={{ x: 960 }}
         pagination={false}
       />
 
@@ -233,40 +265,69 @@ export default function AdminAdsPage() {
         confirmLoading={saving}
         okText="Lưu"
         cancelText="Hủy"
+        width={600}
         destroyOnClose
       >
         <Form form={form} layout="vertical">
           <Form.Item name="name" label="Tên (nội bộ)" rules={[{ required: true, message: "Nhập tên" }]}>
-            <Input placeholder="VD: SEELI tháng 12" />
+            <Input placeholder="VD: Adsterra 300x250 hoặc SEELI tháng 12" />
           </Form.Item>
           <Form.Item name="placement" label="Vị trí chèn" rules={[{ required: true }]}>
             <Select options={Object.entries(PLACEMENTS).map(([value, label]) => ({ value, label }))} />
           </Form.Item>
-          <Form.Item
-            name="image_url"
-            label="Ảnh quảng cáo"
-            rules={[{ required: true, message: "Tải ảnh lên" }]}
-            extra={
-              watchedPlacement === "mobile-home-header"
-                ? "Khuyến nghị ảnh banner ngang tỉ lệ ~2.7:1 (VD: 1170×433 px) để hiển thị sắc nét trên header app mobile."
-                : undefined
-            }
-          >
-            <ImageUploadInput />
+
+          <Form.Item name="creative_type" label="Loại quảng cáo">
+            <Radio.Group optionType="button" buttonStyle="solid">
+              <Radio.Button value="image">Ảnh banner</Radio.Button>
+              <Radio.Button value="html">Mã HTML / Script (Adsterra…)</Radio.Button>
+            </Radio.Group>
           </Form.Item>
-          {watchedPlacement === "mobile-home-header" && watchedImageUrl ? (
-            <div className="mb-4">
-              <div className="text-xs text-gray-500 mb-1">Xem trước trên header app mobile:</div>
-              <div className="rounded-2xl overflow-hidden border border-gray-200 dark:border-neutral-700 aspect-[1170/433] bg-gray-50">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={watchedImageUrl} alt="Banner preview" className="w-full h-full object-cover" />
-              </div>
-            </div>
-          ) : null}
-          <Form.Item name="link_url" label="Link khi bấm vào">
-            <Input placeholder="https://..." />
-          </Form.Item>
-          <Form.Item name="alt_text" label="Mô tả ảnh (alt)">
+
+          {watchedCreativeType === "html" ? (
+            <Form.Item
+              name="html_code"
+              label="Mã HTML / Script"
+              rules={[{ required: true, message: "Nhập mã HTML/script quảng cáo" }]}
+              extra="Dán nguyên đoạn <script> / <div> của Adsterra hoặc mạng quảng cáo. Trên app mobile, mã sẽ tự render khi người dùng cuộn tới vị trí quảng cáo."
+            >
+              <Input.TextArea
+                rows={7}
+                className="font-mono text-xs"
+                placeholder={`<script>...</script>\n<div id="container-..."></div>`}
+              />
+            </Form.Item>
+          ) : (
+            <>
+              <Form.Item
+                name="image_url"
+                label="Ảnh quảng cáo"
+                rules={[{ required: true, message: "Tải ảnh lên" }]}
+                extra={
+                  watchedPlacement === "mobile-home-header"
+                    ? "Khuyến nghị ảnh banner ngang tỉ lệ ~2.7:1 (VD: 1170×433 px) để hiển thị sắc nét trên header app mobile."
+                    : watchedPlacement === "mobile-feed-inline"
+                      ? "Khuyến nghị ảnh tỉ lệ 300×250 (6:5) hoặc 16:9 để hiển thị đẹp trong bảng tin app mobile."
+                      : undefined
+                }
+              >
+                <ImageUploadInput />
+              </Form.Item>
+              {watchedPlacement === "mobile-home-header" && watchedImageUrl ? (
+                <div className="mb-4">
+                  <div className="text-xs text-gray-500 mb-1">Xem trước trên header app mobile:</div>
+                  <div className="rounded-2xl overflow-hidden border border-gray-200 dark:border-neutral-700 aspect-[1170/433] bg-gray-50">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={watchedImageUrl} alt="Banner preview" className="w-full h-full object-cover" />
+                  </div>
+                </div>
+              ) : null}
+              <Form.Item name="link_url" label="Link khi bấm vào">
+                <Input placeholder="https://..." />
+              </Form.Item>
+            </>
+          )}
+
+          <Form.Item name="alt_text" label="Mô tả (alt / tiêu đề phụ)">
             <Input />
           </Form.Item>
           <Form.Item name="range" label="Thời gian chạy (để trống = không giới hạn)">
