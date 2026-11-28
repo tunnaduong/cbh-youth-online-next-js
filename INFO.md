@@ -261,6 +261,8 @@ Every new or changed page or component must follow this section. If the part you
 
 ## Recent work (newest first, as of 2026-11)
 
+- **Mobile home header ad slot in `/admin/ads`** (`src/app/admin/ads/page.js`, `public/images/ads/seeli-home-banner.jpg`): added `mobile-home-header` ("Header trang chủ app mobile") to `PLACEMENTS` and published the `1170×433` SEELI banner image used by the seeded API slot and mobile app's `HomeAdBanner`.
+
 - **Managed ads on home sidebar & all feed inline slots** (`src/components/home/HomeClient.js`, `src/app/feed/FeedClient.js`): `HomeClient` previously rendered `<Ad300x250 />` directly (bypassing `/v1.0/ads?placement=sidebar`), so ads configured in `/admin/ads` for `sidebar` never appeared on `/`. It now wraps `<Ad300x250 />` in `<ManagedAd placement="sidebar" />`. `FeedClient` also wraps both alternating inline ad slots (including even slots that previously rendered `<NativeBanner />` directly) in `<ManagedAd placement="feed-inline" />`.
 
 - **Game start screen scrolls** (`src/app/explore/games/[slug]/GamePlayClient.js`, branch `fix/game-scroll-mobile`): the "Bắt đầu chơi" screen is `fixed inset-0` and could not scroll, so on a phone held sideways in the app's WebView (~360px high) the play button was below the fold and could not be pressed. It now scrolls up/down (`overflow-y-auto`), the game picture is capped at 40vh, and the back / "Mở trong app" buttons are `fixed` so they stay put. While the game runs (iframe) scrolling stays off. Not built or run in a browser (no node_modules on the dev machine) - syntax-checked only.

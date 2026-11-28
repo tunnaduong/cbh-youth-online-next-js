@@ -14,6 +14,7 @@ const PLACEMENTS = {
   sidebar: "Bên dưới bảng xếp hạng (sidebar)",
   "post-bottom": "Dưới bài viết, trên bình luận",
   "feed-inline": "Xen giữa bảng tin",
+  "mobile-home-header": "Header trang chủ app mobile",
 };
 
 const unwrap = (res) => res?.data ?? res;
