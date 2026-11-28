@@ -10,6 +10,39 @@ import { compressImageForUpload } from "@/utils/imageUpload";
 import { compressVideoForUpload } from "@/utils/videoCompression";
 import { arrayMove } from "@/components/ui/SortableImageGrid";
 
+const makeComposerSnapshot = ({
+  title = "",
+  description = "",
+  subforum_id = null,
+  privacy = "public",
+  anonymous = false,
+  images = [],
+  existingDocuments = [],
+  documentFiles = [],
+  existingVideos = [],
+  videoPreviews = [],
+}) =>
+  JSON.stringify({
+    title,
+    description,
+    subforum_id: subforum_id ?? null,
+    privacy: privacy || "public",
+    anonymous: Boolean(anonymous),
+    images: images.map((img) =>
+      img.kind === "existing" ? `e:${img.id}` : `n:${img.uid}`
+    ),
+    documents: [
+      ...existingDocuments.map((doc) => `e:${doc.id}`),
+      ...documentFiles.map((f) => `n:${f.name}:${f.size}:${f.lastModified}`),
+    ],
+    videos: [
+      ...existingVideos.map((vid) => `e:${vid.id}`),
+      ...videoPreviews.map((v) => `n:${v.id}`),
+    ],
+  });
+
+const EMPTY_COMPOSER_SNAPSHOT = makeComposerSnapshot({});
+
 /**
  * All the state, refs, effects and handlers behind the post composer
  * (create + edit) at /composer (src/app/composer/ComposerClient.js) - both
@@ -97,6 +130,7 @@ export default function usePostComposer({ isEditMode = false, postData = null, o
     // Handle Edit Mode Data Pre-fill
     if (open && isEditMode && postData) {
       setLoading(true);
+      setBaselineSnapshot(null);
       getPostDetail(postData.id)
         .then((response) => {
           const fetchedPost = response.data.post;
@@ -106,30 +140,48 @@ export default function usePostComposer({ isEditMode = false, postData = null, o
           const fetchedDescription = normalizeNewlines(
             fetchedPost.description || fetchedPost.content || ""
           );
+          const loadedImages = (fetchedPost.images || []).map((img) => ({
+            uid: `existing-${img.id}`,
+            kind: "existing",
+            id: img.id,
+            url: img.url,
+          }));
+          const loadedDocs = fetchedPost.documents || [];
+          const loadedVideos = fetchedPost.videos || [];
+          const loadedTitle = fetchedPost.title || "";
+          const loadedSubforum = fetchedPost.subforum_id || null;
+          const loadedPrivacy = fetchedPost.privacy || "public";
+          const loadedAnonymous = Boolean(fetchedPost.anonymous);
+
           setData({
-            title: fetchedPost.title || "",
+            title: loadedTitle,
             description: fetchedDescription, // Prioritize description (raw content)
-            subforum_id: fetchedPost.subforum_id || null,
+            subforum_id: loadedSubforum,
             image_files: [],
             document_files: [],
             video_files: [],
             visibility: fetchedPost.visibility || 0,
-            privacy: fetchedPost.privacy || "public",
-            anonymous: fetchedPost.anonymous || false,
+            privacy: loadedPrivacy,
+            anonymous: loadedAnonymous,
           });
           revokeAllObjectUrls();
-          setImages(
-            (fetchedPost.images || []).map((img) => ({
-              uid: `existing-${img.id}`,
-              kind: "existing",
-              id: img.id,
-              url: img.url,
-            }))
+          setImages(loadedImages);
+          setExistingDocuments(loadedDocs);
+          setExistingVideos(loadedVideos);
+          setSelectedSubforum(loadedSubforum);
+          setSelectedVisibility(loadedPrivacy);
+          setBaselineSnapshot(
+            makeComposerSnapshot({
+              title: loadedTitle,
+              description: fetchedDescription,
+              subforum_id: loadedSubforum,
+              privacy: loadedPrivacy,
+              anonymous: loadedAnonymous,
+              images: loadedImages,
+              existingDocuments: loadedDocs,
+              existingVideos: loadedVideos,
+            })
           );
-          setExistingDocuments(fetchedPost.documents || []);
-          setExistingVideos(fetchedPost.videos || []);
-          setSelectedSubforum(fetchedPost.subforum_id || null);
-          setSelectedVisibility(fetchedPost.privacy || "public");
           setLoading(false);
         })
         .catch((error) => {
@@ -164,6 +216,9 @@ export default function usePostComposer({ isEditMode = false, postData = null, o
   });
   const [existingDocuments, setExistingDocuments] = useState([]);
   const [existingVideos, setExistingVideos] = useState([]);
+  const [baselineSnapshot, setBaselineSnapshot] = useState(
+    isEditMode ? null : EMPTY_COMPOSER_SNAPSHOT
+  );
   const [processing, setProcessing] = useState(false);
   const [errors, setErrors] = useState({});
   const [isDraggingFiles, setIsDraggingFiles] = useState(false);
@@ -200,9 +255,24 @@ export default function usePostComposer({ isEditMode = false, postData = null, o
     setDocumentFiles([]);
     setVideoFiles([]);
     setVideoPreviews([]);
+    setBaselineSnapshot(EMPTY_COMPOSER_SNAPSHOT);
     setUploadProgress(0);
     setUploadStage(null);
   };
+
+  const currentSnapshot = makeComposerSnapshot({
+    title: data.title,
+    description: data.description,
+    subforum_id: data.subforum_id,
+    privacy: data.privacy,
+    anonymous: data.anonymous,
+    images,
+    existingDocuments,
+    documentFiles,
+    existingVideos,
+    videoPreviews,
+  });
+  const isDirty = baselineSnapshot !== null && currentSnapshot !== baselineSnapshot;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -714,6 +784,7 @@ export default function usePostComposer({ isEditMode = false, postData = null, o
     handleFilesDragLeave,
 
     // submit
+    isDirty,
     uploadProgress,
     uploadStage,
     handleSubmit,

@@ -9,6 +9,7 @@ import ComposerForm from "@/components/forum/ComposerForm";
 import { useAuthContext } from "@/contexts/Support";
 import { usePostRefresh } from "@/contexts/PostRefreshContext";
 import usePostComposer from "@/hooks/usePostComposer";
+import useUnsavedChangesGuard from "@/hooks/useUnsavedChangesGuard";
 
 // Written by CreatePostModal.js's "Nâng cao" button right before it
 // navigates here, so switching from the quick modal to the full editor
@@ -36,6 +37,7 @@ export default function ComposerClient() {
   const { loggedIn, currentUser, authLoading } = useAuthContext();
   const { triggerRefresh } = usePostRefresh();
   const handoffAppliedRef = useRef(false);
+  const bypassGuardRef = useRef(null);
 
   // Memoized: usePostComposer's load effect keys off this, and a fresh object
   // literal on every render would restart the fetch after each of its own
@@ -96,6 +98,7 @@ export default function ComposerClient() {
     handleFilesDrop,
     handleFilesDragEnter,
     handleFilesDragLeave,
+    isDirty,
     uploadProgress,
     uploadStage,
     handleSubmit,
@@ -104,12 +107,24 @@ export default function ComposerClient() {
     isEditMode,
     postData: editPostData,
     onSuccess: () => {
+      bypassGuardRef.current?.();
       triggerRefresh();
       router.refresh();
       router.push("/");
     },
-    onClose: () => router.push("/"),
+    onClose: () => {
+      bypassGuardRef.current?.();
+      router.push("/");
+    },
   });
+
+  const { confirmModal, bypassGuard } = useUnsavedChangesGuard({
+    enabled: isDirty || processing,
+    isEditMode,
+    interceptLinks: true,
+    onNavigate: (href) => router.push(href),
+  });
+  bypassGuardRef.current = bypassGuard;
 
   // Pick up a draft handed off from the quick CreatePostModal (only makes
   // sense for a fresh post - editing already loads its own data from the API).
@@ -201,6 +216,7 @@ export default function ComposerClient() {
         handleSubmit={handleSubmit}
         isEditMode={isEditMode}
       />
+      {confirmModal}
     </div>
   );
 }

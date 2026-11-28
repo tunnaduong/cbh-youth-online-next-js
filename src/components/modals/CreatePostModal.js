@@ -22,6 +22,7 @@ import { uploadInlineImage, collectImageFiles, compressImageForUpload } from "@/
 import { compressVideoForUpload } from "@/utils/videoCompression";
 import MentionSuggestionsDropdown from "../ui/MentionSuggestionsDropdown";
 import SortableImageGrid, { arrayMove } from "../ui/SortableImageGrid";
+import useUnsavedChangesGuard from "@/hooks/useUnsavedChangesGuard";
 import {
   buildHtml,
   getCaretOffset,
@@ -38,6 +39,39 @@ import {
 // doesn't lose whatever was already typed here. Not a persisted draft
 // feature - written right before navigating, read once and discarded.
 const COMPOSER_HANDOFF_KEY = "composer_modal_handoff";
+
+const makeModalSnapshot = ({
+  title = "",
+  description = "",
+  subforum_id = null,
+  privacy = "public",
+  anonymous = false,
+  images = [],
+  existingDocuments = [],
+  documentFiles = [],
+  existingVideos = [],
+  videoPreviews = [],
+}) =>
+  JSON.stringify({
+    title,
+    description,
+    subforum_id: subforum_id ?? null,
+    privacy: privacy || "public",
+    anonymous: Boolean(anonymous),
+    images: images.map((img) =>
+      img.kind === "existing" ? `e:${img.id}` : `n:${img.uid}`
+    ),
+    documents: [
+      ...existingDocuments.map((doc) => `e:${doc.id}`),
+      ...documentFiles.map((f) => `n:${f.name}:${f.size}:${f.lastModified}`),
+    ],
+    videos: [
+      ...existingVideos.map((vid) => `e:${vid.id}`),
+      ...videoPreviews.map((v) => `n:${v.id}`),
+    ],
+  });
+
+const EMPTY_MODAL_SNAPSHOT = makeModalSnapshot({});
 
 const CreatePostModal = ({ open, onClose, isEditMode = false, postData = null, onSuccess = null }) => {
   const router = useRouter();
@@ -100,6 +134,7 @@ const CreatePostModal = ({ open, onClose, isEditMode = false, postData = null, o
     // Handle Edit Mode Data Pre-fill
     if (open && isEditMode && postData) {
       setLoading(true);
+      setBaselineSnapshot(null);
       getPostDetail(postData.id)
         .then((response) => {
           const fetchedPost = response.data.post;
@@ -111,34 +146,52 @@ const CreatePostModal = ({ open, onClose, isEditMode = false, postData = null, o
           const fetchedDescription = normalizeNewlines(
             fetchedPost.description || fetchedPost.content || ""
           );
+          const loadedImages = (fetchedPost.images || []).map((img) => ({
+            uid: `existing-${img.id}`,
+            kind: "existing",
+            id: img.id,
+            url: img.url,
+          }));
+          const loadedDocs = fetchedPost.documents || [];
+          const loadedVideos = fetchedPost.videos || [];
+          const loadedTitle = fetchedPost.title || "";
+          const loadedSubforum = fetchedPost.subforum_id || null;
+          const loadedPrivacy = fetchedPost.privacy || "public";
+          const loadedAnonymous = Boolean(fetchedPost.anonymous);
+
           programmaticChangeRef.current = true;
           setData({
-            title: fetchedPost.title || "",
+            title: loadedTitle,
             description: fetchedDescription, // Prioritize description (raw content)
-            subforum_id: fetchedPost.subforum_id || null,
+            subforum_id: loadedSubforum,
             image_files: [],
             document_files: [],
             video_files: [],
             visibility: fetchedPost.visibility || 0,
-            privacy: fetchedPost.privacy || "public",
-            anonymous: fetchedPost.anonymous || false,
+            privacy: loadedPrivacy,
+            anonymous: loadedAnonymous,
           });
           descriptionHistoryRef.current = { undo: [], redo: [] };
           lastCommittedRef.current = { text: fetchedDescription, offset: 0 };
           lastEditTimeRef.current = 0;
           revokeAllObjectUrls();
-          setImages(
-            (fetchedPost.images || []).map((img) => ({
-              uid: `existing-${img.id}`,
-              kind: "existing",
-              id: img.id,
-              url: img.url,
-            }))
+          setImages(loadedImages);
+          setExistingDocuments(loadedDocs);
+          setExistingVideos(loadedVideos);
+          setSelectedSubforum(loadedSubforum);
+          setSelectedVisibility(loadedPrivacy);
+          setBaselineSnapshot(
+            makeModalSnapshot({
+              title: loadedTitle,
+              description: fetchedDescription,
+              subforum_id: loadedSubforum,
+              privacy: loadedPrivacy,
+              anonymous: loadedAnonymous,
+              images: loadedImages,
+              existingDocuments: loadedDocs,
+              existingVideos: loadedVideos,
+            })
           );
-          setExistingDocuments(fetchedPost.documents || []);
-          setExistingVideos(fetchedPost.videos || []);
-          setSelectedSubforum(fetchedPost.subforum_id || null);
-          setSelectedVisibility(fetchedPost.privacy || "public");
           setLoading(false);
         })
         .catch((error) => {
@@ -170,6 +223,9 @@ const CreatePostModal = ({ open, onClose, isEditMode = false, postData = null, o
   });
   const [existingDocuments, setExistingDocuments] = useState([]);
   const [existingVideos, setExistingVideos] = useState([]);
+  const [baselineSnapshot, setBaselineSnapshot] = useState(
+    isEditMode ? null : EMPTY_MODAL_SNAPSHOT
+  );
   const [processing, setProcessing] = useState(false);
   const [errors, setErrors] = useState({});
   const [isPreviewMode, setIsPreviewMode] = useState(false);
@@ -397,8 +453,36 @@ const CreatePostModal = ({ open, onClose, isEditMode = false, postData = null, o
     setDocumentFiles([]);
     setVideoFiles([]);
     setVideoPreviews([]);
+    setBaselineSnapshot(EMPTY_MODAL_SNAPSHOT);
     setUploadProgress(0);
     setUploadStage(null);
+  };
+
+  const currentSnapshot = makeModalSnapshot({
+    title: data.title,
+    description: data.description,
+    subforum_id: data.subforum_id,
+    privacy: data.privacy,
+    anonymous: data.anonymous,
+    images,
+    existingDocuments,
+    documentFiles,
+    existingVideos,
+    videoPreviews,
+  });
+  const isDirty = baselineSnapshot !== null && currentSnapshot !== baselineSnapshot;
+
+  const { confirmModal, confirmAction, bypassGuard } = useUnsavedChangesGuard({
+    enabled: open && (isDirty || processing),
+    isEditMode,
+    interceptLinks: false,
+  });
+
+  const handleRequestClose = () => {
+    confirmAction("close", () => {
+      reset();
+      onClose();
+    });
   };
 
   const handleSubmit = async (e) => {
@@ -555,6 +639,7 @@ const CreatePostModal = ({ open, onClose, isEditMode = false, postData = null, o
         refreshUser();
         if (fetchTopUsers) fetchTopUsers(true);
 
+        bypassGuard();
         onClose();
       } else {
         throw new Error("Unexpected response status");
@@ -969,6 +1054,7 @@ const CreatePostModal = ({ open, onClose, isEditMode = false, postData = null, o
       // sessionStorage unavailable (private mode etc.) - /composer just
       // opens with a clean draft instead of the current one.
     }
+    bypassGuard();
     onClose();
     router.push(isEditMode && postData?.id ? `/composer?edit=${postData.id}` : "/composer");
   };
@@ -1036,8 +1122,8 @@ const CreatePostModal = ({ open, onClose, isEditMode = false, postData = null, o
       <Modal
         closable={{ "aria-label": "Custom Close Button" }}
         open={open}
-        onOk={onClose}
-        onCancel={onClose}
+        onOk={handleRequestClose}
+        onCancel={handleRequestClose}
         footer={null}
         style={{ top: 40 }}
         className="custom-modal"
@@ -1579,6 +1665,7 @@ const CreatePostModal = ({ open, onClose, isEditMode = false, postData = null, o
           </form >
         </div >
       </Modal >
+      {confirmModal}
     </>
   );
 };
