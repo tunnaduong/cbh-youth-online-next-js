@@ -15,6 +15,7 @@ import { useEffect } from "react";
 import { usePathname } from "next/navigation";
 import UpdateNotification from "@/components/UpdateNotification";
 import AppBanner from "@/components/AppBanner";
+import AdBlockerModal from "@/components/ads/AdBlockerModal";
 import MaintenanceGuard from "@/components/maintenance/MaintenanceGuard";
 import LoginApprovalPrompt from "@/components/LoginApprovalPrompt";
 import dynamic from "next/dynamic";
@@ -81,6 +82,7 @@ export default function ClientProviders({ children }) {
                       >
                         {children}
                         <AppBanner />
+                        <AdBlockerModal />
                         <ChatWidget />
                         <IncomingCallModal />
                         <ActiveCallModal />

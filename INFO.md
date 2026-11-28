@@ -50,7 +50,7 @@ The web app at **https://chuyenbienhoa.com** (also `www.`): the student communit
 | Composer | `/composer`: rich editor (TipTap, mentions, slash commands, image compression) |
 | Profiles | `/[username]`, `/[username]/[tab]`. Discord-style profile theme: frames, effects, name styles, points milestones (`src/lib/profileTheme.js`, `src/lib/nameFonts.js`) |
 | Chat | `/chat` (private and group chat, realtime), `/invite/[token]` (group invite) |
-| Ads | `/admin/ads` (`src/app/admin/ads/page.js`), `src/components/ads/ManagedAd.js` (API-backed with Adsterra fallback), `src/components/ads/AdSlot.js`, `src/data/ads.js` |
+| Ads | `/admin/ads` (`src/app/admin/ads/page.js`), `src/components/ads/ManagedAd.js` (API-backed with Adsterra fallback), `src/components/ads/AdSlot.js`, `src/components/ads/AdBlockerModal.js` (adblocker notice popup), `src/data/ads.js` |
 | Stories | `src/components/stories` (viewer, overlays in `src/lib/storyOverlays.js`) |
 | Explore | `/explore`, `/explore/games` (+`[slug]`), `/explore/quiz` (+`custom`), `/explore/study-materials` (+`[id]`, `upload`), `/explore/universities`, `/explore/timetable` (class timetable, `src/lib/timetable.js`), `/explore/lookup` (+`thpt`, `grade-10`, `grades`), `/explore/ranking`. Shared sidebar helper: `getExploreSidebarItems()` in `src/data/exploreFeatures.js` (includes a "Quay lại diễn đàn" back button to `/`) |
 | Points & money | `/wallet` (+`deposit`, `withdraw`; SePay QR, see `SEPAY_*.md`), `/guide/points`, `/explore/ranking` (legacy `/users/ranking` redirects permanently in `next.config.mjs`) |
@@ -260,6 +260,8 @@ Weights: `font-medium` (default emphasis), `font-semibold` (titles, buttons), `f
 Every new or changed page or component must follow this section. If the part you touch is in the older style, bring it in line. When a deliberate, large redesign changes these rules (new card style, new palette, new navigation), **update this section in the same commit** - it must always describe the site as it is, not as it was.
 
 ## Recent work (newest first, as of 2026-11)
+
+- **AdBlocker detection popup** (`src/components/ads/AdBlockerModal.js`, `src/app/ClientProviders.js`): added a global Antd `Modal` ("Bạn đang dùng trình chặn quảng cáo" — "Quảng cáo góp phần duy trì website...") with "Tôi đã tắt" (reloads the page after clearing dismissal state) and "Không, cảm ơn" (dismisses for 24h via `localStorage` `cbh_adblock_dismissed_at`). Detects both cosmetic filters (hidden bait element) and network/DNS blockers (probes `adsbygoogle.js` and cross-checks `gstatic.com/generate_204` to avoid offline false positives). Suppressed in app WebView (`isInApp()`/`isChatLite()`), `/admin`, `/shop`, auth routes, `/egg`, and active game pages.
 
 - **Merged lookup sidebar into Explore, moved `/lookup/*` and `/users/ranking` under `/explore/*`, and added "Quay lại diễn đàn" in Explore sidebar** (`src/data/exploreFeatures.js`, `next.config.mjs`, `src/app/explore/lookup/**`, `src/app/explore/ranking/**`, `src/components/lookup/LookupShell.js`, all Explore client pages, `e2e/routes.spec.ts`): unified every Explore and lookup page onto `getExploreSidebarItems()` (which starts with a "Quay lại diễn đàn" back-arrow link to `/`), moved `/lookup`, `/lookup/grades`, `/lookup/thpt`, `/lookup/grade-10` to `/explore/lookup/*` and `/users/ranking` to `/explore/ranking` with permanent 308 redirects in `next.config.mjs`, updated all internal links, and updated the print card copy from "đồ án" to "đề thi".
 
